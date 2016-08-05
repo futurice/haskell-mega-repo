@@ -1,0 +1,26 @@
+name: servant-binary-tagged
+version: 0.1.0.0
+synopsis: Servant support for binary-tagged
+description: Servant support for binary-tagged
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: phadej/servant-yaml
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+dependencies:
+  - base          >=4.7      && <4.10
+  - bifunctors
+  - binary 
+  - binary-tagged >=0.1      && <0.2
+  - bytestring    >=0.10.4.0 && <0.11
+  - http-media    >=0.6.2    && <0.7
+  - servant       >=0.4.4.5  && <0.9
+
+library:
+  source-dirs: src
