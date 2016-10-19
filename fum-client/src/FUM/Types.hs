@@ -4,18 +4,16 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
---
-{-# LANGUAGE FlexibleInstances #-}
 module FUM.Types where
 
 import Futurice.Prelude
 import Prelude ()
 
 import Data.Aeson.Compat
+import Data.Aeson.Types
+       (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
 
 import qualified Data.Maybe.Strict as S
-
-import Unsafe.Coerce
 
 -------------------------------------------------------------------------------
 -- Authentication token
@@ -91,8 +89,14 @@ instance NFData UserName
 instance FromJSON UserName where
     parseJSON = withText "FUM UserName" $ pure . UserName
 
-instance ToJSON a => ToJSON (HashMap UserName a) where
-    toJSON m = toJSON (unsafeCoerce m :: HashMap Text a)
+instance ToJSON UserName where
+    toJSON = toJSON . _getUserName
+
+instance ToJSONKey UserName where
+    toJSONKey = toJSONKeyText _getUserName
+
+instance FromJSONKey UserName where
+    fromJSONKey = fromJSONKeyCoerce
 
 -------------------------------------------------------------------------------
 -- List name

@@ -35,15 +35,19 @@ library
     , env-config
     , futurice-prelude
     , haxl
-    , planmill-client
     , http-client
     , http-client-tls
+    , intervals
+    , planmill-client
+    , time-parsers >=0.1.1.0
     , aeson
     , binary
     , binary-tagged
     , bytestring
+    , containers
     , exceptions
     , futurice-servant
+    , intervals
     , monad-logger
     , periocron
     , postgresql-simple
@@ -53,7 +57,10 @@ library
     , servant-binary-tagged
     , servant-server
     , swagger2
+    , text
     , unordered-containers
+    , vector
+    , lens
   exposed-modules:
       Futurice.App.PlanMillProxy
       Futurice.App.PlanMillProxy.API
@@ -75,9 +82,11 @@ executable planmill-proxy-client
     , env-config
     , futurice-prelude
     , haxl
-    , planmill-client
     , http-client
     , http-client-tls
+    , intervals
+    , planmill-client
+    , time-parsers >=0.1.1.0
     , ansi-pretty
   default-language: Haskell2010
 
@@ -93,8 +102,10 @@ executable planmill-proxy-server
     , env-config
     , futurice-prelude
     , haxl
-    , planmill-client
     , http-client
     , http-client-tls
+    , intervals
+    , planmill-client
+    , time-parsers >=0.1.1.0
     , planmill-proxy
   default-language: Haskell2010

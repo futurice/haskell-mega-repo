@@ -11,6 +11,8 @@ import Test.Tasty.QuickCheck
 import qualified Data.ByteString as BS
 
 import PlanMill
+import PlanMill.Types.Query
+import Numeric.Interval.NonEmpty ((...))
 
 data P a = P
 
@@ -20,6 +22,7 @@ main = defaultMain tests
 tests :: TestTree
 tests = testGroup "tests"
     [ exampleResponses
+    , queryHashExamples
     ]
 
 exampleResponses :: TestTree
@@ -63,6 +66,13 @@ exampleResponses = testGroup "exampleResponses"
                  . once
                  . isRightProp
                  $ (eitherDecodeStrict' bs :: Either String a)
+
+queryHashExamples :: TestTree
+queryHashExamples = testGroup "Query examples"
+    [ testProperty "timereports Eq" $ once $ tr === tr
+    ]
+  where
+    tr = SomeQuery (QueryTimereports (Just $ toEnum 0 ... toEnum 2) (Ident 42))
 
 isRightProp :: (Show a) => Either a b -> Property
 isRightProp (Right _) = property True

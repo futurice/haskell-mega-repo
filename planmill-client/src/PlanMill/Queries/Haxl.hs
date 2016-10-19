@@ -21,6 +21,7 @@ import PlanMill.Types.Cfg   (Cfg)
 import PlanMill.Types.Query
 
 -- For initDataSourceSimpleIO
+import Control.Monad.Logger             (LogLevel, filterLogger)
 import Control.Monad.CryptoRandom.Extra
        (MonadInitHashDRBG (..), evalCRandTThrow)
 import Control.Monad.Http               (evalHttpT)
@@ -50,8 +51,8 @@ instance DataSource u Query where
 -- | This is a simple query function.
 --
 -- It's smart enough to reuse http/random-gen for blocked fetches
-initDataSourceSimpleIO :: Cfg -> State Query
-initDataSourceSimpleIO cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
+initDataSourceSimpleIO :: LogLevel -> Cfg -> State Query
+initDataSourceSimpleIO loglevel cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
     g <- mkHashDRBG
     perform g $ for_ blockedFetches $ \(BlockedFetch q v) ->
         case queryDict (Proxy :: Proxy FromJSON) q of
@@ -59,7 +60,13 @@ initDataSourceSimpleIO cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
                 res <- evalPlanMill $ queryToRequest q
                 liftIO $ putSuccess v res
   where
-    perform g = evalHttpT . runStderrLoggingT . flip runReaderT cfg . flip evalCRandTThrow g
+    perform g
+        = evalHttpT
+        . runStderrLoggingT
+        . filterLogger logPred
+        . flip runReaderT cfg
+        . flip evalCRandTThrow g
+    logPred _ = (>= loglevel)
 
 -- | This is batched query function.
 --

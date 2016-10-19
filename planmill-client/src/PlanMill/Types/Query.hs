@@ -1,11 +1,16 @@
-{-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE RankNTypes         #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module PlanMill.Types.Query (
     Query (..),
     QueryTypes,
@@ -15,19 +20,23 @@ module PlanMill.Types.Query (
     SomeResponse(..),
     queryToRequest,
     queryDict,
-    queryTagDict,
     ) where
 
 import Prelude ()
 import PlanMill.Internal.Prelude
-import Data.Binary               (Binary (..), Put)
-import Data.Binary.Tagged (StructuralInfo (..))
+import Data.Binary                      (Binary (..), Put)
+import Data.Binary.Tagged               (StructuralInfo (..))
 import Data.Constraint
-import Data.GADT.Compare         (GEq (..), defaultEq)
-import Data.Swagger              (NamedSchema (..), ToSchema (..))
+import Data.GADT.Compare                (GEq (..), defaultEq)
+import Data.Reflection                  (reifySymbol)
+import Data.Singletons.Bool             (SBoolI, sboolEqRefl)
+import Data.Swagger                     (NamedSchema (..), ToSchema (..))
+import Data.Text.Lens                   (unpacked)
 import Data.Type.Equality
-import Generics.SOP              (All, hcmap, hcollapse, hcpure)
-import Numeric.Interval.NonEmpty (Interval)
+import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
+import Generics.SOP                     (All, hcmap, hcollapse, hcpure)
+import GHC.TypeLits                     (KnownSymbol, sameSymbol, symbolVal)
+import Numeric.Interval.NonEmpty        (Interval, inf, sup)
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Map                             as Map
@@ -35,15 +44,19 @@ import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
+import PlanMill.Types.Enumeration    (EnumDesc)
+import PlanMill.Types.Identifier     (Identifier (..))
 import PlanMill.Types.Me             (Me)
+import PlanMill.Types.Meta           (Meta)
 import PlanMill.Types.Request
-       (PlanMill (..), QueryString, planMillPagedGetQs)
+       (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
 import PlanMill.Types.ResultInterval
        (IntervalType (..), ResultInterval (..), intervalDayToIntervalUTC,
        intervalToQueryString)
-import PlanMill.Types.Timereport     (Timereports)
-import PlanMill.Types.UrlPart        (UrlParts)
-import PlanMill.Types.User           (User, UserId, Users)
+import PlanMill.Types.Timereport     (Timereport, Timereports)
+import PlanMill.Types.UOffset        (showPlanmillUTCTime)
+import PlanMill.Types.UrlPart        (UrlParts, (//))
+import PlanMill.Types.User           (Team, Teams, User, UserId, Users)
 import PlanMill.Types.UserCapacity   (UserCapacities)
 
 -------------------------------------------------------------------------------
@@ -51,19 +64,22 @@ import PlanMill.Types.UserCapacity   (UserCapacities)
 -------------------------------------------------------------------------------
 
 -- | Arbitrary queries are tagged by this values
-data QueryTag a where
-    QueryTagMe   :: QueryTag Me
-    QueryTagUser :: QueryTag User
-    -- Remember to update HasStruturalInfo instance
+data QueryTag f a where
+    QueryTagMe         :: QueryTag I Me
+    QueryTagMeta       :: QueryTag I Meta
+    QueryTagTeam       :: QueryTag f Team -- can be I or Vector
+    QueryTagUser       :: QueryTag f User -- can be I or Vector
+    QueryTagTimereport :: QueryTag I Timereport
+    QueryTagEnumDesc   :: KnownSymbol enum => Proxy enum -> QueryTag I (EnumDesc enum)
 
 -- | Planmill query (i.e. read-only operation).
 --
 -- More sophisticated then 'PlanMill' -request,
 -- as it can be serialised.
 data Query a where
-    QueryGet         :: QueryTag a -> QueryString -> UrlParts -> Query a
-    QueryPagedGet    :: QueryTag a -> QueryString -> UrlParts -> Query (Vector a)
-    QueryTimereports :: Interval Day -> UserId -> Query Timereports
+    QueryGet         :: QueryTag I a -> QueryString -> UrlParts -> Query a
+    QueryPagedGet    :: QueryTag Vector a -> QueryString -> UrlParts -> Query (Vector a)
+    QueryTimereports :: Maybe (Interval Day) -> UserId -> Query Timereports
     QueryCapacities  :: Interval Day -> UserId -> Query UserCapacities
   deriving (Typeable)
 
@@ -71,18 +87,27 @@ data Query a where
 queryToRequest :: Query a -> PlanMill a
 queryToRequest (QueryGet _ qs ps)      = PlanMillGet qs ps
 queryToRequest (QueryPagedGet _ qs ps) = PlanMillPagedGet  qs ps
-queryToRequest (QueryTimereports i u) =
+queryToRequest (QueryTimereports i (Ident u)) =
     planMillPagedGetQs (qs <> qs') ("timereports" :: Text)
   where
     qs :: QueryString
-    qs = intervalToQueryString
-        $ ResultInterval IntervalStart
-        $ intervalDayToIntervalUTC i
+    qs = maybe mempty dayIntervalToQueryString i
+      where
+        dayIntervalToQueryString
+            = intervalToQueryString
+            . ResultInterval IntervalStart
+            . intervalDayToIntervalUTC
 
     qs' :: QueryString
     qs' = Map.fromList [ ("person", T.pack $ show u)
           ]
-queryToRequest _                       = error "queryToRequest: not -implemented"
+queryToRequest (QueryCapacities i uid) =
+    planMillGetQs qs $ ("users" :: Text) // uid // ("capacity" :: Text)
+  where
+    qs = Map.fromList
+        [ ("start",  fromString . showPlanmillUTCTime $ UTCTime (inf i) 0)
+        , ("finish", fromString . showPlanmillUTCTime $ UTCTime (sup i) 0)
+        ]
 
 -- | Existential 'Query'
 --
@@ -98,59 +123,108 @@ data SomeQuery where SomeQuery :: Query a -> SomeQuery
 deriving instance Show SomeQuery
 
 -- Helper to make deserialisation of SomeQuery simpler
-data SomeQueryTag where SomeQueryTag :: QueryTag a -> SomeQueryTag
+data SomeQueryTag f where SomeQueryTag :: QueryTag f a -> SomeQueryTag f
 
 -------------------------------------------------------------------------------
 -- QueryTag instances
 -------------------------------------------------------------------------------
 
 -- All tags are equal to itself
-instance Eq (QueryTag a) where _ == _ = True
-instance Ord (QueryTag a) where compare _ _ = EQ
+instance Eq (QueryTag f a) where _ == _ = True
+instance Ord (QueryTag f a) where compare _ _ = EQ
 
-instance GEq QueryTag where
-    geq QueryTagMe QueryTagMe     = Just Refl
-    geq QueryTagUser QueryTagUser = Just Refl
-    geq _ _                       = Nothing
+instance GEq (QueryTag f) where
+    geq QueryTagMe QueryTagMe                 = Just Refl
+    geq QueryTagMeta QueryTagMeta             = Just Refl
+    geq QueryTagTeam QueryTagTeam             = Just Refl
+    geq QueryTagUser QueryTagUser             = Just Refl
+    geq QueryTagTimereport QueryTagTimereport = Just Refl
+    geq (QueryTagEnumDesc p) (QueryTagEnumDesc p') = do
+        Refl <- sameSymbol p p'
+        pure Refl
+    geq _ _                                   = Nothing
 
-instance Eq SomeQueryTag where
+instance Eq (SomeQueryTag f) where
     SomeQueryTag t == SomeQueryTag t' = defaultEq t t'
 
-instance Show (QueryTag a) where
-    showsPrec _ r = case r of
-        QueryTagMe   -> showString "QueryTagMe"
-        QueryTagUser -> showString "QueryTagUser"
+instance Show (QueryTag f a) where
+    showsPrec d r = case r of
+        QueryTagMe         -> showString "QueryTagMe"
+        QueryTagMeta       -> showString "QueryTagMeta"
+        QueryTagTeam       -> showString "QueryTagTeam"
+        QueryTagUser       -> showString "QueryTagUser"
+        QueryTagTimereport -> showString "QueryTagTimereport"
+        QueryTagEnumDesc p -> showParen (d > 10)
+            $ showString "QueryTagEnumDesc "
+            . showsPrec 11 (symbolVal p)
 
-instance Hashable (QueryTag a) where
-    hashWithSalt salt QueryTagMe   = salt `hashWithSalt` (0 :: Int)
-    hashWithSalt salt QueryTagUser = salt `hashWithSalt` (1 :: Int)
+instance Hashable (QueryTag f a) where
+    hashWithSalt salt QueryTagMe           = salt `hashWithSalt` (0 :: Int)
+    hashWithSalt salt QueryTagMeta         = salt `hashWithSalt` (1 :: Int)
+    hashWithSalt salt QueryTagTeam         = salt `hashWithSalt` (2 :: Int)
+    hashWithSalt salt QueryTagUser         = salt `hashWithSalt` (3 :: Int)
+    hashWithSalt salt QueryTagTimereport   = salt `hashWithSalt` (4 :: Int)
+    hashWithSalt salt (QueryTagEnumDesc p) = salt
+        `hashWithSalt` (5 :: Int)
+        `hashWithSalt` (symbolVal p)
 
-instance NFData (QueryTag a) where
+instance NFData (QueryTag f a) where
     rnf x = x `seq` ()
 
-instance Binary SomeQueryTag where
-    put (SomeQueryTag QueryTagMe)   = put (0 :: Word8)
-    put (SomeQueryTag QueryTagUser) = put (1 :: Word8)
+-- We use SBoolI, though we could have defined two instances:
+-- * Binary (SomeQueryTag I)
+-- * Binary (SomeQueryTag Vector)
+instance SBoolI (f == I) => Binary (SomeQueryTag f) where
+    put (SomeQueryTag QueryTagMe)           = put (0 :: Word8)
+    put (SomeQueryTag QueryTagMeta)         = put (1 :: Word8)
+    put (SomeQueryTag QueryTagTeam)         = put (2 :: Word8)
+    put (SomeQueryTag QueryTagUser)         = put (3 :: Word8)
+    put (SomeQueryTag QueryTagTimereport)   = put (4 :: Word8)
+    put (SomeQueryTag (QueryTagEnumDesc p)) = do
+        put (5 :: Word8)
+        put (symbolVal p)
 
-    get = get >>= \n -> case (n :: Word8) of
-        0 -> pure $ SomeQueryTag QueryTagMe
-        1 -> pure $ SomeQueryTag QueryTagUser
+    get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I)) of
+        (0, Just Refl) -> pure $ SomeQueryTag QueryTagMe
+        (1, Just Refl) -> pure $ SomeQueryTag QueryTagMeta
+        (2, _)         -> pure $ SomeQueryTag QueryTagTeam
+        (3, _)         -> pure $ SomeQueryTag QueryTagUser
+        (4, Just Refl) -> pure $ SomeQueryTag QueryTagTimereport
+        (5, Just Refl) -> do
+            val <- get
+            pure $ reifySymbol val $ \p -> SomeQueryTag (QueryTagEnumDesc p)
         _ -> fail $ "Invalid tag " ++ show n
 
-instance ToJSON (QueryTag a) where
-    toJSON QueryTagMe   = String "me"
-    toJSON QueryTagUser = String "user"
+instance ToJSON (QueryTag f a) where
+    toJSON QueryTagMe           = String "me"
+    toJSON QueryTagMeta         = String "meta"
+    toJSON QueryTagTeam         = String "team"
+    toJSON QueryTagUser         = String "user"
+    toJSON QueryTagTimereport   = String "timereport"
+    toJSON (QueryTagEnumDesc p) = String $ "enumdesc-" <> symbolVal p ^. packed
 
-instance FromJSON SomeQueryTag where
-    parseJSON (String "me")   = pure $ SomeQueryTag QueryTagMe
-    parseJSON (String "user") = pure $ SomeQueryTag QueryTagUser
-    parseJSON (String t)      = fail $ "Invalid tag: " ++ show t
-    parseJSON v               = typeMismatch "QueryTag" v
+instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
+    parseJSON = withText "SomeQueryTag" $ \t -> case (t, sboolEqRefl :: Maybe (f :~: I)) of
+        ("me",   Just Refl)       -> pure $ SomeQueryTag QueryTagMe
+        ("meta", Just Refl)       -> pure $ SomeQueryTag QueryTagMeta
+        ("team", _)               -> pure $ SomeQueryTag QueryTagTeam
+        ("user", _)               -> pure $ SomeQueryTag QueryTagUser
+        ("timereport", Just Refl) -> pure $ SomeQueryTag QueryTagTimereport
+        (_, Just Refl) | T.isPrefixOf pfx t
+            -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
+          where
+            pfx = "enumdesc-"
+            mk p = SomeQueryTag (QueryTagEnumDesc p)
+        _ -> fail $ "Invalid tag: " ++ show t
 
-instance HasStructuralInfo (QueryTag a) where
+instance HasStructuralInfo (QueryTag f a) where
     structuralInfo _ = StructuralInfo "QueryTag"
         [[ NominalType "QueryTagMe"
+        ,  NominalType "QueryTagMeta"
+        ,  NominalType "QueryTagTeam"
         ,  NominalType "QueryTagUser"
+        ,  NominalType "QueryTagTimereport"
+        ,  NominalType "QueryTagEnumDesc"
         ]]
 
 -------------------------------------------------------------------------------
@@ -170,9 +244,9 @@ instance GEq Query where
         guard (q == q' && p == p')
         pure Refl
     geq (QueryTimereports i u) (QueryTimereports i' u')
-        | i == i' && u == u' = Just Refl
+        | liftEqMaybe eqInterval i i' && u == u' = Just Refl
     geq (QueryCapacities i u) (QueryCapacities i' u')
-        | i == i' && u == u' = Just Refl
+        | eqInterval i i' && u == u' = Just Refl
     geq _ _ = Nothing
 
 instance Show (Query a) where
@@ -249,18 +323,18 @@ instance Postgres.ToField (Query a) where
 -- Unfortunately we cannot autoderive this
 instance HasStructuralInfo (Query a) where
     structuralInfo _ = StructuralInfo "SomeQuery"
-        [ [ structuralInfo (Proxy :: Proxy (QueryTag ()))
+        [ [ structuralInfo (Proxy :: Proxy :$ QueryTag I ())
           , structuralInfo (Proxy :: Proxy QueryString)
           , structuralInfo (Proxy :: Proxy UrlParts)
           ]
-        , [ structuralInfo (Proxy :: Proxy (QueryTag ()))
+        , [ structuralInfo (Proxy :: Proxy :$ QueryTag Vector ())
           , structuralInfo (Proxy :: Proxy QueryString)
           , structuralInfo (Proxy :: Proxy UrlParts)
           ]
-        , [ structuralInfo (Proxy :: Proxy (Interval Day))
+        , [ structuralInfo (Proxy :: Proxy :$ Maybe :$ Interval Day)
           , structuralInfo (Proxy :: Proxy UserId)
           ]
-        , [ structuralInfo (Proxy :: Proxy (Interval Day))
+        , [ structuralInfo (Proxy :: Proxy :$ Interval Day)
           , structuralInfo (Proxy :: Proxy UserId)
           ]
         ]
@@ -271,31 +345,63 @@ instance HasStructuralInfo (Query a) where
 
 -- | Possible 'Query' types
 type QueryTypes = '[ Timereports, UserCapacities
-    , Me, Vector Me
+    , Me
     , User, Users
+    , Meta
+    , Team, Teams
+    , Timereport
     ]
 
-queryTagType :: QueryTag a -> NS ((:~:) a) QueryTypes
-queryTagType QueryTagMe   = S (S (Z Refl))
-queryTagType QueryTagUser = S (S (S (S (Z Refl))))
+-- | A bit fancier than ':~:'
+data IsSomeEnumDesc a where
+    IsSomeEnumDesc  :: KnownSymbol k => Proxy k -> IsSomeEnumDesc (EnumDesc k)
 
-queryTagVectorType :: QueryTag a -> NS ((:~:) (Vector a)) QueryTypes
-queryTagVectorType QueryTagMe   = S (S (S (Z Refl)))
-queryTagVectorType QueryTagUser = S (S (S (S (S (Z Refl)))))
+queryTagType
+    :: QueryTag I a
+    -> Either (IsSomeEnumDesc a) (NS ((:~:) a) QueryTypes)
+queryTagType QueryTagMe           = Right $ insertNS Refl
+queryTagType QueryTagUser         = Right $ insertNS Refl
+queryTagType QueryTagMeta         = Right $ insertNS Refl
+queryTagType QueryTagTeam         = Right $ insertNS Refl
+queryTagType QueryTagTimereport   = Right $ insertNS Refl
+queryTagType (QueryTagEnumDesc p) = Left $ IsSomeEnumDesc p
+
+queryTagVectorType
+    :: QueryTag Vector a
+    -> NS ((:~:) (Vector a)) QueryTypes
+queryTagVectorType QueryTagUser         = insertNS Refl
+queryTagVectorType QueryTagTeam         = insertNS Refl
+#if __GLASGOW_HASKELL__ < 800
+queryTagVectorType _ = error "queryTagVectorType: panic!"
+#endif
 
 -- | Reflect the type of 'Query'.
-queryType :: Query a -> NS ((:~:) a) QueryTypes
+queryType
+    :: Query a
+    -> Either (IsSomeEnumDesc a) (NS ((:~:) a) QueryTypes)
 queryType (QueryGet t _ _)       = queryTagType t
-queryType (QueryPagedGet t _ _)  = queryTagVectorType t
-queryType (QueryTimereports _ _) = Z Refl
-queryType (QueryCapacities _ _)  = S (Z Refl)
+queryType (QueryPagedGet t _ _)  = Right $ queryTagVectorType t
+queryType (QueryTimereports _ _) = Right $ Z Refl
+queryType (QueryCapacities _ _)  = Right $ S (Z Refl)
+
+-- This is a helper class to help writing above proofs.
+--
+-- We can write them by hand, but it's tedious
+class InsertNS x ys where
+    insertNS :: f x -> NS f ys
+
+instance {-# INCOHERENT #-} InsertNS x (x ': ys) where
+    insertNS = Z
+
+instance InsertNS x ys => InsertNS x (y ': ys) where
+    insertNS = S . insertNS
 
 -------------------------------------------------------------------------------
 -- SomeQuery instances
 -------------------------------------------------------------------------------
 
 instance Eq SomeQuery where
-    SomeQuery q == SomeQuery q' = defaultEq q q';
+    SomeQuery q == SomeQuery q' = defaultEq q q'
 
 instance Hashable SomeQuery where
     hashWithSalt salt (SomeQuery q) = hashWithSalt salt q
@@ -355,16 +461,16 @@ instance Binary SomeQuery where
         3 -> mkSomeQueryCapacities <$> get <*> get
         _ -> fail $ "Invalid tag: " ++ show n
 
-mkSomeQueryGet :: SomeQueryTag -> QueryString -> UrlParts -> SomeQuery
+mkSomeQueryGet :: SomeQueryTag I-> QueryString -> UrlParts -> SomeQuery
 mkSomeQueryGet t q p = case t of
     SomeQueryTag t' -> SomeQuery (QueryGet t' q p)
 
-mkSomeQueryPagedGet :: SomeQueryTag -> QueryString -> UrlParts -> SomeQuery
+mkSomeQueryPagedGet :: SomeQueryTag Vector -> QueryString -> UrlParts -> SomeQuery
 mkSomeQueryPagedGet t q p = case t of
     SomeQueryTag t' -> SomeQuery (QueryPagedGet t' q p)
 
 mkSomeQueryTimereports :: Interval Day -> UserId -> SomeQuery
-mkSomeQueryTimereports i u = SomeQuery (QueryTimereports i u)
+mkSomeQueryTimereports i u = SomeQuery (QueryTimereports (Just i) u)
 
 mkSomeQueryCapacities :: Interval Day -> UserId -> SomeQuery
 mkSomeQueryCapacities i u = SomeQuery (QueryCapacities i u)
@@ -386,18 +492,14 @@ instance Postgres.FromField SomeQuery where
 
 -- | We can recover all type parameters 'Query' can has.
 queryDict
-    :: forall c a. All c QueryTypes
+    :: forall c a. (All c QueryTypes, ForallFSymbol c EnumDesc)
     => Proxy c -> Query a -> Dict (c a)
-queryDict pc q = f (queryType q)
+queryDict pc q = case queryType q of
+    Right ns                 -> f ns
+    Left (IsSomeEnumDesc _)  -> instFSymbol
   where
     f :: NS ((:~:) a) QueryTypes -> Dict (c a)
     f xs = hcollapse (hcmap pc (\Refl -> K Dict) xs)
-
-queryTagDict
-    :: (c Me, c User)
-    => Proxy c -> QueryTag a -> Dict (c a)
-queryTagDict _ QueryTagMe   = Dict
-queryTagDict _ QueryTagUser = Dict
 
 -------------------------------------------------------------------------------
 -- SomeResponse
@@ -444,3 +546,16 @@ instance HasStructuralInfo SomeResponse where
 
 instance ToSchema SomeResponse where
     declareNamedSchema _ = pure $ NamedSchema (Just "Some planmill query response") mempty
+
+-------------------------------------------------------------------------------
+-- Utilities
+-------------------------------------------------------------------------------
+
+eqInterval :: Eq a => Interval a -> Interval a -> Bool
+eqInterval i j = sup i == sup j && inf i == inf j
+
+-- TODO: require transformers-0.5
+liftEqMaybe :: (a -> a -> Bool) -> Maybe a -> Maybe a -> Bool
+liftEqMaybe _eq Nothing  Nothing  = True
+liftEqMaybe  eq (Just a) (Just b) = eq a b
+liftEqMaybe _eq _        _        = False

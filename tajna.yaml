@@ -46,7 +46,10 @@ envs:
     # spice stats
     FD_FLOW: "open-source"
 
-    # PORTS
+    # Internal connections
+    PLANMILLPROXY_BASEURL: "http://localhost:8808/haxl"
+
+    # Ports
     AVATARAPP_PORT:     "8801"
     CONTACTSAPI_PORT:   "8802"
     FUTUHOURSAPI_PORT:  "8803"

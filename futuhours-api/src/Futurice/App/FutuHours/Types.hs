@@ -62,6 +62,7 @@ import Servant.Docs       (DocCapture (..), ToCapture (..))
 import qualified Futurice.IC     as IList
 import           Futurice.Peano
 import           Futurice.Report
+import Futurice.Integrations.Types (Employee (..))
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Types                     as Aeson
@@ -322,47 +323,6 @@ instance ToSchema Hour where
         opts = Swagger.defaultSchemaOptions
             { Swagger.fieldLabelModifier = camelTo . drop 4
             }
-
--------------------------------------------------------------------------------
--- Reports
--------------------------------------------------------------------------------
-
--- | Todo move to @futurice-integrations@
-data Employee = Employee
-    { employeeName     :: !Text
-    , employeeTeam     :: !Text
-    , employeeContract :: !Text
-    }
-
-deriveGeneric ''Employee
-
-instance ToReportRow Employee where
-    type ReportRowLen Employee = PThree
-
-    reportHeader _ = ReportHeader
-        $ IList.cons "name"
-        $ IList.cons "team"
-        $ IList.cons "contract"
-        $ IList.nil
-
-    reportRow (Employee n t c) = [r]
-      where
-        r = ReportRow mempty
-            $ IList.cons (toHtml n)
-            $ IList.cons (toHtml t)
-            $ IList.cons (toHtml c)
-            $ IList.nil
-
-    reportCsvRow (Employee n t c) = [r]
-      where
-        r = ReportCsvRow
-            $ IList.cons (pure $ Csv.toField n)
-            $ IList.cons (pure $ Csv.toField t)
-            $ IList.cons (pure $ Csv.toField c)
-            $ IList.nil
-
-instance ToJSON Employee where toJSON = sopToJSON
-instance FromJSON Employee where parseJSON = sopParseJSON
 
 -------------------------------------------------------------------------------
 -- Balance
