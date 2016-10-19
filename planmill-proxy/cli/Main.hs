@@ -37,7 +37,7 @@ main = do
     putDoc . (<> linebreak) . ansiPretty $ result
 
 script0 :: MonadPlanMillQuery m => m PM.Me
-script0 = Q.me 
+script0 = Q.me
 
 -------------------------------------------------------------------------------
 -- H(axl) Monad

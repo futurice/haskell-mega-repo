@@ -63,6 +63,7 @@ extra-deps:
 - servant-cassava-0.8
 - servant-client-0.9
 - servant-docs-0.9
+- singleton-bool-0.1.2.0
 - servant-server-0.9
 - servant-swagger-1.1.2
 - servant-swagger-ui-0.2.0.2.1.5

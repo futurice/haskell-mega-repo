@@ -18,6 +18,7 @@ import qualified Data.Csv     as Csv
 import           Data.Swagger (ToSchema)
 
 import qualified Database.PostgreSQL.Simple.ToField as Postgres
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
 
 -- | Tagged identifier
 newtype Identifier a = Ident Word64
@@ -51,3 +52,6 @@ instance ToSchema (Identifier a)
 
 instance Postgres.ToField (Identifier a) where
     toField (Ident x) = Postgres.toField x
+
+instance Postgres.FromField (Identifier a) where
+    fromField f mbs = Ident . fromInteger <$> Postgres.fromField f mbs

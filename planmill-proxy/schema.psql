@@ -7,6 +7,36 @@
 CREATE TABLE planmillproxy.cache (
   query TEXT PRIMARY KEY,
   updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  variance FLOAT NOT NULL DEFAULT random(),
   viewed INT NOT NULL DEFAULT 0,
   data BYTEA NOT NULL
 );
+
+CREATE TABLE planmillproxy.timereports (
+  trid INT NOT NULL PRIMARY KEY,
+  uid INT NOT NULL,
+  day DATE NOT NULL,
+  updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  variance FLOAT NOT NULL DEFAULT random(),
+  data BYTEA NOT NULL
+);
+
+CREATE INDEX timereports_uid_day_idx
+  ON planmillproxy.timereports (uid, day);
+
+CREATE TABLE planmillproxy.capacity (
+  uid INT NOT NULL,
+  day DATE NOT NULL,
+  updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- prevent all cache pruned at the same time
+  variance FLOAT NOT NULL DEFAULT random(),
+  data BYTEA NOT NULL,
+  PRIMARY KEY (uid, day)
+);
+
+-------------------------------------------------------------------------------
+-- Statistics
+-------------------------------------------------------------------------------
+
+-- SELECT count(*), avg(current_timestamp - updated) FROM planmillproxy.cache WHERE viewed > 0;
+-- SELECT count(*), avg(current_timestamp - updated) FROM planmillproxy.capacity ;

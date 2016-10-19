@@ -10,7 +10,7 @@ module Futurice.App.Contacts.Executor (
     execute,
     ) where
 
-import Futurice.Integrations
+import Futurice.Integrations hiding (Env)
 import Futurice.Prelude
 
 import Control.Monad.Reader      (ReaderT, runReaderT)

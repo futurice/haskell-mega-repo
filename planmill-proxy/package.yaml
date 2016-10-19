@@ -19,9 +19,11 @@ dependencies:
   - env-config
   - futurice-prelude
   - haxl
-  - planmill-client
   - http-client
   - http-client-tls
+  - intervals
+  - planmill-client
+  - time-parsers >=0.1.1.0
 
 default-extensions:
   - DeriveDataTypeable
@@ -38,8 +40,10 @@ library:
     - binary
     - binary-tagged
     - bytestring
+    - containers
     - exceptions
     - futurice-servant
+    - intervals
     - monad-logger
     - periocron
     - postgresql-simple
@@ -49,7 +53,11 @@ library:
     - servant-binary-tagged
     - servant-server
     - swagger2
+    - text
     - unordered-containers
+    - vector
+
+    - lens
 
 executables:
   planmill-proxy-client:

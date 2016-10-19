@@ -21,17 +21,17 @@ when:
   ghc-options: -fcontext-stack=40
 
 dependencies:
-  - aeson                 >=1     && <1.1
-  - aeson-compat          >=0.3.6 && <0.4
+  - aeson
+  - aeson-compat
   - aeson-extra
-  - ansi-pretty           >=0.1.2 && <0.2
+  - ansi-pretty
   - ansi-wl-pprint
   - async
-  - base                  >=4.7     && <4.10
-  - base-compat           >=0.6     && <0.10
+  - base
+  - base-compat
   - base64-bytestring
   - binary
-  - binary-orphans        >=0.1.3.0 && <0.2
+  - binary-orphans
   - binary-tagged
   - byteable
   - bytestring
@@ -45,13 +45,13 @@ dependencies:
   - DRBG
   - entropy
   - exceptions
-  - futurice-prelude      >=0.1.8.0
+  - futurice-prelude
   - generics-sop
   - hashable
   - hashable-time
   - haxl
-  - http-client           >=0.4.31.1 && <0.6
-  - http-client-tls       >=0.2.2 && <0.4
+  - http-client
+  - http-client-tls
   - http-types
   - intervals
   - lens
@@ -65,14 +65,15 @@ dependencies:
   - reflection >= 2 && <2.3
   - regex-applicative-text
   - semigroups
+  - singleton-bool >= 0.1.2.0 # We need sboolEqRefl
   - swagger2
-  - text                  >=1.2   && <1.3
+  - text
   - time
   - time-locale-compat
   - time-parsers
   - transformers
   - unordered-containers
-  - vector                >=0.10  && <0.12
+  - vector
 
 library:
   source-dirs: src

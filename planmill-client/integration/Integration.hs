@@ -154,7 +154,7 @@ instance MonadPlanMillQuery H where
 
 runH :: Cfg -> H a -> IO a
 runH cfg (H haxl) = do
-    let stateStore = H.stateSet (initDataSourceSimpleIO cfg) H.stateEmpty
+    let stateStore = H.stateSet (initDataSourceSimpleIO LevelDebug cfg) H.stateEmpty
     env <- H.initEnv stateStore ()
     H.runHaxl env haxl
 

@@ -47,15 +47,14 @@ module Futurice.Servant (
     DynMapCache,
     newDynMapCache,
     cachedIO,
+    genCachedIO,
+    CachePolicy(..),
     -- * Middlewares
     logStdoutDev,
     ) where
 
--- TOOD: add middleware
-
-import Futurice.Prelude
 import Prelude ()
-
+import Futurice.Prelude
 import Control.Concurrent.STM               (atomically)
 import Control.Lens                         (Lens, LensLike)
 import Data.Char                            (isAlpha)
@@ -63,12 +62,13 @@ import Data.Swagger                         hiding (HasPort (..))
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Futurice.EnvConfig                   (HasPort (..), GetConfig (..))
+import Futurice.EnvConfig                   (GetConfig (..), HasPort (..))
 import GHC.Prim                             (coerce)
 import Network.Wai                          (Middleware, requestHeaders)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant
-import Servant.Cache.Class                  (DynMapCache, cachedIO)
+import Servant.Cache.Class
+       (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
 import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
 import Servant.Futurice.Status              hiding (info)
 import Servant.HTML.Lucid                   (HTML)
