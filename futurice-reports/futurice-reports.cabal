@@ -52,4 +52,5 @@ library
   exposed-modules:
       Futurice.IC
       Futurice.Report
+      Futurice.Report.Columns
   default-language: Haskell2010
