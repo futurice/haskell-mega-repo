@@ -1,0 +1,79 @@
+-- This file has been generated from package.yaml by hpack version 0.15.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           futuhours-mock
+version:        0
+synopsis:       Futuhours API Mock
+description:    Futuhours API Mock
+category:       Web
+homepage:       https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-mega-repo
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  build-depends:
+      base
+    , aeson
+    , aeson-compat
+    , base-compat
+    , env-config
+    , futurice-foundation
+    , futurice-prelude
+    , futurice-reports
+    , futurice-servant
+    , generics-sop
+    , lens
+    , lucid
+    , planmill-client
+    , postgresql-simple
+    , QuickCheck
+    , resource-pool
+    , servant
+    , servant-lucid
+    , servant-server
+    , swagger2
+    , time
+    , vector
+    , pretty-show
+    , random
+    , stm
+    , text
+    , time-locale-compat
+    , transformers
+    , containers
+  exposed-modules:
+      Futurice.App.FutuhoursMock
+      Futurice.App.FutuhoursMock.API
+      Futurice.App.FutuhoursMock.Config
+      Futurice.App.FutuhoursMock.Logic
+      Futurice.App.FutuhoursMock.MockData
+      Futurice.App.FutuhoursMock.Types
+  default-language: Haskell2010
+
+executable futuhours-mock-server
+  main-is: Main.hs
+  hs-source-dirs:
+      srv
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  ghc-options: -threaded
+  build-depends:
+      base
+    , futuhours-mock
+  default-language: Haskell2010

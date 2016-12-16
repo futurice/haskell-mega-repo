@@ -14,6 +14,7 @@ packages:
 - fum-client/
 #- futucli/
 - futuhours-api/
+- futuhours-mock/
 - futulogo/
 - futurice-foundation/
 - futurice-github/

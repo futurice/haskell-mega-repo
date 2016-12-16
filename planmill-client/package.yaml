@@ -61,6 +61,7 @@ dependencies:
   - mtl
   - operational
   - postgresql-simple
+  - QuickCheck
   - reflection >= 2 && <2.3
   - regex-applicative-text
   - semigroups

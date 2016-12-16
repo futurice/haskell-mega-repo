@@ -1,0 +1,63 @@
+name: futuhours-mock
+version: "0"
+synopsis: Futuhours API Mock
+description: Futuhours API Mock
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: futurice/haskell-mega-repo
+category: Web
+tested-with: GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+extra-source-files:
+- README.md
+
+default-extensions:
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - ScopedTypeVariables
+
+library:
+  source-dirs: src
+  dependencies:
+    - base
+    - aeson
+    - aeson-compat
+    - base-compat
+    - env-config
+    - futurice-foundation
+    - futurice-prelude
+    - futurice-reports
+    - futurice-servant
+    - generics-sop
+    - lens
+    - lucid
+    - planmill-client
+    - postgresql-simple
+    - QuickCheck
+    - resource-pool
+    - servant
+    - servant-lucid
+    - servant-server
+    - swagger2
+    - time
+    - vector
+    - pretty-show
+    - random
+    - stm
+    - text
+    - time-locale-compat
+    - transformers
+    - containers
+
+
+executables:
+  futuhours-mock-server:
+    ghc-options: -threaded
+    main: Main.hs
+    source-dirs: srv
+    dependencies:
+      - base
+      - futuhours-mock
