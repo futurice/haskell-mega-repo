@@ -51,6 +51,9 @@ instance (Applicative m, MonadThrow m) => MonadThrow (CachingT m) where
 instance (Applicative m, MonadCatch m) => MonadCatch (CachingT m) where
     catch (CachingT a) handler =  CachingT $ catch a (runCachingT . handler)
 
+instance MonadTrans CachingT where
+    lift = CachingT
+
 class (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
      => CachingTC m a
 

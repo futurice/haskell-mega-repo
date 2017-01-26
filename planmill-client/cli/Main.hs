@@ -13,6 +13,8 @@ import Control.Monad.Http   (HttpT, evalHttpT)
 import Data.Yaml            (decodeFileEither)
 import System.Environment   (getArgs)
 import System.IO            (hPutStrLn, stderr)
+import Data.Time.Clock      (NominalDiffTime, addUTCTime)
+import Data.Time            (fromGregorian, toGregorian)
 
 import qualified Data.HashMap.Strict as HM
 
@@ -69,6 +71,13 @@ printDumpStats (Dump ps ts as t us) = do
     putStrLn $ "teams:       " <> show (HM.size t)
     putStrLn $ "users:       " <> show (HM.size us)
 
+timeInterval :: (MonadIO m, MonadTime m) => Integer -> Integer -> m (Day, Day)
+timeInterval x y = do
+    now <- currentTime
+    let ndt z = (fromInteger z) :: NominalDiffTime
+    let mkRelDay z' = utctDay $ addUTCTime (ndt $ 86400*z') now
+    pure (mkRelDay x, mkRelDay y)
+
 -------------------------------------------------------------------------------
 -- My projects
 -------------------------------------------------------------------------------
@@ -88,12 +97,13 @@ myTimereports :: (MonadPlanMill m, MonadIO m) => m ()
 myTimereports = do
     me' <- planmillAction me
     putPretty me'
-    let ident = Ident 17549
+    let ident = me' ^. identifier
     u <- planmillAction $ user ident
     putPretty u
     t <- traverse (planmillAction . team) (uTeam u)
     putPretty t
-    let interval = $(mkDay "2016-03-01") ... $(mkDay "2016-05-01")
+    intDays <- timeInterval (-7) 30
+    let interval = (fst intDays) ... (snd intDays)
     let interval' = ResultInterval IntervalStart interval
     trs <- planmillVectorAction $ timereportsFromIntervalFor interval' ident
     putPretty trs
@@ -105,9 +115,12 @@ myTimereports = do
 capacityCalendar :: (MonadPlanMill m, MonadIO m) => m ()
 capacityCalendar = do
     me' <- planmillAction me
+    let ident = me' ^. identifier
     putPretty me'
-    let interval = $(mkDay "2016-01-01") ... $(mkDay "2016-02-01")
-    cc <- planmillVectorAction $ userCapacity interval $ Ident 17557
+    now <- currentTime
+    let (year, _, _) = toGregorian $ utctDay now
+    let interval = (fromGregorian year 1 1) ... (fromGregorian year 12 31)
+    cc <- planmillVectorAction $ userCapacity interval $ ident
     putPretty cc
 
 -------------------------------------------------------------------------------
