@@ -13,8 +13,7 @@ import Control.Monad.Http   (HttpT, evalHttpT)
 import Data.Yaml            (decodeFileEither)
 import System.Environment   (getArgs)
 import System.IO            (hPutStrLn, stderr)
-import Data.Time.Clock      (NominalDiffTime, addUTCTime)
-import Data.Time            (fromGregorian, toGregorian)
+import Data.Time            (fromGregorian, toGregorian, addDays)
 
 import qualified Data.HashMap.Strict as HM
 
@@ -73,10 +72,8 @@ printDumpStats (Dump ps ts as t us) = do
 
 timeInterval :: (MonadIO m, MonadTime m) => Integer -> Integer -> m (Day, Day)
 timeInterval x y = do
-    now <- currentTime
-    let ndt z = (fromInteger z) :: NominalDiffTime
-    let mkRelDay z' = utctDay $ addUTCTime (ndt $ 86400*z') now
-    pure (mkRelDay x, mkRelDay y)
+    now <- currentDay
+    pure (addDays x now, addDays y now)
 
 -------------------------------------------------------------------------------
 -- My projects
