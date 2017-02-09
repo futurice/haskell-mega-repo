@@ -26,6 +26,7 @@ packages:
 - log-logentries
 - mega-repo-tool/
 - monad-http/
+- monisto/
 - periocron/
 - planmill-client/
 - planmill-proxy/
