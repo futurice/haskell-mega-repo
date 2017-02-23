@@ -70,10 +70,10 @@ printDumpStats (Dump ps ts as t us) = do
     putStrLn $ "teams:       " <> show (HM.size t)
     putStrLn $ "users:       " <> show (HM.size us)
 
-timeInterval :: (MonadIO m, MonadTime m) => Integer -> Integer -> m (Day, Day)
+timeInterval :: (MonadIO m, MonadTime m) => Integer -> Integer -> m (Interval Day)
 timeInterval x y = do
     now <- currentDay
-    pure (addDays x now, addDays y now)
+    pure $ (addDays x now) ... (addDays y now)
 
 -------------------------------------------------------------------------------
 -- My projects
@@ -99,9 +99,9 @@ myTimereports = do
     putPretty u
     t <- traverse (planmillAction . team) (uTeam u)
     putPretty t
-    intDays <- timeInterval (-7) 30
-    let interval = ResultInterval IntervalStart $ (fst intDays) ... (snd intDays)
-    trs <- planmillVectorAction $ timereportsFromIntervalFor interval ident
+    interval <- timeInterval (-7) 30
+    trs <- planmillVectorAction $ timereportsFromIntervalFor
+                                  (ResultInterval IntervalStart $ interval) ident
     putPretty trs
 
 -------------------------------------------------------------------------------
