@@ -90,7 +90,7 @@ myProjects = do
 -- Timereports
 -------------------------------------------------------------------------------
 
-myTimereports :: (MonadPlanMill m, MonadIO m) => m ()
+myTimereports :: (MonadPlanMill m, MonadIO m, MonadTime m) => m ()
 myTimereports = do
     me' <- planmillAction me
     putPretty me'
@@ -100,16 +100,15 @@ myTimereports = do
     t <- traverse (planmillAction . team) (uTeam u)
     putPretty t
     intDays <- timeInterval (-7) 30
-    let interval = (fst intDays) ... (snd intDays)
-    let interval' = ResultInterval IntervalStart interval
-    trs <- planmillVectorAction $ timereportsFromIntervalFor interval' ident
+    let interval = ResultInterval IntervalStart $ (fst intDays) ... (snd intDays)
+    trs <- planmillVectorAction $ timereportsFromIntervalFor interval ident
     putPretty trs
 
 -------------------------------------------------------------------------------
 -- Capacity calendar
 -------------------------------------------------------------------------------
 
-capacityCalendar :: (MonadPlanMill m, MonadIO m) => m ()
+capacityCalendar :: (MonadPlanMill m, MonadIO m, MonadTime m) => m ()
 capacityCalendar = do
     me' <- planmillAction me
     let ident = me' ^. identifier
