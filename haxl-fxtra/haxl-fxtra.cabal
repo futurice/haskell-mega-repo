@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -47,6 +47,9 @@ library
     , tagged
     , text
     , vector
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   exposed-modules:
       Flowdock.Haxl
       FUM.Haxl

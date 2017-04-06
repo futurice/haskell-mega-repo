@@ -49,4 +49,7 @@ executable favicon
     , time
     , transformers
     , transformers-compat
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010

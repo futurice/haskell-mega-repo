@@ -63,6 +63,9 @@ library
     , time
     , trifecta
     , uuid
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   exposed-modules:
       Futurice.App.Checklist
       Futurice.App.Checklist.Ack
@@ -142,6 +145,9 @@ executable checklist-app-server
     , trifecta
     , uuid
     , checklist-app
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010
 
 executable checklist-import
@@ -191,6 +197,9 @@ executable checklist-import
     , lifted-base
     , transformers
     , yaml
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010
 
 test-suite unit-tests
@@ -240,4 +249,7 @@ test-suite unit-tests
     , tasty
     , tasty-quickcheck
     , checklist-app
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010

@@ -69,6 +69,9 @@ library
     , unordered-containers
     , vector
     , wai
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   exposed-modules:
       Futurice.App.Spice
       Futurice.App.Spice.Config
@@ -128,6 +131,9 @@ executable spice-stats
     , vector
     , wai
     , spice-stats
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010
 
 executable spice-stats-server
@@ -181,4 +187,7 @@ executable spice-stats-server
     , vector
     , wai
     , spice-stats
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010

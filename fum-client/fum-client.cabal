@@ -51,6 +51,9 @@ library
     , swagger2              >=2.1.3     && <2.2
     , text                  >=1.2.0.6   && <1.3
     , vector                >=0.10.12.3 && <0.13
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   exposed-modules:
       Control.Monad.FUM
       FUM
