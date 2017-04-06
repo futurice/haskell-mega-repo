@@ -32,6 +32,8 @@ before_install:
 # Gold linker
 - ld --version
 - gold --version
+- ln -s `which ld.gold` ~/.local/bin/ld
+- ld --version
 # Version infos
 - stack +RTS -N1 -RTS --version
 - ghc --version
