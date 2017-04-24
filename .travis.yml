@@ -29,6 +29,11 @@ before_install:
     travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack';
     travis_retry curl -L http://oleg.fi/stack.xz | xz -d > ~/.local/bin/stack;
   fi
+# Gold linker
+- ld --version
+- gold --version
+- ln -s `which ld.gold` ~/.local/bin/ld
+- ld --version
 # Version infos
 - stack +RTS -N1 -RTS --version
 - ghc --version
@@ -36,14 +41,19 @@ before_install:
 install:
 - JOB_CURR_TIME=$(date +%s)
 - echo time to run $((JOB_START_TIME + 2400 - JOB_CURR_TIME))
-- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-optl-fuse-ld=gold -j +RTS -M1.5G -A128M -n2m -RTS" || true;
+- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j +RTS -M1.5G -A128M -n2m -RTS" || true;
 
 script:
 - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
+# build everything, but do not run tests
 - JOB_CURR_TIME=$(date +%s)
 - echo time to run $((JOB_START_TIME + 2400 - JOB_CURR_TIME))
-- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-optl-fuse-ld=gold -j2 +RTS -M2G -A128M -n2m -RTS"
-  # - stack --no-terminal --skip-ghc-check sdist
+- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --no-run-tests $STACKOPTS -j1 --ghc-options="-j2 +RTS -M2G -A128M -n2m -RTS"
+# run tests
+- JOB_CURR_TIME=$(date +%s)
+- echo time to run $((JOB_START_TIME + 2400 - JOB_CURR_TIME))
+- timeout $((JOB_START_TIME + 2400 - JOB_CURR_TIME)) stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-j2 +RTS -M2G -A128M -n2m -RTS"
+# - stack --no-terminal --skip-ghc-check sdist
 
 matrix:
   fast_finish: true
