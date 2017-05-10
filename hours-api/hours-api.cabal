@@ -28,6 +28,7 @@ library
   hs-source-dirs:
       src
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  ghc-options: -Wall
   build-depends:
       base >= 4.8 && < 4.10
     , aeson
@@ -72,6 +73,9 @@ library
     , transformers
     , unordered-containers
     , vector
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   exposed-modules:
       Futurice.App.HoursApi
       Futurice.App.HoursApi.API
@@ -91,10 +95,13 @@ executable hours-api-server
   hs-source-dirs:
       srv
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded -rtsopts
+  ghc-options: -Wall -threaded -rtsopts
   build-depends:
       base
     , hours-api
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010
 
 executable hours-mock-server
@@ -102,8 +109,11 @@ executable hours-mock-server
   hs-source-dirs:
       mock
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded -rtsopts
+  ghc-options: -Wall -threaded -rtsopts
   build-depends:
       base
     , hours-api
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   default-language: Haskell2010

@@ -65,6 +65,9 @@ library
     , unordered-containers
     , vector
     , zlib
+  if os(linux)
+    ghc-options: -optl-fuse-ld=gold
+    ld-options: -fuse-ld=gold
   exposed-modules:
       Futurice.Integrations
       Futurice.Integrations.Classes

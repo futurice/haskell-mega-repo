@@ -9,6 +9,11 @@ github: futurice/haskell-mega-repo
 category: Web
 
 ghc-options: -Wall
+# http://stackoverflow.com/questions/43243322/how-to-link-with-the-gnu-gold-linker-instead-of-ld-in-haskell/43243323#43243323
+when:
+  condition: os(linux)
+  ghc-options: -optl-fuse-ld=gold
+  ld-options:  -fuse-ld=gold
 
 dependencies:
   - base >= 4.8 && <4.10
