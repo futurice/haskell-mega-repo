@@ -77,6 +77,8 @@ data Employee = Employee
     , _employeeEmail    :: !Text
     , _employeePhone    :: !Text
     , _employeeSupervisorId :: !(Maybe EmployeeId)
+    , _employeeDepartment :: !Text -- | Employee tribe, for example Tribe Four
+    , _employeeOffice :: !Text -- | Employee site, for example Helsinki
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -125,7 +127,9 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseDynamicAttribute "Primary role"
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute "Work phone"
-        <*> fmap getSupervisor (parseAttribute obj "supervisor")
+        <*> fmap getSupervisorId (parseAttribute obj "supervisor")
+        <*> fmap getDepartment (parseAttribute obj "department")
+        <*> fmap getOffice (parseAttribute obj "office")
             -- <*> pure obj -- for employeeR<§<§est field
       where
         parseDynamicAttribute :: FromJSON a => Text -> Parser a
@@ -154,7 +158,7 @@ instance FromJSON Attribute where
         <$> obj .: "label"
         <*> obj .: "value"
 
-newtype Supervisor = Supervisor { getSupervisor :: Maybe EmployeeId }
+newtype Supervisor = Supervisor { getSupervisorId :: Maybe EmployeeId }
 
 instance FromJSON Supervisor where
     parseJSON = withObjectDump "SupervisorId" $ \obj -> do
@@ -166,6 +170,23 @@ instance FromJSON Supervisor where
         parseObject :: HashMap Text Attribute -> Parser Supervisor
         parseObject obj = Supervisor <$> parseAttribute obj "id"
 
+newtype Department = Department { getDepartment :: Text }
+
+instance FromJSON Department where
+    parseJSON = withObjectDump "Department" $ \obj -> do
+        type_ <- obj .: "type"
+        if type_ == ("Department" :: Text)
+            then Department <$> ((obj .: "attributes") >>= (.: "name"))
+            else fail $ "Not department: " ++ type_ ^. unpacked
+
+newtype Office = Office { getOffice :: Text }
+
+instance FromJSON Office where
+    parseJSON = withObjectDump "Office" $ \obj -> do
+        type_ <- obj .: "type"
+        if type_ == ("Office" :: Text)
+            then Office <$> ((obj .: "attributes") >>= (.: "name"))
+            else fail $ "Not Office: " ++ type_ ^. unpacked
 
 -------------------------------------------------------------------------------
 -- Envelope
