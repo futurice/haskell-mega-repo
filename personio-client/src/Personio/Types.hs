@@ -78,9 +78,10 @@ data Employee = Employee
     , _employeeEmail        :: !Text
     , _employeePhone        :: !Text
     , _employeeSupervisorId :: !(Maybe EmployeeId)
+    , _employeeLogin        :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
     , _employeeTribe        :: !(Maybe Text)
     , _employeeOffice       :: !(Maybe Text)
-    , _employeeCostCenter   :: !(Maybe Text)
+    , _employeeCostCenter   :: !(Maybe Text) -- exactly 1
     , _employeeGithub       :: !(Maybe Text)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
@@ -133,6 +134,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
+        <*> pure (Just "foo") -- TODO: implemnet me
         <*> fmap getName (parseAttribute obj "department")
         <*> fmap getName (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
@@ -340,3 +342,57 @@ configurePersonioCfg = Cfg productionBaseUrl
 
 instance Configure Cfg where
     configure = configurePersonioCfg
+
+-------------------------------------------------------------------------------
+-- Validation
+-------------------------------------------------------------------------------
+
+data ValidationMessage
+    = TribeMissing
+    | EmailMissing
+    | CostCenterMissing
+    | CostCenterMultiple [Text]
+    | InvalidGithub Text
+  deriving (Eq, Ord, Show, Typeable, Generic)
+
+
+instance ToJSON ValidationMessage
+instance FromJSON ValidationMessage
+
+data EmployeeValidation = EmployeeValidation
+    { _evEmployeeId :: !EmployeeId
+    , _evMessages   :: ![ValidationMessage]
+    }
+  deriving Show
+
+makeLenses ''EmployeeValidation
+
+validatePersonioEmployee :: Value -> Parser EmployeeValidation
+validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
+    type_ <- obj .: "type"
+    if type_ == ("Employee" :: Text)
+        then obj .: "attributes" >>= parseObject
+        else fail $ "Not Employee: " ++ type_ ^. unpacked
+  where
+    parseObject :: HashMap Text Attribute -> Parser EmployeeValidation
+    parseObject obj = EmployeeValidation
+        <$> parseAttribute obj "id"
+        <*> pure (validate obj)
+
+    validate :: HashMap Text Attribute -> [ValidationMessage]
+    validate obj = catMaybes
+        [ githubValid
+        ]
+      where
+        githubValid :: Maybe ValidationMessage
+        githubValid = do
+            githubText <- Just "foo" -- TODO: lookup in obj
+            case match regexp githubText of
+                Just _  -> Nothing
+                Nothing -> Just (InvalidGithub githubText)
+          where
+            regexp :: RE' Text
+            regexp = string "https://github.com/" *> (T.pack <$> some anySym)
+
+
+    -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN

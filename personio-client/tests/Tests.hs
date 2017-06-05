@@ -53,6 +53,11 @@ examples = testGroup "HUnit"
         Just "A Tribe" @=? e ^. employeeTribe
         Just "Helsinki" @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
+    , testCase "validatePersonioEmployee validates GitHub" $ do
+        contents <-  decodeStrict $(makeRelativeToProject "fixtures/employee-i-github.json" >>= embedFile)
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            InvalidGithub "http://github.com/gitMastur" `elem` ev ^. evMessages
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
