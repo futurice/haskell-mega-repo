@@ -36,6 +36,8 @@ library
     , env-config
     , futurice-prelude
     , http-api-data
+    , lens
+    , mtl
     , http-client
     , monad-http
     , regex-applicative
@@ -66,6 +68,8 @@ test-suite unit-tests
     , env-config
     , futurice-prelude
     , http-api-data
+    , lens
+    , mtl
     , http-client
     , monad-http
     , regex-applicative

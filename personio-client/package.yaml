@@ -22,6 +22,8 @@ dependencies:
   - env-config
   - futurice-prelude
   - http-api-data
+  - lens
+  - mtl
   - http-client
   - monad-http
   - regex-applicative

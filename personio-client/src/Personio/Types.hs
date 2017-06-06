@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types where
 
+import Control.Monad.Writer
 import Data.Aeson.Compat
 import Data.Aeson.Internal (JSONPathElement (Key), (<?>))
 import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1)
@@ -74,13 +75,13 @@ data Employee = Employee
     , _employeeLast         :: !Text
     , _employeeHireDate     :: !(Maybe Day)
     , _employeeEndDate      :: !(Maybe Day)
-    , _employeeRole         :: !Text
-    , _employeeEmail        :: !Text
-    , _employeePhone        :: !Text
+    , _employeeRole         :: !Text -- TODO
+    , _employeeEmail        :: !Text -- TODO
+    , _employeePhone        :: !Text -- TODO
     , _employeeSupervisorId :: !(Maybe EmployeeId)
     , _employeeLogin        :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
-    , _employeeTribe        :: !(Maybe Text)
-    , _employeeOffice       :: !(Maybe Text)
+    , _employeeTribe        :: !(Maybe Text) -- TODO
+    , _employeeOffice       :: !(Maybe Text) -- TODO
     , _employeeCostCenter   :: !(Maybe Text) -- exactly 1
     , _employeeGithub       :: !(Maybe Text)
     -- use this when debugging
@@ -116,6 +117,21 @@ parseAttribute obj attrName = case HM.lookup attrName obj of
     Nothing              -> fail $ "key " ++ show attrName ++ " not present"
     Just (Attribute _ v) -> parseJSON v <?> Key attrName
 
+parseDynamicAttribute :: FromJSON a => HashMap Text Attribute -> Text -> Parser a
+parseDynamicAttribute obj k = (dynamicAttributes obj) .: k
+  where
+    dynamicAttributes :: HashMap Text Attribute -> HashMap Text Value
+    dynamicAttributes o = flip mapHM o $ \aKey (Attribute l v) ->
+        if "dynamic_" `T.isPrefixOf` aKey
+            then Just (l, v)
+            else Nothing
+
+    mapHM
+            :: (Eq k2, Hashable k2)
+            => (k1 -> v1 -> Maybe (k2, v2))
+            -> HashMap k1 v1 -> HashMap k2 v2
+    mapHM f = HM.fromList . mapMaybe (uncurry f) . HM.toList
+
 parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
@@ -130,33 +146,19 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "last_name"
         <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
         <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
-        <*> parseDynamicAttribute "Primary role"
+        <*> parseDynamicAttribute obj "Primary role"
         <*> parseAttribute obj "email"
-        <*> parseDynamicAttribute "Work phone"
+        <*> parseDynamicAttribute obj "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
         <*> pure (Just "foo") -- TODO: implemnet me
         <*> fmap getName (parseAttribute obj "department")
         <*> fmap getName (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
-        <*> fmap getGithubUsername (parseDynamicAttribute "Github")
+        <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
             -- <*> pure obj -- for employeeRest field
       where
-        parseDynamicAttribute :: FromJSON a => Text -> Parser a
-        parseDynamicAttribute k = dynamicAttributes .: k
-
-        dynamicAttributes :: HashMap Text Value
-        dynamicAttributes = flip mapHM obj $ \k (Attribute l v) ->
-            if "dynamic_" `T.isPrefixOf` k
-                then Just (l, v)
-                else Nothing
 
         zonedDay =  localDay . zonedTimeToLocalTime
-
-        mapHM
-            :: (Eq k2, Hashable k2)
-            => (k1 -> v1 -> Maybe (k2, v2))
-            -> HashMap k1 v1 -> HashMap k2 v2
-        mapHM f = HM.fromList . mapMaybe (uncurry f) . HM.toList
 
 -- | Personio attribute, i.e. labelled value.
 data Attribute = Attribute !Text !Value deriving Show
@@ -352,7 +354,7 @@ data ValidationMessage
     | EmailMissing
     | CostCenterMissing
     | CostCenterMultiple [Text]
-    | InvalidGithub Text
+    | GithubInvalid Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -377,22 +379,32 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     parseObject :: HashMap Text Attribute -> Parser EmployeeValidation
     parseObject obj = EmployeeValidation
         <$> parseAttribute obj "id"
-        <*> pure (validate obj)
+        <*> validate obj
 
-    validate :: HashMap Text Attribute -> [ValidationMessage]
-    validate obj = catMaybes
-        [ githubValid
+    validate :: HashMap Text Attribute -> Parser [ValidationMessage]
+    validate obj = execWriterT $ sequenceA_
+        [ validateGithub
         ]
       where
-        githubValid :: Maybe ValidationMessage
-        githubValid = do
-            githubText <- Just "foo" -- TODO: lookup in obj
+        validateGithub :: WriterT [ValidationMessage] Parser ()
+        validateGithub = do
+            githubText <- lift (parseDynamicAttribute obj "Github")
             case match regexp githubText of
-                Just _  -> Nothing
-                Nothing -> Just (InvalidGithub githubText)
+                Nothing -> tell [GithubInvalid githubText]
+                Just _ -> pure ()
           where
             regexp :: RE' Text
             regexp = string "https://github.com/" *> (T.pack <$> some anySym)
 
+        githubValid :: Parser (Maybe ValidationMessage)
+        githubValid = do
+            githubText <- parseDynamicAttribute obj "Github"
+            pure $ do
+                case match regexp githubText of
+                    Just _  -> Nothing
+                    Nothing -> Just (GithubInvalid githubText)
+          where
+            regexp :: RE' Text
+            regexp = string "https://github.com/" *> (T.pack <$> some anySym)
 
     -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN

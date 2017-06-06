@@ -57,7 +57,7 @@ examples = testGroup "HUnit"
         contents <-  decodeStrict $(makeRelativeToProject "fixtures/employee-i-github.json" >>= embedFile)
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
         assertBool (show ev) $
-            InvalidGithub "http://github.com/gitMastur" `elem` ev ^. evMessages
+            GithubInvalid "http://github.com/gitMastur" `elem` ev ^. evMessages
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
