@@ -396,15 +396,4 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             regexp :: RE' Text
             regexp = string "https://github.com/" *> (T.pack <$> some anySym)
 
-        githubValid :: Parser (Maybe ValidationMessage)
-        githubValid = do
-            githubText <- parseDynamicAttribute obj "Github"
-            pure $ do
-                case match regexp githubText of
-                    Just _  -> Nothing
-                    Nothing -> Just (GithubInvalid githubText)
-          where
-            regexp :: RE' Text
-            regexp = string "https://github.com/" *> (T.pack <$> some anySym)
-
     -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN
