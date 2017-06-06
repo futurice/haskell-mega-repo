@@ -383,7 +383,9 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
     validate :: HashMap Text Attribute -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
-        [ validateGithub
+        [
+            validateGithub,
+            emailMissing
         ]
       where
         validateGithub :: WriterT [ValidationMessage] Parser ()
@@ -395,5 +397,20 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
           where
             regexp :: RE' Text
             regexp = string "https://github.com/" *> (T.pack <$> some anySym)
+
+        anyText :: Text -> Maybe Text
+        anyText val = match (T.pack <$> some anySym :: RE' Text) val
+
+        emailMissing :: WriterT [ValidationMessage] Parser ()
+        emailMissing = do
+            email <- lift (parseAttribute obj "email")
+            case email of
+                (Array _) -> tell [EmailMissing] -- | Assumes that if email is given as array, it is missing
+                _         -> checkMail (T.pack (show email))
+          where
+              checkMail :: Text -> WriterT [ValidationMessage] Parser ()
+              checkMail m = case anyText m of
+                  Nothing -> tell [EmailMissing]
+                  Just _  -> pure ()
 
     -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN
