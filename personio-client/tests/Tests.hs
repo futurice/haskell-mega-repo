@@ -65,6 +65,36 @@ examples = testGroup "HUnit"
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
         assertBool (show ev) $
             EmailMissing `elem` ev ^. evMessages
+
+    , testCase "validatePersonioEmployee validates tribe" $ do
+        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-tribe.json" >>= embedFile)
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            TribeMissing `elem` ev ^. evMessages
+
+    , testCase "validatePeronioEmployee validates missing cost center" $ do
+        contents <- contentsM
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            CostCenterMissing `elem` ev ^. evMessages
+
+    , testCase "validatePersonioEmployee validates missing office" $ do
+        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-office.json" >>= embedFile)
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            OfficeMissing `elem` ev ^. evMessages
+
+    , testCase "validatePersonioEmployee validates missing Work phone" $ do
+        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-phone.json" >>= embedFile)
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            PhoneMissing `elem` ev ^. evMessages
+
+    , testCase "validatePersonioEmployee validates missing role" $ do
+        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-role.json" >>= embedFile)
+        ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $
+            RoleMissing `elem` ev ^. evMessages
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)

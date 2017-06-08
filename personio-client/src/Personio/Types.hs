@@ -11,7 +11,7 @@ module Personio.Types where
 import Control.Monad.Writer
 import Data.Aeson.Compat
 import Data.Aeson.Internal (JSONPathElement (Key), (<?>))
-import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1)
+import Data.Aeson.Types    (FromJSON1 (..), explicitParseField, parseJSON1, typeMismatch, Value)
 import Data.Time           (zonedTimeToLocalTime)
 import Futurice.Aeson
 import Futurice.EnvConfig
@@ -75,13 +75,13 @@ data Employee = Employee
     , _employeeLast         :: !Text
     , _employeeHireDate     :: !(Maybe Day)
     , _employeeEndDate      :: !(Maybe Day)
-    , _employeeRole         :: !Text -- TODO
-    , _employeeEmail        :: !Text -- TODO
-    , _employeePhone        :: !Text -- TODO
+    , _employeeRole         :: !Text
+    , _employeeEmail        :: !Text
+    , _employeePhone        :: !Text
     , _employeeSupervisorId :: !(Maybe EmployeeId)
     , _employeeLogin        :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
-    , _employeeTribe        :: !(Maybe Text) -- TODO
-    , _employeeOffice       :: !(Maybe Text) -- TODO
+    , _employeeTribe        :: !(Maybe Text)
+    , _employeeOffice       :: !(Maybe Text)
     , _employeeCostCenter   :: !(Maybe Text) -- exactly 1
     , _employeeGithub       :: !(Maybe Text)
     -- use this when debugging
@@ -355,6 +355,9 @@ data ValidationMessage
     | CostCenterMissing
     | CostCenterMultiple [Text]
     | GithubInvalid Text
+    | OfficeMissing
+    | RoleMissing
+    | PhoneMissing
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -383,9 +386,13 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
     validate :: HashMap Text Attribute -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
-        [
-            validateGithub,
-            emailMissing
+        [ validateGithub
+        , costCenterValidate
+        , attributeMissing "email" EmailMissing
+        , attributeObjectMissing "department" TribeMissing
+        , attributeObjectMissing "office" OfficeMissing
+        , dynamicAttributeMissing "Work phone" PhoneMissing
+        , dynamicAttributeMissing "Primary role" RoleMissing
         ]
       where
         validateGithub :: WriterT [ValidationMessage] Parser ()
@@ -398,19 +405,51 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             regexp :: RE' Text
             regexp = string "https://github.com/" *> (T.pack <$> some anySym)
 
-        anyText :: Text -> Maybe Text
-        anyText val = match (T.pack <$> some anySym :: RE' Text) val
+        isSomeText :: Text -> Maybe Text
+        isSomeText val = match (T.pack <$> some anySym :: RE' Text) val
 
-        emailMissing :: WriterT [ValidationMessage] Parser ()
-        emailMissing = do
-            email <- lift (parseAttribute obj "email")
-            case email of
-                (Array _) -> tell [EmailMissing] -- | Assumes that if email is given as array, it is missing
-                _         -> checkMail (T.pack (show email))
-          where
-              checkMail :: Text -> WriterT [ValidationMessage] Parser ()
-              checkMail m = case anyText m of
-                  Nothing -> tell [EmailMissing]
-                  Just _  -> pure ()
+        checkAttributeName :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
+        checkAttributeName val msg = case isSomeText val of
+            Nothing -> tell [msg]
+            Just _  -> pure ()
+
+        -- | Given attribute should be fetchable with parseAttribute,
+        -- and error message should be constant value
+        attributeMissing :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
+        attributeMissing attrName errMsg = do
+            attribute <- lift (parseAttribute obj attrName)
+            case attribute of
+                Array _  -> tell [errMsg]
+                String a -> checkAttributeName a errMsg
+                a        -> lift (typeMismatch (show attrName) a)
+
+        -- | Attribute should be fetchable with parseAttribute,
+        -- error message should be value constant and fetched attribute's value
+        -- should be an object
+        attributeObjectMissing :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
+        attributeObjectMissing attrName errMsg = do
+          attribute <- lift (parseAttribute obj attrName)
+          case attribute of
+              Array _ -> tell [errMsg] -- | Should not be an array!
+              _       -> pure ()
+
+        -- | Attribute should be fetchable with parseDynamicAttribute and error
+        -- message should be a constant value
+        dynamicAttributeMissing :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
+        dynamicAttributeMissing attrName errMsg = do
+            attribute <- lift (parseDynamicAttribute obj attrName)
+            case attribute of
+                Array _  -> tell [errMsg]
+                String a -> checkAttributeName a errMsg
+                a        -> lift (typeMismatch (show attrName) a)
+
+        costCenterValidate :: WriterT [ValidationMessage] Parser ()
+        costCenterValidate = do
+          (Array cost) <- lift (parseAttribute obj "cost_centers")
+          case toList cost of
+              [] -> tell [CostCenterMissing]
+              xs -> if length xs > 1
+                  then tell [CostCenterMultiple (map T.pack (map show xs))] -- TODO: Test this case
+                  else pure ()
 
     -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN
