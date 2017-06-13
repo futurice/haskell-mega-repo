@@ -449,7 +449,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
           case toList cost of
               [] -> tell [CostCenterMissing]
               xs -> if length xs > 1
-                  then tell [CostCenterMultiple (map T.pack (map show xs))] -- TODO: Test this case
+                  then tell [CostCenterMultiple (map textShow xs)] -- TODO: Test this case
                   else pure ()
 
     -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN
