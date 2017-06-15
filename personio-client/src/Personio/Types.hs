@@ -357,6 +357,7 @@ data ValidationMessage
     | OfficeMissing
     | RoleMissing
     | PhoneMissing
+    | IbanInvalid
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -398,6 +399,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     validate obj = execWriterT $ sequenceA_
         [ validateGithub
         , costCenterValidate
+        , ibanValidate
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
@@ -463,4 +465,35 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                   then tell [CostCenterMultiple (map textShow xs)] -- TODO: Test this case
                   else pure ()
 
-    -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN
+        ibanValidate :: WriterT [ValidationMessage] Parser ()
+        ibanValidate = do
+            iban <- lift (parseDynamicAttribute obj "IBAN")
+            case iban of
+                String unparsed -> if ibanValidateLength (ibanPreparse unparsed)
+                    then tell [IbanInvalid]
+                    else if ibanParse (ibanPreparse unparsed) `mod` 97 == 1
+                        then pure ()
+                        else tell [IbanInvalid]
+                i -> lift (typeMismatch "IBAN" i)
+          where
+              -- | Shortest 15 from Norway, longest 31 from Malta
+              -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country
+              ibanValidateLength prep = T.length (ibanPreparse prep) < 15 ||
+                   T.length (ibanPreparse prep) > 31
+
+              ibanPreparse raw = T.filter (/= ' ') $
+                  T.append (T.drop 4 raw) (T.take 4 raw)
+
+              ibanParse :: Text -> Integer
+              ibanParse preparsed = read (charsToNums preparsed) :: Integer
+                where
+                    charsToNums :: Text -> String
+                    charsToNums prep = if T.null prep
+                        then []
+                        else charToNum (T.head prep) ++ charsToNums (T.tail prep)
+
+                    charToNum c = case T.findIndex (c==) letters of
+                        Nothing -> [c]
+                        Just n  -> show (n + 10) -- A == 10, B == 11 etc.
+
+                    letters = T.pack ['A'..'Z']
