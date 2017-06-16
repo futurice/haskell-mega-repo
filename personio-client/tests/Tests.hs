@@ -96,17 +96,36 @@ examples = testGroup "HUnit"
         assertBool (show ev) $
             RoleMissing `elem` ev ^. evMessages
 
-    , testCase "validatePersonioEmployee validates missing IBAN" $ do
-        contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-m-iban.json" >>= embedFile)
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $
-            IbanInvalid `elem` ev ^. evMessages
-
     , testCase "validatePersonioEmployee validates invalid IBAN" $ do
         contents <- decodeStrict $(makeRelativeToProject "fixtures/employee-i-iban.json" >>= embedFile)
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
         assertBool (show ev) $
             IbanInvalid `elem` ev ^. evMessages
+
+    , testCase "isValidIBAN validates correct IBAN" $ do
+        correct <- pure "MT84 MALT 0110 0001 2345 MTLC AST0 01S"
+        ev <- pure $ isValidIBAN correct
+        assertBool (show correct) $ ev == True
+
+    , testCase "isValidIBAN validates IBAN with invalid characters" $ do
+        invalid <- pure "FI21 Ä234 5600 0007 foo"
+        ev <- pure $ isValidIBAN invalid
+        assertBool (show invalid) $ ev == False
+
+    , testCase "isValidIBAN validates too short IBAN" $ do
+        tooShort <- pure "FI21 1234 5600 00"
+        ev <- pure $ isValidIBAN tooShort
+        assertBool (show tooShort) $ ev == False
+
+    , testCase "isvalidIBAN validates too long IBAN" $ do
+        tooLong <- pure "MT84 MALT 0110 0001 2345 MTLC AST0 01S 00"
+        ev <- pure $ isValidIBAN tooLong
+        assertBool (show tooLong) $ ev == False
+
+    , testCase "isValidIban validates IBAN with incorrect checksum" $ do
+        invalid <- pure "FI21 4321 5600 0007 85"
+        ev <- pure $ isValidIBAN invalid
+        assertBool (show invalid) $ ev == False
     ]
   where
     contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)

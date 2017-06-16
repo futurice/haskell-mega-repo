@@ -469,31 +469,35 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         ibanValidate = do
             iban <- lift (parseDynamicAttribute obj "IBAN")
             case iban of
-                String unparsed -> if ibanValidateLength (ibanPreparse unparsed)
-                    then tell [IbanInvalid]
-                    else if ibanParse (ibanPreparse unparsed) `mod` 97 == 1
-                        then pure ()
-                        else tell [IbanInvalid]
+                String unparsed -> if isValidIBAN unparsed
+                    then pure ()
+                    else tell [IbanInvalid]
                 i -> lift (typeMismatch "IBAN" i)
-          where
-              -- | Shortest 15 from Norway, longest 31 from Malta
-              -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country
-              ibanValidateLength prep = T.length (ibanPreparse prep) < 15 ||
-                   T.length (ibanPreparse prep) > 31
 
-              ibanPreparse raw = T.filter (/= ' ') $
-                  T.append (T.drop 4 raw) (T.take 4 raw)
+isValidIBAN :: Text -> Bool
+isValidIBAN iban =
+    let preparsed = T.filter (/= ' ') $ T.append (T.drop 4 iban) (T.take 4 iban)
+        parsed    = parse preparsed
+    in isValidLength preparsed && isValid parsed
+  where
+      isValid :: Maybe Integer -> Bool
+      isValid ib = case ib of
+          Nothing -> False -- If parameter is false, when parse-function failed to read strint to integer due to invalid characters
+          Just i  -> i `mod` 97 == 1
 
-              ibanParse :: Text -> Integer
-              ibanParse preparsed = read (charsToNums preparsed) :: Integer
-                where
-                    charsToNums :: Text -> String
-                    charsToNums prep = if T.null prep
-                        then []
-                        else charToNum (T.head prep) ++ charsToNums (T.tail prep)
+      charToNum :: Char -> [Char]
+      charToNum c =
+          let letters = T.pack ['A'..'Z']
+          in case T.findIndex (c ==) letters of
+              Nothing -> [c]
+              Just n  -> show (n + 10) -- A == 10, B == 11 etc.
 
-                    charToNum c = case T.findIndex (c==) letters of
-                        Nothing -> [c]
-                        Just n  -> show (n + 10) -- A == 10, B == 11 etc.
+      charsToNums = map charToNum . T.unpack
 
-                    letters = T.pack ['A'..'Z']
+      parse :: Text -> Maybe Integer
+      parse ib = readMaybe (concat $ charsToNums ib) :: Maybe Integer -- Returns Nothing in case of invalid characters
+
+      -- | Shortest 15 from Norway, longest 31 from Malta
+      -- https://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country
+      isValidLength :: Text -> Bool
+      isValidLength i = T.length i >= 15 && T.length i <= 31
