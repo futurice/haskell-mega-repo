@@ -475,11 +475,11 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 i -> lift (typeMismatch "IBAN" i)
 
 isValidIBAN :: Text -> Bool
-isValidIBAN iban =
-    let preparsed = T.filter (/= ' ') $ T.append (T.drop 4 iban) (T.take 4 iban)
-        parsed    = parse preparsed
-    in isValidLength preparsed && isValid parsed
+isValidIBAN iban = isValidLength preparsed && isValid parsed
   where
+      preparsed = T.filter (/= ' ') $ T.append (T.drop 4 iban) (T.take 4 iban)
+      parsed    = parse preparsed
+
       isValid :: Maybe Integer -> Bool
       isValid ib = case ib of
           Nothing -> False -- If parameter is false, when parse-function failed to read strint to integer due to invalid characters
