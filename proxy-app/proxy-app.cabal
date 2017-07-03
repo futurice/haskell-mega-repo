@@ -50,6 +50,8 @@ library
     , planmill-client
     , postgresql-simple
     , reflection
+    , regex-applicative
+    , regex-applicative-text
     , reports-app
     , resource-pool
     , semigroups

@@ -28,7 +28,9 @@ import Servant.Common.Req              (Req (headers))
 import Servant.Proxy
 import Servant.Excel
 import System.IO                       (hPutStrLn, stderr)
+import Text.Regex.Applicative.Text     (RE', anySym, match, string)
 
+import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
 import qualified Futurice.GitHub            as GH (SomeRequest, SomeResponse)
@@ -205,7 +207,17 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
             pure False
         _ : _ -> do
             let endpoint = decodeLatin1 $ rawPathInfo req
-            _ <- Postgres.execute conn
-                "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
-                (u', endpoint)
+            _ <- logAccess conn u' endpoint
             pure True
+  where
+    logAccess :: Postgres.Connection -> Text -> Text -> IO Int64
+    logAccess conn user endp =
+        case match swaggerReg endp of
+            Nothing ->
+                Postgres.execute conn
+                    "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
+                    (user, endp)
+            Just _  -> pure 0
+      where
+        swaggerReg :: RE' Text
+        swaggerReg = string "/swagger" *> (T.pack <$> many anySym)
