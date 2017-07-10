@@ -15,6 +15,7 @@ module Futurice.App.Proxy (
 
 import Prelude ()
 import Futurice.Prelude
+import Data.Maybe                      (isNothing)
 import Data.Pool                       (createPool, withResource)
 import Data.Reflection                 (Given (..), give)
 import Data.Text.Encoding              (decodeLatin1)
@@ -210,14 +211,13 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
             _ <- logAccess conn u' endpoint
             pure True
   where
-    logAccess :: Postgres.Connection -> Text -> Text -> IO Int64
+    -- | Logs user, and requested endpoint if endpoint is not swagger-related.
+    logAccess :: Postgres.Connection -> Text -> Text -> IO ()
     logAccess conn user endp =
-        case match swaggerReg endp of
-            Nothing ->
-                Postgres.execute conn
-                    "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
-                    (user, endp)
-            Just _  -> pure 0
-      where
-        swaggerReg :: RE' Text
-        swaggerReg = string "/swagger" *> (T.pack <$> many anySym)
+        when (isNothing $ match isSwaggerReg endp) $ void $
+            Postgres.execute conn
+            "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
+            (user, endp)
+
+    isSwaggerReg :: RE' Text
+    isSwaggerReg = string "/swagger.json" <|> string "/swagger-ui" *> (T.pack <$> many anySym)
