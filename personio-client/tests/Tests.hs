@@ -10,6 +10,8 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
+import Personio.EmployeeStatus (Status(..))
+
 import Personio
 
 main :: IO ()
@@ -54,6 +56,8 @@ examples = testGroup "HUnit"
         Just "A Tribe" @=? e ^. employeeTribe
         Just "Helsinki" @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
+        Active @=? e ^. employeeStatus
+        Just 0 @=? e ^. employeeHRNumber
 
     , validations
     ]

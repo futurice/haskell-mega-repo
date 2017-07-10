@@ -10,6 +10,7 @@ module Personio (
     evalPersonioReqIO,
     -- * Testing
     testPersonioEmployees,
+    testPersonioValidations,
     -- * Types
     module Control.Monad.Personio,
     module Personio.Request,
@@ -72,3 +73,10 @@ testPersonioEmployees = do
     withStderrLogger $ \lgr -> runLogT "personio-test" lgr $ do
         cfg <- getConfig' "REPL" configurePersonioCfg
         liftIO $ evalPersonioReqIO mgr lgr cfg PersonioEmployees
+
+testPersonioValidations :: IO [EmployeeValidation]
+testPersonioValidations = do
+    mgr <- newManager tlsManagerSettings
+    withStderrLogger $ \lgr -> runLogT "personio-test" lgr $ do
+        cfg <- getConfig' "REPL" configurePersonioCfg
+        liftIO $ evalPersonioReqIO mgr lgr cfg PersonioValidations

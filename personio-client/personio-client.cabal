@@ -31,8 +31,10 @@ library
   build-depends:
       aeson
     , aeson-compat
+    , ansi-pretty
     , base
     , constraints
+    , containers
     , env-config
     , futurice-prelude
     , http-api-data
@@ -49,6 +51,7 @@ library
   exposed-modules:
       Control.Monad.Personio
       Personio
+      Personio.EmployeeStatus
       Personio.Eval
       Personio.Request
       Personio.Types
@@ -63,8 +66,10 @@ test-suite unit-tests
   build-depends:
       aeson
     , aeson-compat
+    , ansi-pretty
     , base
     , constraints
+    , containers
     , env-config
     , futurice-prelude
     , http-api-data

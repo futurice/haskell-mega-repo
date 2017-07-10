@@ -17,8 +17,10 @@ ghc-options: -Wall
 dependencies:
   - aeson
   - aeson-compat
+  - ansi-pretty
   - base
   - constraints
+  - containers
   - env-config
   - futurice-prelude
   - http-api-data

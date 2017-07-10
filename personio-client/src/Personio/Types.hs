@@ -25,6 +25,8 @@ import Futurice.Prelude
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
+import Personio.EmployeeStatus (Status(..))
+
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
 
@@ -88,6 +90,8 @@ data Employee = Employee
     , _employeeOffice       :: !(Maybe Text)
     , _employeeCostCenter   :: !(Maybe Text) -- exactly 1
     , _employeeGithub       :: !(Maybe Text)
+    , _employeeStatus       :: !Status
+    , _employeeHRNumber     :: !(Maybe Int)
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -161,6 +165,8 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap getName (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
         <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
+        <*> parseAttribute obj "status"
+        <*> parseDynamicAttribute obj "HR number"
         -- <*> pure obj -- for employeeRest field
 
 -- | Personio attribute, i.e. labelled value.
