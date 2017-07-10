@@ -195,6 +195,13 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxLogger               = logger
             }
 
+-- SELECT re.prefix FROM
+--   (SELECT * FROM proxyapp.restrictedendpoint
+--     WHERE '/testi' LIKE (prefix || '%')) AS re
+--   RIGHT JOIN
+--     (SELECT * FROM proxyapp.accesscontrollist WHERE username = 'masa') AS acl
+--   ON acl.endpoint = re.id
+--   WHERE acl.username IS NULL;
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
 checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
@@ -208,6 +215,18 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
             pure False
         _ : _ -> do
             let endpoint = decodeLatin1 $ rawPathInfo req
+            -- TODO: check access rights
+            hPutStrLn stderr $ show (u, endpoint)
+            mapM_ print =<< (Postgres.query conn
+                "SELECT re.prefix FROM \
+                    \(SELECT * FROM proxyapp.restrictedEndpoint \
+                        \WHERE ? LIKE (prefix || '%')) AS re \
+                    \LEFT JOIN (SELECT * FROM proxyapp.accessControlList \
+                        \WHERE username = ?) AS acl \
+                    \ON acl.endpoint = re.id \
+                    \WHERE acl.username IS NULL;"
+            -- Test print ends
+                (endpoint, u') :: IO [Postgres.Only String])
             _ <- logAccess conn u' endpoint
             pure True
   where
