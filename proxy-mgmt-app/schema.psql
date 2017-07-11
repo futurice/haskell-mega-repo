@@ -8,6 +8,10 @@ CREATE TABLE proxyapp.credentials (
   createdat TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE proxyapp.credentials
+  ADD COLUMN endpoint TEXT,
+  ADD UNIQUE (username, endpoint);
+
 CREATE TABLE proxyapp.accesslog (
   username TEXT NOT NULL references proxyapp.credentials(username),
   updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

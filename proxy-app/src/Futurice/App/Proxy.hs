@@ -195,38 +195,25 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxLogger               = logger
             }
 
--- SELECT re.prefix FROM
---   (SELECT * FROM proxyapp.restrictedendpoint
---     WHERE '/testi' LIKE (prefix || '%')) AS re
---   RIGHT JOIN
---     (SELECT * FROM proxyapp.accesscontrollist WHERE username = 'masa') AS acl
---   ON acl.endpoint = re.id
---   WHERE acl.username IS NULL;
+-- SELECT 1 FROM proxyapp.credentials
+-- WHERE username = ?
+-- AND passtext = ?
+-- AND (? LIKE (endpoint || '')
+-- OR (SELECT COUNT(*) FROM proxyapp.credentials
+-- WHERE ? LIKE (endpoint || '%')) = 0);
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
 checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
+        endpoint = decodeLatin1 $ rawPathInfo req
     res <- Postgres.query conn
         credentialCheckQuery
-        (u', p') :: IO [Postgres.Only Int]
+        (u', p', endpoint, endpoint) :: IO [Postgres.Only Int]
     case res of
         [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
             logAttention "Invalid login with" u'
             pure False
         _ : _ -> do
-            let endpoint = decodeLatin1 $ rawPathInfo req
-            -- TODO: check access rights
-            hPutStrLn stderr $ show (u, endpoint)
-            mapM_ print =<< (Postgres.query conn
-                "SELECT re.prefix FROM \
-                    \(SELECT * FROM proxyapp.restrictedEndpoint \
-                        \WHERE ? LIKE (prefix || '%')) AS re \
-                    \LEFT JOIN (SELECT * FROM proxyapp.accessControlList \
-                        \WHERE username = ?) AS acl \
-                    \ON acl.endpoint = re.id \
-                    \WHERE acl.username IS NULL;"
-            -- Test print ends
-                (endpoint, u') :: IO [Postgres.Only String])
             _ <- logAccess conn u' endpoint
             pure True
   where
@@ -245,5 +232,8 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     credentialCheckQuery = fromString $ unwords $
         [ "SELECT 1 FROM proxyapp.credentials"
         , "WHERE username = ? AND passtext = crypt(?, passtext)"
+        , "AND (? LIKE (endpoint || '%')"
+        , "OR (SELECT COUNT(*) FROM proxyapp.credentials"
+        , "WHERE ? LIKE (endpoint || '%')) = 0)"
         , ";"
         ]
