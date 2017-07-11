@@ -195,12 +195,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxLogger               = logger
             }
 
--- SELECT 1 FROM proxyapp.credentials
--- WHERE username = ?
--- AND passtext = ?
--- AND (? LIKE (endpoint || '')
--- OR (SELECT COUNT(*) FROM proxyapp.credentials
--- WHERE ? LIKE (endpoint || '%')) = 0);
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
 checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
