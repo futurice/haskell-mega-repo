@@ -19,6 +19,7 @@ data Ctx = Ctx
     , ctxFumBaseurl           :: !BaseUrl
     , ctxFumAuthToken         :: !FUM.AuthToken
     , ctxPowerBaseurl         :: !BaseUrl
+    , ctxLogger               :: !Logger
     }
 
 instance HasHttpManager Ctx where

@@ -193,6 +193,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxFumBaseurl           = cfgFumBaseurl
             , ctxFumAuthToken         = cfgFumAuthToken
             , ctxPowerBaseurl         = cfgPowerBaseurl
+            , ctxLogger               = _logger
             }
 
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
@@ -203,8 +204,8 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         "select 1 from proxyapp.credentials where username = ? and passtext = ?;"
         (u', p') :: IO [Postgres.Only Int]
     case res of
-        [] -> do
-            hPutStrLn stderr $ "Invalid login with: " ++ show (u, p)
+        [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
+            logAttention_ $ "Invalid login with: " <> u' <> ", " <> p'
             pure False
         _ : _ -> do
             let endpoint = decodeLatin1 $ rawPathInfo req
