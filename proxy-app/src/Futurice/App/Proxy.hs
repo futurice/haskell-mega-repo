@@ -28,7 +28,6 @@ import Servant.Client
 import Servant.Common.Req              (Req (headers))
 import Servant.Proxy
 import Servant.Excel
-import System.IO                       (hPutStrLn, stderr)
 import Text.Regex.Applicative.Text     (RE', anySym, match, string)
 
 import qualified Data.Text                  as T
