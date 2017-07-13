@@ -9,8 +9,7 @@ CREATE TABLE proxyapp.credentials (
 );
 
 ALTER TABLE proxyapp.credentials
-  ADD COLUMN endpoint TEXT,
-  ADD UNIQUE (username, endpoint);
+  ADD COLUMN endpoint TEXT NOT NULL DEFAULT '/';
 
 CREATE TABLE proxyapp.accesslog (
   username TEXT NOT NULL references proxyapp.credentials(username),
