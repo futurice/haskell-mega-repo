@@ -202,10 +202,10 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         endpoint = decodeLatin1 $ rawPathInfo req
     res <- Postgres.query conn
         credentialCheckQuery
-        (u', p', endpoint, endpoint) :: IO [Postgres.Only Int]
+        (u', p', endpoint) :: IO [Postgres.Only Int]
     case res of
         [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
-            logAttention "Invalid login with" u'
+            logAttention "Invalid login with" $ u' <> " to endpoint " <> endpoint
             pure False
         _ : _ -> do
             _ <- logAccess conn u' endpoint
@@ -226,8 +226,8 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     credentialCheckQuery = fromString $ unwords $
         [ "SELECT 1 FROM proxyapp.credentials"
         , "WHERE username = ? AND passtext = crypt(?, passtext)"
-        , "AND (? LIKE (endpoint || '%')"
-        , "OR (SELECT COUNT(*) FROM proxyapp.credentials"
-        , "WHERE ? LIKE (endpoint || '%')) = 0)"
+        , "AND endpoint LIKE ((SELECT endpoint FROM proxyapp.credentials"
+        , "WHERE ? LIKE (endpoint || '%') ORDER BY endpoint DESC LIMIT 1)"
+        , "|| '%')"
         , ";"
         ]
