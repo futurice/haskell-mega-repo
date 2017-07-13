@@ -177,7 +177,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx       .~ "PROXYMGMT"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx Config {..} _logger _cache = do
+    makeCtx Config {..} logger _cache = do
         mgr                  <- newManager tlsManagerSettings
         postgresPool         <- createPool
             (Postgres.connect cfgPostgresConnInfo)
@@ -192,7 +192,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxFumBaseurl           = cfgFumBaseurl
             , ctxFumAuthToken         = cfgFumAuthToken
             , ctxPowerBaseurl         = cfgPowerBaseurl
-            , ctxLogger               = _logger
+            , ctxLogger               = logger
             }
 
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
@@ -204,7 +204,7 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         (u', p') :: IO [Postgres.Only Int]
     case res of
         [] -> runLogT "checkCreds" (ctxLogger ctx) $ do
-            logAttention_ $ "Invalid login with: " <> u' <> ", " <> p'
+            logAttention "Invalid login with" u'
             pure False
         _ : _ -> do
             let endpoint = decodeLatin1 $ rawPathInfo req
