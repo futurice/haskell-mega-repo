@@ -197,12 +197,12 @@ instance FromJSON SupervisorId where
 newtype NamedAttribute = NamedAttribute { getName :: Maybe Text }
 
 instance FromJSON NamedAttribute where
-    parseJSON (Null) = pure (NamedAttribute Nothing)
     parseJSON v = case v of
-        (Array xs) ->  case toList xs of
+        (Null)     -> pure (NamedAttribute Nothing)
+        (Array xs) -> case toList xs of
             []    -> pure (NamedAttribute Nothing)
             (x:_) -> p x  -- take first attribute.
-        _ -> p v
+        _          -> p v
       where
         p = withObjectDump "NamedAttribute" $ \obj ->
             NamedAttribute . Just <$> ((obj .: "attributes") >>= (.: "name"))
