@@ -181,6 +181,7 @@ newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 
 instance FromJSON SupervisorId where
     -- no supervisor: empty array
+    parseJSON (Null) = pure (SupervisorId Nothing)
     parseJSON (Array xs) | null xs = pure (SupervisorId Nothing)
     parseJSON v = p v
       where
@@ -196,6 +197,7 @@ instance FromJSON SupervisorId where
 newtype NamedAttribute = NamedAttribute { getName :: Maybe Text }
 
 instance FromJSON NamedAttribute where
+    parseJSON (Null) = pure (NamedAttribute Nothing)
     parseJSON v = case v of
         (Array xs) ->  case toList xs of
             []    -> pure (NamedAttribute Nothing)
