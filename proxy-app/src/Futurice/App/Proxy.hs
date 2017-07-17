@@ -226,8 +226,6 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     credentialCheckQuery = fromString $ unwords $
         [ "SELECT 1 FROM proxyapp.credentials"
         , "WHERE username = ? AND passtext = crypt(?, passtext)"
-        , "AND endpoint LIKE ((SELECT endpoint FROM proxyapp.credentials"
-        , "WHERE ? LIKE (endpoint || '%') ORDER BY endpoint DESC LIMIT 1)"
-        , "|| '%')"
+        , "AND ? LIKE endpoint || '%'"
         , ";"
         ]
