@@ -6,7 +6,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-module Personio.Types where
+module Personio.Types (
+    module Personio.Types,
+    module Personio.EmployeeStatus
+    ) where
 
 import Control.Monad.Writer
 import Data.Aeson.Compat

@@ -31,7 +31,6 @@ library
   build-depends:
       aeson
     , aeson-compat
-    , ansi-pretty
     , base
     , constraints
     , containers
@@ -66,7 +65,6 @@ test-suite unit-tests
   build-depends:
       aeson
     , aeson-compat
-    , ansi-pretty
     , base
     , constraints
     , containers

@@ -10,8 +10,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import Personio.EmployeeStatus (Status(..))
-
 import Personio
 
 main :: IO ()
