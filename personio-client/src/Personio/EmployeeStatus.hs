@@ -16,7 +16,7 @@ import Data.Swagger               (NamedSchema (..))
 import qualified Data.Map  as Map
 import qualified Data.Text as T
 
--- | Employee contractual status with initial state being Onboarding
+-- |Employee contractual status with initial state being Onboarding
 -- Personio changes status to Inactive on reaching Employee.endDate
 data Status
     = Active
