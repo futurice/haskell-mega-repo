@@ -1,15 +1,17 @@
 {
-  "accepterPerson": 2850921,
+  "accepterPerson": 2850572,
   "interruptionDate": null,
-  "start": "2015-09-07T00:00:00.000+0300",
-  "project": 2850931,
-  "description": "child care leave",
+  "created": "2015-09-07T11:16:40.807+0300",
+  "start": "2016-04-07T11:17:00.000+0300",
+  "project": 2850582,
+  "description": "sick leave",
   "vacationYear": null,
   "vacationLength": 450,
-  "person": 2850921,
-  "absenceType": 1130,
-  "finish": "2015-09-07T00:00:00.000+0300",
-  "id": 2850933,
+  "person": 2850572,
+  "absenceType": 1010,
+  "modified": "2015-09-07T11:16:40.807+0300",
+  "finish": "2016-04-07T11:17:00.000+0300",
+  "id": 2850600,
   "substitutePerson": null,
-  "status": 40
+  "status": 20
 }
