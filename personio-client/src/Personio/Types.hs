@@ -552,9 +552,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                   String d -> checkAttributeName d ExternalEndDateMissing
                   _        -> pure ()
 
-
-
-
 -- | Validate IBAN.
 --
 -- See <https://en.wikipedia.org/wiki/International_Bank_Account_Number#Validating_the_IBAN>
