@@ -28,7 +28,9 @@ import Futurice.Prelude
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.EmployeeStatus (Status (..))
+import Personio.Types.EmployeeEmploymentType
+       (EmploymentType (..), employmentTypeFromText)
+import Personio.Types.EmployeeStatus         (Status (..))
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
@@ -79,22 +81,23 @@ _EmployeeId = prism' toUrlPiece (either (const Nothing) Just . parseUrlPiece)
 
 -- | Employee structure. Doesn't contain sensitive information.
 data Employee = Employee
-    { _employeeId           :: !EmployeeId
-    , _employeeFirst        :: !Text
-    , _employeeLast         :: !Text
-    , _employeeHireDate     :: !(Maybe Day)
-    , _employeeEndDate      :: !(Maybe Day)
-    , _employeeRole         :: !Text
-    , _employeeEmail        :: !Text
-    , _employeePhone        :: !Text
-    , _employeeSupervisorId :: !(Maybe EmployeeId)
-    , _employeeLogin        :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
-    , _employeeTribe        :: !(Maybe Text)
-    , _employeeOffice       :: !(Maybe Text)
-    , _employeeCostCenter   :: !(Maybe Text) -- exactly 1
-    , _employeeGithub       :: !(Maybe Text)
-    , _employeeStatus       :: !Status
-    , _employeeHRNumber     :: !(Maybe Int)
+    { _employeeId             :: !EmployeeId
+    , _employeeFirst          :: !Text
+    , _employeeLast           :: !Text
+    , _employeeHireDate       :: !(Maybe Day)
+    , _employeeEndDate        :: !(Maybe Day)
+    , _employeeRole           :: !Text
+    , _employeeEmail          :: !Text
+    , _employeePhone          :: !Text
+    , _employeeSupervisorId   :: !(Maybe EmployeeId)
+    , _employeeLogin          :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
+    , _employeeTribe          :: !(Maybe Text)
+    , _employeeOffice         :: !(Maybe Text)
+    , _employeeCostCenter     :: !(Maybe Text) -- exactly 1
+    , _employeeGithub         :: !(Maybe Text)
+    , _employeeStatus         :: !Status
+    , _employeeHRNumber       :: !(Maybe Int)
+    , _employeeEmploymentType :: !EmploymentType
     -- use this when debugging
     -- , employeeRest     :: !(HashMap Text Value)
     }
@@ -170,6 +173,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
         <*> parseAttribute obj "status"
         <*> parseDynamicAttribute obj "HR number"
+        <*> parseAttribute obj "employment_type"
         -- <*> pure obj -- for employeeRest field
 
 -- | Personio attribute, i.e. labelled value.
@@ -397,6 +401,8 @@ data ValidationMessage
     | PhoneMissing
     | IbanInvalid
     | LoginInvalid Text
+    | EmploymentTypeMissing
+    | ExternalEndDateMissing
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -452,7 +458,9 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , costCenterValidate
         , ibanValidate
         , loginValidate
+        , extEndDateMissing
         , attributeMissing "email" EmailMissing
+        , attributeMissing "employment_type" EmploymentTypeMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
         , dynamicAttributeMissing "Work phone" PhoneMissing
@@ -480,6 +488,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         attributeMissing attrName errMsg = do
             attribute <- lift (parseAttribute obj attrName)
             case attribute of
+                Null     -> tell [errMsg]
                 Array _  -> tell [errMsg]
                 String a -> checkAttributeName a errMsg
                 a        -> lift (typeMismatch (show attrName) a)
@@ -528,6 +537,23 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             case match loginRegexp login of
                 Nothing -> tell [LoginInvalid login]
                 Just _  -> pure ()
+
+        extEndDateMissing :: WriterT [ValidationMessage] Parser()
+        extEndDateMissing = do
+            eType <- lift (parseAttribute obj "employment_type")
+            case employmentTypeFromText eType of
+                Just External -> checkEndDate
+                _             -> pure ()
+          where
+            checkEndDate = do
+              eDate <- lift (parseAttribute obj "contract_end_date")
+              case eDate of
+                  Null     -> tell [ExternalEndDateMissing]
+                  String d -> checkAttributeName d ExternalEndDateMissing
+                  _        -> pure ()
+
+
+
 
 -- | Validate IBAN.
 --

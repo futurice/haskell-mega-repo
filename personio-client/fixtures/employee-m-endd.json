@@ -1,0 +1,285 @@
+{
+    "type": "Employee",
+    "attributes": {
+        "id": {
+            "label": "id",
+            "value": 42
+        },
+        "first_name": {
+            "label": "First name",
+            "value": "Teemu"
+        },
+        "last_name": {
+            "label": "Last name",
+            "value": "Teekkari"
+        },
+        "email": {
+            "label": "Email",
+            "value": "teemu.teekkari@example.com"
+        },
+        "gender": {
+            "label": "Gender",
+            "value": "female"
+        },
+        "status": {
+            "label": "Status",
+            "value": "active"
+        },
+        "position": {
+            "label": "Position",
+            "value": "Tester"
+        },
+        "supervisor": {
+            "label": "Supervisor",
+            "value": {
+                "type": "Employee",
+                "attributes": {
+                    "id": {
+                        "label": "id",
+                        "value": 1337
+                    },
+                    "first_name": {
+                        "label": "First name",
+                        "value": "Esko"
+                    },
+                    "last_name": {
+                        "label": "Last name",
+                        "value": "Karvinen"
+                    },
+                    "email": {
+                        "label": "Email",
+                        "value": "esko.karvinen@example.com"
+                    }
+                }
+            }
+        },
+        "employment_type": {
+            "label": "Employment type",
+            "value": "external"
+        },
+        "weekly_working_hours": {
+            "label": "Weekly hours",
+            "value": "37.5"
+        },
+        "hire_date": {
+            "label": "Hire date",
+            "value": "2017-05-29T00:00:00+01:00"
+        },
+        "contract_end_date": {
+            "label": "Contract ends",
+            "value": null
+        },
+        "termination_date": {
+            "label": "Termination date",
+            "value": null
+        },
+        "termination_type": {
+            "label": "Termination type",
+            "value": ""
+        },
+        "termination_reason": {
+            "label": "Termination reason",
+            "value": ""
+        },
+        "probation_period_end": {
+            "label": "Probation period end",
+            "value": null
+        },
+        "created_at": {
+            "label": "created_at",
+            "value": "2017-05-24T16:01:45+02:00"
+        },
+        "subcompany": {
+            "label": "subcompany",
+            "value": []
+        },
+        "office": {
+            "label": "Office",
+            "value": {
+                "type": "Office",
+                "attributes": {
+                    "id": 1,
+                    "name": "Helsinki"
+                }
+            }
+        },
+        "department": {
+            "label": "Department",
+            "value": {
+                "type": "Department",
+                "attributes": {
+                    "id": 2,
+                    "name": "A Tribe"
+                }
+            }
+        },
+        "cost_centers": {
+            "label": "Cost center",
+            "value": []
+        },
+        "fix_salary": {
+            "label": "Fix salary",
+            "value": 0
+        },
+        "hourly_salary": {
+            "label": "Hourly salary",
+            "value": 0
+        },
+        "vacation_day_balance": {
+            "label": "Vacation day balance",
+            "value": 0
+        },
+        "dynamic_27163": {
+            "label": "Work phone",
+            "value": "+123 5678910"
+        },
+        "dynamic_65806": {
+            "label": "Studies",
+            "value": ""
+        },
+        "dynamic_66136": {
+            "label": "HR number",
+            "value": 0
+        },
+        "dynamic_72952": {
+            "label": "Base salary",
+            "value": ""
+        },
+        "dynamic_72910": {
+            "label": "Primary role",
+            "value": "Developer (Primary)"
+        },
+        "dynamic_65812": {
+            "label": "(FI) Social Security Number",
+            "value": ""
+        },
+        "dynamic_66529": {
+            "label": "Degree",
+            "value": ""
+        },
+        "dynamic_72955": {
+            "label": "Variable salary",
+            "value": ""
+        },
+        "dynamic_27167": {
+            "label": "LinkedIn",
+            "value": ""
+        },
+        "dynamic_65821": {
+            "label": "(DE) HR Number",
+            "value": ""
+        },
+        "dynamic_66592": {
+            "label": "Study points",
+            "value": ""
+        },
+        "dynamic_72958": {
+            "label": "Company car",
+            "value": ""
+        },
+        "dynamic_72961": {
+            "label": "Accommodation benefit",
+            "value": ""
+        },
+        "dynamic_72928": {
+            "label": "(DE) ID number",
+            "value": ""
+        },
+        "dynamic_72913": {
+            "label": "Github",
+            "value": "https://github.com/gitMastur"
+        },
+        "dynamic_66595": {
+            "label": "Degree stage",
+            "value": ""
+        },
+        "dynamic_72931": {
+            "label": "(DE) Social security number (SV)",
+            "value": ""
+        },
+        "dynamic_72964": {
+            "label": "Parking lot",
+            "value": ""
+        },
+        "dynamic_66598": {
+            "label": "Year of graduation",
+            "value": ""
+        },
+        "dynamic_72982": {
+            "label": "Login name",
+            "value": "vsch"
+        },
+        "dynamic_27165": {
+            "label": "Birthday",
+            "value": "1849-01-01T00:00:00+01:00"
+        },
+        "dynamic_72967": {
+            "label": "Additional benefits",
+            "value": ""
+        },
+        "dynamic_72970": {
+            "label": "Expat bonus",
+            "value": ""
+        },
+        "dynamic_66601": {
+            "label": "Nationality",
+            "value": "Finnish"
+        },
+        "dynamic_72973": {
+            "label": "FutuBonus",
+            "value": ""
+        },
+        "dynamic_66604": {
+            "label": "Work permit",
+            "value": ""
+        },
+        "dynamic_72937": {
+            "label": "Work permit ends on",
+            "value": ""
+        },
+        "dynamic_72976": {
+            "label": "IBAN",
+            "value": "GB82 WEST 1234 5698 7654 32"
+        },
+        "dynamic_72919": {
+            "label": "Work time in %",
+            "value": ""
+        },
+        "dynamic_72979": {
+            "label": "BIC",
+            "value": ""
+        },
+        "dynamic_72922": {
+            "label": "Work time in hours",
+            "value": ""
+        },
+        "dynamic_72925": {
+            "label": "End of trial period",
+            "value": ""
+        },
+        "dynamic_72940": {
+            "label": "Career path level",
+            "value": ""
+        },
+        "dynamic_72946": {
+            "label": "Local / Expat",
+            "value": "local"
+        },
+        "dynamic_72949": {
+            "label": "End of expat assignment",
+            "value": ""
+        },
+        "dynamic_72943": {
+            "label": "Home tribe",
+            "value": "SomeTribe"
+        },
+        "dynamic_72916": {
+            "label": "Home address",
+            "value": "Otakaari 1, Espoo"
+        },
+        "dynamic_72934": {
+            "label": "Health insurance",
+            "value": "AOK Nordost in Berlin"
+        }
+    }
+}

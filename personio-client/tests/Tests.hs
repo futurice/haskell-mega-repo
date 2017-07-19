@@ -11,6 +11,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 import Personio
+import Personio.Types.EmployeeEmploymentType
 
 main :: IO ()
 main = defaultMain $ testGroup "tests"
@@ -56,7 +57,7 @@ examples = testGroup "HUnit"
         Just "gitMastur" @=? e ^. employeeGithub
         Active @=? e ^. employeeStatus
         Just 0 @=? e ^. employeeHRNumber
-
+        Internal @=? e ^. employeeEmploymentType
     , validations
     ]
   where
@@ -104,6 +105,14 @@ validations = testGroup "Validations"
         "login name"
         $(makeRelativeToProject "fixtures/employee-i-login.json" >>= embedFile)
         $ LoginInvalid "erAt"
+    , testValidation
+        "employment_type"
+        $(makeRelativeToProject "fixtures/employee-m-etype.json" >>= embedFile)
+        EmploymentTypeMissing
+    , testValidation
+        "external contract_end_date"
+        $(makeRelativeToProject "fixtures/employee-m-endd.json" >>= embedFile)
+        ExternalEndDateMissing
     ]
   where
     testValidation name source warning = testCase name $ do
