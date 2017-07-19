@@ -32,6 +32,7 @@ data Absence = Absence
     , absenceStart            :: !Day
     , absenceFinish           :: !Day
     , absenceAbsenceType      :: !(EnumValue Absence "absenceType")
+    , absenceCreated          :: !UTCTime
     {-
       2016-10-26, phadej:
       We don't actually use those fields, so let's not parse or
@@ -41,7 +42,6 @@ data Absence = Absence
 
     , absenceAccepterPerson   :: !(Maybe UserId)
     , absenceInterruptionDate :: !(Maybe UTCTime)
-    , absenceCreated          :: !(Maybe UTCTime)
     , absenceDescription      :: !(Maybe Text)
     , absenceVacationYear     :: !(Maybe Int)
     , absenceVacationLength   :: !Int
@@ -73,6 +73,7 @@ instance FromJSON Absence where
         <*> (dayFromZ <$> obj .: "start")
         <*> (dayFromZ <$> obj .: "finish")
         <*> obj .: "absenceType"
+        <*> obj .: "created"
         {-
         <*> obj .: "accepterPerson"
         -- TODO: I'd add a combinator to aeson-extra to make this prettier
