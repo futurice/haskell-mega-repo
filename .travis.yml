@@ -44,6 +44,7 @@ before_install:
 - unset CC
 - export STACK_YAML=stack-$HC.yaml
 - GHCVER=$(echo $HC|sed 's/ghc-//')
+- echo $GHCVER $STACK_YAML
 # job starting moment
 - JOB_START_TIME=$(date +%s)
 # git submodules
