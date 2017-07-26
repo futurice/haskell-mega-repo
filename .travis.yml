@@ -97,7 +97,7 @@ jobs:
         echo time to run $JOB_DURR
         timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" || true;
 
-    - stage: "test"
+    - stage: "build"
       script:
         - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
         - JOB_CURR_TIME=$(date +%s)
