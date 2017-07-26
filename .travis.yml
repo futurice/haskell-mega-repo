@@ -1,5 +1,5 @@
 dist: trusty
-sudo: false
+sudo: true
 language: c
 
 # Caching so the next build will be fast too.
@@ -47,20 +47,20 @@ install:
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" futurice-prelude || true;
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M3.5G -A128M -n4m -RTS" futurice-prelude || true;
 
 # servant-Chart
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
 - if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; JOB_DURR=1; fi
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" servant-Chart || true;
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M3.5G -A128M -n4m -RTS" servant-Chart || true;
 
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
 - if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; JOB_DURR=1; fi
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" || true;
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-dependencies -j2 --ghc-options="-j2 +RTS -M3.5G -A128M -n4m -RTS" || true;
 
 script:
 - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
@@ -68,7 +68,7 @@ script:
 - JOB_DURR=$((JOB_START_TIME + 2400 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
 - if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; JOB_DURR=1; fi
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-j2 +RTS -M2G -A128M -n4m -RTS"
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-j2 +RTS -M3.5G -A128M -n4m -RTS"
   # - stack --no-terminal --skip-ghc-check sdist
 
 matrix:
