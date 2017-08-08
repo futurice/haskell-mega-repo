@@ -444,7 +444,7 @@ data ValidationMessage
     | GithubInvalid Text
     | OfficeMissing
     | RoleMissing
-    | WorkPhoneMissing
+    | PhoneMissing
     | IbanInvalid
     | LoginInvalid Text
     | EmploymentTypeMissing
@@ -515,7 +515,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
-        , dynamicAttributeMissing "Work phone" WorkPhoneMissing
+        , dynamicAttributeMissing "Work phone" PhoneMissing
         , dynamicAttributeMissing "Primary role" RoleMissing
         ]
       where
