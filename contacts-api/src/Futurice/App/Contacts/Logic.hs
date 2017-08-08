@@ -44,13 +44,14 @@ compareUnicodeText = compareUnicode `on` T.unpack
 
 -- | Get contacts data
 contacts
-    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, MonadPlanMillQuery m
+    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, MonadPlanMillQuery m, Personio.MonadPersonio m
        , MonadReader env m
        , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
        )
     => m [Contact Text]
 contacts = contacts'
-    <$> fumEmployeeList
+    <$> Personio.personio Personio.PersonioEmployees
+    <*> fumEmployeeList
     <*> githubDetailedMembers
     <*> flowdockOrganisation
     <*> fumPlanmillCompetenceMap
@@ -58,13 +59,14 @@ contacts = contacts'
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
-    :: Vector FUM.User
+    :: a
+    -> Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
     -> HashMap FUM.Login (Maybe Text)
     -> HashMap FUM.Login (Maybe Text)
     -> [Contact Text]
-contacts' users githubMembers flowdockOrg competenceMap teamMap =
+contacts' _ users githubMembers flowdockOrg competenceMap teamMap =
     let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
         res0 = map userToContact users'
         res1 = addGithubInfo githubMembers res0
