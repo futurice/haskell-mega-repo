@@ -46,12 +46,13 @@ compareUnicodeText = compareUnicode `on` T.unpack
 -- | Get contacts data
 contacts
     :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, MonadPlanMillQuery m, Personio.MonadPersonio m
-       , MonadReader env m
+       , MonadTime m, MonadReader env m
        , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
        )
     => m [Contact Text]
 contacts = contacts'
-    <$> Personio.personio Personio.PersonioEmployees
+    <$> currentTime
+    <*> Personio.personio Personio.PersonioEmployees
     <*> fumEmployeeList
     <*> githubDetailedMembers
     <*> flowdockOrganisation
@@ -60,35 +61,21 @@ contacts = contacts'
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
-    :: [Personio.Employee]
+    :: UTCTime
+    -> [Personio.Employee]
     -> Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
     -> HashMap FUM.Login (Maybe Text)
     -> HashMap FUM.Login (Maybe Text)
     -> [Contact Text]
-contacts' employees users githubMembers flowdockOrg competenceMap teamMap =
-    let employees' = filter ((==Personio.Active) . Personio._employeeStatus) employees
+contacts' now employees _users githubMembers flowdockOrg competenceMap teamMap =
+    let employees' = filter (Personio.employeeIsActive now) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
         res3 = addPlanmillInfo competenceMap teamMap res2
     in sortBy (compareUnicodeText `on` contactName) res3
--- contacts'
---     :: a
---     -> Vector FUM.User
---     -> Vector GH.User
---     -> FD.Organisation
---     -> HashMap FUM.Login (Maybe Text)
---     -> HashMap FUM.Login (Maybe Text)
---     -> [Contact Text]
--- contacts' _ users githubMembers flowdockOrg competenceMap teamMap =
---     let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
---         res0 = map userToContact users'
---         res1 = addGithubInfo githubMembers res0
---         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
---         res3 = addPlanmillInfo competenceMap teamMap res2
---     in sortBy (compareUnicodeText `on` contactName) res3
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
@@ -100,17 +87,24 @@ employeeToContact e = Contact
     , contactTitle      = Just "title todo"
     , contactThumb      = noImage -- from FUM
     , contactImage      = noImage -- from FUM
-    , contactFlowdock   = Unknown
-    , contactGithub     = Unknown -- TODO
+    , contactFlowdock   = maybe Unknown
+                                (Sure . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage))
+                                $ e ^. Personio.employeeFlowdock
+    , contactGithub     = maybe Unknown 
+                                (Sure . flip (ContactGH . ghProfileLink) noImage) 
+                                $ e ^. Personio.employeeGithub
     , contactTeam       = Just (tribeToText $ e ^. Personio.employeeTribe)
     -- , contactOffice
     , contactCompetence = Just "competence todo"
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
+    ghProfileLink = T.append githubPrefix . GH.untagName 
+      where
+        githubPrefix = "https://github.com/"
 
-userToContact :: FUM.User -> Contact Text
-userToContact FUM.User{..} = Contact
+_userToContact :: FUM.User -> Contact Text
+_userToContact FUM.User{..} = Contact
     { contactLogin      = _userName
     , contactFirst      = _userFirst
     , contactName       = _userFirst <> " " <> _userLast

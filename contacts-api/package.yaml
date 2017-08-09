@@ -84,6 +84,7 @@ library:
     - swagger2
     - tagged
     - text
+    - time
     - transformers
     - transformers-compat
     - unordered-containers
