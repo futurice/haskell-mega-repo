@@ -60,23 +60,38 @@ contacts = contacts'
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
-    :: a
+    :: [Personio.Employee]
     -> Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
     -> HashMap FUM.Login (Maybe Text)
     -> HashMap FUM.Login (Maybe Text)
     -> [Contact Text]
-contacts' _ users githubMembers flowdockOrg competenceMap teamMap =
-    let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
-        res0 = map userToContact users'
+contacts' employees users githubMembers flowdockOrg competenceMap teamMap =
+    let employees' = filter ((==Personio.Active) . Personio._employeeStatus) employees
+        res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
         res3 = addPlanmillInfo competenceMap teamMap res2
     in sortBy (compareUnicodeText `on` contactName) res3
+-- contacts'
+--     :: a
+--     -> Vector FUM.User
+--     -> Vector GH.User
+--     -> FD.Organisation
+--     -> HashMap FUM.Login (Maybe Text)
+--     -> HashMap FUM.Login (Maybe Text)
+--     -> [Contact Text]
+-- contacts' _ users githubMembers flowdockOrg competenceMap teamMap =
+--     let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
+--         res0 = map userToContact users'
+--         res1 = addGithubInfo githubMembers res0
+--         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
+--         res3 = addPlanmillInfo competenceMap teamMap res2
+--     in sortBy (compareUnicodeText `on` contactName) res3
 
-_employeeToContact :: Personio.Employee -> Contact Text
-_employeeToContact e = Contact
+employeeToContact :: Personio.Employee -> Contact Text
+employeeToContact e = Contact
     { contactLogin      = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
     , contactFirst      = e ^. Personio.employeeFirst
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
@@ -85,7 +100,7 @@ _employeeToContact e = Contact
     , contactTitle      = Just "title todo"
     , contactThumb      = noImage -- from FUM
     , contactImage      = noImage -- from FUM
-    , contactFlowdock   = (\uid -> ContactFD uid "-" noImage) $ e ^. Personio.employeeFlowdock
+    , contactFlowdock   = Unknown
     , contactGithub     = Unknown -- TODO
     , contactTeam       = Just (tribeToText $ e ^. Personio.employeeTribe)
     -- , contactOffice
