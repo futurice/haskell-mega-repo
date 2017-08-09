@@ -20,6 +20,7 @@ module Futurice.App.Contacts.Logic (
 import Data.RFC5051          (compareUnicode)
 import Futurice.Integrations
 import Futurice.Prelude
+import Futurice.Tribe
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
@@ -80,13 +81,13 @@ _employeeToContact e = Contact
     , contactFirst      = e ^. Personio.employeeFirst
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
     , contactEmail      = e ^. Personio.employeeEmail
-    , contactPhones     = [] -- e ^. Personio.employeePhone -- TODO: multiple phones
+    , contactPhones     = catMaybes [e ^. Personio.employeeWorkPhone, e ^. Personio.employeeHomePhone]
     , contactTitle      = Just "title todo"
     , contactThumb      = noImage -- from FUM
     , contactImage      = noImage -- from FUM
-    , contactFlowdock   = Unknown -- TODO
+    , contactFlowdock   = (\uid -> ContactFD uid "-" noImage) $ e ^. Personio.employeeFlowdock
     , contactGithub     = Unknown -- TODO
-    , contactTeam       = Nothing -- e ^. Personio.employeeTribe
+    , contactTeam       = Just (tribeToText $ e ^. Personio.employeeTribe)
     -- , contactOffice
     , contactCompetence = Just "competence todo"
     }
