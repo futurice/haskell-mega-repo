@@ -26,7 +26,6 @@ import Prelude ()
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Maybe.Strict   as S
 import qualified Data.Text           as T
-import qualified Data.Vector         as V
 
 -- Data definition
 import qualified Chat.Flowdock.REST as FD
