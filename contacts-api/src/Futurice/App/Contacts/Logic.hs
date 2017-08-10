@@ -62,12 +62,13 @@ contacts'
     -> Vector GH.User
     -> FD.Organisation
     -> [Contact Text]
-contacts' now employees _users githubMembers flowdockOrg =
+contacts' now employees users githubMembers flowdockOrg =
     let employees' = filter (Personio.employeeIsActive now) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
-    in sortBy (compareUnicodeText `on` contactName) res2
+        res3 = addFUMInfo users res2
+    in sortBy (compareUnicodeText `on` contactName) res3
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
@@ -123,6 +124,29 @@ githubDetailedMembers = pure mempty {- do
     githubMembers <- githubOrganisationMembers
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
     -}
+
+addFUMInfo
+    :: (Functor f, Foldable g)
+    => g FUM.User -> f (Contact Text) -> f (Contact Text)
+addFUMInfo fum = fmap add
+  where
+    fum' = toList fum
+
+    loginMap :: HM.HashMap FUM.Login FUM.User
+    loginMap = HM.fromList (map pair fum')
+      where
+        pair x = (FUM._userName x, x)
+
+    add :: Contact Text -> Contact Text
+    add c = 
+        case user (contactLogin c) of
+            Nothing -> c
+            Just u  -> c{ contactThumb = S.fromMaybe noImage $ FUM._userThumbUrl u
+                        , contactImage = S.fromMaybe noImage $ FUM._userImageUrl u
+                        }
+      where
+        user login = HM.lookup login loginMap
+        noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 addGithubInfo
     :: (Functor f, Foldable g)
