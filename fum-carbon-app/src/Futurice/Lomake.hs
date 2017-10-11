@@ -239,7 +239,7 @@ lomakeHtml formOpts fields names values =
                 , type_ "text"
                 , value_ $ vMaybe "" (tfoEncode opts) value
                 ] ++
-                [ data_ "lomake-regexp" $ kleeneToJS $ tfoRegexp opts
+                [ data_ "lomake-regexp" $ view packed $ kleeneToJS $ tfoRegexp opts
                 | not (isKleeneEverything (tfoRegexp opts)) ]
 
     render (EnumField opts) n v@VHidden {} =

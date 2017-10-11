@@ -27,13 +27,21 @@ library
   build-depends:
     base >= 4.9 && <4.11,
     base-compat >=0.9.3 && <0.10,
-    regex-applicative,
+    containers,
+    lattices >= 1.7 && <1.8,
     range-set-list,
-    text
+    regex-applicative,
+    text,
+    transformers,
+    QuickCheck
   other-extensions:
     GADTs OverloadedStrings
   exposed-modules:
     Kleene
+    Kleene.Functor
+    Kleene.Partition
+    Kleene.RE
+    Kleene.Sets
   ghc-options: -Wall
   hs-source-dirs: src
   default-language: Haskell2010
@@ -43,9 +51,10 @@ test-suite doctests
   main-is:             doctests.hs
   build-depends:
     base,
-    doctest >= 0.11.3 && <0.12,
+    doctest >= 0.13 && <0.14,
     QuickCheck ==2.10.*,
     template-haskell
+  x-doctest-options:   --fast
   ghc-options:         -Wall -threaded
   hs-source-dirs:      tests
   default-language:    Haskell2010

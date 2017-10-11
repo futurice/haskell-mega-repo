@@ -13,7 +13,7 @@ import Data.Aeson
        (FromJSON (..), FromJSONKey (..), FromJSONKeyFunction (..), ToJSON (..),
        ToJSONKey (..), withText)
 import Futurice.Prelude
-import Kleene                      (Kleene, kleeneEverything1, kleeneToRe)
+import Kleene                      (Kleene, kleeneEverything1, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, href_)
 import Prelude ()
@@ -115,7 +115,7 @@ emailKleene = Email . T.toLower . view packed
     <* (suffix :: Kleene Char String)
 
 emailRegexp :: RE' Email
-emailRegexp = kleeneToRe emailKleene
+emailRegexp = kleeneToRA emailKleene
 
 suffix :: IsString a => a
 suffix = "@futurice.com"
