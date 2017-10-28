@@ -81,6 +81,10 @@ parseLogin' t
     len = T.length t
     isInvalidChar = (`notElem` ['a'..'z'])
 
+-- | Login's regular expression.
+--
+-- >>> Kleene.kleeneToJS loginKleene
+-- "^[a-z][a-z][a-z][a-z][a-z]?$"
 loginKleene :: Kleene Char Login
 loginKleene = Login . T.pack <$> range 4 5 (kleeneCharRange 'a' 'z')
   where
@@ -109,8 +113,6 @@ loginKleene = Login . T.pack <$> range 4 5 (kleeneCharRange 'a' 'z')
 --
 loginRegexp :: RE' Login
 loginRegexp = kleeneToRe loginKleene
-
-
 
 -------------------------------------------------------------------------------
 -- Instances
