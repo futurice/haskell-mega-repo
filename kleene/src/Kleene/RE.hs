@@ -1,22 +1,23 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Kleene.RE where
 
 import Prelude ()
 import Prelude.Compat
 
-import Algebra.Lattice    (BoundedJoinSemiLattice (..), JoinSemiLattice (..))
-import Data.List          (foldl')
-import Data.RangeSet.List (RSet)
-import Data.Semigroup     (Semigroup (..))
-import Data.Set           (Set)
-import Data.String        (IsString (..))
+import Algebra.Lattice     (BoundedJoinSemiLattice (..), JoinSemiLattice (..))
+import Control.Applicative (liftA2)
+import Data.List           (foldl')
+import Data.RangeSet.List  (RSet)
+import Data.Semigroup      (Semigroup (..))
+import Data.Set            (Set)
+import Data.String         (IsString (..))
 
 import qualified Data.RangeSet.List as RSet
 import qualified Data.Set           as Set
-
-import Kleene.Sets
+import           Kleene.Sets
+import qualified Test.QuickCheck    as QC
 
 -- | Regular expression
 --
@@ -47,6 +48,14 @@ eps = REAppend []
 char :: c -> RE c
 char = REChars . RSet.singleton
 
+-- | Concatenate regular expressions.
+--
+-- prop> (asREChar r <> s) <> t == r <> (s <> t)
+-- prop> asREChar r <> empty == empty
+-- prop> empty <> asREChar r == empty
+-- prop> asREChar r <> eps == r
+-- prop> eps <> asREChar r == r
+--
 appends :: Eq c => [RE c] -> RE c
 appends rs0
     | elem empty rs1 = empty
@@ -56,10 +65,35 @@ appends rs0
   where
     rs1 = flatten rs0
 
-    flatten rs = concatMap f rs0
+    flatten rs = concatMap f rs
     f (REAppend rs) = rs
     f r             = [r]
 
+-- | Union regular expressions.
+--
+-- prop> asREChar r \/ r == r
+-- prop> asREChar r \/ s == s \/ r
+-- prop> (asREChar r \/ s) \/ t == r \/ (s \/ t)
+-- prop> empty \/ r == r
+-- prop> r \/ empty == r
+--
+unions :: Ord c => [RE c] -> RE c
+unions = mk . Set.filter (/= empty) . Set.fromList . flatten where
+    mk s = case  Set.toList s of
+        []  -> empty
+        [r] -> r
+        _   -> REUnion s
+
+    flatten rs = concatMap f rs
+    f (REUnion rs) = Set.toList rs
+    f r            = [r]
+
+-- | Kleene star.
+--
+-- prop> star (star (asREChar r)) == star r
+-- prop> star eps == eps
+-- prop> star empty == eps
+--
 star :: Eq c => RE c -> RE c
 star r@(REStar _) = r
 star r
@@ -116,6 +150,7 @@ matches r = nullable . foldl' (flip derivate) r
 -- REChars fromRangeList [(B,B)]
 -- REAppend []
 -- REAppend [REChars fromRangeList [(A,A)],REChars fromRangeList [(B,B)]]
+--
 states :: forall a. (Enum a, Bounded a, Ord a) => RE a -> Set (RE a)
 states re = go mempty [re]  where
     go :: Set (RE a) -> [RE a] -> Set (RE a)
@@ -141,19 +176,31 @@ instance Eq c => Monoid (RE c) where
     mappend = (<>)
 
 instance Ord c => JoinSemiLattice (RE c) where
-    r \/ r'
-        | r  == empty = r'
-        | r' == empty = r
-    REUnion rs \/ REUnion rs' = REUnion (rs <> rs')
-    REUnion rs \/ r           = REUnion (Set.insert r rs)
-    r          \/ REUnion rs  = REUnion (Set.insert r rs)
-    r          \/ r'          = REUnion (Set.fromList [r, r'])
+    r \/ r' = unions [r, r']
 
 instance Ord c => BoundedJoinSemiLattice (RE c) where
     bottom = empty
 
 instance c ~ Char => IsString (RE c) where
     fromString = string
+
+instance (Ord c, Enum c, QC.Arbitrary c) => QC.Arbitrary (RE c) where
+    arbitrary = QC.sized arb where
+        c :: QC.Gen (RE c)
+        c = REChars . RSet.fromRangeList <$> QC.arbitrary
+
+        arb :: Int -> QC.Gen (RE c)
+        arb n | n <= 0    = QC.oneof [c, fmap char QC.arbitrary, pure eps]
+              | otherwise = QC.oneof
+            [ c
+            , pure eps
+            , fmap char QC.arbitrary
+            , liftA2 (<>) (arb n2) (arb n2)
+            , liftA2 (\/) (arb n2) (arb n2)
+            , fmap star (arb n2)
+            ]
+          where
+            n2 = n `div` 2
 
 -------------------------------------------------------------------------------
 -- JavaScript
@@ -190,17 +237,6 @@ toJS inputRe = showString "^" . go False inputRe . showString "$" $ "" where
     parens True  s = showString "(?:" . s . showChar ')'
     parens False s = s
 
--- TODO: escaping, ranges
-rsetToJS :: RSet Char -> ShowS
-rsetToJS cs
-    = showChar '['
-    . foldMap f (RSet.toRangeList cs)
-    . showChar ']'
-  where
-    f (a, b)
-      | a == b = showChar a
-      | otherwise = showChar a . showChar '-' . showChar b
-
 -------------------------------------------------------------------------------
 -- Doctest
 -------------------------------------------------------------------------------
@@ -208,3 +244,4 @@ rsetToJS cs
 -- $setup
 -- >>> data AB = A | B deriving (Eq, Ord, Show, Enum, Bounded)
 -- >>> import Data.Foldable (traverse_)
+-- >>> let asREChar :: RE Char -> RE Char; asREChar = id
