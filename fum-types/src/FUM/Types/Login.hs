@@ -20,7 +20,7 @@ import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Prelude
 import Kleene
-       (Kleene, kleeneCharRange, kleeneToRe)
+       (Kleene, kleeneCharRange, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
@@ -112,7 +112,7 @@ loginKleene = Login . T.pack <$> range 4 5 (kleeneCharRange 'a' 'z')
 -- * this is strict @[a-z]{4,5}@ regexp.
 --
 loginRegexp :: RE' Login
-loginRegexp = kleeneToRe loginKleene
+loginRegexp = kleeneToRA loginKleene
 
 -------------------------------------------------------------------------------
 -- Instances
