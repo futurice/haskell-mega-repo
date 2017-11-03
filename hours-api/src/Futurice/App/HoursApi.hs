@@ -87,7 +87,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 action :: IO ()
                 action = do
                     m <- getFumPlanmillMap
-                    runLogT "update-job" lgr $ logAttention "FUM users" $
+                    runLogT "update-job" lgr $ logInfo "FUM users" $
                         sort $ HM.keys m
                     atomically $ writeTVar fpmTVar m
 
