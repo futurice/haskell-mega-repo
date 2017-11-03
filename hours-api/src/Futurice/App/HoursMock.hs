@@ -22,12 +22,18 @@ import Futurice.App.HoursMock.Monad
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours mock api"
-    :<|> (\_        -> runHours ctx projectEndpoint)
+    :<|> v1Server ctx
+    :<|> pure []
+
+v1Server :: Ctx -> Server FutuhoursV1API
+v1Server ctx =
+         (\_        -> runHours ctx projectEndpoint)
     :<|> (\_        -> runHours ctx userEndpoint)
     :<|> (\_ a b    -> runHours ctx (hoursEndpoint a b))
     :<|> (\_ eu     -> runHours ctx (entryEndpoint eu))
     :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
+
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName            .~ "Futuhours MOCK api"
