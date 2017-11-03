@@ -7,11 +7,12 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi.API where
 
-import Prelude ()
 import Futurice.Prelude
 import Futurice.Servant (SSOUser)
+import Prelude ()
 import Servant
 
+import FUM.Types.Login             (Login)
 import Futurice.App.HoursApi.Types
 
 import qualified PlanMill as PM
@@ -26,6 +27,7 @@ type FutuhoursV1API =
 
 type FutuhoursAPI = Get '[JSON] Text
     :<|> "api" :> "v1" :> FutuhoursV1API
+    :<|> "debug" :> "users" :> Get '[JSON] [Login]
 
 futuhoursApi :: Proxy FutuhoursAPI
 futuhoursApi = Proxy

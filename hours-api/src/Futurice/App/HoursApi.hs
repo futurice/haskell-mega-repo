@@ -32,7 +32,16 @@ import qualified PlanMill.Worker     as PM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> (\mfum        -> authorisedUser ctx mfum "project" projectEndpoint)
+    :<|> v1Server ctx
+    :<|> debugUsers
+  where
+    debugUsers = liftIO $ do
+        pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
+        pure $ sort $ HM.keys pmData
+
+v1Server :: Ctx -> Server FutuhoursV1API
+v1Server ctx =
+         (\mfum        -> authorisedUser ctx mfum "project" projectEndpoint)
     :<|> (\mfum        -> authorisedUser ctx mfum "user"    userEndpoint)
     :<|> (\mfum a b    -> authorisedUser ctx mfum "hours"   (hoursEndpoint a b))
     :<|> (\mfum eu     -> authorisedUser ctx mfum "entry"   (entryEndpoint eu))
@@ -87,7 +96,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 action :: IO ()
                 action = do
                     m <- getFumPlanmillMap
-                    runLogT "update-job" lgr $ logAttention "FUM users" $
+                    runLogT "update-job" lgr $ logInfo "FUM users" $
                         sort $ HM.keys m
                     atomically $ writeTVar fpmTVar m
 

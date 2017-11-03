@@ -37,6 +37,7 @@ library
     , dynmap-cache
     , env-config
     , fum-client
+    , fum-types
     , futurice-foundation
     , futurice-integrations
     , futurice-metrics
