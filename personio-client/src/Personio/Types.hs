@@ -405,21 +405,22 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         -- should be an object
         attributeObjectMissing :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
         attributeObjectMissing attrName errMsg = do
-          attribute <- lift (parseAttribute obj attrName)
-          case attribute of
-              Array _ -> tell [errMsg] -- Should not be an array!
-              _       -> pure ()
+            attribute <- lift (parseAttribute obj attrName)
+            case attribute of
+                Array _ -> tell [errMsg] -- Should not be an array!
+                _       -> pure ()
 
         -- | Attribute should be fetchable with parseDynamicAttribute and error
         -- message should be a constant value
         dynamicAttributeMissing :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
         dynamicAttributeMissing attrName errMsg = do
-            attribute <- lift (parseDynamicAttribute obj attrName)
+            attribute <- lift $ optional $ parseDynamicAttribute obj attrName
             case attribute of
-                Null     -> tell [errMsg]
-                Array _  -> tell [errMsg]
-                String a -> checkAttributeName a errMsg
-                a        -> lift (typeMismatch (show attrName) a)
+                Nothing         -> tell [errMsg]
+                Just Null       -> tell [errMsg]
+                Just (Array _)  -> tell [errMsg]
+                Just (String a) -> checkAttributeName a errMsg
+                Just a          -> lift (typeMismatch (show attrName) a)
 
 {-
         phoneValidate :: Text -> (Text -> ValidationMessage) ->  WriterT [ValidationMessage] Parser ()
@@ -619,7 +620,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         salaryValidate :: WriterT [ValidationMessage] Parser ()
         salaryValidate = do
             monthlyS <- lift (parseDynamicAttribute obj "Monthly fixed salary 100%")
-            hourlyS <- lift (parseDynamicAttribute obj "Hourly salary x 100")
+            hourlyS <- lift (parseDynamicAttribute obj "Hourly salary")
             if xor (salarySet monthlyS) (salarySet hourlyS)
                 then pure ()
                 else tell [SalaryInvalid (msg monthlyS hourlyS)]
