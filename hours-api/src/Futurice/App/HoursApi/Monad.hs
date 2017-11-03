@@ -14,6 +14,7 @@ module Futurice.App.HoursApi.Monad (
 
 import Control.Lens              (Getting, filtered, firstOf, sumOf)
 import Data.Aeson.Compat         (FromJSON)
+import Data.Char                 (isSpace)
 import Data.Constraint
 import Data.Fixed                (Centi)
 import Data.List                 (maximumBy)
@@ -32,6 +33,7 @@ import Servant                   (Handler)
 import Futurice.App.HoursApi.Class
 import Futurice.App.HoursApi.Ctx
 
+import qualified Data.Text                   as T
 import qualified Futurice.App.HoursApi.Types as T
 import qualified Futurice.Time               as Time
 import qualified Haxl.Core                   as Haxl
@@ -151,7 +153,7 @@ newtype Wrapped a = Wrap { unwrap :: Either SomeException a }
 instance NFData a => NFData (Wrapped a) where
     rnf (Wrap (Right x))                = rnf x
     rnf (Wrap (Left (SomeException e))) = seq e ()
-    
+
 
 -------------------------------------------------------------------------------
 -- Instance
@@ -298,9 +300,21 @@ instance MonadHours Hours where
 -- Helpers
 -------------------------------------------------------------------------------
 
+-- | Preprocess comments:
+--
+-- * Convert 'isSpace' charters (etc. tabs, newlines) to ordinary spaces
+--
+-- * Trim output (strip leading and trailing spaces)
+--
+-- * If the comment is empty, use single dash: @-@.
+--
 nonEmptyComment :: Text -> Text
-nonEmptyComment ""   = "-"
-nonEmptyComment comm = comm
+nonEmptyComment comm = case T.strip (T.map spacesToSpace comm) of
+    comm' | T.null comm' -> "-"
+    comm'                -> comm'
+  where
+    spacesToSpace c | isSpace c = ' '
+    spacesToSpace c             = c
 
 convertTimereport :: PM.Timereport -> Hours Timereport
 convertTimereport tr = case PM.trProject tr of
