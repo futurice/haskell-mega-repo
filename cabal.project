@@ -71,3 +71,6 @@ package theme-app
 
 package planmill-client
   ghc-options: +RTS -M2G -RTS
+
+package reports-app
+  ghc-options: +RTS -M2G -RTS
