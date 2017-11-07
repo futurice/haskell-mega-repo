@@ -27,7 +27,7 @@ import Futurice.App.ProxyMgmt.Dashdo
 import Futurice.App.ProxyMgmt.Ctx
 
 server :: Ctx Identity -> Server ProxyMgmtAPI
-server ctx mfu = enter (NT nt) (runIdentity (ctxDashdoServer ctx))
+server ctx mfu = hoistServer (Proxy :: Proxy DashdoAPI) nt (runIdentity (ctxDashdoServer ctx))
   where
     -- Access control adding transformation
     nt :: Handler a -> Handler a

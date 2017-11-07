@@ -24,7 +24,7 @@ machineServer ctx = machineServer' ctx
     :<|> rawValidations ctx
 
 machineServer' :: Ctx -> Server FUMMachineAPI
-machineServer' ctx = enter (NT nt) $ traverse haxl
+machineServer' ctx = hoistServer fumMachineApi nt $ traverse haxl
     :<|> eg
   where
     nt :: Reader World a -> Handler a

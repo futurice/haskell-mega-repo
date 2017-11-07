@@ -21,7 +21,7 @@ dependencies:
   - diagrams-svg
   - file-embed
   - http-media     >=0.6.2
-  - servant        >=0.4.4.5  && <0.12
+  - servant        >=0.4.4.5  && <0.13
   - swagger2
   - svg-builder
   - SVGFonts
