@@ -52,7 +52,7 @@ library
     , lens
     , log-cloudwatch
     , periocron
-    , servant ==0.11.*
+    , servant ==0.12.*
     , servant-cassava
     , servant-lucid
     , servant-server

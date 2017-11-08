@@ -13,23 +13,24 @@ module Futurice.App.Proxy (
     defaultMain,
     ) where
 
-import Data.Aeson.Compat               (object, (.=))
-import Data.Maybe                      (isNothing)
-import Data.Pool                       (createPool, withResource)
-import Data.Reflection                 (Given (..), give)
-import Data.Text.Encoding              (decodeLatin1)
-import Futurice.Metrics.RateMeter      (mark)
+import Data.Aeson.Compat                    (object, (.=))
+import Data.Maybe                           (isNothing)
+import Data.Pool                            (createPool, withResource)
+import Data.Reflection                      (Given (..), give)
+import Data.Sequence                        ((<|))
+import Data.Text.Encoding                   (decodeLatin1)
+import Futurice.Metrics.RateMeter           (mark)
 import Futurice.Prelude
 import Futurice.Servant
-import Network.Wai                     (Request, rawPathInfo)
-import Network.Wai.Middleware.HttpAuth (basicAuth')
+import Network.Wai                          (Request, rawPathInfo)
+import Network.Wai.Middleware.HttpAuth      (basicAuth')
 import Prelude ()
 import Servant
-import Servant.Binary.Tagged           (BINARYTAGGED)
+import Servant.Binary.Tagged                (BINARYTAGGED)
 import Servant.Client
-import Servant.Common.Req              (Req (headers))
+import Servant.Client.Core.Internal.Request (RequestF (requestHeaders))
 import Servant.Proxy
-import Text.Regex.Applicative.Text     (RE', anySym, match, string)
+import Text.Regex.Applicative.Text          (RE', anySym, match, string)
 
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -196,13 +197,15 @@ proxyAPI = Proxy
 -- We use @reflection@ to 'give' 'FUM.AuthToken'.
 
 data WithFumAuthToken
-instance (Given FUM.AuthToken, HasClient api)
-    => HasClient (WithFumAuthToken :> api)
+instance (Given FUM.AuthToken, HasClient m api)
+    => HasClient m (WithFumAuthToken :> api)
   where
-    type Client (WithFumAuthToken :> api) = Client api
-    clientWithRoute _ req = clientWithRoute (Proxy :: Proxy api) req'
+    type Client m (WithFumAuthToken :> api) = Client m api
+    clientWithRoute m _ req = clientWithRoute m (Proxy :: Proxy api) req'
       where
-        req' = req { headers = ("Authorization", "Token " <> given ^. FUM.getAuthToken) : headers req }
+        req' = req
+            { requestHeaders = ("Authorization", "Token " <> encodeUtf8 (given ^. FUM.getAuthToken)) <| requestHeaders req
+            }
 
 -------------------------------------------------------------------------------
 -- WAI/startup

@@ -468,6 +468,9 @@ data SSOUser
 instance HasServer api context => HasServer (SSOUser :> api) context where
     type ServerT (SSOUser :> api) m = Maybe FUM.Login -> ServerT api m
 
+    hoistServerWithContext _ pc nt s =
+        hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+
     route Proxy context subserver =
         route (Proxy :: Proxy api) context (passToServer subserver ssoUser)
       where

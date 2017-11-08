@@ -42,8 +42,8 @@ import qualified Network.HTTP.Client as HTTP
 -- Servant API
 -------------------------------------------------------------------------------
 
-type FUMMachineAPI = "haxl" :> ReqBody '[JSON] [SomeFUM6] :> Post '[JSON] [SomeFUM6Response]
-    :<|> "groups" :> Capture "group-name" GroupName :> "employees" :> Get '[JSON] (Set Login)
+type FUMMachineAPI = "haxl" :> Summary "Haxl endpoint" :> ReqBody '[JSON] [SomeFUM6] :> Post '[JSON] [SomeFUM6Response]
+    :<|> "groups" :> Summary "Get group members" :> Capture "group-name" GroupName :> "employees" :> Get '[JSON] (Set Login)
 
 fumMachineApi :: Proxy FUMMachineAPI
 fumMachineApi = Proxy

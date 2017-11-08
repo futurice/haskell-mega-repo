@@ -25,6 +25,7 @@ library:
     - blaze-html
     - bytestring
     - cassava
+    - containers
     - env-config
     - fum-api
     - fum-client
@@ -49,7 +50,8 @@ library:
     - servant
     - servant-binary-tagged
     - servant-cassava
-    - servant-client >= 0.9
+    - servant-client
+    - servant-client-core
     - servant-lucid
     - servant-server
     - servant-swagger

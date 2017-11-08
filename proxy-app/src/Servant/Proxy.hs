@@ -82,8 +82,8 @@ class HasClientBaseurl a service where
 -- 'ClientEnv' paramater is taken tagged, so we don't mix them.
 makeProxy
     :: forall env public service private.
-       ( HasClient private
-       , Convertible (Client private) (ServerT public Handler)
+       ( HasClient ClientM private
+       , Convertible (Client ClientM private) (ServerT public Handler)
        , HasHttpManager env, HasClientBaseurl env service
        )
     => Proxy (ProxyPair public service private)
