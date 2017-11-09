@@ -254,4 +254,4 @@ missingHours ctx = do
 
 missingHoursRDashdo :: Ctx -> RDashdo IO
 missingHoursRDashdo  ctx =
-    RDashdo "mh" "Missing Hours" $ Dashdo params0 $ missingHours ctx
+    RDashdo "missing-hours" "Missing Hours" $ Dashdo params0 $ missingHours ctx

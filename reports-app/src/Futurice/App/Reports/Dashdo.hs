@@ -11,6 +11,7 @@ import Servant               (Server)
 import Futurice.App.Reports.BalancesDashdo
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.MissingHoursDashdo
+import Futurice.App.Reports.GithubReposDashdo
 
 type Ctx = (Cache, Manager, Logger, Config)
 
@@ -22,4 +23,5 @@ makeDashdoServer ctx = do
     dashdos =
         [ missingHoursRDashdo ctx
         , balancesRDashdo ctx
+        , githubReposRDashdo ctx
         ]
