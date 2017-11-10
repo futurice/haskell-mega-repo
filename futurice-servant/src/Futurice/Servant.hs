@@ -63,7 +63,9 @@ module Futurice.Servant (
 
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, swapTVar)
+import Control.Lens                         (each)
 import Control.Monad.Catch                  (fromException, handleAll)
+import Data.Char                            (isAscii, isControl)
 import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
@@ -393,8 +395,11 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                     & AWS.mdDimensions .~ [AWS.dimension "Service" service]
 
             -- Put.
-            let datums = datum1 : datum2 : datum3
+            let datums' = datum1 : datum2 : datum3
                        : cacheDatum : meterDatums
+            -- metric names can be only ASCII
+            let datums = datums'
+                    & traverse . AWS.mdMetricName . each %~ makeAscii
             let pmd = AWS.putMetricData (awsGroup <> "/RTS")
                     & AWS.pmdMetricData .~ datums
 
@@ -520,3 +525,12 @@ defaultPort = 8000
 
 defaultEkgPort :: Int
 defaultEkgPort = 9000
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+makeAscii :: Char -> Char
+makeAscii c
+    | isAscii c && not (isControl c) = c
+    | otherwise                      = '?'
