@@ -5,6 +5,9 @@ BUILD=$2
 
 STACK="stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check"
 
+CONCURRENCY=-j2
+if [ "$HC" = "ghc-8.0.2" ]; then CONCURRENCY=-j1; fi
+
 # Stack isn't compiled with -rtsopts
 #export GHCRTS="-M1.5G -A128M -n4m"
 
@@ -16,7 +19,7 @@ timed () {
         echo "Less than 10 minutes to go, aborting"
         exit 1
     else
-        timeout $JOB_DURR $*
+        timeout "$JOB_DURR" "$@"
     fi
 }
 
@@ -43,7 +46,7 @@ prepare)
         cabal --version
 
         cabal update -v
-        sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+        sed -i 's/^jobs:/-- jobs:/' "$HOME/.cabal/config"
         rm -fv cabal.project.local
         rm -fv cabal.project.freeze
         ;;
@@ -59,9 +62,9 @@ install)
 
     case $BUILD in
     stack)
-        timed $STACK build --test --only-snapshot -j2 --ghc-options=-j2 futurice-prelude
-        timed $STACK build --test --only-snapshot -j2 --ghc-options=-j2 servant-Chart
-        timed $STACK build --test --only-snapshot -j2 --ghc-options=-j2
+        timed "$STACK" build --test --only-snapshot -j2 --ghc-options=-j2 futurice-prelude
+        timed "$STACK" build --test --only-snapshot -j2 --ghc-options=-j2 servant-Chart
+        timed "$STACK" build --test --only-snapshot -j2 --ghc-options=-j2
         ;;
 
     cabal)
@@ -70,8 +73,8 @@ install)
         doctest --version
 
         # Install some stuff already in install phase
-        timed cabal new-build --enable-tests -j2 futurice-prelude
-        timed cabal new-build --enable-tests -j2 servant-Chart
+        timed cabal new-build --enable-tests $CONCURRENCY futurice-prelude
+        timed cabal new-build --enable-tests $CONCURRENCY servant-Chart
         ;;
 
     esac
@@ -85,11 +88,11 @@ build)
             STACKOPTS=--pedantic
         fi
 
-        timed $STACK build --test $STACKOPTS -j1 --ghc-options=-j2
+        timed "$STACK" build --test $STACKOPTS -j1 --ghc-options=-j2
         ;;
 
     cabal)
-        timed cabal new-build --enable-tests  -j2 all
+        timed cabal new-build --enable-tests  $CONCURRENCY all
         timed cabal new-test --enable-tests all
 
         # Run doctest on selected packages
