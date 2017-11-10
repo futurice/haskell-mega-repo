@@ -51,5 +51,5 @@ binaryTagTests = testGroup "BinaryTagged tags" $ map mk tags
         , BTTest "PlanMill.CapacityCalendars" (Proxy :: Proxy PM.CapacityCalendars)
             0 "1fde910b8a5fc395de41cf0cda34f17fe9d141cd"
         , BTTest "GitHub.SomeResponse" (Proxy :: Proxy GH.SomeResponse)
-            0 "e299b9ec4d641300444bd32e17148546c036a3a8"
+            0 "878a632b660c32fb9f126732f9809ba2ab2d0c7b"
         ]

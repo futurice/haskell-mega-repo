@@ -305,7 +305,7 @@ kindColors = cycle
 
 balancesRDashdo :: Ctx -> RDashdo IO
 balancesRDashdo  ctx =
-    RDashdo "balances" "Flex balances" $ Dashdo params0 $ balances ctx
+    RDashdo "balances" "Flex Balances" $ Dashdo params0 $ balances ctx
 
 balances :: Ctx -> SHtml IO Params ()
 balances ctx = do

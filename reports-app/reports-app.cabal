@@ -116,6 +116,7 @@ library
       Futurice.App.Reports.FumPersonio
       Futurice.App.Reports.FumPlanmill
       Futurice.App.Reports.GithubIssues
+      Futurice.App.Reports.GithubReposDashdo
       Futurice.App.Reports.GithubUsers
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
@@ -127,6 +128,7 @@ library
       Futurice.App.Reports.PowerUser
       Futurice.App.Reports.TimereportsByTask
       Futurice.App.Reports.UtzChart
+      Futurice.Vec
   default-language: Haskell2010
 
 executable reports-app-server
