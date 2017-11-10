@@ -13,12 +13,13 @@ import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
-import Futurice.App.FUM.Command.Server    (commandServer)
+import Futurice.App.FUM.Command.Server       (commandServer)
 import Futurice.App.FUM.Config
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Machine
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.Server
+import Futurice.App.FUM.Report.CompareOldFum
 import Futurice.App.FUM.Report.Validation
 
 import qualified Futurice.IdMap as IdMap
@@ -31,6 +32,7 @@ import qualified Personio
 server :: Ctx -> Server FumCarbonApi
 server ctx = pagesServer ctx
     :<|> validationReportImpl ctx
+    :<|> compareOldFumReportImpl ctx
     :<|> commandServer ctx
     :<|> machineServer ctx
 
@@ -40,6 +42,9 @@ server ctx = pagesServer ctx
 
 validationReportImpl :: Ctx -> Handler (HtmlPage "validation-report")
 validationReportImpl = liftIO . validationReport
+
+compareOldFumReportImpl :: Ctx -> Handler (HtmlPage "compare-old-fum-report")
+compareOldFumReportImpl = liftIO . compareOldFumReport
 
 -------------------------------------------------------------------------------
 -- Main
@@ -54,7 +59,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr _cache = do
+makeCtx cfg@Config {..} lgr _cache = do
     mgr <- newManager tlsManagerSettings
 
     -- employees
@@ -62,10 +67,7 @@ makeCtx Config {..} lgr _cache = do
     (employees, validations) <- fetchEmployees
 
     -- context
-    ctx <- newCtx
-        lgr
-        cfgMockUser
-        cfgPostgresConnInfo
+    ctx <- newCtx lgr mgr cfg
         (IdMap.fromFoldable employees)
         validations
 

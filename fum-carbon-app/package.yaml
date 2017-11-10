@@ -33,8 +33,10 @@ dependencies:
   - fail
   - flowdock-rest
   - fum-api
+  - fum-client # temporary
   - fum-types
   - futurice-foundation
+  - futurice-integrations
   - futurice-postgres
   - futurice-prelude
   - futurice-servant
@@ -71,6 +73,7 @@ dependencies:
   - stm
   - swagger2
   - text
+  - these
   - time
   - trifecta
   - unordered-containers

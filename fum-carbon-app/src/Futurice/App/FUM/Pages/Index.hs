@@ -22,6 +22,10 @@ indexPage auth _world _es = fumPage_ "FUM" auth $ do
 
     when (hasITRights auth) $ do
         subheader_ "IT Tasks"
-
         fullRow_ $
             futuLinkButton_ fromPersonioPageHref_ "Create employee"
+
+        subheader_ "Pages"
+        fullRow_ $ ul_ $ do
+            li_ $ a_ [ href_ "/reports/validations" ] "Personio validations"
+            li_ $ a_ [ href_ "/reports/compare-old-fum" ] "Compare old FUM5 and Personio"

@@ -3,6 +3,7 @@
 module Futurice.App.FUM.Ctx (
     Ctx (..),
     newCtx,
+    ctxMockUser,
     ) where
 
 import Control.Concurrent.MVar (MVar, newMVar)
@@ -10,7 +11,8 @@ import Control.Concurrent.STM  (TChan, TVar, newBroadcastTChanIO, newTVarIO)
 import Data.Pool               (Pool, createPool)
 import Futurice.CryptoRandom   (CryptoGen, mkCryptoGen)
 import Futurice.IdMap          (IdMap)
-import Futurice.Postgres       (HasPostgresPool (..), poolQuery_)
+import Futurice.Postgres
+       (HasPostgresPool (..), createPostgresPool, poolQuery_)
 import Futurice.Prelude
 import Futurice.Stricter       (StricterT, execStricterT)
 import Prelude ()
@@ -19,11 +21,13 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified Personio
 
 import Futurice.App.FUM.Command
+import Futurice.App.FUM.Config
 import Futurice.App.FUM.Types
 
 data Ctx = Ctx
     { ctxLogger              :: !Logger
-    , ctxMockUser            :: !(Maybe Login)
+    , ctxManager             :: !Manager
+    , ctxConfig              :: !Config
     , ctxPersonio            :: !(TVar (IdMap Personio.Employee))
     , ctxPersonioValidations :: !(TVar [Personio.EmployeeValidation])
     , ctxWorld               :: !(TVar World)
@@ -33,25 +37,28 @@ data Ctx = Ctx
     , ctxPRNGs               :: !(Pool (TVar CryptoGen))
     }
 
+ctxMockUser :: Ctx -> Maybe Login
+ctxMockUser = cfgMockUser . ctxConfig
+
 instance HasPostgresPool Ctx where
     postgresPool = ctxPostgres
 
 newCtx
     :: Logger
-    -> Maybe Login
-    -> Postgres.ConnectInfo
+    -> Manager
+    -> Config
     -> IdMap Personio.Employee
     -> [Personio.EmployeeValidation]
     -> IO Ctx
-newCtx logger mockUser ci es vs = do
-    pool <- createPool (Postgres.connect ci) Postgres.close 1 60 5
+newCtx lgr mgr cfg es vs = do
+    pool <- createPostgresPool $ cfgPostgresConnInfo cfg
     cmds <- poolQuery_ pool selectQuery
     w <- case execStricterT (applyCommands cmds) emptyWorld of
         Right w  -> pure w
         Left err -> do
-            runLogT "newCtx" logger $ logAttention_ $ view packed err
+            runLogT "newCtx" lgr $ logAttention_ $ view packed err
             fail err
-    Ctx logger mockUser
+    Ctx lgr mgr cfg
         <$> newTVarIO es
         <*> newTVarIO vs
         <*> newTVarIO w
