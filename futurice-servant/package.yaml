@@ -45,6 +45,7 @@ library:
     - http-types
     - lens
     - log-cloudwatch
+    - optparse-applicative
     - periocron
     - servant ==0.12.*
     - servant-cassava

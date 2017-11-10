@@ -42,7 +42,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName          .~ "Planmill Proxy"
     & serverDescription   .~ "Make faster queries to PlanMill"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp planmillProxyApi .~ server
     & serverEnvPfx        .~ "PLANMILLPROXY"
   where

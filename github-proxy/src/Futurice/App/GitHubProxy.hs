@@ -34,7 +34,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName          .~ "GitHub Proxy"
     & serverDescription   .~ "Make faster (and cached) queries to GitHub"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    & serverMiddleware    .~ liftFuturiceMiddleware logStdoutDev
     & serverApp githubProxyApi .~ server
     & serverEnvPfx        .~ "GITHUBPROXY"
   where

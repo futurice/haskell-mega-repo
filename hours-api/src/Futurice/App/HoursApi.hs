@@ -72,8 +72,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName            .~ "Futuhours API"
     & serverDescription     .~ "Here we mark hours"
     & serverApp futuhoursApi .~ server
-    -- TODO: remove this before going live:
-    & serverMiddleware      .~ liftFuturiceMiddleware logStdoutDev
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where

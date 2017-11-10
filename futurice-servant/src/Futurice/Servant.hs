@@ -12,7 +12,6 @@
 module Futurice.Servant (
     -- * @main@ boilerplate
     futuriceServerMain,
-    futuriceServerMain',
     futuriceNoMiddleware,
     liftFuturiceMiddleware,
     -- * HTML (lucid)
@@ -55,8 +54,6 @@ module Futurice.Servant (
     cachedIO,
     genCachedIO,
     CachePolicy(..),
-    -- * Middlewares
-    logStdoutDev,
     -- * Re-export
     Job,
     ) where
@@ -66,7 +63,6 @@ import Control.Concurrent.STM
 import Control.Lens                         (each)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAscii, isControl)
-import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
 import Data.Time                            (addUTCTime)
@@ -105,6 +101,7 @@ import qualified GHC.Stats                 as Stats
 import qualified Network.HTTP.Types        as H
 import qualified Network.HTTP.Types.Status as HTTP
 import qualified Network.Wai.Handler.Warp  as Warp
+import qualified Options.Applicative as O
 
 import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
@@ -207,6 +204,25 @@ serverColour
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
+args :: O.Parser (Bool, Middleware)
+args = (,)
+    <$> (printEnv <|> pure False)
+    <*> (middleware <|> pure id)
+  where
+    printEnv = O.flag' True $ mconcat
+        [ O.long "help-env-config"
+        , O.help "Show env-config help, and quit"
+        ]
+
+    middleware = O.flag' (logStdoutDev . m) $ mconcat
+        [ O.long "middleware-log-stdout"
+        , O.help "Add development request logger middleware."
+        ]
+
+    m app req res = do
+        print req
+        app req res
+
 futuriceServerMain
     :: forall cfg ctx api colour.
        (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
@@ -215,50 +231,44 @@ futuriceServerMain
     -> ServerConfig I colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain = futuriceServerMain' (\_ -> Dict)
-
-futuriceServerMain'
-    :: forall cfg ctx api colour.
-       (Configure cfg, HasSwagger api, SColour colour)
-    => (ctx -> Dict (HasServer api '[]))
-    -> (cfg -> Logger -> Cache -> IO (ctx, [Job]))
-       -- ^ Initialise the context for application, add periocron jobs
-    -> ServerConfig I colour ctx api
-       -- ^ Server configuration
-    -> IO ()
-futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
-    withStderrLogger $ \logger ->
-    handleAll (handler logger) $ do
-        cfg <- runLogT "futurice-servant" logger $ do
-            logInfo_ $ "Hello, " <> t <> " is alive"
-            getConfigWithPorts (envpfx ^. from packed)
-
-        cache       <- newCache
-
-        let awsGroup = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
-        let service  = t
-
-        menv <- for (_cfgCloudWatchCreds cfg) $ \awsCreds -> do
-            env' <- AWS.newEnv awsCreds
-            return $ env'
-                & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
-
-        let main' = main cfg menv service cache
-
-        case menv of
-            Nothing -> main' logger
-            Just env -> do
-                createCloudWatchLogStream env awsGroup service
-                withCloudWatchLogger env awsGroup service $ \leLogger -> main' $
-                    if fromMaybe True (_cfgStderrLogger cfg)
-                    then (logger <> leLogger)
-                    else leLogger
-
+futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx)) = do
+    (_showEnvConvig, middleware2) <- O.execParser $ O.info (O.helper <*> args) $ mconcat
+        [ O.fullDesc
+        , O.progDesc "foo"
+        ]
+    main1 (\ctx -> middleware1 ctx . middleware2)
   where
-    main (Cfg cfg p _ekgP mgroup _ _) menv service cache logger = do
+    main1 :: (ctx -> Middleware) -> IO ()
+    main1 middleware = withStderrLogger $ \logger ->
+        handleAll (handler logger) $ do
+            cfg <- runLogT "futurice-servant" logger $ do
+                logInfo_ $ "Hello, " <> t <> " is alive"
+                getConfigWithPorts (envpfx ^. from packed)
+
+            cache       <- newCache
+
+            let awsGroup = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
+            let service  = t
+
+            menv <- for (_cfgCloudWatchCreds cfg) $ \awsCreds -> do
+                env' <- AWS.newEnv awsCreds
+                return $ env'
+                    & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
+
+            let main' = main2 middleware cfg menv service cache
+
+            case menv of
+                Nothing -> main' logger
+                Just env -> do
+                    createCloudWatchLogStream env awsGroup service
+                    withCloudWatchLogger env awsGroup service $ \leLogger -> main' $
+                        if fromMaybe True (_cfgStderrLogger cfg)
+                        then (logger <> leLogger)
+                        else leLogger
+
+    main2 :: (ctx -> Middleware) -> Cfg cfg -> Maybe AWS.Env -> Text -> Cache -> Logger -> IO ()
+    main2 middleware (Cfg cfg p _ekgP mgroup _ _) menv service cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
-        -- brings 'HasServer' instance into a scope
-        Dict           <- pure $ makeDict ctx
         let server'    =  futuriceServer t d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
