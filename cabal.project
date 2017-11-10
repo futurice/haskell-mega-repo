@@ -73,3 +73,9 @@ package planmill-client
 
 package reports-app
   ghc-options: +RTS -M2G -RTS
+
+package fum-carbon-app
+  ghc-options: +RTS -M2G -RTS
+
+package checklist-app
+  ghc-options: +RTS -M2G -RTS
