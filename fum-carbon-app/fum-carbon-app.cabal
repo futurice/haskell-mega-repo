@@ -48,8 +48,10 @@ library
     , fail
     , flowdock-rest
     , fum-api
+    , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
@@ -86,6 +88,7 @@ library
     , stm
     , swagger2
     , text
+    , these
     , time
     , trifecta
     , unordered-containers
@@ -134,6 +137,7 @@ library
       Futurice.App.FUM.Pages.Summary
       Futurice.App.FUM.Pages.ViewEmployee
       Futurice.App.FUM.Pages.ViewGroup
+      Futurice.App.FUM.Report.CompareOldFum
       Futurice.App.FUM.Report.Validation
       Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
@@ -180,8 +184,10 @@ executable fum-carbon-server
     , fail
     , flowdock-rest
     , fum-api
+    , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
@@ -218,6 +224,7 @@ executable fum-carbon-server
     , stm
     , swagger2
     , text
+    , these
     , time
     , trifecta
     , unordered-containers
@@ -257,8 +264,10 @@ test-suite unit-tests
     , fail
     , flowdock-rest
     , fum-api
+    , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
@@ -295,6 +304,7 @@ test-suite unit-tests
     , stm
     , swagger2
     , text
+    , these
     , time
     , trifecta
     , unordered-containers

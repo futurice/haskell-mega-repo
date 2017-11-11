@@ -46,6 +46,7 @@ before_cache:
 
 before_install:
 # We use compiler: to tag caches
+- export HC=$CC
 - unset CC
 # job starting moment
 - export JOB_START_TIME=$(date +%s)

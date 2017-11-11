@@ -23,6 +23,7 @@ import qualified Personio
 type FumCarbonApi = FumCarbonPagesApi
     -- reports
     :<|> "reports" :> "validations" :> Get '[HTML] (HtmlPage "validation-report")
+    :<|> "reports" :> "compare-old-fum" :> Get '[HTML] (HtmlPage "compare-old-fum-report")
     -- commands
     :<|> "commands" :> FumCarbonCommandApi
     -- machine api

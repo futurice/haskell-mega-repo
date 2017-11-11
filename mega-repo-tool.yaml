@@ -36,6 +36,9 @@ apps:
   prox:
     docker: proxy-app
     executable: proxy-app-server
+  prox-mgmt:
+    docker: proxy-mgmt-app
+    executable: proxy-mgmt-app-server
   reports:
     docker: reports-app
     executable: reports-app-server
