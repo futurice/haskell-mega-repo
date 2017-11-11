@@ -36,4 +36,4 @@ dotScript = () <$ pipe ""
   where
     pipe = readProcess "stack" ["dot"]
         >=> readProcess "tred" []
-        >=> readProcess "dot" ["-Tpng", "-o", "deps.png" ]
+        >=> readProcess "sfdp" ["-Tpng", "-o", "deps.png" ]
