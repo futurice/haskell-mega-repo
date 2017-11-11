@@ -34,6 +34,6 @@ packdepsScript = do
 dotScript :: IO ()
 dotScript = () <$ pipe ""
   where
-    pipe = readProcess "stack" ["dot"]
+    pipe = readProcess "cabal-plan" ["dot", "--hide-builtin", "--hide-global"]
         >=> readProcess "tred" []
-        >=> readProcess "sfdp" ["-Tpng", "-o", "deps.png" ]
+        >=> readProcess "dot" ["-Tpng", "-o", "deps.png" ]
