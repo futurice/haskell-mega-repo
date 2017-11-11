@@ -15,6 +15,7 @@ dependencies:
   - base-compat
   - aeson
   - aeson-pretty
+  - algebraic-graphs
   - ansi-pretty
   - base64-bytestring
   - bifunctors
@@ -70,9 +71,10 @@ dependencies:
   - resource-pool
   - semigroups
   - servant
-  - servant-dashdo
+  - servant-algebraic-graphs
   - servant-cassava ==0.9.*
   - servant-Chart
+  - servant-dashdo
   - servant-lucid
   - servant-server
   - SHA

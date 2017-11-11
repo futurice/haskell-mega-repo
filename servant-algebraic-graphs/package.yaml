@@ -1,0 +1,29 @@
+name: servant-algebraic-graphs
+version: "0"
+synopsis: Servant support for algebraic-graphs
+description: Servant support for algebraic-graphs, uses graphviz to render them.
+author: Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
+license: BSD3
+github: phadej/servant-algebraic-graphs
+category: Web
+tested-with: GHC==8.0.2, GHC==8.2.1
+extra-source-files:
+- README.md
+
+ghc-options: -Wall
+
+dependencies:
+  - algebraic-graphs
+  - base           >=4.9   && <4.11
+  - bytestring
+  - deepseq
+  - http-media     >=0.6.2
+  - process-extras
+  - servant        >=0.12  && <0.13
+  - swagger2
+  - text
+
+library:
+  source-dirs: src
+  other-modules: []

@@ -29,18 +29,19 @@ import Numeric.Interval.NonEmpty  ((...))
 import Prelude ()
 import Servant
 import Servant.Chart              (Chart (..))
+import Servant.Graph              (Graph (..))
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text            as T
 import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
-import Futurice.App.Reports.Balances           (BalanceReport, balanceReport)
+import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
 import Futurice.App.Reports.Config
+import Futurice.App.Reports.Dashdo            (makeDashdoServer)
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
-import Futurice.App.Reports.FumGithub
-       (FumGitHubReport, fumGithubReport)
+import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
 import Futurice.App.Reports.FumPersonio
        (FumPersonioReport, fumPersonioReport)
 import Futurice.App.Reports.FumPlanmill
@@ -54,18 +55,17 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
-import Futurice.App.Reports.Dashdo (makeDashdoServer)
 import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
-import Futurice.App.Reports.PowerUser
-       (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.SupervisorsGraph  (supervisorsGraph)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
-import Futurice.App.Reports.UtzChart           (utzChartData, utzChartRender)
+import Futurice.App.Reports.UtzChart          (utzChartData, utzChartRender)
 
 -- /TODO/ Make proper type
 type Ctx = (Cache, Manager, Logger, Config, Server DashdoAPI)
@@ -189,6 +189,13 @@ serveChart f g ctx = do
     v <- cachedIO' ctx () $ runIntegrations' ctx f
     pure (g v)
 
+serveGraph
+    :: (Typeable key, KnownSymbol key)
+    => Integrations I I Proxy I I I (Graph key)
+    -> Ctx
+    -> IO (Graph key)
+serveGraph m ctx = cachedIO' ctx () $ runIntegrations' ctx m
+
 -- TODO: introduce "HasMissingHoursContracts"?
 missingHoursChartData'
     :: Ctx
@@ -217,6 +224,7 @@ server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
+    :<|> liftIO (serveGraph supervisorsGraph ctx)
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx

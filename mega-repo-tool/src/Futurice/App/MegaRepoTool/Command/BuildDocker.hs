@@ -5,11 +5,14 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
     AppName,
     ) where
 
-import Data.Aeson       (FromJSON (..), withObject, (.:), (.=), withText, object)
+import Data.Aeson
+       (FromJSON (..), object, withObject, withText, (.:), (.=))
 import Data.Yaml        (decodeFileEither)
 import Futurice.Prelude
 import Prelude ()
+import System.Directory (copyFile)
 import System.Exit      (exitFailure)
+import System.FilePath  ((</>))
 import System.IO        (hClose, hFlush)
 import System.IO.Temp   (withTempFile)
 import System.Process   (callProcess, readProcess)
@@ -122,8 +125,18 @@ buildDocker appnames = do
     images <- ifor apps $ \appname (ImageDefinition image exe) -> do
         -- Write Dockerfile
         dockerfile <- makeDockerfile exe cfg
-        let directory = "build/" <> exe ^. unpacked
+        T.putStrLn dockerfile
+        let directory = "build" </> exe ^. unpacked
         withTempFile directory "Dockerfile." $ \fp handle -> do
+            -- Because of
+            -- https://bugs.launchpad.net/ubuntu/+source/graphviz/+bug/1409280
+            -- we have own sfdp
+            --
+            -- To compile own use sfdp
+            -- /configure --prefix=/opt/graphviz --with-gtk=no --with-glade=no --with-glut=no --with-gts=yes --with-smyrna=no --with-pangocairo=yes --enable-static --disable-shared
+            copyFile "vendor/sfdp" (directory </> "sfdp")
+
+            -- write dockerfile
             T.hPutStrLn handle dockerfile
             hFlush handle
             hClose handle
@@ -139,7 +152,7 @@ buildDocker appnames = do
     for_ images $ \(_, image, _) ->
         T.putStrLn $ "  docker push " <> image
 
-    T.putStrLn "Deploy iamges by:"
+    T.putStrLn "Deploy images by:"
     for_ images $ \(appname, _, image) ->
         T.putStrLn $ "  futuswarm app:deploy"
             <> " --name " <> appname
@@ -157,7 +170,7 @@ makeDockerfile exe cfg = do
         [ "debs" .= debs
         , "exe" .= exe
         ]
-    
+
 
 onIOError :: Monad m => a -> IOError -> m a
 onIOError v _ = return v
