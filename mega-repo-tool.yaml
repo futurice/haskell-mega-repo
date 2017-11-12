@@ -66,6 +66,7 @@ dockerfile-template: |
   WORKDIR /app
   RUN chown -R app:app /app
   USER app
+  ADD sfdp /usr/local/bin
   ADD {{exe}} /app
   CMD ["/app/{{exe}}", "+RTS", "-N4", "-A32m", "-T", "-qg", "-I0"]
 # "-i100", "-hd" -- profiling
@@ -74,8 +75,11 @@ dockerfile-template: |
 debs:
 - ca-certificates
 - curl
+- libcairo2
 - libfftw3-bin
 - libgmp10
+- libgts-bin
+- libpango1.0
 - libpq5
 - netbase
 - openssh-client

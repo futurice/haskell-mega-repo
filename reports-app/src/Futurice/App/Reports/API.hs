@@ -16,7 +16,8 @@ import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Prelude ()
 import Servant
-import Servant.Chart             (Chart (..), SVG)
+import Servant.Chart             (Chart, SVG)
+import Servant.Graph             (Graph, ALGA)
 
 import Futurice.App.Reports.Balances          (BalanceReport)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
@@ -78,6 +79,8 @@ type ReportsAPI = FoldReportsAPI Reports
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
+    -- Graphs
+    :<|> "graphs" :> "supervisors" :> Get '[ALGA] (Graph "supervisors")
     -- Additional non-reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport

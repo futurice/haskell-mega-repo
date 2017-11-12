@@ -40,8 +40,10 @@ library
     , case-insensitive
     , containers
     , crypto-api
+    , directory
     , entropy
     , exceptions
+    , filepath
     , futurice-prelude
     , http-client
     , http-client-tls

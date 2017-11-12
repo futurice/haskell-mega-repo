@@ -52,9 +52,10 @@ packages:
   proxy-app/
   proxy-mgmt-app/
   reports-app/
-  servant-dashdo/
-  servant-Chart/
+  servant-algebraic-graphs/
   servant-binary-tagged/
+  servant-Chart/
+  servant-dashdo/
   smileys-app/
   sms-proxy/
   tajna/
