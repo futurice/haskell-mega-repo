@@ -19,6 +19,8 @@ module Network.Arcola (
     defaultSettings,
     -- * Connection
     Connection (..),
+    connLazyRead,
+    connLazySendAll,
     ) where
 
 import Control.Concurrent              (forkIOWithUnmask)
@@ -59,17 +61,8 @@ type Application = Connection -> IO ()
 -- | Converts a lazy 'LBS.ByteString' endomorphism into an 'Application'.
 lazyIOApplication :: (LBS.ByteString -> LBS.ByteString) -> Application
 lazyIOApplication f conn = do
-    lbs <- lazyRead
-    traverse_ (connSendAll conn) (LBS.toChunks (f lbs))
-  where
-    lazyRead = unsafeInterleaveIO loop
-    loop = do
-        c <- connRecv conn -- only blocks if there is no data available
-        if BS.null c
-        then connClose conn >> return LBSI.Empty
-        else do
-            cs <- lazyRead
-            return (LBSI.Chunk c cs)
+    lbs <- connLazyRead conn
+    connLazySendAll conn (f lbs)
 
 -------------------------------------------------------------------------------
 -- Run
@@ -145,6 +138,23 @@ data Connection = Connection
     , connRecv        :: IO ByteString
     -- ^ The connection receiving function. This returns "" for EOF.
     }
+
+-- | Lazily read the whole input from 'Connection' into lazy 'LBS.ByteString'.
+connLazyRead :: Connection -> IO LBS.ByteString
+connLazyRead conn = lazyRead
+  where
+    lazyRead = unsafeInterleaveIO loop
+    loop = do
+        c <- connRecv conn -- only blocks if there is no data available
+        if BS.null c
+        then connClose conn >> return LBSI.Empty
+        else do
+            cs <- lazyRead
+            return (LBSI.Chunk c cs)
+
+-- | Send all lazy 'LBS.ByteString' chunks one by one.
+connLazySendAll :: Connection -> LBS.ByteString -> IO ()
+connLazySendAll conn lbs = traverse_ (connSendAll conn) (LBS.toChunks lbs)
 
 socketConnection :: Socket -> Connection
 socketConnection s = Connection
