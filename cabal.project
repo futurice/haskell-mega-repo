@@ -10,6 +10,7 @@ constraints:
 
 packages:
   ansi-pretty/
+  arcola/
   avatar-app/
   checklist-app/
   contacts-api/
