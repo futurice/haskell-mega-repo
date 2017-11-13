@@ -15,8 +15,17 @@ module Network.Arcola (
     runSettings,
     Port,
     -- * Settings
-    Settings (..),
+    Settings,
     defaultSettings,
+    -- ** Lenses
+    settingsPort,
+    settingsHost,
+    settingsOnException,
+    settingsOnOpen,
+    settingsOnClose,
+    settingsBeforeMainLoop,
+    settingsFork,
+    Fork (..),
     -- * Connection
     Connection (..),
     connLazyRead,
@@ -48,8 +57,6 @@ import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as LBS
 import qualified Data.ByteString.Lazy.Internal as LBSI
 
-type Port = Int
-
 -------------------------------------------------------------------------------
 -- Application
 -------------------------------------------------------------------------------
@@ -70,12 +77,12 @@ lazyIOApplication f conn = do
 
 -- | Run 'Application' with 'defaultSettings'.
 run :: Port -> Application -> IO ()
-run p = runSettings defaultSettings { settingsPort = p }
+run p = runSettings defaultSettings { _settingsPort = p }
 
 -- | Run 'Application' with 'Settings'.
 runSettings :: Settings -> Application -> IO ()
 runSettings set app = withSocketsDo $ bracket
-    (bindPortTCP (settingsPort set) (settingsHost set))
+    (bindPortTCP (_settingsPort set) (_settingsHost set))
     close
     (\socket -> runSettingsSocket set socket app)
 
@@ -83,45 +90,91 @@ runSettings set app = withSocketsDo $ bracket
 -- Settings
 -------------------------------------------------------------------------------
 
--- | Various Arcola settings.
---
--- TODO: make abstract, add lenses.
-data Settings = Settings
-    { settingsPort :: Port -- ^ Port to listen on. Default value: 3000
-    , settingsHost :: HostPreference -- ^ Default value: HostIPv4
-    , settingsOnException :: SomeException -> IO () -- ^ What to do with exceptions thrown by either the application or server. Default: ignore server-generated exceptions (see 'InvalidRequest') and print application-generated applications to stderr.
-    , settingsOnOpen :: SockAddr -> IO Bool -- ^ What to do when a connection is open. When 'False' is returned, the connection is closed immediately. Otherwise, the connection is going on. Default: always returns 'True'.
-    , settingsOnClose :: SockAddr -> IO ()  -- ^ What to do when a connection is close. Default: do nothing.
-    , settingsBeforeMainLoop :: IO ()
-      -- ^ Code to run after the listening socket is ready but before entering
-      -- the main event loop. Useful for signaling to tests that they can start
-      -- running, or to drop permissions after binding to a restricted port.
-      --
-      -- Default: do nothing.
+-- | TCP port number.
+type Port = Int
 
-    , settingsFork :: ((forall a. IO a -> IO a) -> IO ()) -> IO ()
-      -- ^ Code to fork a new thread to accept a connection.
-      --
-      -- This may be useful if you need OS bound threads, or if
-      -- you wish to develop an alternative threading model.
-      --
-      -- Default: @void . forkIOWithUnmask@
+-- | Various Arcola settings.
+data Settings = Settings
+    { _settingsPort           :: Port
+    , _settingsHost           :: HostPreference
+    , _settingsOnException    :: SomeException -> IO ()
+    , _settingsOnOpen         :: SockAddr -> IO Bool
+    , _settingsOnClose        :: SockAddr -> IO ()
+    , _settingsBeforeMainLoop :: IO ()
+    , _settingsFork           :: ((forall a. IO a -> IO a) -> IO ()) -> IO ()
     }
 
 -- |  The default settings for the Arcola server.
 defaultSettings :: Settings
 defaultSettings = Settings
-    { settingsPort = 9999
-    , settingsHost = HostIPv4
-    , settingsOnException = hPutStrLn stderr . displayException
-    , settingsOnOpen = \_ -> return True
-    , settingsOnClose = \_ -> return ()
-    , settingsBeforeMainLoop = return ()
-    , settingsFork = defaultSettingsFork
+    { _settingsPort           = 9999
+    , _settingsHost           = HostIPv4
+    , _settingsOnException    = hPutStrLn stderr . displayException
+    , _settingsOnOpen         = \_ -> return True
+    , _settingsOnClose        = \_ -> return ()
+    , _settingsBeforeMainLoop = return ()
+    , _settingsFork           = defaultSettingsFork
     }
   where
     defaultSettingsFork :: ((forall a. IO a -> IO a) -> IO ()) -> IO ()
     defaultSettingsFork f = void (forkIOWithUnmask f)
+
+-------------------------------------------------------------------------------
+-- Settings lenses
+-------------------------------------------------------------------------------
+
+type Lens' s a = forall f. Functor f =>  (a -> f a) -> s -> f s
+
+-- | Port to listen on. Default value: 9999
+settingsPort :: Lens' Settings Port
+settingsPort f s = fmap (\x -> s { _settingsPort = x }) (f (_settingsPort s))
+{-# INLINE settingsPort #-}
+
+-- | Default value: 'HostIPv4'
+settingsHost :: Lens' Settings HostPreference
+settingsHost f s = fmap (\x -> s { _settingsHost = x }) (f (_settingsHost s))
+{-# INLINE settingsHost #-}
+
+-- | What to do with exceptions thrown by either the application or server. Default: ignore server-generated exceptions (see 'InvalidRequest') and print application-generated applications to stderr.
+settingsOnException :: Lens' Settings (SomeException -> IO ())
+settingsOnException f s = fmap (\x -> s { _settingsOnException = x }) (f (_settingsOnException s))
+{-# INLINE settingsOnException #-}
+
+-- | What to do when a connection is open.
+--
+-- When 'False' is returned, the connection is closed immediately.
+-- Otherwise, the connection is going on.
+--
+-- Default: always returns 'True'.
+settingsOnOpen :: Lens' Settings (SockAddr -> IO Bool)
+settingsOnOpen f s = fmap (\x -> s { _settingsOnOpen = x }) (f (_settingsOnOpen s))
+{-# INLINE settingsOnOpen #-}
+
+-- | What to do when a connection is close. Default: do nothing.
+settingsOnClose :: Lens' Settings (SockAddr -> IO ())
+settingsOnClose f s = fmap (\x -> s { _settingsOnClose = x }) (f (_settingsOnClose s))
+{-# INLINE settingsOnClose #-}
+      
+-- | Code to run after the listening socket is ready but before entering
+-- the main event loop. Useful for signaling to tests that they can start
+-- running, or to drop permissions after binding to a restricted port.
+--
+-- Default: do nothing.
+settingsBeforeMainLoop :: Lens' Settings (IO ())
+settingsBeforeMainLoop f s = fmap (\x -> s { _settingsBeforeMainLoop = x }) (f (_settingsBeforeMainLoop s))
+{-# INLINE settingsBeforeMainLoop #-}
+      
+-- | Code to fork a new thread to accept a connection.
+--
+-- This may be useful if you need OS bound threads, or if
+-- you wish to develop an alternative threading model.
+--
+-- Default: @void . forkIOWithUnmask@
+settingsFork :: Lens' Settings Fork
+settingsFork f s = fmap (\x -> s { _settingsFork = runFork x }) (f (Fork (_settingsFork s)))
+
+-- | A newtype wrapper around polymorphic @fork@ type to avoid @ImpredicativeTypes@.
+newtype Fork = Fork { runFork :: ((forall a. IO a -> IO a) -> IO ()) -> IO () }
 
 -------------------------------------------------------------------------------
 -- Connection
@@ -185,7 +238,7 @@ runSettingsSocket set socket app = do
 
 runSettingsConnection :: Settings -> IO (Connection, SockAddr) -> Application -> IO ()
 runSettingsConnection set getConn app = do
-    settingsBeforeMainLoop set
+    _settingsBeforeMainLoop set
     void $ mask_ acceptLoop
   where
     acceptLoop = do
@@ -211,14 +264,14 @@ runSettingsConnection set getConn app = do
                 if ioe_errno e == Just eConnAborted
                     then acceptNewConnection
                     else do
-                        settingsOnException set $ toException e
+                        _settingsOnException set $ toException e
                         return Nothing
 
 fork :: Settings -> Connection -> SockAddr -> Application -> IO ()
-fork set conn addr app = settingsFork set $ \unmask ->
+fork set conn addr app = _settingsFork set $ \unmask ->
     -- Call the user-supplied on exception code if any
     -- exceptions are thrown.
-    handle (settingsOnException set) $ finally (serve unmask) (connClose conn)
+    handle (_settingsOnException set) $ finally (serve unmask) (connClose conn)
   where
     -- We need to register a timeout handler for this thread, and
     -- cancel that handler as soon as we exit. We additionally close
@@ -232,8 +285,8 @@ fork set conn addr app = settingsFork set $ \unmask ->
            -- above ensures the connection is closed.
            when goingon $ serveConnection conn addr set app
 
-    onOpen = settingsOnOpen  set addr
-    onClose _ = settingsOnClose set addr
+    onOpen = _settingsOnOpen  set addr
+    onClose _ = _settingsOnClose set addr
 
 serveConnection :: Connection -> SockAddr -> Settings -> Application -> IO ()
 serveConnection conn _addr _set app = app conn
