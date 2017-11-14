@@ -3,8 +3,10 @@ module Neleus (
     module Neleus.Types,
     module Neleus.Decode,
     module Neleus.Encode,
+    module Neleus.DER,
     ) where
 
 import Neleus.Decode
 import Neleus.Encode
 import Neleus.Types
+import Neleus.DER

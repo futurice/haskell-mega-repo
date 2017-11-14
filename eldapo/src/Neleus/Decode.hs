@@ -2,7 +2,10 @@
 -- | Decoding according to Basic Endcoding Rules (BER).
 --
 -- See <https://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf ITU-T Recommendation X.690>.
-module Neleus.Decode where
+module Neleus.Decode (
+    decodeLazy,
+    decodeManyStrict,
+    ) where
 
 -- TODO:
 
@@ -10,18 +13,32 @@ import Data.Bits ((.&.))
 import Data.Int  (Int8)
 import Data.List (foldl')
 
-import qualified Data.Attoparsec.ByteString as A
-import qualified Data.ByteString            as BS
+import qualified Data.Attoparsec.ByteString      as A
+import qualified Data.Attoparsec.ByteString.Lazy as AL
+import qualified Data.ByteString                 as BS
+import qualified Data.ByteString.Lazy            as LBS
 
 import Neleus.Types
 
+-- temporarily qualified
+import qualified Neleus.Parser as P
+
 import Debug.Trace
 
-asn1P :: A.Parser ASN1
-asn1P = do
+decodeLazy :: LBS.ByteString -> Either String (ASN1, LBS.ByteString)
+decodeLazy lbs = case AL.parse asn1Parser lbs of
+    AL.Fail _ _ err -> Left err
+    AL.Done lbs' x  -> Right (x, lbs')
+
+decodeManyStrict :: BS.ByteString -> Either String [ASN1]
+decodeManyStrict = A.parseOnly (A.manyTill asn1Parser A.endOfInput)
+
+asn1Parser :: A.Parser ASN1
+asn1Parser = do
     -- identifier octets
     hdr@(Identifier cls pc tag) <- identifierParser
     -- length octets
+    --
     len <- lengthParser
     -- content octets
     case cls of
@@ -73,7 +90,7 @@ asn1P = do
                 requireConstructed pc
                 l <- requireFinite len
                 bs <- A.take l
-                xs <- either fail pure $ A.parseOnly (A.manyTill asn1P A.endOfInput) bs
+                xs <- either fail pure $ decodeManyStrict bs
                 pure $ Sequence xs
 
             _ -> do
@@ -104,9 +121,8 @@ asn1BSP pc len = do
     l <- requireFinite len
     bs <- A.take l
     case pc of
-        Primitive -> pure $ BS bs
-        Constructed -> either fail (pure . Val) $
-            A.parseOnly (A.manyTill asn1P A.endOfInput) bs
+        Primitive   -> pure $ BS bs
+        Constructed -> either fail (pure . Val) $ decodeManyStrict bs
 
 -------------------------------------------------------------------------------
 -- 8.3 Encoding of an integer value

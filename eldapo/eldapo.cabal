@@ -26,12 +26,17 @@ library
     Neleus.Types
     Neleus.Decode
     Neleus.Encode
+    Neleus.DER
+    Neleus.Integer
+    Neleus.Parser
   build-depends:
     base,
+    arcola,
+    semigroupoids,
+    attoparsec,
     base16-bytestring,
     bytestring,
-    attoparsec,
-    arcola
+    recursion-schemes
 executable eldapo
   default-language:    Haskell2010
   ghc-options:         -Wall

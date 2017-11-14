@@ -78,11 +78,6 @@ integerB i
     | -128 <= i && i <= 127 = B 1 (B.int8 (fromInteger i))
     | otherwise = error "big integer"
 
-{-
-toIntegerChunks :: Integer -> (Int8, [Word8])
-fromIntegerChunks :: (Int8, [Word8]) -> Integer
--}
-
 -------------------------------------------------------------------------------
 -- Identifier
 -------------------------------------------------------------------------------
