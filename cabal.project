@@ -15,6 +15,7 @@ packages:
   checklist-app/
   contacts-api/
   dynmap-cache/
+  eldapo/
   email-proxy/
   env-config/
   favicon-app/
