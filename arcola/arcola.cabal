@@ -14,6 +14,7 @@ cabal-version:       >=1.10
 
 library
   default-language:    Haskell2010
+  ghc-options:         -Wall
   hs-source-dirs:      src
   exposed-modules:     Network.Arcola
   build-depends:
@@ -24,6 +25,7 @@ library
 
 executable arcola-echo
   default-language:    Haskell2010
+  ghc-options:         -Wall
   hs-source-dirs:      echo
   main-is:             Main.hs
   build-depends:
