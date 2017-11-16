@@ -15,6 +15,7 @@ import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Types
 import Futurice.FUM.MachineAPI
 
+import qualified Futurice.App.FUM.Types.ScheduleEmployee as S
 import qualified Personio
 
 machineServer :: Ctx -> Server FumCarbonMachineApi
@@ -22,6 +23,7 @@ machineServer ctx = machineServer' ctx
     :<|> personioRequest ctx
     :<|> rawEmployees ctx
     :<|> rawValidations ctx
+    :<|> scheduleEmployees ctx
 
 machineServer' :: Ctx -> Server FUMMachineAPI
 machineServer' ctx = hoistServer fumMachineApi nt $ traverse haxl
@@ -58,3 +60,9 @@ rawEmployees ctx = do
 
 rawValidations :: Ctx -> Handler [Personio.EmployeeValidation]
 rawValidations ctx = liftIO $ readTVarIO $ ctxPersonioValidations ctx
+
+scheduleEmployees :: Ctx -> Handler [S.ScheduleEmployee]
+scheduleEmployees ctx = do
+    es <- liftIO $ readTVarIO $ ctxPersonio ctx
+    -- no filtering, all employees
+    pure $ S.fromPersonio $ toList es

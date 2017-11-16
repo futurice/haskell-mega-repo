@@ -149,6 +149,7 @@ library
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Mailbox
       Futurice.App.FUM.Types.Password
+      Futurice.App.FUM.Types.ScheduleEmployee
       Futurice.App.FUM.Types.SSHKey
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.UnixID
