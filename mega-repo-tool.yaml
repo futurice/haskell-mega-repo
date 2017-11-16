@@ -66,15 +66,19 @@ dockerfile-template: |
   WORKDIR /app
   RUN chown -R app:app /app
   USER app
-  ADD sfdp /usr/local/bin
   ADD {{exe}} /app
   CMD ["/app/{{exe}}", "+RTS", "-N4", "-A32m", "-T", "-qg", "-I0"]
+#
 # "-i100", "-hd" -- profiling
 # -qg disables parallel GC
 # -I0 disables idle GC
+
+#  sfdp might be useful for graphs
+#  ADD sfdp /usr/local/bin
 debs:
 - ca-certificates
 - curl
+- graphviz
 - libcairo2
 - libfftw3-bin
 - libgmp10
