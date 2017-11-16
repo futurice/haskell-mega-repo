@@ -190,10 +190,10 @@ serveChart f g ctx = do
     pure (g v)
 
 serveGraph
-    :: (Typeable key, KnownSymbol key)
-    => Integrations I I Proxy I I I (Graph key)
+    :: (Typeable key, KnownSymbol key, Typeable a, NFData a)
+    => Integrations I I Proxy I I I (Graph a key)
     -> Ctx
-    -> IO (Graph key)
+    -> IO (Graph a key)
 serveGraph m ctx = cachedIO' ctx () $ runIntegrations' ctx m
 
 -- TODO: introduce "HasMissingHoursContracts"?

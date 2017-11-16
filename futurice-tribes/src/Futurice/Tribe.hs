@@ -46,6 +46,9 @@ instance Bounded Tribe where
     minBound = Tribe 0 -- assume there is at least one tribe!
     maxBound = Tribe (V.length tribeInfos - 1)
 
+instance Hashable Tribe where
+    hashWithSalt salt (Tribe i) = hashWithSalt salt i
+
 -------------------------------------------------------------------------------
 -- Magic
 -------------------------------------------------------------------------------
@@ -54,7 +57,6 @@ instance Bounded Tribe where
 tribeInfos :: Vector TribeInfo
 tribeInfos
     = V.fromList
-    $ sortOn tiName
     $ $(makeRelativeToProject "tribes.json" >>= embedFromJSON (Proxy :: Proxy [TribeInfo]))
 
 -- | Map from lowercased tribe names and aliases to index in tribeInfos and TribeInfo itself

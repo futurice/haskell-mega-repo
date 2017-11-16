@@ -1,18 +1,23 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-module Servant.Graph (ALGA, Graph (..)) where
+module Servant.Graph (
+    ALGA,
+    Graph (..),
+    ToDot (..),
+    ToDotVertex (..)
+    ) where
 
 import Control.DeepSeq                (NFData (..))
 import Data.Proxy                     (Proxy (..))
 import Data.String                    (fromString)
 import Data.Swagger                   (NamedSchema (..), ToSchema (..))
-import Data.Text                      (Text)
 import Data.Typeable                  (Typeable)
 import GHC.TypeLits                   (KnownSymbol, Symbol, symbolVal)
 import Servant.API                    (Accept (..), MimeRender (..))
@@ -37,26 +42,36 @@ data ALGA deriving Typeable
 
 -- | @image/svg+xml@
 instance Accept ALGA where
-    contentType _ = "image" M.// "png"
+    contentType _ = "application" M.// "pdf"
 
-instance (ALGA.ToGraph t, ALGA.ToVertex t ~ Text) => MimeRender ALGA t where
+class (ALGA.ToGraph g, Ord (ALGA.ToVertex g)) => ToDot g where
+    exportStyle :: proxy g -> Dot.Style (ALGA.ToVertex g) LT.Text
+
+instance ToDot g => MimeRender ALGA g where
     mimeRender _ = renderDot
+
+class Ord a => ToDotVertex a where
+    exportVertexStyle :: Dot.Style a LT.Text
+
+instance ToDotVertex a => ToDot (G.Graph a) where
+    exportStyle _ = exportVertexStyle
 
 -------------------------------------------------------------------------------
 -- Internals
 -------------------------------------------------------------------------------
 
-renderDot :: (ALGA.ToGraph g, ALGA.ToVertex g ~ Text) => g -> LBS.ByteString
+renderDot :: forall g. ToDot g => g -> LBS.ByteString
 renderDot g
     = (\(_, x, _) -> x)
     $ unsafePerformIO
-    $ readProcessWithExitCode "sfdp" ["-Tpng"] -- make configurable!
+    $ readProcessWithExitCode "dot" ["-Tpdf"] -- make configurable!
     $ LTE.encodeUtf8
     $ Dot.export style g
   where
-    style = (Dot.defaultStyle LT.fromStrict)
+    style = (exportStyle (Proxy :: Proxy g))
         { Dot.graphAttributes =
             [ "overlap" Dot.:= "false"
+            , "rankdir" Dot.:= "LR"
             ]
         }
 
@@ -64,25 +79,28 @@ renderDot g
 -- Graph
 -------------------------------------------------------------------------------
 
-newtype Graph (name :: Symbol) = Graph (G.Graph Text)
+newtype Graph a (name :: Symbol) = Graph (G.Graph a)
 
 -- https://github.com/snowleopard/alga/issues/25
-instance NFData (Graph name) where
+instance NFData a => NFData (Graph a name) where
     rnf (Graph _) = rnf ()
 
-instance ALGA.Graph (Graph name) where
-    type Vertex (Graph name) = Text
+instance ALGA.Graph (Graph a name) where
+    type Vertex (Graph a name) = a
 
     empty = Graph G.empty
     vertex = Graph . G.vertex
     Graph a `overlay` Graph b = Graph (a `G.overlay` b)
     Graph a `connect` Graph b = Graph (a `G.connect` b)
 
-instance ALGA.ToGraph (Graph name) where
-    type ToVertex (Graph name) = Text
+instance ALGA.ToGraph (Graph a name) where
+    type ToVertex (Graph a name) =  a
     toGraph (Graph g) = ALGA.toGraph g
 
-instance KnownSymbol name => ToSchema (Graph name) where
+instance ToDotVertex a => ToDot (Graph a name) where
+    exportStyle _ = exportVertexStyle
+
+instance KnownSymbol name => ToSchema (Graph a name) where
     declareNamedSchema _ = pure $ NamedSchema (Just $ fromString $ "Graph" ++ n) mempty
       where
         n = symbolVal (Proxy :: Proxy name)
