@@ -45,7 +45,13 @@ instance NFData Emp where
 
 instance ToDotVertex Emp where
     exportVertexStyle = (Dot.defaultStyle (view lazy . empName))
-        { Dot.vertexAttributes = \(Emp _ t) -> [ "color" Dot.:= fromString (tribeToColour t) ]
+        { Dot.vertexAttributes = \(Emp n t) ->
+            [ "color" Dot.:= fromString (tribeToColour t) ]
+        , Dot.graphAttributes =
+            [ "rankdir" Dot.:= "LR"
+            , "labelloc" Dot.:= "t"
+            , "label" Dot.:= "Supervisor graph, based on Personio data"
+            ]
         }
 
 -- @hashWithSalt 0@ is a way to extract the position in tribes.json :)

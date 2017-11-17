@@ -68,12 +68,10 @@ renderDot g
     $ LTE.encodeUtf8
     $ Dot.export style g
   where
-    style = (exportStyle (Proxy :: Proxy g))
-        { Dot.graphAttributes =
-            [ "overlap" Dot.:= "false"
-            , "rankdir" Dot.:= "LR"
-            ]
+    style = style'
+        { Dot.graphAttributes = ("overlap" Dot.:= "false") : Dot.graphAttributes style'
         }
+    style' = exportStyle (Proxy :: Proxy g)
 
 -------------------------------------------------------------------------------
 -- Graph
