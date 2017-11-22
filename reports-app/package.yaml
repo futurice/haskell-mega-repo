@@ -89,6 +89,7 @@ dependencies:
   - transformers
   - transformers-compat
   - unordered-containers
+  - vec
   - vector
   - wai
 

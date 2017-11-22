@@ -104,6 +104,7 @@ library
     , transformers
     , transformers-compat
     , unordered-containers
+    , vec
     , vector
     , wai
   exposed-modules:
@@ -131,7 +132,6 @@ library
       Futurice.App.Reports.SupervisorsGraph
       Futurice.App.Reports.TimereportsByTask
       Futurice.App.Reports.UtzChart
-      Futurice.Vec
   default-language: Haskell2010
 
 executable reports-app-server
@@ -218,6 +218,7 @@ executable reports-app-server
     , transformers
     , transformers-compat
     , unordered-containers
+    , vec
     , vector
     , wai
     , reports-app

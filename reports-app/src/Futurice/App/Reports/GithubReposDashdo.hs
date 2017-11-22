@@ -10,11 +10,11 @@ import Dashdo.Rdash          (charts)
 import Dashdo.Types
 import Data.Aeson            (toJSON)
 import Data.Time             (diffUTCTime)
+import Data.Vec.Lazy         (Vec (..), mapWithVec)
 import Futurice.Integrations
        (Integrations, githubOrganisationName, githubReq, runIntegrations)
 import Futurice.Prelude
 import Futurice.Servant      (Cache, cachedIO)
-import Futurice.Vec
 import Lucid                 hiding (for_)
 import Lucid.Bootstrap
 import Lucid.Bootstrap3
@@ -241,7 +241,7 @@ valueTable vs = do
 --
 -- >>> mapWithVec (multiApply (1 :: Int)) ((*2), (*3), (*5))
 -- (15,10,6)
--- 
+--
 multiApply :: a -> Vec n (a -> a) -> Vec n a
 multiApply _ VNil       = VNil
 multiApply xs (f ::: fs) = case multiApply xs fs of
