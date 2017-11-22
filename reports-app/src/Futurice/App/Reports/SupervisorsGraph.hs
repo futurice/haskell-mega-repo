@@ -45,7 +45,7 @@ instance NFData Emp where
 
 instance ToDotVertex Emp where
     exportVertexStyle = (Dot.defaultStyle (view lazy . empName))
-        { Dot.vertexAttributes = \(Emp n t) ->
+        { Dot.vertexAttributes = \(Emp _ t) ->
             [ "color" Dot.:= fromString (tribeToColour t) ]
         , Dot.graphAttributes =
             [ "rankdir" Dot.:= "LR"
