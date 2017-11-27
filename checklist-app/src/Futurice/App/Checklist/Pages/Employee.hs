@@ -19,6 +19,8 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
+import qualified Personio as P
+
 -- |
 --
 -- === Preconditions
@@ -28,13 +30,16 @@ employeePage
     :: World
     -> AuthUser
     -> Employee
+    -> [P.Employee]
     -> HtmlPage "employee"
-employeePage world authUser employee = checklistPage_ (view nameText employee) authUser $ do
+employeePage world authUser employee _personios = checklistPage_ (view nameText employee) authUser $ do
     -- Title
     header (employee ^. nameText) []
 
     -- Buttons
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
+        for_ (employee ^. employeePersonio) $ \pid ->
+            toHtml pid `with` [ class_ " button hollow" ]
         for_ mlist $ \cl -> button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText

@@ -16,6 +16,7 @@ import Futurice.CryptoRandom
        runCRandT)
 import Futurice.Integrations  (IntegrationsConfig)
 import Futurice.Prelude
+import Futurice.Servant       (Cache)
 import Prelude ()
 
 import qualified Data.Map                   as M
@@ -29,6 +30,7 @@ import Futurice.App.Checklist.Types
 data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxManager         :: !Manager
+    , ctxCache           :: !Cache
     , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy Proxy I Proxy Proxy I)
     , ctxWorld           :: TVar World
     , ctxOrigWorld       :: World
@@ -40,14 +42,15 @@ data Ctx = Ctx
 
 newCtx
     :: Logger
+    -> Cache
     -> IntegrationsConfig Proxy Proxy I Proxy Proxy I
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World
     -> IO Ctx
-newCtx lgr cfg ci mockUser w = do
+newCtx lgr cache cfg ci mockUser w = do
     mgr <- newManager tlsManagerSettings
-    Ctx lgr mgr cfg
+    Ctx lgr mgr cache cfg
         <$> newTVarIO w
         <*> pure w
         <*> createPool (Postgres.connect ci) Postgres.close 1 60 5

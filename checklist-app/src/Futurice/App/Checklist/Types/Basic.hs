@@ -27,6 +27,8 @@ import qualified Data.Text       as T
 import qualified FUM.Types.Login as FUM
 import qualified Test.QuickCheck as QC
 
+import qualified Personio as P
+
 newtype Name a = Name Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -40,8 +42,9 @@ instance ToJSON (Name a) where
 --
 -- /TODO:/ add more fields? Is 'Employee' better name?
 data Employee = Employee
-    { _employeeId           :: Identifier Employee
-    , _employeeChecklist    :: Identifier Checklist
+    { _employeeId           :: !(Identifier Employee)
+    , _employeeChecklist    :: !(Identifier Checklist)
+    , _employeePersonio     :: !(Maybe P.EmployeeId)
     , _employeeFirstName    :: !Text
     , _employeeLastName     :: !Text
     , _employeeContractType :: !ContractType

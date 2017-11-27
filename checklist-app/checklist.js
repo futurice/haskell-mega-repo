@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var defs = {
       checklistId: { sel: "select[data-futu-id=employee-checklist", check: nonEmptyCheck },
+      personio: { sel: "input[data-futu-id=employee-personio" },
       firstName: { sel: "input[data-futu-id=employee-firstname", check: nonEmptyCheck },
       lastName: { sel: "input[data-futu-id=employee-lastname", check: nonEmptyCheck },
       contractType: { sel: "select[data-futu-id=employee-contract-type", check: nonEmptyCheck },

@@ -38,7 +38,7 @@ module Futurice.App.Checklist.Types (
     -- ** Employee
     employeeFirstName, employeeLastName, employeeContractType, employeeOffice, employeeConfirmed,
     employeePhone, employeeContactEmail, employeeStartingDay, employeeSupervisor, employeeTribe,
-    employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist,
+    employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist, employeePersonio,
     -- ** ContractType
     _ContractType,
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,

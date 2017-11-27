@@ -99,6 +99,12 @@ createEmployeePage world authUser memployee pemployee = checklistPage_ "Create e
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-create" ] $ do
+        input_
+            [ futuId_ "employee-personio"
+            , type_ "hidden"
+            , value_ $ maybe "" toQueryParam $ tmpl >>= tmplPersonioId
+            ]
+
         row_ $ large_ 12 $ label_ $ do
             "Checklist"
             -- TODO: sort checklists
