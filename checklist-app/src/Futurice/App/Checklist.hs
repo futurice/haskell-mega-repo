@@ -195,9 +195,12 @@ employeePageImpl
     -> Handler (HtmlPage "employee")
 employeePageImpl ctx fu eid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
-        Nothing       -> notFoundPage
-        Just employee -> employeePage world userInfo employee
+    impl world userInfo = case world ^? worldEmployees . ix eid of
+        Nothing       -> pure notFoundPage
+        Just employee -> do
+            now <- currentTime
+            employees <- getPersonioEmployees now ctx
+            pure (employeePage world userInfo employee employees)
 
 archivePageImpl
     :: Ctx
@@ -246,12 +249,13 @@ applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
 -------------------------------------------------------------------------------
 
 getPersonioEmployees :: MonadIO m => UTCTime -> Ctx -> m [Personio.Employee]
-getPersonioEmployees now ctx = liftIO $ runIntegrations
-    (ctxManager ctx)
-    (ctxLogger ctx)
-    now
-    (ctxIntegrationsCfg ctx)
-    $ personio Personio.PersonioEmployees
+getPersonioEmployees now ctx = liftIO $ cachedIO lgr cache 180 () $
+    runIntegrations mgr lgr now cfg $ personio Personio.PersonioEmployees
+  where
+    lgr = ctxLogger ctx
+    mgr = ctxManager ctx
+    cfg = ctxIntegrationsCfg ctx
+    cache = ctxCache ctx
 
 -------------------------------------------------------------------------------
 -- Audit
@@ -381,9 +385,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
 makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr _cache = do
+makeCtx Config {..} lgr cache = do
     ctx <- newCtx
         lgr
+        cache
         cfgIntegrationsCfg
         cfgPostgresConnInfo
         cfgMockUser

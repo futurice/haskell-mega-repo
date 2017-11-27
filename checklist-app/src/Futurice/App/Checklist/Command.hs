@@ -33,7 +33,7 @@ module Futurice.App.Checklist.Command (
     ) where
 
 import Algebra.Lattice         (top)
-import Data.Aeson              (Value (..))
+import Data.Aeson              (Value (..), withText)
 import Data.Aeson.Lens         (key)
 import Data.Char               (isUpper, toLower)
 import Data.List               (intercalate)
@@ -58,6 +58,7 @@ import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified FUM.Types.Login                      as FUM
 import qualified Generics.SOP                         as SOP
 import qualified Generics.SOP.Lens                    as SOPL
+import qualified Personio                             as P
 
 import Futurice.App.Checklist.Types
 
@@ -127,6 +128,26 @@ instance
                 <*> obj .:? "comment" .!= pure False
 
 -------------------------------------------------------------------------------
+-- PersonioID wrapper
+-------------------------------------------------------------------------------
+
+newtype PersonioId = PersonioId { getPersonioId :: P.EmployeeId }
+  deriving (Eq, Show)
+
+instance FieldToHtml PersonioId where
+    fieldToHtml = toHtml . getPersonioId
+
+instance ToJSON PersonioId where
+    toJSON = toJSON . toQueryParam . getPersonioId
+
+instance FromJSON PersonioId where
+    parseJSON = withText "PersonioId" $
+        either (fail . view unpacked) (pure . PersonioId) . parseQueryParam
+
+instance Arbitrary PersonioId where
+    arbitrary = PersonioId <$> arbitrary
+
+-------------------------------------------------------------------------------
 -- Employee edit
 -------------------------------------------------------------------------------
 
@@ -145,6 +166,8 @@ data EmployeeEdit f = EmployeeEdit
     , eeContactEmail :: !(Maybe Text)
     , eeFumLogin     :: !(Maybe FUM.Login)
     , eeHrNumber     :: !(Maybe Int)
+    -- Personio
+    , eePersonio     :: !(Maybe PersonioId)
     }
 
 deriveGeneric ''EmployeeEdit
@@ -157,6 +180,7 @@ fromEmployeeEdit
 fromEmployeeEdit eid cid EmployeeEdit {..} = Employee
     { _employeeId           = eid
     , _employeeChecklist    = cid
+    , _employeePersonio     = getPersonioId <$> eePersonio
     , _employeeFirstName    = runIdentity eeFirstName
     , _employeeLastName     = runIdentity eeLastName
     , _employeeContractType = runIdentity eeContractType
@@ -187,6 +211,7 @@ applyEmployeeEdit ee
     . Lens.over employeeContactEmail (eeContactEmail ee <|>)
     . Lens.over employeeFUMLogin (eeFumLogin ee <|>)
     . Lens.over employeeHRNumber (eeHrNumber ee <|>)
+    . Lens.over employeePersonio (getPersonioId <$> eePersonio ee <|>)
 
 type EmployeeEditTypes =
     '[Text, ContractType, Office, Bool, FUM.Login, Int, Day, Tribe]
