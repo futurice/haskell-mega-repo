@@ -171,11 +171,13 @@ validations = testGroup "Validations"
         (EmailInvalid "invalid.mail")
         $ correctEmployeeValue
             & attributeValue "email" . _String .~ "invalid.mail"
+    {-
     , testValidation
         "position"
         PositionMissing
         $ correctEmployeeValue
             & attributeValue "position" . _String .~ ""
+    -}
     , testValidation
         "hire-date"
         HireDateMissing
@@ -215,7 +217,7 @@ validations = testGroup "Validations"
             & attributeValue "dynamic_66604" . _String .~ "temporary" -- Work permit
             & attributeValue "dynamic_72937" .~ Null  -- Work permit ends
     , testValidation
-        "career path level"
+        "career level"
         CareerPathLevelMissing
         $ correctEmployeeValue
             & attributeValue "employment_type" . _String .~ "internal"

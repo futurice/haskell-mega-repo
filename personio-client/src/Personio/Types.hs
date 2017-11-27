@@ -333,15 +333,16 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeMissing "gender" GenderMissing
         , attributeMissing "hire_date" HireDateMissing
         , attributeMissing "last_name" LastNameMissing
-        , attributeMissing "position" PositionMissing
+        -- , attributeMissing "position" PositionMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
         , costCenterValidate
         , dynamicAttributeMissing "Contract type" ContractTypeMissing
-        , dynamicAttributeMissing "Home city" HomeCityMissing
-        , dynamicAttributeMissing "Home country" HomeCountryMissing
-        , dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
-        , dynamicAttributeMissing "Primary role" RoleMissing
+        , when isInternal $ dynamicAttributeMissing "Home city" HomeCityMissing
+        , when isInternal $ dynamicAttributeMissing "Home country" HomeCountryMissing
+        , when isInternal $ dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
+        -- TODO: should require for externals too
+        , when isInternal $ dynamicAttributeMissing "Primary role" RoleMissing
         , dynamicAttributeMissing "Work phone" WorkPhoneMissing
         , emailValidate
         , expatBonusAndAllowanceCurrencyValidate
@@ -370,6 +371,9 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , workPermitEndsMissing
         ]
       where
+        isExternal = e ^. employeeEmploymentType == Just External
+        isInternal = e ^. employeeEmploymentType == Just Internal
+
         privEmailRegexp = some anySym *> string "@" *> some anySym *> string "." *> some anySym
 
         phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
@@ -448,7 +452,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                   else pure ()
 
         ibanValidate :: WriterT [ValidationMessage] Parser ()
-        ibanValidate = do
+        ibanValidate = when isInternal $ do
             iban <- lift (parseDynamicAttribute obj "IBAN")
             case iban of
                 String unparsed -> if isValidIBAN unparsed
@@ -479,13 +483,12 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                     _        -> pure ()
 
         externalContractValidate :: WriterT [ValidationMessage] Parser ()
-        externalContractValidate = do
+        externalContractValidate = when isExternal $ do
             cType <- lift (optional $ parseDynamicAttribute obj "Contract type")
-            eType <- lift (optional $ parseAttribute obj "employment_type")
-            case (cType, eType) of
-                (Just PermanentAllIn, Just External) -> tell [PermanentExternal]
-                (Just Permanent, Just External)      -> tell [PermanentExternal]
-                _                                    -> pure ()
+            case cType of
+                Just PermanentAllIn -> tell [PermanentExternal]
+                Just Permanent      -> tell [PermanentExternal]
+                _                   -> pure ()
 
         homePhoneValidate :: WriterT [ValidationMessage] Parser ()
         homePhoneValidate = do
@@ -531,24 +534,20 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             toNum _          = Nothing
 
         workPermitEndsMissing :: WriterT [ValidationMessage] Parser ()
-        workPermitEndsMissing = do
+        workPermitEndsMissing = when isInternal $ do
             pType <- lift (parseDynamicAttribute obj "Work permit")
             if T.toLower pType == "temporary"
                 then dynamicAttributeMissing "Work permit ends on" WorkPermitEndsMissing
                 else pure ()
 
         internalValidations :: WriterT [ValidationMessage] Parser ()
-        internalValidations = do
-            eType <- lift (parseAttribute obj "employment_type")
-            case employmentTypeFromText eType of
-                Just Internal -> do
-                    dynamicAttributeMissing "Nationality" NationalityMissing
-                    dynamicAttributeMissing "Work permit" WorkPermitMissing
-                    dynamicAttributeMissing "Career path level" CareerPathLevelMissing
-                    salaryCurrencyValidate
-                    sweValidations
-                    salaryValidate
-                _             -> pure ()
+        internalValidations = when isInternal $ do
+            dynamicAttributeMissing "Nationality" NationalityMissing
+            dynamicAttributeMissing "Work permit" WorkPermitMissing
+            dynamicAttributeMissing "Career level" CareerPathLevelMissing
+            salaryCurrencyValidate
+            sweValidations
+            salaryValidate
           where
             salaryCurrencyValidate = do
                 currency <- lift (parseDynamicAttribute obj "Salary currency")
@@ -664,7 +663,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 _        -> lift (typeMismatch (T.unpack attrN) pId)
 
         identificationNumberMissing :: WriterT [ValidationMessage] Parser ()
-        identificationNumberMissing = do
+        identificationNumberMissing = when isInternal $ do
             fiSSN <- lift (parseDynamicAttribute obj "(FI) Social Security Number")
             deSSN <- lift (parseDynamicAttribute obj "(DE) Social security number (SV)")
             gbNIN <- lift (parseDynamicAttribute obj "(GB) National Insurance Number")

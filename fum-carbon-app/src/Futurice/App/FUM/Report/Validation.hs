@@ -36,6 +36,7 @@ validationReport ctx = do
                 th_ "fum"
                 th_ "hire-date"
                 th_ "end-date"
+                th_ "internal"
                 th_ "type"
                 th_ "warnings"
 
@@ -45,5 +46,6 @@ validationReport ctx = do
                 td_ $ traverse_ toHtml $ e ^. Personio.employeeLogin
                 td_ $ toHtml $ show $ e ^. Personio.employeeHireDate
                 td_ $ toHtml $ show $ e ^. Personio.employeeEndDate
+                td_ $ toHtml $ show $ e ^. Personio.employeeEmploymentType
                 td_ $ toHtml $ show $ e ^. Personio.employeeContractType
                 td_ $ ul_ $ traverse_ (li_ . toHtml . show) msgs
