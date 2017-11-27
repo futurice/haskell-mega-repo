@@ -36,6 +36,7 @@ library
     , containers
     , env-config
     , fum-api
+    , fum-client
     , fum-types
     , futurice-constants
     , futurice-foundation

@@ -8,12 +8,13 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.PlanMillSync (defaultMain) where
 
+import Control.Applicative (liftA3)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
+import Futurice.Lucid.Foundation (fullRow_, h1_, page_)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
-import Futurice.Lucid.Foundation (page_, h1_, fullRow_)
 import Servant
 
 import Futurice.FUM.MachineAPI (FUM6 (..), fum6)
@@ -24,8 +25,9 @@ import Futurice.App.PlanMillSync.Ctx
 import Futurice.App.PlanMillSync.IndexPage
 import Futurice.App.PlanMillSync.Types
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
-import qualified FUM.Types.Login as FUM
+import qualified FUM
 import qualified Personio        as P
 
 server :: Ctx -> Server PlanMillSyncAPI
@@ -47,11 +49,11 @@ indexPageAction ctx mfu = do
     case mfu <|> cfgMockUser cfg of
         Just fu | Set.member fu fus -> do
             -- Data fetch
-            (pm, p) <- liftIO $
+            (pm, fum, p) <- liftIO $
                 runIntegrations mgr lgr now (cfgIntegrationsConfig cfg) fetcher
 
             -- Render
-            pure $ indexPage now pm p
+            pure $ indexPage now pm fum p
 
         _ -> pure page404 -- TODO: log unauhtorised access?
   where
@@ -60,15 +62,17 @@ indexPageAction ctx mfu = do
     mgr = ctxManager ctx
 
 page404 :: HtmlPage a
-page404 = page_ "PlanMill Sync - Unauthorised" $ 
+page404 = page_ "PlanMill Sync - Unauthorised" $
     fullRow_ $ do
         h1_ "Unauthorised"
         "Ask IT Team for access rights"
 
-type M = Integrations I Proxy Proxy Proxy Proxy I
+type M = Integrations I I Proxy Proxy Proxy I
 
-fetcher :: M ([PMUser], [P.Employee])
-fetcher = liftA2 (,) users (P.personio P.PersonioEmployees)
+fetcher :: M ([PMUser], Map FUM.Login FUM.User, [P.Employee])
+fetcher = liftA3 (,,) users fum (P.personio P.PersonioEmployees)
+  where
+    fum = Map.fromList . map (\u -> (u ^. FUM.userName, u)) . toList <$> fumEmployeeList
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
