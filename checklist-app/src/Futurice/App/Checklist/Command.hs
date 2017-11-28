@@ -242,6 +242,7 @@ instance
   where
     parseJSON value = sopParseJSON $ value
         -- monkey patch values for backwards-compat
+        & key "personio" %~ emptyToNull
         & key "fumLogin" %~ emptyToNull
       where
         emptyToNull x
