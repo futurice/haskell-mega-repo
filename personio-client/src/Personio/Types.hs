@@ -330,7 +330,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     validate :: Employee -> Attributes -> Parser [ValidationMessage]
     validate e obj = execWriterT $ sequenceA_
         [ attributeMissing "first_name" FirstNameMissing
-        , attributeMissing "gender" GenderMissing
+        -- TODO?
+        -- , attributeMissing "gender" GenderMissing
         , attributeMissing "hire_date" HireDateMissing
         , attributeMissing "last_name" LastNameMissing
         -- , attributeMissing "position" PositionMissing
