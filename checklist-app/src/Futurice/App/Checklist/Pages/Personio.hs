@@ -30,49 +30,64 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
         li_ "Checklist shown when employee personio id or fum login matches"
 
     -- Table
-    fullRow_ $ table_ $ do
-        thead_ $ tr_ $ do
-            th_ "Personio ID"
-            th_ "Name"
-            th_ "Checklists"
-            th_ "Login"
-            th_ "Tribe"
-            th_ "Office"
-            th_ "Internal"
-            th_ "Hire date"
-            th_ "Create"
+    subheader_ "Starting"
+    employeeTable True world startingEmployees
 
-        tbody_ $ for_ employees $ \e -> tr_ $ do
-            td_ $ toHtml $ e ^. Personio.employeeId
-            td_ $ toHtml $ (e ^. Personio.employeeFirst) <> " " <> (e ^. Personio.employeeLast)
-            td_ $ for_ (matchingEmployees e) $ \e' ->
-                a_ [ employeePageHref e' ] $ maybe "?" (view nameHtml) $
-                    world ^? worldLists . ix (e' ^. employeeChecklist)
-            td_ $ traverse_ toHtml $ e ^. Personio.employeeLogin
-            td_ $ toHtml $ e ^. Personio.employeeTribe
-            td_ $ toHtml $ e ^. Personio.employeeOffice
-            td_ $ traverse_ toHtml $ e ^. Personio.employeeEmploymentType
-            td_ $ traverse_ (toHtml . show) $ e ^. Personio.employeeHireDate
-            td_ $ button_
-                [ class_ "button"
-                , data_ "futu-link-button" $ linkToText
-                $ safeLink checklistApi createEmployeePageEndpoint Nothing (e ^? Personio.employeeId)
-                ]
-                "Import"
+    -- Table
+    subheader_ "Leaving"
+    employeeTable False world leavingEmployees
 
   where
     today = utctDay now
     hday = addDays 90 today
 
-    employees = employees0
+    startingEmployees = employees0
         & filter predicate
         & sortOn (Down . view Personio.employeeHireDate)
+      where
+        predicate e = case e ^. Personio.employeeHireDate of
+            Nothing -> False
+            Just d  -> today <= d && d < hday
 
+    leavingEmployees = employees0
+        & filter predicate
+        & sortOn (Down . view Personio.employeeEndDate)
+      where
+        predicate e = case e ^. Personio.employeeEndDate of
+            Nothing -> False
+            Just d  -> today <= d
 
-    predicate e = case e ^. Personio.employeeHireDate of
-        Nothing -> False
-        Just d  -> today <= d && d < hday
+employeeTable :: Monad m => Bool -> World -> [Personio.Employee] -> HtmlT m ()
+employeeTable hire world employees = fullRow_ $ table_ $ do
+    thead_ $ tr_ $ do
+        th_ "Personio ID"
+        th_ "Name"
+        th_ "Checklists"
+        th_ "Login"
+        th_ "Tribe"
+        th_ "Office"
+        th_ "Internal"
+        th_ $ if hire then "Hire date" else "End Date"
+        th_ "Create"
 
+    tbody_ $ for_ employees $ \e -> tr_ $ do
+        td_ $ toHtml $ e ^. Personio.employeeId
+        td_ $ toHtml $ (e ^. Personio.employeeFirst) <> " " <> (e ^. Personio.employeeLast)
+        td_ $ for_ (matchingEmployees e) $ \e' ->
+            a_ [ employeePageHref e' ] $ maybe "?" (view nameHtml) $
+                world ^? worldLists . ix (e' ^. employeeChecklist)
+        td_ $ traverse_ toHtml $ e ^. Personio.employeeLogin
+        td_ $ toHtml $ e ^. Personio.employeeTribe
+        td_ $ toHtml $ e ^. Personio.employeeOffice
+        td_ $ traverse_ toHtml $ e ^. Personio.employeeEmploymentType
+        td_ $ traverse_ (toHtml . show) $ e ^. if hire then Personio.employeeHireDate else Personio.employeeEndDate
+        td_ $ button_
+            [ class_ "button"
+            , data_ "futu-link-button" $ linkToText
+            $ safeLink checklistApi createEmployeePageEndpoint Nothing (e ^? Personio.employeeId)
+            ]
+            "Import"
+  where
     matchingEmployees e = filter (predicate' e) $ world ^.. worldEmployees . folded
 
     predicate' e e'
