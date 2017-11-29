@@ -27,6 +27,7 @@ import Data.Char                   (ord)
 import Data.Fixed                  (Centi)
 import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
+import Data.Semigroup              (Min (..))
 import Data.Swagger
        (defaultSchemaOptions, genericDeclareNamedSchemaUnrestricted)
 import Data.Time                   (zonedTimeToLocalTime)
@@ -142,7 +143,7 @@ parseEmployeeObject obj' = Employee
     <*> parseAttribute obj "first_name"
     <*> parseAttribute obj "last_name"
     <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
-    <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
+    <*> endDate
     <*> parseDynamicAttribute obj "Primary role"
     <*> optional (parseAttribute obj "email")
     <*> parseDynamicAttribute obj "Work phone"
@@ -167,6 +168,12 @@ parseEmployeeObject obj' = Employee
   where
     zonedDay = localDay . zonedTimeToLocalTime
     obj = mkAttributes obj'
+
+    endDate = do
+        a <- fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
+        b <- fmap (fmap zonedDay) (parseAttribute obj "termination_date")
+        return $ fmap getMin $ fmap Min a <> fmap Min b
+
 
 newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 

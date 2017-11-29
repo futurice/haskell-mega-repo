@@ -8,7 +8,6 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
-import Control.Lens              (filtered, firstOf)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
@@ -47,6 +46,7 @@ import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
 
+import qualified Data.Map.Strict            as Map
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.GroupName        as FUM
 import qualified FUM.Types.Login            as FUM
@@ -145,14 +145,13 @@ createEmployeePageImpl ctx fu meid mpeid = withAuthUser ctx fu impl
     impl world userInfo = do
         let memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
         now <- currentTime
-        mpersonio <- fmap join $ for mpeid $ \eid -> do
+        pemployees <- do
             employees <- getPersonioEmployees now ctx
-            -- Note: 'find' would be simpler
-            pure $ firstOf
-                (folded . filtered (\e -> eid == e ^. Personio.employeeId))
-                employees
+            pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
 
-        pure $ createEmployeePage world userInfo memployee mpersonio
+        pure $ createEmployeePage world userInfo memployee
+            (mpeid >>= \eid -> pemployees ^? ix eid)
+            pemployees
 
 checklistsPageImpl
     :: Ctx

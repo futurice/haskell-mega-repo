@@ -50,8 +50,8 @@ employeeToTemplate e = Tmpl
     , tmplHRNumber     = e ^. employeeHRNumber
     }
 
-personioToTemplate :: Personio.Employee -> Tmpl
-personioToTemplate e = Tmpl
+personioToTemplate :: Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
+personioToTemplate es e = Tmpl
     { tmplPersonioId   = Just $ e ^. Personio.employeeId
     , tmplFirst        = e ^. Personio.employeeFirst
     , tmplLast         = e ^. Personio.employeeLast
@@ -59,13 +59,19 @@ personioToTemplate e = Tmpl
     , tmplOffice       = e ^. Personio.employeeOffice
     , tmplTribe        = e ^. Personio.employeeTribe
     , tmplStartingDay  = e ^. Personio.employeeHireDate
-    , tmplSupervisor   = "" -- TODO
-    , tmplPhone        = e ^. Personio.employeeWorkPhone
+    , tmplSupervisor   = fromMaybe "" $ do
+        suid <- e ^. Personio.employeeSupervisorId
+        es ^? ix suid . Personio.employeeFullname
+    -- TODO: private phone and email
+    , tmplPhone        = Nothing
     , tmplEmail        = Nothing
     , tmplLogin        = e ^. Personio.employeeLogin
-    , tmplHRNumber     = e ^. Personio.employeeHRNumber
+    , tmplHRNumber     = zeroToNothing $ e ^. Personio.employeeHRNumber
     }
   where
+    zeroToNothing (Just 0) = Nothing
+    zeroToNothing x        = x
+
     contractType = case e ^. Personio.employeeEmploymentType of
         Nothing -> Nothing
         Just Personio.External -> Just ContractTypeExternal
@@ -84,10 +90,11 @@ createEmployeePage
     -> AuthUser    -- ^ logged in user
     -> Maybe Employee
     -> Maybe Personio.Employee
+    -> Map Personio.EmployeeId Personio.Employee
     -> HtmlPage "create-employee"
-createEmployeePage world authUser memployee pemployee = checklistPage_ "Create employee" authUser $ do
+createEmployeePage world authUser memployee pemployee pes = checklistPage_ "Create employee" authUser $ do
     let tmpl = employeeToTemplate <$> memployee
-            <|> personioToTemplate <$> pemployee
+            <|> personioToTemplate pes <$> pemployee
     -- Title
     header "Create employee" []
 
