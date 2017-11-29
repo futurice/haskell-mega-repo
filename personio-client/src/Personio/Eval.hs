@@ -76,4 +76,6 @@ instance FromJSON E where
 newtype V = V [EmployeeValidation]
 
 instance FromJSON V where
-    parseJSON = fmap V . listParser validatePersonioEmployee
+    parseJSON
+      = fmap (V . postValidatePersonioEmployees)
+      . listParser validatePersonioEmployee

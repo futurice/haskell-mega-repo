@@ -56,6 +56,7 @@ import qualified Chat.Flowdock.REST            as FD
 import qualified Data.Text                     as T
 import qualified GitHub                        as GH
 import qualified Text.Regex.Applicative.Common as RE
+import qualified Data.Map.Strict as Map
 
 -------------------------------------------------------------------------------
 -- Employee
@@ -262,6 +263,7 @@ data ValidationMessage
     | FirstNameMissing
     | FISSNInvalid
     | FixedTermEndDateMissing
+    | PermanentEndDateSet
     | FlowdockInvalid
     | GBNINOInvalid
     | GenderMissing
@@ -281,6 +283,7 @@ data ValidationMessage
     | NationalityMissing
     | OfficeMissing
     | PermanentExternal
+    | PermanentContractEndDate
     | PositionMissing
     | PrivateEmailInvalid Text
     | PrivatePhoneInvalid Text
@@ -296,6 +299,7 @@ data ValidationMessage
     | WorkPermitEndsMissing
     | WorkPermitMissing
     | WorkPhoneMissing
+    | SupervisorNotActive !Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -323,6 +327,25 @@ instance FromJSON EmployeeValidation where
 instance ToJSON EmployeeValidation where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
+
+-- | Validate collection of employees.
+postValidatePersonioEmployees :: [EmployeeValidation] -> [EmployeeValidation]
+postValidatePersonioEmployees ev = map single ev
+  where
+    m :: Map EmployeeId Employee
+    m = Map.fromList $ map (\v -> (v ^. evEmployee . employeeId, v ^. evEmployee)) ev
+
+    single :: EmployeeValidation -> EmployeeValidation
+    single v = case msupervisor of
+        Just supervisor | supervisor ^. employeeStatus /= Active -> v
+            & evMessages %~ (SupervisorNotActive (supervisor ^. employeeFullname) :)
+        -- otherwise, everything seems to be ok.
+        _ -> v
+      where
+        msupervisor :: Maybe Employee
+        msupervisor = do
+            supId <- v ^. evEmployee . employeeSupervisorId
+            m ^? ix supId
 
 validatePersonioEmployee :: Value -> Parser EmployeeValidation
 validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
@@ -357,6 +380,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , expatValidate
         , externalContractValidate
         , fixedEndDateValidate
+        , permanentEndDateValidate
         , flowdockValidate
         , githubValidate
         , homePhoneValidate
@@ -476,19 +500,26 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 Just _  -> pure ()
 
         fixedEndDateValidate :: WriterT [ValidationMessage] Parser ()
-        fixedEndDateValidate = do
-            cType <- lift (optional $ parseDynamicAttribute obj "Contract type")
-            case cType of
-                Just FixedTerm -> checkEndDate FixedTermEndDateMissing
-                Just _         -> pure ()
-                Nothing        -> pure () -- TODO: invalid contract type
+        fixedEndDateValidate = when (e ^. employeeContractType == Just FixedTerm) $ do
+            checkEndDate FixedTermEndDateMissing
           where
-              checkEndDate err = do
-                eDate <- lift (parseAttribute obj "contract_end_date")
-                case eDate of
-                    Null     -> tell [err]
-                    String d -> checkAttributeName d err
-                    _        -> pure ()
+            checkEndDate err = do
+              eDate <- lift (parseAttribute obj "contract_end_date")
+              case eDate of
+                  Null     -> tell [err]
+                  String d -> checkAttributeName d err
+                  _        -> pure ()
+
+        permanentEndDateValidate :: WriterT [ValidationMessage] Parser ()
+        permanentEndDateValidate = unless (e ^. employeeContractType == Just FixedTerm) $ do
+            checkEndDate PermanentEndDateSet
+          where
+            checkEndDate err = do
+              eDate <- lift (parseAttribute obj "contract_end_date")
+              case eDate of
+                  Null     -> pure ()
+                  String _ -> tell [err] -- error if set
+                  _        -> pure ()
 
         externalContractValidate :: WriterT [ValidationMessage] Parser ()
         externalContractValidate = when isExternal $ do
