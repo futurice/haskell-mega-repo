@@ -56,6 +56,7 @@ import qualified Chat.Flowdock.REST            as FD
 import qualified Data.Text                     as T
 import qualified GitHub                        as GH
 import qualified Text.Regex.Applicative.Common as RE
+import qualified Data.Map.Strict as Map
 
 -------------------------------------------------------------------------------
 -- Employee
@@ -296,6 +297,7 @@ data ValidationMessage
     | WorkPermitEndsMissing
     | WorkPermitMissing
     | WorkPhoneMissing
+    | SupervisorNotActive !Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -323,6 +325,25 @@ instance FromJSON EmployeeValidation where
 instance ToJSON EmployeeValidation where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
+
+-- | Validate collection of employees.
+postValidatePersonioEmployees :: [EmployeeValidation] -> [EmployeeValidation]
+postValidatePersonioEmployees ev = map single ev
+  where
+    m :: Map EmployeeId Employee
+    m = Map.fromList $ map (\v -> (v ^. evEmployee . employeeId, v ^. evEmployee)) ev
+
+    single :: EmployeeValidation -> EmployeeValidation
+    single v = case msupervisor of
+        Just supervisor | supervisor ^. employeeStatus /= Active -> v
+            & evMessages %~ (SupervisorNotActive (supervisor ^. employeeFullname) :)
+        -- otherwise, everything seems to be ok.
+        _ -> v
+      where
+        msupervisor :: Maybe Employee
+        msupervisor = do
+            supId <- v ^. evEmployee . employeeSupervisorId
+            m ^? ix supId
 
 validatePersonioEmployee :: Value -> Parser EmployeeValidation
 validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
