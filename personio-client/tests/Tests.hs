@@ -161,11 +161,13 @@ validations = testGroup "Validations"
         LastNameMissing
         $ correctEmployeeValue
             & attributeValue "last_name" . _String .~ ""
+    {-
     , testValidation
         "gender"
         GenderMissing
         $ correctEmployeeValue
             & attributeValue "gender" . _String .~ ""
+    -}
     , testValidation
         "email"
         (EmailInvalid "invalid.mail")
