@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -10,9 +9,7 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
-#endif
 module Futurice.App.Contacts.Logic (
     contacts,
     ) where
@@ -35,7 +32,6 @@ import qualified Personio
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
-import Futurice.App.Contacts.Types.Tri (lessSure)
 
 compareUnicodeText :: Text -> Text -> Ordering
 compareUnicodeText = compareUnicode `on` T.unpack
@@ -84,10 +80,10 @@ employeeToContact e = Contact
     , contactTitle      = e ^. Personio.employeePosition
     , contactThumb      = noImage -- from FUM
     , contactImage      = noImage -- from FUM
-    , contactFlowdock   = mcase (e ^. Personio.employeeFlowdock) Unknown $
-        Sure . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage)
-    , contactGithub     = mcase (e ^. Personio.employeeGithub) Unknown $
-        Sure . flip (ContactGH . GH.untagName) noImage
+    , contactFlowdock   = mcase (e ^. Personio.employeeFlowdock) Nothing $
+        Just . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage)
+    , contactGithub     = mcase (e ^. Personio.employeeGithub) Nothing $
+        Just . flip (ContactGH . GH.untagName) noImage
     , contactTeam       = e ^. Personio.employeeTribe
     , contactOffice     = e ^. Personio.employeeOffice
     , contactCompetence = e ^. Personio.employeeRole
@@ -99,10 +95,9 @@ githubDetailedMembers
        , MonadReader env m, HasGithubOrgName env
        )
     => m (Vector GH.User)
-githubDetailedMembers = pure mempty {- do
+githubDetailedMembers = do
     githubMembers <- githubOrganisationMembers
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
-    -}
 
 addFUMInfo
     :: (Functor f, Foldable g)
@@ -131,35 +126,22 @@ addGithubInfo gh = fmap add
   where
     gh' = toList gh
 
-    nameMap :: HM.HashMap Text GH.User
-    nameMap = HM.fromList (mapMaybe pair gh')
-      where
-        pair :: GH.User -> Maybe (Text, GH.User)
-        pair x = (\y -> (y, x)) <$> GH.userName x
-
-    loginMap :: HM.HashMap Text GH.User
+    loginMap :: HM.HashMap (GH.Name GH.User) GH.User
     loginMap = HM.fromList (map pair gh')
       where
-        pair :: GH.User -> (Text, GH.User)
-        pair x = (GH.untagName $ GH.userLogin x, x)
+        pair :: GH.User -> (GH.Name GH.User, GH.User)
+        pair x = (GH.userLogin x, x)
 
     add :: Contact Text -> Contact Text
-    add c = c{ contactGithub = (cgh >>= byLogin . cghNick)
-                             <> lessSure cgh
-                             <> byName }
+    add c = c
+        { contactGithub = cgh >>= byLogin . cghNick
+        }
       where
-        cgh :: Tri (ContactGH Text)
+        cgh :: Maybe (ContactGH Text)
         cgh = contactGithub c
 
-        byName :: Tri (ContactGH Text)
-        byName = maybe Unknown
-                       (Unsure . fromDetailedOwner)
-                       (HM.lookup (contactName c) nameMap)
-
-        byLogin :: Text -> Tri (ContactGH Text)
-        byLogin ghLogin = maybe Unknown
-                                (Sure . fromDetailedOwner)
-                                (HM.lookup ghLogin loginMap)
+        byLogin :: Text -> Maybe (ContactGH Text)
+        byLogin ghLogin = fromDetailedOwner <$> HM.lookup (GH.mkUserName ghLogin) loginMap
 
 fromDetailedOwner :: GH.User -> ContactGH Text
 fromDetailedOwner gh = ContactGH
@@ -188,18 +170,17 @@ addFlowdockInfo us = fmap add
     add c = c
         { contactFlowdock =
             (cfd >>= byId . FD.mkIdentifier . fromIntegral . cfdId)
-            <> lessSure cfd
-            <> byEmail
-            <> byName
+            <|> byEmail
+            <|> byName
         }
       where
         cfd = contactFlowdock c
         name = contactName c
         email = contactEmail c
 
-        byId uid = maybe Unknown (Sure . f) (HM.lookup uid uidMap)
-        byEmail = maybe Unknown (Sure . f)   (HM.lookup email emailMap)
-        byName  = maybe Unknown (Unsure . f) (HM.lookup name nameMap)
+        byId uid = fmap f (HM.lookup uid uidMap)
+        byEmail = fmap f (HM.lookup email emailMap)
+        byName  = fmap f (HM.lookup name nameMap)
 
         f :: u -> ContactFD Text
         f u = ContactFD

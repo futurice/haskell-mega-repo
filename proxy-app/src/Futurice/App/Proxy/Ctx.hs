@@ -21,6 +21,7 @@ data Ctx = Ctx
     , ctxFumBaseurl           :: !BaseUrl
     , ctxFumAuthToken         :: !FUM.AuthToken
     , ctxPowerBaseurl         :: !BaseUrl
+    , ctxContactsApiBaseurl   :: !BaseUrl
     , ctxLogger               :: !Logger
     }
 

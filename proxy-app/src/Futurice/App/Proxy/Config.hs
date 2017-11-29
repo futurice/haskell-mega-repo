@@ -20,6 +20,7 @@ data Config = Config
     , cfgFumBaseurl           :: !BaseUrl
     , cfgFumAuthToken         :: !FUM.AuthToken
     , cfgPowerBaseurl         :: !BaseUrl
+    , cfgContactsApiBaseurl   :: !BaseUrl
     }
 
 instance Configure Config where
@@ -33,3 +34,4 @@ instance Configure Config where
         <*> envVar "FUM_BASEURL"
         <*> envVar "FUM_TOKEN"
         <*> envVar "POWER_BASEURL"
+        <*> envVar "CONTACTSAPI_BASEURL"

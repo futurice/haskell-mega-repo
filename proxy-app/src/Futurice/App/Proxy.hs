@@ -32,13 +32,14 @@ import Servant.Client.Core.Internal.Request (RequestF (requestHeaders))
 import Servant.Proxy
 import Text.Regex.Applicative.Text          (RE', anySym, match, string)
 
-import qualified Data.Text                  as T
-import qualified Database.PostgreSQL.Simple as Postgres
+import qualified Data.Text                   as T
+import qualified Database.PostgreSQL.Simple  as Postgres
 import qualified FUM
-import qualified Futurice.FUM.MachineAPI    as FUM6
-import qualified Futurice.GitHub            as GH (SomeRequest, SomeResponse)
+import qualified Futurice.App.Contacts.Types as Contact
+import qualified Futurice.FUM.MachineAPI     as FUM6
+import qualified Futurice.GitHub             as GH (SomeRequest, SomeResponse)
 import qualified Personio
-import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
+import qualified PlanMill.Types.Query        as PM (SomeQuery, SomeResponse)
 
 import Futurice.App.Proxy.Config
 import Futurice.App.Proxy.Ctx
@@ -57,6 +58,7 @@ data GithubProxyService
 data FumService
 data PowerService
 data PersonioProxyService
+data ContactsApiService
 
 instance HasClientBaseurl Ctx ReportsAppService where
     clientBaseurl _ = lens ctxReportsAppBaseurl $ \ctx x ->
@@ -85,6 +87,10 @@ instance HasClientBaseurl Ctx PowerService where
 instance HasClientBaseurl Ctx PersonioProxyService where
     clientBaseurl _ = lens ctxPersonioProxyBaseurl $ \ctx x ->
         ctx { ctxPersonioProxyBaseurl = x }
+
+instance HasClientBaseurl Ctx ContactsApiService where
+    clientBaseurl _ = lens ctxContactsApiBaseurl $ \ctx x ->
+        ctx { ctxContactsApiBaseurl = x }
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -169,6 +175,12 @@ type PersonioProxyEndpoint = ProxyPair
     PersonioProxyService
     ("api" :> "personio-request" :> PersonioProxyEndpoint')
 
+-- contacts
+type ContactsEndpoint = ProxyPair
+    ("contacts":> "contacts.json" :> Get '[JSON] [Contact.Contact Text])
+    ContactsApiService
+    ("contacts.json" :> Get '[JSON] [Contact.Contact Text])
+
 -- | Whole proxy definition
 type ProxyDefinition =
     '[ MissingReportsEndpoint
@@ -183,6 +195,7 @@ type ProxyDefinition =
     , PowerCompetencesEndpoint
     , PowerPeopleEndpoint
     , PowerTribesEndpoint
+    , ContactsEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -225,6 +238,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy PowerCompetencesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PowerPeopleEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PowerTribesEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy ContactsEndpoint) ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -253,6 +267,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             , ctxFumBaseurl           = cfgFumBaseurl
             , ctxFumAuthToken         = cfgFumAuthToken
             , ctxPowerBaseurl         = cfgPowerBaseurl
+            , ctxContactsApiBaseurl   = cfgContactsApiBaseurl
             , ctxLogger               = logger
             }
 

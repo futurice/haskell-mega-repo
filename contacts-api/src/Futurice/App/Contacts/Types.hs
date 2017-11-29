@@ -6,14 +6,12 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 module Futurice.App.Contacts.Types (
-    Tri(..),
     ContactFD(..),
     ContactGH(..),
     Contact(..),
     ) where
 
-import Data.Csv                        (ToField (..))
-import Futurice.App.Contacts.Types.Tri
+import Data.Csv          (ToField (..))
 import Futurice.Generics
 import Futurice.IsMaybe
 import Futurice.Office
@@ -37,6 +35,8 @@ data ContactFD avatar = ContactFD
 
 instance NFData a => NFData (ContactFD a)
 deriveGeneric ''ContactFD
+instance (FromJSON a, IsMaybe a) => FromJSON (ContactFD a) where
+    parseJSON = sopParseJSON
 instance (ToJSON a, IsMaybe a) => ToJSON (ContactFD a) where
     toJSON     = sopToJSON
     toEncoding = sopToEncoding
@@ -56,6 +56,8 @@ data ContactGH avatar = ContactGH
 
 instance NFData a => NFData (ContactGH a)
 deriveGeneric ''ContactGH
+instance (FromJSON a, IsMaybe a) => FromJSON (ContactGH a) where
+    parseJSON = sopParseJSON
 instance (ToJSON a, IsMaybe a) => ToJSON (ContactGH a) where
     toJSON     = sopToJSON
     toEncoding = sopToEncoding
@@ -73,8 +75,8 @@ data Contact avatar = Contact
     , contactTitle      :: !(Maybe Text)
     , contactThumb      :: !avatar
     , contactImage      :: !Text
-    , contactFlowdock   :: !(Tri (ContactFD avatar))
-    , contactGithub     :: !(Tri (ContactGH avatar))
+    , contactFlowdock   :: !(Maybe (ContactFD avatar))
+    , contactGithub     :: !(Maybe (ContactGH avatar))
     , contactTeam       :: !Tribe
     , contactOffice     :: !Office
     , contactCompetence :: !Text
@@ -90,11 +92,17 @@ instance NFData a => NFData (Contact a)
 -- TH slices
 
 deriveGeneric ''Contact
+
+instance (FromJSON a, IsMaybe a) => FromJSON (Contact a) where
+    parseJSON = sopParseJSON
+
 instance (ToJSON a, IsMaybe a) => ToJSON (Contact a) where
     toJSON     = sopToJSON
     toEncoding = sopToEncoding
+
 instance ToSchema a => ToSchema (Contact a) where
     declareNamedSchema = sopDeclareNamedSchema
+
 instance ToField a => ToNamedRecord (Contact a) where
     toNamedRecord Contact {..} = HM.fromList
         [ (,) "login"      $ toField contactLogin
@@ -110,5 +118,6 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "team"       $ toField contactTeam
         , (,) "competence" $ toField contactCompetence
         ]
+
 instance DefaultOrdered (Contact a) where
     headerOrder = sopHeaderOrder
