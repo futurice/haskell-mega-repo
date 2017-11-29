@@ -37,6 +37,7 @@ library
     , blaze-html
     , bytestring
     , cassava
+    , contacts-api
     , containers
     , env-config
     , fum-api
