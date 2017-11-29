@@ -65,6 +65,23 @@ compareOldFumReport ctx = do
                     td_ $ traverse_ toHtml $ f ^. FUM.userEmail
                     td_ $ traverse_ toHtml $ p ^. Personio.employeeEmail
 
+        fullRow_ $ h2_ "People with non-matching phone numbers"
+        fullRow_ $ table_ $ do
+            thead_ $ tr_ $ do
+                th_ "Login"
+                th_ "Personio"
+                th_ "Name"
+                th_ "FUM phone"
+                th_ "Personio phone"
+            tbody_ $ iforOf_ (ifolded . _These) aligned $ \login (p, f) -> do
+                let phonesMatch = p ^? Personio.employeeWorkPhone . _Just == f ^. FUM.userPhone1 . lazy
+                when (isNothing (p ^. Personio.employeeWorkPhone) || not phonesMatch) $ tr_ $ do
+                    td_ $ toHtml login
+                    td_ $ toHtml $ p ^. Personio.employeeId
+                    td_ $ toHtml $ f ^. FUM.userFullName
+                    td_ $ traverse_ toHtml $ f ^. FUM.userPhone1
+                    td_ $ traverse_ toHtml $ p ^. Personio.employeeWorkPhone
+
         fullRow_ $ h2_ "Active people in Personio without FUM login"
         fullRow_ $ table_ $ do
             thead_ $ tr_ $ do
