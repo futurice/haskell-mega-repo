@@ -1,12 +1,14 @@
 module Futurice.App.EmailProxy.Ctx where
 
-import Prelude ()
 import Futurice.Prelude
+import Prelude ()
 
 import Futurice.App.EmailProxy.Config
+
+import qualified Network.AWS as AWS
 
 data Ctx = Ctx
     { ctxLogger  :: !Logger
     , ctxConfig  :: !Config
-    , ctxManager :: !Manager
+    , ctxAwsEnv  :: !AWS.Env
     }

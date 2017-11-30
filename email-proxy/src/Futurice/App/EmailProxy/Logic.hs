@@ -1,78 +1,42 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.EmailProxy.Logic (sendEmail, getSignature) where
+module Futurice.App.EmailProxy.Logic (sendEmail) where
 
+import Data.Aeson       (object, (.=))
 import Futurice.Prelude
 import Prelude ()
+import Servant          (NoContent (..))
 
-import Futurice.App.EmailProxy.Config
+import qualified Network.AWS               as AWS
+import qualified Network.AWS.SES.SendEmail as AWS
+import qualified Network.AWS.SES.Types     as AWS
+
 import Futurice.App.EmailProxy.Ctx
 import Futurice.App.EmailProxy.Types
 
-import qualified Data.ByteString.Base64 as B64
-import           Data.Digest.Pure.SHA
-import qualified Data.List.NonEmpty     as NE
-import           Data.Time              (defaultTimeLocale, formatTime)
-
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text            as T
-
-import qualified Network.HTTP.Client       as H
-import           Network.HTTP.Types        (Header)
-import           Network.HTTP.Types.Status as S
-
-addHeader :: Header -> H.Request -> H.Request
-addHeader header req = req { H.requestHeaders = header : H.requestHeaders req}
-
-getSignature :: ByteString -> ByteString -> ByteString
-getSignature s p = B64.encode $ BL.toStrict $ bytestringDigest $ d
-    where
-      d = hmacSha256 (BL.fromStrict s) (BL.fromStrict p)
-
-mkAwsAuthHeader :: Text -> Text -> String -> Header
-mkAwsAuthHeader ak as moment =
-    ("X-Amzn-Authorization", encodeUtf8 $ T.intercalate ", " . hfmt $
-       [("AWS3-HTTPS AWSAccessKeyId", T.unpack $ ak)
-       , ("Algorithm", "HmacSHA256")
-       , ("Signature", T.unpack $ decodeUtf8Lenient signature)])
-    where
-      signature = getSignature (encodeUtf8 $ as) (encodeUtf8 . T.pack $ moment)
-      hfmt = map (\x -> T.pack $ fst x ++ "=" ++ snd x)
-
-sendSES :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
-sendSES ctx req = do
-    let cfg = ctxConfig ctx
-    now <- currentTime
-    let moment = formatTime defaultTimeLocale "%a, %d %b %Y %H:%M:%S %Z" now
-    -- TODO: support multiple recipients
-    let request = cfgAwsSESUrl cfg
-            & (\r -> r { H.method = "POST" })
-            & addHeader ("Date", encodeUtf8 $ T.pack $ moment)
-            & (addHeader $ mkAwsAuthHeader (cfgAwsAccessKey cfg) (cfgAwsSecretKey cfg) moment)
-            & H.urlEncodedBody
-                 [ ("Action", "SendEmail")
-                 , ("Source", encodeUtf8 $ req ^. reqFrom)
-                 , ("Destination.ToAddresses.member.1", encodeUtf8 $ req ^. reqTo . getter NE.head)
-                 , ("Message.Subject.Data", encodeUtf8 $ req ^. reqSubject)
-                 , ("Message.Body.Text.Data", encodeUtf8 $ req ^. reqBody)
-                 ]
-    res <- liftIO $ H.httpLbs request (ctxManager ctx)
-    {- TODO: parse XML response to obtain Error or SendEmailResult
-    <ErrorResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-    <Error><Type>string</Type><Code>string</Code><Message>string</Message></Error>
-    <RequestId>string</RequestId>
-    </ErrorResponse>
-
-    <SendEmailResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-    <SendEmailResult><MessageId>string</MessageId></SendEmailResult>
-    <ResponseMetadata><RequestId>string/RequestId></ResponseMetadata>
-    </SendEmailResponse>
-    -}
-    pure $ Res { _resMessage = "done"
-               , _resStatus = decodeUtf8Lenient $ S.statusMessage $ H.responseStatus res
-               }
-
-sendEmail :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
+sendEmail :: (MonadIO m, MonadLog m) => Ctx -> Req -> m NoContent
 sendEmail ctx req = do
-    logInfo_ $ "Sending Email to: " <> req ^. reqTo . getter NE.head
-    r <- sendSES ctx req
-    pure $ r
+    let env = ctxAwsEnv ctx
+
+    logInfo "Sending email" $ req
+        & reqBody .~ "<redacted>"
+
+    let destination = AWS.destination
+          & AWS.dToAddresses  .~ (req ^.. reqTo . folded . _EmailAddress)
+          & AWS.dCCAddresses  .~ (req ^.. reqCc . folded . folded . _EmailAddress)
+          & AWS.dBCCAddresses .~ (req ^.. reqBcc . folded . folded . _EmailAddress)
+    let subject = AWS.content (req ^. reqSubject)
+          & AWS.cCharset ?~ "UTF-8"
+    let content = AWS.content (req ^. reqBody)
+          & AWS.cCharset ?~ "UTF-8"
+    let message = AWS.message subject (AWS.body & AWS.bText ?~ content)
+
+    -- Sender address is hardcoded, as this service is used by machines.
+    res <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
+        AWS.send $ AWS.sendEmail "no-reply@futurice.tech" destination message
+
+    logInfo "AWS Response" $ object
+        [ "messageId" .= (res ^. AWS.sersMessageId)
+        , "status"    .= (res ^. AWS.sersResponseStatus)
+        ]
+
+    pure NoContent
