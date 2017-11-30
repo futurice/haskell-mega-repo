@@ -18,8 +18,10 @@ library:
   other-modules: []
   dependencies:
     - base                  >=4.7   && <4.11
+    - aeson
+    - amazonka
+    - amazonka-ses
     - base-compat
-    - base64-bytestring
     - bytestring
     - env-config
     - futurice-prelude
@@ -29,7 +31,6 @@ library:
     - lens
     - servant-server
     - semigroups
-    - SHA
     - text
     - time
 

@@ -4,51 +4,53 @@
 module Futurice.App.EmailProxy.Types where
 
 import Prelude ()
+import Data.Aeson (withText)
 import Futurice.Prelude
 import Futurice.Generics
 
--- | TODO, what we want to return?
-data Res = Res
-    { _resStatus  :: !Text
-    , _resMessage :: !Text
-    }
+-------------------------------------------------------------------------------
+-- Email address
+-------------------------------------------------------------------------------
+
+newtype EmailAddress = EmailAddress { getEmailAddress :: Text }
   deriving (Show)
 
-type EmailAddress = Text
+makePrisms ''EmailAddress
+deriveGeneric ''EmailAddress
+
+instance ToJSON EmailAddress where
+    toJSON     = toJSON . getEmailAddress
+    toEncoding = toEncoding . getEmailAddress
+
+instance FromJSON EmailAddress where
+    parseJSON = withText "Email address" $ pure . EmailAddress
+
+instance ToSchema EmailAddress where
+    declareNamedSchema = newtypeDeclareNamedSchema
+
+-------------------------------------------------------------------------------
+-- Request
+-------------------------------------------------------------------------------
 
 data Req = Req
     { _reqTo      :: !(NonEmpty EmailAddress)
-    , _reqBcc     :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.
-    , _reqFrom    :: !EmailAddress
+    , _reqCc      :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.
+    , _reqBcc     :: !(Maybe (NonEmpty EmailAddress))
     , _reqReplyTo :: !(Maybe EmailAddress)
     , _reqSubject :: !Text
     , _reqBody    :: !Text
     }
   deriving (Show)
 
--------------------------------------------------------------------------------
--- instances
--------------------------------------------------------------------------------
-
-makeLenses ''Res
 makeLenses ''Req
-
-deriveGeneric ''Res
 deriveGeneric ''Req
 
-instance ToJSON Res where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
 instance ToJSON Req where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
-instance FromJSON Res where
-    parseJSON = sopParseJSON
 instance FromJSON Req where
     parseJSON = sopParseJSON
 
-instance ToSchema Res where
-    declareNamedSchema = sopDeclareNamedSchema
 instance ToSchema Req where
     declareNamedSchema = sopDeclareNamedSchema

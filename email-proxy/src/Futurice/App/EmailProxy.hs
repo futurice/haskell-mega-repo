@@ -1,17 +1,20 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances, UndecidableInstances     #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Futurice.App.EmailProxy(defaultMain) where
 
-import Prelude ()
 import Futurice.Prelude
 import Futurice.Servant
+import Prelude ()
 import Servant
+
+import qualified Network.AWS as AWS
 
 import Futurice.App.EmailProxy.API
 import Futurice.App.EmailProxy.Config
@@ -19,7 +22,7 @@ import Futurice.App.EmailProxy.Ctx
 import Futurice.App.EmailProxy.Logic
 
 server :: Ctx -> Server EmailProxyAPI
-server ctx = pure "This is email proxy" 
+server ctx = pure "This is email proxy. See /swagger-ui/"
     :<|> (nt . sendEmail ctx)
   where
     nt :: forall x. LogT Handler x -> Handler x
@@ -35,5 +38,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx cfg logger _cache = do
-        mgr <- newManager tlsManagerSettings
-        return (Ctx logger cfg mgr, [])
+        env' <- AWS.newEnv (cfgSesCreds cfg)
+        -- SES is only in Ireland in Europe
+        let env = env' & AWS.envRegion .~ AWS.Ireland
+        return (Ctx logger cfg env, [])

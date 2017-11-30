@@ -13,8 +13,11 @@ import Servant
 import Futurice.App.EmailProxy.Types
 
 type EmailProxyAPI =
-    Get '[PlainText] Text
-    :<|> "send" :> ReqBody '[JSON] Req :> Post '[JSON] Res
+    Summary "Index page, simple text" :> Get '[PlainText] Text
+
+    :<|> Summary "Simple email sending"
+        :> Description "Recipient lists shall be non-empty. Uses AWS SES as a backend."
+        :> "send" :> ReqBody '[JSON] Req :> Post '[JSON] NoContent
 
 emailProxyApi :: Proxy EmailProxyAPI
 emailProxyApi = Proxy
