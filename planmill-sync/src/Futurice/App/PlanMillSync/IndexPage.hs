@@ -155,6 +155,7 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             th_ "Contract type"
             th_ "Contract span"
 
+            th_ "HR Number"
             th_ "PM Superior"
             th_ "Cost center = PM Team"
             th_ "Expat"
@@ -262,6 +263,18 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
                 markErrorCell "Contract dates differ"
                 " ≠ "
                 toHtml $ formatDateSpan pmStart pmEnd
+
+        -- hr number
+        cell_ $ do
+            let planmillNum = PM.uOperationalId pmu
+            let personioNum = p ^. P.employeeHRNumber
+            -- only internals at helsinki & tampere -offices
+            when (p ^. P.employeeEmploymentType == Just P.Internal && p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $ do
+                traverse_ (toHtml . show) personioNum 
+                unless (fromMaybe False $ liftA2 (==) planmillNum personioNum) $do
+                    markErrorCell "HR number doesn't match"
+                    " ≠ "
+                    traverse_ (toHtml . show) planmillNum
 
         -- superior
         cell_ $ for_ (PM.uSuperior pmu) $ \sv -> do
