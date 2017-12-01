@@ -19,11 +19,7 @@ import Servant
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
-import Futurice.App.Reports.Balances          (BalanceReport)
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
-import Futurice.App.Reports.FumGithub         (FumGitHubReport)
-import Futurice.App.Reports.FumPersonio       (FumPersonioReport)
-import Futurice.App.Reports.FumPlanmill       (FumPlanmillReport)
 import Futurice.App.Reports.GithubIssues      (IssueReport)
 import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
 import Futurice.App.Reports.MissingHours
@@ -41,14 +37,10 @@ data R (path :: Symbol) (report :: *)
 
 type Reports =
     '[ R "issues"             IssueReport
-    , R "fum-github"          FumGitHubReport
     , R "fum-flowdock"        FumFlowdockReport
-    , R "fum-planmill"        FumPlanmillReport
-    , R "fum-personio"        FumPersonioReport
     , R "github-users"        GithubUsersReport
     , R "missing-hours"       (MissingHoursReport MissingHoursTitle)
     , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
-    , R "balances"            BalanceReport
     , R "hours-by-task"       TimereportsByTaskReport
     , R "planmill-employees"  PlanmillEmployeesReport
     ]

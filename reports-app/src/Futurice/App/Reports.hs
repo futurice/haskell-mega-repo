@@ -16,8 +16,7 @@ module Futurice.App.Reports (defaultMain) where
 import Control.Lens               (_5)
 import Dashdo.Servant             (DashdoAPI)
 import Futurice.Integrations
-       (Integrations, beginningOfPrev2Month, beginningOfPrevMonth,
-       runIntegrations)
+       (Integrations, beginningOfPrev2Month, runIntegrations)
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -36,16 +35,10 @@ import qualified Data.Text            as T
 import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
-import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Dashdo            (makeDashdoServer)
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
-import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
-import Futurice.App.Reports.FumPersonio
-       (FumPersonioReport, fumPersonioReport)
-import Futurice.App.Reports.FumPlanmill
-       (FumPlanmillReport, fumPlanmillReport)
 import Futurice.App.Reports.GithubIssues
        (GitHubRepo (..), IssueReport, issueReport)
 import Futurice.App.Reports.GithubUsers
@@ -98,10 +91,6 @@ serveIssues ctx@(_, mgr, _, cfg, _) = cachedIO' ctx () $ do
     runIntegrations' ctx
         (issueReport repos')
 
-serveFumGitHubReport :: Ctx -> IO FumGitHubReport
-serveFumGitHubReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx fumGithubReport
-
 serveGithubUsersReport :: Ctx -> IO GithubUsersReport
 serveGithubUsersReport ctx = cachedIO' ctx () $
     runIntegrations' ctx githubUsersReport
@@ -109,14 +98,6 @@ serveGithubUsersReport ctx = cachedIO' ctx () $
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
 serveFumFlowdockReport ctx = cachedIO' ctx () $
     runIntegrations' ctx fumFlowdockReport
-
-serveFumPlanmillReport :: Ctx -> IO FumPlanmillReport
-serveFumPlanmillReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx fumPlanmillReport
-
-serveFumPersonioReport :: Ctx -> IO FumPersonioReport
-serveFumPersonioReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx fumPersonioReport
 
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
@@ -131,13 +112,6 @@ serveMissingHoursReport allContracts ctx = do
     contractTypes
         | allContracts = Nothing
         | otherwise    = Just (cfgMissingHoursContracts (ctxConfig ctx))
-
-serveBalancesReport :: Ctx -> IO BalanceReport
-serveBalancesReport ctx = do
-    cachedIO' ctx () $ do
-        day <- currentDay
-        let interval = beginningOfPrevMonth day ... day
-        runIntegrations' ctx (balanceReport interval)
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
 servePowerUsersReport ctx = do
@@ -167,14 +141,10 @@ cachedIO' (cache, _, logger, _, _) = cachedIO logger cache 600
 reports :: NP ReportEndpoint Reports
 reports =
     ReportEndpoint serveIssues :*
-    ReportEndpoint serveFumGitHubReport :*
     ReportEndpoint serveFumFlowdockReport :*
-    ReportEndpoint serveFumPlanmillReport :*
-    ReportEndpoint serveFumPersonioReport :*
     ReportEndpoint serveGithubUsersReport :*
     ReportEndpoint (serveMissingHoursReport True) :*
     ReportEndpoint (serveMissingHoursReport False) :*
-    ReportEndpoint serveBalancesReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
     ReportEndpoint servePlanmillEmployeesReport :*
     Nil
