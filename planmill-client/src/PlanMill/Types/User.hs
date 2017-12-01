@@ -46,7 +46,7 @@ data User = User
     , uFirstName         :: !Text
     , uLastName          :: !Text
     , uAccount           :: !(Maybe AccountId)
-    , uAccountName       :: !(Maybe Text)
+    -- , uAccountName       :: !(Maybe Text)
     , uBalanceAdjustment :: !(Maybe Int)
     , uBalanceMaximum    :: !(Maybe Int)
     , uCalendars         :: !(Maybe CapacityCalendarId)
@@ -68,14 +68,15 @@ data User = User
     , uPrimaryPhone      :: !(Maybe Text)
     , uRole              :: !(Maybe Int) -- TODO: RoleId
     , uRoleName          :: !(Maybe Text)
-    , uSkin              :: !(Maybe Int)
+    -- , uSkin              :: !(Maybe Int)
     , uSuperior          :: !(Maybe UserId)
     , uTeam              :: !(Maybe TeamId)
-    , uTeamName          :: !(Maybe Text)
-    , uTeams             :: !(Maybe Int)
-    --, uTimeZone           :: !(Maybe Text) -- can be 0 or Text
+    -- , uTeamName          :: !(Maybe Text)
+    -- , uTeams             :: !(Maybe Int)
+    -- , uTimeZone          :: !(Maybe Text) -- can be 0 or Text
     , uTitle             :: !(Maybe Text)
     , uUserName          :: !Text
+    , uOperationalId     :: !(Maybe Int)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -91,7 +92,7 @@ instance FromJSON User where
         <*> obj .: "firstName"
         <*> obj .: "lastName"
         <*> obj .:? "account"
-        <*> obj .:? "accountName"
+        -- <*> obj .:? "accountName"
         <*> obj .:? "balanceAdjustment"
         <*> obj .:? "balanceMaximum"
         <*> optional (getParsedAsIntegral <$> obj .: "calendars") -- TODO
@@ -111,14 +112,15 @@ instance FromJSON User where
         <*> obj .:? "primaryPhone"
         <*> obj .:? "role"
         <*> obj .:? "roleName"
-        <*> obj .:? "skin"
+        -- <*> obj .:? "skin"
         <*> obj .:? "superior"
         <*> (obj .:? "team" <|> emptyString <$> obj .: "team")
-        <*> obj .:? "teamName"
-        <*> obj .:? "teams"
+        -- <*> obj .:? "teamName"
+        -- <*> obj .:? "teams"
         -- <*> obj .:? "timeZone"
         <*> obj .:? "title"
         <*> obj .: "userName"
+        <*> optional (getParsedAsIntegral <$> obj .: "operationalId")
       where
         -- | TODO: remove me, I'm a hack
         emptyString :: SymTag "" -> Maybe a

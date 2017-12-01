@@ -156,7 +156,7 @@ parseEmployeeObject obj' = Employee
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
     <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
     <*> parseAttribute obj "status"
-    <*> parseDynamicAttribute obj "HR number"
+    <*> parseDynamicAttribute obj "(FI) HR number"
     <*> parseAttribute obj "employment_type"
     <*> optional (parseDynamicAttribute obj "Contract type")
     <*> parseDynamicAttribute obj "Private phone"
@@ -684,13 +684,11 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                     tell [ExternalMonthlyVariableSalary]
 
         hrNumberValidate :: WriterT [ValidationMessage] Parser ()
-        hrNumberValidate = do
-            hrNum <- lift (parseDynamicAttribute obj "HR number" :: Parser Int)
-            case () of
-                _ | e ^. employeeEmploymentType == Just External -> pure ()
-                _ | e ^. employeeOffice `notElem` finnishOffices -> pure ()
-                _ | hrNum > 0                                    -> pure ()
-                _                                                -> tell [HRNumberInvalid hrNum]
+        hrNumberValidate = when (isInternal && e ^. employeeOffice `elem` finnishOffices) $ do
+            hrNum <- lift (parseDynamicAttribute obj "(FI) HR number" :: Parser Int)
+            if hrNum > 0
+            then pure ()
+            else tell [HRNumberInvalid hrNum]
 
         withValidatorValidate :: Text -> ValidationMessage -> (Text -> Bool) -> WriterT [ValidationMessage] Parser ()
         withValidatorValidate attrN valMsg validation = do
