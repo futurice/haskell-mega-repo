@@ -35,6 +35,8 @@ import qualified Data.Text            as T
 import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
+import Futurice.App.Reports.CareerLengthChart
+       (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Dashdo            (makeDashdoServer)
 import Futurice.App.Reports.FumFlowdock
@@ -192,12 +194,18 @@ makeServer ctx (r :* rs) =
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
+    -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
+    :<|> liftIO (serveChart careerLengthData careerLengthRender ctx)
+    :<|> liftIO (serveChart careerLengthData careerLengthRelativeRender ctx)
+    -- graphs
     :<|> liftIO (serveGraph supervisorsGraph ctx)
+    -- power
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
+    -- dashdo
     :<|> view _5 ctx
 
 defaultMain :: IO ()

@@ -72,12 +72,15 @@ type ReportsAPI = FoldReportsAPI Reports
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
+    :<|> "charts" :> "career-length" :> Get '[SVG] (Chart "career-length")
+    :<|> "charts" :> "career-length-relative" :> Get '[SVG] (Chart "career-length-relative")
     -- Graphs
     :<|> "graphs" :> "supervisors" :> Get '[ALGA] (Graph Emp "supervisors")
     -- Additional non-reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+    -- dashdo
     :<|> "dashdo" :> DashdoAPI
 
 reportsApi :: Proxy ReportsAPI

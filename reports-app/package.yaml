@@ -13,6 +13,7 @@ ghc-options: -Wall
 dependencies:
   - base >= 4.8 && <4.11
   - base-compat
+  - adjunctions
   - aeson
   - aeson-pretty
   - algebraic-graphs
@@ -34,6 +35,7 @@ dependencies:
   - env-config
   - exceptions
   - filepath
+  - fin
   - flowdock-rest
   - folds
   - friendly-time >=0.4 && <0.5

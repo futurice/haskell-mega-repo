@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Reports.SupervisorsGraph (supervisorsGraph, Emp (..)) where
 
@@ -32,27 +33,35 @@ supervisorsGraph = do
         pure (toEmp s, toEmp e)
 
 toEmp :: P.Employee -> Emp
-toEmp e = Emp (e ^. P.employeeFullname) (e ^. P.employeeTribe)
+toEmp e = Emp
+    { empName     = e ^. P.employeeFullname
+    , empTribe    = e ^. P.employeeTribe
+    , empInternal = e ^. P.employeeEmploymentType == Just P.Internal
+    }
 
 data Emp = Emp
-    { empName  :: !Text
-    , empTribe :: !Tribe
+    { empName     :: !Text
+    , empTribe    :: !Tribe
+    , empInternal :: !Bool
     }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
 
-instance NFData Emp where
-    rnf (Emp n t) = rnf n `seq` rnf t
+instance NFData Emp
 
 instance ToDotVertex Emp where
     exportVertexStyle = (Dot.defaultStyle (view lazy . empName))
-        { Dot.vertexAttributes = \(Emp _ t) ->
-            [ "color" Dot.:= fromString (tribeToColour t) ]
+        { Dot.vertexAttributes = va
         , Dot.graphAttributes =
             [ "rankdir" Dot.:= "LR"
             , "labelloc" Dot.:= "t"
             , "label" Dot.:= "Supervisor graph, based on Personio data"
             ]
         }
+      where
+        va (Emp _ t i) =
+            [ "color" Dot.:= fromString (tribeToColour t)
+            , "shape" Dot.:= if i then "oval" else "septagon"
+            ]
 
 -- @hashWithSalt 0@ is a way to extract the position in tribes.json :)
 tribeToColour :: Tribe -> String

@@ -34,6 +34,27 @@ textVal p = symbolVal p ^. packed
 indexPage :: HtmlPage "index"
 indexPage = page_ "Reports" $ do
     row_ $ large_ 12 $ h1_ "Reports"
-    row_ $ large_ 12 $ div_ [class_ "callout primary"] $ ul_ $ do
+
+    fullRow_ $ h2_ "Dashdo"
+    fullRow_ $ do
+        a_ [ href_ "/dashdo/" ] "Dashdo dashboards"
+        ", including missing-hours, balances, and other"
+
+    fullRow_ $ h2_ "Charts"
+    fullRow_ $ ul_ $ do
+        li_ $ a_ [ href_ "/charts/career-length" ] "Distribution of career lengths over time, absolute"
+        li_ $ a_ [ href_ "/charts/career-length-relative" ] "Distribution of career length over time, relative"
+
+    fullRow_ $ h2_ "Graphs"
+    fullRow_ $ ul_ $ do
+        li_ $ a_ [ href_ "/graphs/supervisors" ] "Supervisor graph"
+
+    fullRow_ $ h2_ "Tables"
+    fullRow_ $ ul_ $ do
         void $ hsequenceK $ hcmap (Proxy :: Proxy RClass) makeLink links
-        li_ $ a_ [ href_ "/dashdo/" ] "[WIP] Dashdo dashboards"
+
+    fullRow_ $ h2_ "Integrations for Power"
+    fullRow_ $ ul_ $ do
+        li_ $ a_ [ href_ "/power/users" ] "Users"
+        li_ $ a_ [ href_ "/power/projects" ] "Projects"
+        li_ $ a_ [ href_ "/power/absences" ] "Absences"
