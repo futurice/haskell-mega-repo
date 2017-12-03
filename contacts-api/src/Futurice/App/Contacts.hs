@@ -29,16 +29,15 @@ server action = liftIO action
     :<|> liftIO action
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "Contacts API"
     & serverDescription     .~ "All employees and externals"
     & serverApp contactsApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverEnvPfx          .~ "CONTACTSAPI"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr cache = do
-        mgr <- newManager tlsManagerSettings
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx cfg lgr mgr cache = do
         now <- currentTime
 
         -- Contacts action
