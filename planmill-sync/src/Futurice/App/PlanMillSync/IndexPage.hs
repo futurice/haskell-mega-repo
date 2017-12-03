@@ -52,10 +52,10 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             li_ $ a_ [ href_ "#crosscheck" ] "Crosscheck + sync"
 
     fullRow_ $ div_ [ class_ "callout alert "] $ ul_ $ do
-        li_ $ "PlanMill data updates at night, so it can be out-of-date if there are recent changes."
-        li_ $ "Personio data updates every 5 minutes"
+        li_ $ "PlanMill data is fetched directly from PlanMIll."
+        li_ $ "Personio and PlanMill data updates every ~5 minutes."
         li_ $ do
-            "When values are differeent, both are shown: "
+            "When values are different, both are shown: "
             b_ "Personio ≠ PlanMill"
             "."
 
@@ -275,7 +275,7 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             let personioNum = p ^. P.employeeHRNumber
             -- only internals at helsinki & tampere -offices
             when (p ^. P.employeeEmploymentType == Just P.Internal && p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $ do
-                traverse_ (toHtml . show) personioNum 
+                traverse_ (toHtml . show) personioNum
                 unless (fromMaybe False $ liftA2 (==) planmillNum personioNum) $do
                     markErrorCell "HR number doesn't match"
                     " ≠ "

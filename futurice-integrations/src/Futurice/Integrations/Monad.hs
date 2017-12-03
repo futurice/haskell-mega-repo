@@ -9,6 +9,7 @@ module Futurice.Integrations.Monad (
     Integrations,
     Env,
     runIntegrations,
+    runIntegrationsWithHaxlStore,
     runIntegrationsIO,
     IntegrationsConfig (..),
     loadIntegrationConfig,
@@ -95,25 +96,18 @@ runIntegrations
     -> IntegrationsConfig pm fum fum6 gh fd pe
     -> Integrations pm fum fum6 gh fd pe a
     -> IO a
-runIntegrations mgr lgr now cfg (Integr m) = do
-    let env = Env
-            { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
-            , _envNow                 = now
-            , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
-            , _envGithubOrgName       = integrCfgGithubOrgName cfg
-            }
-    let haxl = runReaderT m env
-    let stateStore
-            = pmStateSet
-            . fumStateSet
-            . fum6StateSet
-            . fdStateSet
-            . ghStateSet
-            . peStateSet
-            $ H.stateEmpty
-    haxlEnv <- H.initEnv stateStore ()
-    H.runHaxl haxlEnv haxl
+runIntegrations mgr lgr now cfg m =
+    runIntegrationsWithHaxlStore stateStore now cfg m
   where
+    stateStore
+        = pmStateSet
+        . fumStateSet
+        . fum6StateSet
+        . fdStateSet
+        . ghStateSet
+        . peStateSet
+        $ H.stateEmpty
+
     fumStateSet = extractSEndo $ fmap H.stateSet $ FUM.Haxl.initDataSource' mgr
         <$> integrCfgFumAuthToken cfg
         <*> integrCfgFumBaseUrl cfg
@@ -127,6 +121,28 @@ runIntegrations mgr lgr now cfg (Integr m) = do
         <$> integrCfgGithubProxyBaseRequest cfg
     peStateSet  = extractSEndo $ fmap H.stateSet $ Personio.Haxl.initDataSource lgr mgr
         <$> integrCfgPersonioProxyBaseRequest cfg
+
+-- | Run 'Integrations' action using Haxl's 'H.StateStore'.
+-- This function is needed when one want to do un-orthodox integrations.
+--
+-- /Note:/ It's up to user to verify that state store can handle
+-- requests.
+runIntegrationsWithHaxlStore
+    :: H.StateStore
+    -> UTCTime
+    -> IntegrationsConfig pm fum fum6 gh fd pe
+    -> Integrations pm fum fum6 gh fd pe a
+    -> IO a
+runIntegrationsWithHaxlStore stateStore now cfg (Integr m) = do
+    let env = Env
+            { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
+            , _envNow                 = now
+            , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
+            , _envGithubOrgName       = integrCfgGithubOrgName cfg
+            }
+    let haxl = runReaderT m env
+    haxlEnv <- H.initEnv stateStore ()
+    H.runHaxl haxlEnv haxl
 
 {-# DEPRECATED runIntegrationsIO "Only use this in repl" #-}
 runIntegrationsIO :: Integrations I I I I I I a -> IO a
