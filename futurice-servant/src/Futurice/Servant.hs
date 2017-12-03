@@ -45,6 +45,9 @@ module Futurice.Servant (
     serverMiddleware,
     serverColour,
     serverEnvPfx,
+    serverOpts,
+    -- * Options
+    optionsFlag,
     -- ** WAI
     Application,
     Middleware,
@@ -149,23 +152,25 @@ futuriceServer t d _cache papi server
 -------------------------------------------------------------------------------
 
 -- | Data type containing the server setup
-data ServerConfig f (colour :: Colour) ctx api = SC
+data ServerConfig f opts (colour :: Colour) ctx api = SC
     { _serverName        :: !Text
     , _serverDescription :: !Text
     , _serverApplication :: ctx -> Server api
     , _serverMiddleware  :: ctx -> Middleware
     , _serverEnvPfx      :: !(f Text)
+    , _serverOpts        :: !(O.Parser opts)
     }
 
 -- | Default server config, through the lenses the type of api will be refined
 --
-emptyServerConfig :: ServerConfig Proxy 'FutuGreen ctx (Get '[JSON] ())
+emptyServerConfig :: ServerConfig Proxy () 'FutuGreen ctx (Get '[JSON] ())
 emptyServerConfig = SC
     { _serverName         = "Futurice Service"
     , _serverDescription  = "Some futurice service"
     , _serverApplication  = \_ -> pure ()
     , _serverMiddleware   = futuriceNoMiddleware
     , _serverEnvPfx       = Proxy
+    , _serverOpts         = pure ()
     }
 
 -- | Default middleware: i.e. nothing.
@@ -176,15 +181,15 @@ futuriceNoMiddleware = liftFuturiceMiddleware id
 liftFuturiceMiddleware :: Middleware -> ctx -> Middleware
 liftFuturiceMiddleware mw _ = mw
 
-serverName :: Lens' (ServerConfig f colour ctx api) Text
+serverName :: Lens' (ServerConfig f opts colour ctx api) Text
 serverName = lens _serverName $ \sc x -> sc { _serverName = x }
 
-serverDescription :: Lens' (ServerConfig f colour ctx api) Text
+serverDescription :: Lens' (ServerConfig f opts colour ctx api) Text
 serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
 
 serverEnvPfx :: Lens
-    (ServerConfig f colour ctx api)
-    (ServerConfig I colour ctx api)
+    (ServerConfig f opts colour ctx api)
+    (ServerConfig I opts colour ctx api)
     (f Text)
     Text
 serverEnvPfx = lens _serverEnvPfx $ \sc x -> sc { _serverEnvPfx = I x }
@@ -192,22 +197,28 @@ serverEnvPfx = lens _serverEnvPfx $ \sc x -> sc { _serverEnvPfx = I x }
 serverApp
     :: Functor f
     => Proxy api'
-    -> LensLike f (ServerConfig g colour ctx api) (ServerConfig g colour ctx api')
+    -> LensLike f (ServerConfig g opts colour ctx api) (ServerConfig g opts colour ctx api')
        (ctx -> Server api) (ctx -> Server api')
 serverApp _ = lens _serverApplication $ \sc x -> sc { _serverApplication = x }
 
-serverMiddleware :: Lens' (ServerConfig g colour ctx api) (ctx -> Middleware)
+serverMiddleware :: Lens' (ServerConfig g opts colour ctx api) (ctx -> Middleware)
 serverMiddleware = lens _serverMiddleware $ \sc x -> sc { _serverMiddleware = x }
 
 serverColour
-    :: Lens (ServerConfig f colour ctx api) (ServerConfig f colour' ctx api)
+    :: Lens (ServerConfig f opts colour ctx api) (ServerConfig f opts colour' ctx api)
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
-args :: O.Parser (Bool, Middleware)
-args = (,)
+serverOpts
+    :: Lens (ServerConfig f opts colour ctx api) (ServerConfig f opts' colour ctx api)
+       (O.Parser opts) (O.Parser opts')
+serverOpts = lens _serverOpts $ \sc x -> sc { _serverOpts = x }
+
+args :: O.Parser opts -> O.Parser (Bool, Middleware, opts)
+args o = (,,)
     <$> (printEnv <|> pure False)
     <*> (middleware <|> pure id)
+    <*> o
   where
     printEnv = O.flag' True $ mconcat
         [ O.long "help-env-config"
@@ -224,28 +235,26 @@ args = (,)
         app req res
 
 futuriceServerMain
-    :: forall cfg ctx api colour.
+    :: forall cfg opts ctx api colour.
        (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
-    => (cfg -> Logger -> Cache -> IO (ctx, [Job]))
+    => (opts -> cfg -> Logger -> Manager -> Cache -> IO (ctx, [Job]))
        -- ^ Initialise the context for application, add periocron jobs
-    -> ServerConfig I colour ctx api
+    -> ServerConfig I opts colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx)) = do
-    (_showEnvConvig, middleware2) <- O.execParser $ O.info (O.helper <*> args) $ mconcat
+futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
+    (_showEnvConvig, middleware2, opts) <- O.execParser $ O.info (O.helper <*> args optsP) $ mconcat
         [ O.fullDesc
-        , O.progDesc "foo"
+        , O.progDesc (d ^. unpacked)
         ]
-    main1 (\ctx -> middleware1 ctx . middleware2)
+    main1 (\ctx -> middleware1 ctx . middleware2) opts
   where
-    main1 :: (ctx -> Middleware) -> IO ()
-    main1 middleware = withStderrLogger $ \logger ->
+    main1 :: (ctx -> Middleware) -> opts -> IO ()
+    main1 middleware opts = withStderrLogger $ \logger ->
         handleAll (handler logger) $ do
             cfg <- runLogT "futurice-servant" logger $ do
                 logInfo_ $ "Hello, " <> t <> " is alive"
                 getConfigWithPorts (envpfx ^. from packed)
-
-            cache       <- newCache
 
             let awsGroup = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
             let service  = t
@@ -255,7 +264,7 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx)) = do
                 return $ env'
                     & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
 
-            let main' = main2 middleware cfg menv service cache
+            let main' = main2 middleware opts cfg menv service
 
             case menv of
                 Nothing -> main' logger
@@ -266,9 +275,11 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx)) = do
                         then (logger <> leLogger)
                         else leLogger
 
-    main2 :: (ctx -> Middleware) -> Cfg cfg -> Maybe AWS.Env -> Text -> Cache -> Logger -> IO ()
-    main2 middleware (Cfg cfg p _ekgP mgroup _ _) menv service cache logger = do
-        (ctx, jobs)    <- makeCtx cfg logger cache
+    main2 :: (ctx -> Middleware) -> opts -> Cfg cfg -> Maybe AWS.Env -> Text -> Logger -> IO ()
+    main2 middleware opts (Cfg cfg p _ekgP mgroup _ _) menv service lgr = do
+        mgr            <- newManager tlsManagerSettings
+        cache          <- newCache
+        (ctx, jobs)    <- makeCtx opts cfg lgr mgr cache
         let server'    =  futuriceServer t d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
@@ -284,20 +295,20 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx)) = do
         let mcloudwatchJob = do
                 guard statsEnabled
                 env <- menv
-                pure (cloudwatchJob cache mutgcTVar logger env awsGroup service)
+                pure (cloudwatchJob cache mutgcTVar lgr env awsGroup service)
 
-        let jobs' = mkJob "dynmap-cache-cleanup" (cacheCleanupJob cache logger) (shifted 5 $ every (15 * 60))
+        let jobs' = mkJob "dynmap-cache-cleanup" (cacheCleanupJob cache lgr) (shifted 5 $ every (15 * 60))
                   : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
                   ++ jobs
-        _ <- spawnPeriocron (defaultOptions logger) jobs'
+        _ <- spawnPeriocron (defaultOptions lgr) jobs'
 
-        runLogT "futurice-servant" logger $ do
+        runLogT "futurice-servant" lgr $ do
             logInfo_ $ "Starting " <> t <> " at port " <> textShow p
             logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
             logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
             -- logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
 
-        Warp.runSettings (settings p logger)
+        Warp.runSettings (settings p lgr)
             $ middleware ctx
             $ waiMiddleware
             $ serve proxyApi' server'
@@ -499,6 +510,22 @@ instance HasLink api => HasLink (SSOUser :> api) where
 
 instance HasSwagger api => HasSwagger (SSOUser :> api) where
     toSwagger _ = toSwagger (Proxy :: Proxy api)
+
+-------------------------------------------------------------------------------
+-- Options applicative
+-------------------------------------------------------------------------------
+
+optionsFlag
+    :: a              -- ^ default value
+    -> [(a, String)]  -- ^ values
+    -> String         -- ^ help text
+    -> O.Parser a
+optionsFlag def ys h = start ys
+  where
+    start []            = pure def
+    start ((x, l) : xs) = O.flag' x (O.long l <> O.help h) <|> go xs
+    go []               = pure def
+    go ((x, l) : xs)    = O.flag' x (O.long l) <|> go xs
 
 -------------------------------------------------------------------------------
 -- Config
