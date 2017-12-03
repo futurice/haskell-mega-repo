@@ -12,5 +12,5 @@ data Ctx = Ctx
     , ctxLogger  :: !Logger
     , ctxManager :: !Manager
     , ctxCache   :: !Cache
-    , ctxWorkers :: !Workers
+    , ctxWorkers :: !(Maybe Workers)
     }

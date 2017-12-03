@@ -52,7 +52,7 @@ indexPageAction ctx mfu = do
         Just fu | Set.member fu fus -> do
             -- Data fetch
             (pm, fum, p) <- liftIO $ cachedIO lgr cache 300 () $
-                runIntegrations' mgr lgr now (Just ws) (cfgIntegrationsConfig cfg) fetcher
+                runIntegrations' mgr lgr now ws (cfgIntegrationsConfig cfg) fetcher
 
             -- Render
             pure $ indexPage now pm fum p
@@ -71,7 +71,7 @@ page404 = page_ "PlanMill Sync - Unauthorised" $
         h1_ "Unauthorised"
         "Ask IT Team for access rights"
 
-type M = Integrations I I Proxy Proxy Proxy I
+type M = Integrations '[I, I, Proxy, Proxy, Proxy, I]
 
 fetcher :: M ([PMUser], Map FUM.Login FUM.User, [P.Employee])
 fetcher = liftA3 (,,) users fum (P.personio P.PersonioEmployees)
@@ -85,10 +85,13 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp githubSyncApi .~ server
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF5 'AC1))
     & serverEnvPfx            .~ "PLANMILLSYNC"
+    & serverOpts              .~ optionsFlag True [(True, "planmill-direct"), (False, "planmill-proxy")] "Access PlanMill directly"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr cache = do
-        mgr <- newManager tlsManagerSettings
-        ws <- workers lgr mgr (cfgPlanMillCfg cfg) ["worker1", "worker2", "worker3"]
+    makeCtx :: Bool -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx planmillDirect cfg lgr mgr cache = do
+        ws <-
+            if planmillDirect
+            then Just <$> workers lgr mgr (cfgPlanMillCfg cfg) ["worker1", "worker2", "worker3"]
+            else pure Nothing
         let ctx = Ctx cfg lgr mgr cache ws
         pure (ctx, [])

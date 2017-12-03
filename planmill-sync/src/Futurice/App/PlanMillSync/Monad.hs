@@ -1,40 +1,30 @@
+{-# LANGUAGE DataKinds #-}
 module Futurice.App.PlanMillSync.Monad (
     runIntegrations',
     ) where
 
+import Control.Category      ((>>>))
 import Futurice.Integrations
 import Futurice.Prelude
-import PlanMill.Queries.Haxl (initDataSourceBatch, initDataSourceWorkers)
+import PlanMill.Queries.Haxl (initDataSourceWorkers)
 import PlanMill.Worker       (Workers)
 import Prelude ()
 
-import qualified FUM.Haxl
-import qualified Haxl.Core     as H
-import qualified Personio.Haxl
-import qualified PlanMill      as PM
+import qualified Haxl.Core as H
 
 runIntegrations'
     :: Manager -> Logger -> UTCTime
     -> Maybe Workers
-    -> IntegrationsConfig I I Proxy Proxy Proxy I
-    -> Integrations I I Proxy Proxy Proxy I a
+    -> IntegrationsConfig '[I, I, Proxy, Proxy, Proxy, I]
+    -> Integrations [I, I, Proxy, Proxy, Proxy, I] a
     -> IO a
 runIntegrations' mgr lgr now mworkers cfg m = do
-    runIntegrationsWithHaxlStore stateStore now cfg m
+    runIntegrationsWithHaxlStore now stateMorphism cfg m
   where
-    stateStore
-        = pmStateSet
-        . fumStateSet
-        . peStateSet
-        $ H.stateEmpty
+    stateMorphism = morph
+        >>> fumIntegrationStateMorphism lgr mgr cfg
+        >>> peIntegrationStateMorphism lgr mgr cfg
 
-    fumStateSet = unI $ fmap H.stateSet $ FUM.Haxl.initDataSource' mgr
-        <$> integrCfgFumAuthToken cfg
-        <*> integrCfgFumBaseUrl cfg
-    peStateSet  = unI $ fmap H.stateSet $ Personio.Haxl.initDataSource lgr mgr
-        <$> integrCfgPersonioProxyBaseRequest cfg
-
-    pmStateSet'  = unI $ fmap H.stateSet $ initDataSourceBatch lgr mgr
-        <$> integrCfgPlanmillProxyBaseRequest cfg
-    pmStateSet  = mcase mworkers pmStateSet' $ \workers ->
-        H.stateSet $ initDataSourceWorkers workers
+    morph' = pmIntegrationStateMorphism lgr mgr cfg
+    morph  = mcase mworkers morph' $ \workers ->
+        IntegrSM $ H.stateSet $ initDataSourceWorkers workers
