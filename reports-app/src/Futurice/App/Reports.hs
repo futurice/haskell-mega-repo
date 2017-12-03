@@ -74,7 +74,7 @@ ctxConfig (_, _, _, cfg, _) = cfg
 -- Integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
+runIntegrations' :: Ctx -> Integrations '[I, I, Proxy, I, I, I] a -> IO a
 runIntegrations' (_, mgr, lgr, cfg, _) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
@@ -153,7 +153,7 @@ reports =
 
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
-    => Integrations I I Proxy I I I v
+    => Integrations '[I, I, Proxy, I, I, I] v
     -> (v -> Chart key)
     -> Ctx
     -> IO (Chart key)
@@ -163,7 +163,7 @@ serveChart f g ctx = do
 
 serveGraph
     :: (Typeable key, KnownSymbol key, Typeable a, NFData a)
-    => Integrations I I Proxy I I I (Graph a key)
+    => Integrations '[I, I, Proxy, I, I, I] (Graph a key)
     -> Ctx
     -> IO (Graph a key)
 serveGraph m ctx = cachedIO' ctx () $ runIntegrations' ctx m
@@ -171,7 +171,7 @@ serveGraph m ctx = cachedIO' ctx () $ runIntegrations' ctx m
 -- TODO: introduce "HasMissingHoursContracts"?
 missingHoursChartData'
     :: Ctx
-    -> Integrations I I Proxy I I I MissingHoursChartData
+    -> Integrations '[I, I, Proxy, I, I, I] MissingHoursChartData
 missingHoursChartData' ctx =
     missingHoursChartData (cfgMissingHoursContracts (ctxConfig ctx))
 
@@ -209,16 +209,15 @@ server ctx = makeServer ctx reports
     :<|> view _5 ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName           .~ "Report API"
     & serverDescription    .~ "Various reports"
     & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverApp reportsApi .~ server
     & serverEnvPfx         .~ "REPORTSAPP"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr cache = do
-        manager <- newManager tlsManagerSettings
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx cfg lgr manager cache = do
         let ctx' = (cache, manager, lgr, cfg)
         dashDoApp <- makeDashdoServer ctx'
         let ctx = (cache, manager, lgr, cfg, dashDoApp)

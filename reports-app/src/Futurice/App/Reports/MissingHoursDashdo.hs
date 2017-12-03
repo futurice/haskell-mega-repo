@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -77,7 +78,7 @@ fetchValues ctx interval = cachedIO' ctx interval $
             , vMissingHours = realToFrac $ unNDT $ _missingHourCapacity mh
             }
 
-runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
+runIntegrations' :: Ctx -> Integrations '[I, I, Proxy, I, I, I] a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m

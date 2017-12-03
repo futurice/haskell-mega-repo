@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Futurice.App.HoursApi.Ctx where
 
 import Control.Concurrent.STM (TVar)
@@ -18,5 +19,5 @@ data Ctx = Ctx
     , ctxManager         :: !Manager
     , ctxWorkers         :: !PM.Workers
     , ctxPlanmillCfg     :: !PM.Cfg
-    , ctxIntegrationsCfg :: !(IntegrationsConfig I I Proxy Proxy Proxy Proxy)
+    , ctxIntegrationsCfg :: !(IntegrationsConfig '[I, I, Proxy, Proxy, Proxy, Proxy])
     }

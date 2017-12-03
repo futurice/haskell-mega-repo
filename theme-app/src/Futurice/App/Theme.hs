@@ -24,12 +24,12 @@ static :: Server Raw
 static = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "images")
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName         .~ "Theme app"
     & serverDescription  .~ "Futurice theme guidelines"
     & serverColour       .~ (Proxy :: Proxy 'FutuGreen)
     & serverApp themeApi .~ server
     & serverEnvPfx       .~ "THEMEAPP"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO ((), [Job])
-    makeCtx _ _ _ = pure ((), [])
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO ((), [Job])
+    makeCtx _ _ _ _ = pure ((), [])

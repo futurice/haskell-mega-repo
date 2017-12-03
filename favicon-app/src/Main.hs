@@ -40,15 +40,15 @@ server (logger, cache) = pure IndexPage :<|> liftIO . makeLogo'
    makeLogo' c = cachedIO logger cache 3600 c (evaluate $!! makeLogo c)
 
 main :: IO ()
-main = futuriceServerMain makeCtx $ emptyServerConfig
+main = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName        .~ "Favicon API"
     & serverDescription .~ "Futurice favicons"
     & serverColour      .~ (Proxy :: Proxy 'FutuBlack)
     & serverApp api     .~ server
     & serverEnvPfx      .~ "FAVICON"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx _cfg logger cache = return ((logger, cache), [])
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx _cfg logger _mgr cache = return ((logger, cache), [])
 
 -------------------------------------------------------------------------------
 -- IndexPage

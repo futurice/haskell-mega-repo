@@ -49,17 +49,16 @@ server ctx mfu = hoistServer (Proxy :: Proxy DashdoAPI) nt (runIdentity (ctxDash
     mgr = ctxManager ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName             .~ "Prox Management"
     & serverDescription      .~ "Audit log"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
     & serverApp proxyMgmtApi .~ server
     & serverEnvPfx           .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx Identity, [Job])
-    makeCtx cfg@Config {..} lgr cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx Identity, [Job])
+    makeCtx cfg@Config {..} lgr mgr cache = do
         postgresPool <- createPostgresPool cfgPostgresConnInfo
-        mgr <- newManager tlsManagerSettings
         let ctx = Ctx postgresPool cfg lgr cache mgr Proxy
         dashdoServer <- makeDashdoServer ctx
         pure (ctx { ctxDashdoServer = Identity dashdoServer }, [])

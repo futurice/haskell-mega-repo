@@ -38,15 +38,15 @@ server ctx = pure "Try /swagger-ui/"
     :<|> liftIO (timereportsAgeDistr ctx)
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName          .~ "Planmill Proxy"
     & serverDescription   .~ "Make faster queries to PlanMill"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp planmillProxyApi .~ server
     & serverEnvPfx        .~ "PLANMILLPROXY"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx (Config cfg connectionInfo) logger cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx (Config cfg connectionInfo) logger _ cache = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close

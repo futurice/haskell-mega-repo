@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Futurice.App.FUM.Config (
     Config(..),
     ) where
@@ -14,7 +15,7 @@ import qualified Personio
 data Config = Config
     { cfgPostgresConnInfo   :: !ConnectInfo
     , cfgPersonioCfg        :: !(Personio.Cfg)
-    , cfgIntegrationsConfig :: !(IntegrationsConfig Proxy I Proxy Proxy Proxy Proxy)
+    , cfgIntegrationsConfig :: !(IntegrationsConfig '[Proxy, I, Proxy, Proxy, Proxy, Proxy])
     , cfgMockUser           :: !(Maybe Login)
     }
 

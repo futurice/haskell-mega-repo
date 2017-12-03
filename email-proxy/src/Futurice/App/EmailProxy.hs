@@ -29,15 +29,15 @@ server ctx = pure "This is email proxy. See /swagger-ui/"
     nt = runLogT "emailproxy" (ctxLogger ctx)
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName              .~ "Email Proxy"
     & serverDescription       .~ "Send Emails"
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp emailProxyApi .~ server
     & serverEnvPfx            .~ "EMAILPROXY"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg logger _cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx cfg logger _mgr _cache = do
         env' <- AWS.newEnv (cfgSesCreds cfg)
         -- SES is only in Ireland in Europe
         let env = env' & AWS.envRegion .~ AWS.Ireland

@@ -11,7 +11,7 @@ import Prelude ()
 import qualified PlanMill           as PM
 
 data Config = Config
-    { cfgIntegrationsCfg       :: !(IntegrationsConfig I I Proxy I I I)
+    { cfgIntegrationsCfg       :: !(IntegrationsConfig '[I, I, Proxy, I, I, I])
     , cfgReposUrl              :: !Text
     , cfgMissingHoursContracts :: !(Set (PM.EnumValue PM.User "contractType"))
     }

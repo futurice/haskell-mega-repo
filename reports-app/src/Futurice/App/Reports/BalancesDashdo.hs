@@ -147,7 +147,7 @@ fetchValues ctx interval = cachedIO' ctx interval $
         -- strip Nothing:s
         pure (valsMap ^.. folded . _Just)
 
-runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
+runIntegrations' :: Ctx -> Integrations [I, I, Proxy, I, I, I] a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m

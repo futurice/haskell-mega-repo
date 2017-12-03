@@ -51,17 +51,15 @@ compareOldFumReportImpl = liftIO . compareOldFumReport
 -------------------------------------------------------------------------------
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName             .~ "FUM Carbon"
     & serverDescription      .~ "FUM faster than ever"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp fumCarbonApi .~ server
     & serverEnvPfx           .~ "FUMAPP"
 
-makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-makeCtx cfg@Config {..} lgr _cache = do
-    mgr <- newManager tlsManagerSettings
-
+makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+makeCtx cfg@Config {..} lgr mgr _cache = do
     -- employees
     let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
     (employees, validations) <- fetchEmployees

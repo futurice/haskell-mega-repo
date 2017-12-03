@@ -15,11 +15,12 @@ module Futurice.App.Proxy (
 
 import Data.Aeson.Compat                    (object, (.=))
 import Data.Maybe                           (isNothing)
-import Data.Pool                            (createPool, withResource)
+import Data.Pool                            (withResource)
 import Data.Reflection                      (Given (..), give)
 import Data.Sequence                        ((<|))
 import Data.Text.Encoding                   (decodeLatin1)
 import Futurice.Metrics.RateMeter           (mark)
+import Futurice.Postgres                    (createPostgresPool)
 import Futurice.Prelude
 import Futurice.Servant
 import Network.Wai                          (Request, rawPathInfo)
@@ -241,7 +242,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy ContactsEndpoint) ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName         .~ "Prox"
     & serverDescription  .~ "Proxy from the outer space"
     & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
@@ -249,13 +250,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx       .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger _cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx Config {..} logger _mgr _cache = do
         mgr                  <- newManager tlsManagerSettings
-        postgresPool         <- createPool
-            (Postgres.connect cfgPostgresConnInfo)
-            Postgres.close
-            1 10 5
+        postgresPool         <- createPostgresPool cfgPostgresConnInfo
         pure $ flip (,) [] Ctx
             { ctxManager              = mgr
             , ctxPostgresPool         = postgresPool
