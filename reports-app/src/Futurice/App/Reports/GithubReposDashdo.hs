@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -97,7 +98,7 @@ fetchValues ctx = cachedIO' ctx () $
         , vArchived  = GH.repoArchived r
         }
 
-runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
+runIntegrations' :: Ctx -> Integrations '[I, I, Proxy, I, I, I] a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m

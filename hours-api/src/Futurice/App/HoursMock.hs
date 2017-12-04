@@ -35,14 +35,14 @@ v1Server ctx =
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "Futuhours MOCK api"
     & serverDescription     .~ "Is it real?"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverEnvPfx          .~ "FUTUHOURSMOCK"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx _ _ _ = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx _ _ _ _ = do
         ctx <- newCtx
         pure (ctx, [])

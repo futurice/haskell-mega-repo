@@ -31,15 +31,15 @@ server ctx = pure "smileys backend"
     :<|> relativeChartHandler ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName             .~ "Smileys API"
     & serverDescription      .~ "Hours Smileys"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
     & serverApp smileysApi .~ server
     & serverEnvPfx           .~ "SMILEYS"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx Config {..} logger _ cache = do
         pp <- createPostgresPool cfgPostgresConnInfo
         let ctx = Ctx
                   { ctxPostgresPool = pp

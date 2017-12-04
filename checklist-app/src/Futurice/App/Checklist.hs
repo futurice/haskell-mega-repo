@@ -376,17 +376,18 @@ withAuthUser' def ctx fu f = do
 -------------------------------------------------------------------------------
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName             .~ "Checklist"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
-makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr cache = do
+makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+makeCtx Config {..} lgr mgr cache = do
     ctx <- newCtx
         lgr
+        mgr
         cache
         cfgIntegrationsCfg
         cfgPostgresConnInfo
@@ -413,7 +414,7 @@ makeCtx Config {..} lgr cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig Proxy Proxy I Proxy Proxy I
+    -> IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I]
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.PlanMillSync.Types where
 
@@ -14,7 +15,9 @@ data PMUser = PMUser
     , pmAccount  :: !(Maybe PM.Account)
     , pmPassive  :: !Text
     }
-  deriving Show
+  deriving (Show, Generic)
+
+instance NFData PMUser
 
 users :: PMQ.MonadPlanMillQuery m => m [PMUser]
 users = do

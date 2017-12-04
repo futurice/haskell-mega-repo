@@ -68,19 +68,15 @@ authorisedUser ctx mfum meterName action =
         throwError err403
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "Futuhours API"
     & serverDescription     .~ "Here we mark hours"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx config lgr cache = do
-        mgr <- newManager tlsManagerSettings
-            { managerConnCount = 100
-            }
-
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx config lgr mgr cache = do
         let integrConfig = cfgIntegrationsCfg config
         let getFumPlanmillMap = do
                 now <- currentTime

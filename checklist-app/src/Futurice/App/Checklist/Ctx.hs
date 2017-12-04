@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Futurice.App.Checklist.Ctx (
     Ctx (..),
@@ -31,7 +32,7 @@ data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxManager         :: !Manager
     , ctxCache           :: !Cache
-    , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy Proxy I Proxy Proxy I)
+    , ctxIntegrationsCfg :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I])
     , ctxWorld           :: TVar World
     , ctxOrigWorld       :: World
     , ctxPostgres        :: Pool Postgres.Connection
@@ -42,14 +43,14 @@ data Ctx = Ctx
 
 newCtx
     :: Logger
+    -> Manager
     -> Cache
-    -> IntegrationsConfig Proxy Proxy I Proxy Proxy I
+    -> IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I]
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World
     -> IO Ctx
-newCtx lgr cache cfg ci mockUser w = do
-    mgr <- newManager tlsManagerSettings
+newCtx lgr mgr cache cfg ci mockUser w = do
     Ctx lgr mgr cache cfg
         <$> newTVarIO w
         <*> pure w

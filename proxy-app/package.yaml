@@ -32,6 +32,7 @@ library:
     - fum-client
     - futurice-github
     - futurice-metrics
+    - futurice-postgres
     - futurice-prelude
     - futurice-servant
     - http-client

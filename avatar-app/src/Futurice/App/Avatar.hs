@@ -69,14 +69,13 @@ server ctx = pure "Hello from avatar app"
     :<|> mkAvatar ctx
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName          .~ "Avatar API"
     & serverDescription   .~ "Serve smaller versions of your favourite images"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp avatarApi .~ server
     & serverEnvPfx        .~ "AVATAR"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx _cfg logger cache = do
-        mgr <- newManager tlsManagerSettings
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx _cfg logger mgr cache = do
         return ((logger, cache, mgr), [])

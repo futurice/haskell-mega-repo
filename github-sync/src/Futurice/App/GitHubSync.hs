@@ -42,7 +42,7 @@ indexPageAction ctx _mfu = do
     lgr = ctxLogger ctx
     mgr = ctxManager ctx
 
-type M = Integrations Proxy Proxy Proxy I Proxy I
+type M = Integrations '[Proxy, Proxy, Proxy, I, Proxy, I]
 
 fetcher :: M ([GH.User], [P.Employee])
 fetcher = liftA2 (,) github personioE
@@ -56,15 +56,14 @@ githubDetailedMembers = do
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName              .~ "GitHub Sync"
     & serverDescription       .~ "Sync people from personio to github"
     & serverApp githubSyncApi .~ server
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF3 'AC1))
     & serverEnvPfx            .~ "GITHUBSYNC"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr _cache = do
-        mgr <- newManager tlsManagerSettings
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx cfg lgr mgr _cache = do
         let ctx = Ctx cfg lgr mgr
         pure (ctx, [])

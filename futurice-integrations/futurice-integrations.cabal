@@ -41,6 +41,7 @@ library
     , containers
     , dependent-sum
     , env-config
+    , fin
     , flowdock-rest
     , fum-api
     , fum-client

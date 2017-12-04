@@ -39,14 +39,13 @@ sendLegacySms' ctx to msg = do
     sendLegacySms ctx (Req to' msg')
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "SMS Proxy"
     & serverDescription     .~ "Send sms"
     & serverColour          .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp smsProxyApi .~ server
     & serverEnvPfx          .~ "SMSPROXY"
   where
-    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr _cache = do
-        mgr <- newManager tlsManagerSettings
+    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
+    makeCtx cfg lgr mgr _cache = do
         return (Ctx lgr cfg mgr, [])

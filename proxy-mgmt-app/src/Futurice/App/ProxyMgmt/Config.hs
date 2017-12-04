@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Futurice.App.ProxyMgmt.Config (
     Config(..),
     ) where
@@ -13,7 +14,7 @@ import qualified FUM.Types.Login     as FUM
 
 data Config = Config
     { cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsConfig :: !(IntegrationsConfig Proxy Proxy I Proxy Proxy Proxy)
+    , cfgIntegrationsConfig :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, Proxy])
     , cfgMockUser            :: !(Maybe FUM.Login)
     , cfgAccessGroup         :: !(FUM.GroupName)
     }

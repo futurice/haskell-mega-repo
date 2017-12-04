@@ -52,10 +52,10 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             li_ $ a_ [ href_ "#crosscheck" ] "Crosscheck + sync"
 
     fullRow_ $ div_ [ class_ "callout alert "] $ ul_ $ do
-        li_ $ "PlanMill data updates at night, so it can be out-of-date if there are recent changes."
-        li_ $ "Personio data updates every 5 minutes"
+        li_ $ "PlanMill data is fetched directly from PlanMIll."
+        li_ $ "Personio and PlanMill data updates every ~5 minutes."
         li_ $ do
-            "When values are differeent, both are shown: "
+            "When values are different, both are shown: "
             b_ "Personio ≠ PlanMill"
             "."
 
@@ -142,6 +142,17 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
         a_ [ name_ "crosscheck" ] mempty
         h2_ "Cross-check of people in PlanMill and Personio"
 
+    let elements0 = itoListWithOf (ifolded . _These) processBoth employees
+    let elements1 = map (runWriter . commuteHtmlT) elements0
+    let elements2 = map fst $ sortOn (Down . snd) elements1
+
+    fullRow_ $ ul_ $ do
+        let tot = length elements1
+        let err = length $ filter (getAny . snd) elements1
+        li_ $ toHtml $ "Total employees in both Personio and PlanMill: " <> textShow (length elements1)
+        li_ $ toHtml $ "Employees with non-matching data: " <> textShow err
+        li_ $ toHtml $ "Employees with matching data: " <> textShow (tot - err)
+
     fullRow_ $ table_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
@@ -162,12 +173,9 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             th_ "PM Account"
             th_ "PM email"
             th_ "Competence"
+            th_ "Actions"
 
-        tbody_ $ do
-            let elements0 = itoListWithOf (ifolded . _These) processBoth employees
-            let elements1 = map (runWriter . commuteHtmlT) elements0
-            let elements2 = map fst $ sortOn (Down . snd) elements1
-            traverse_ id elements2
+        tbody_ $ traverse_ id elements2
   where
     processBoth :: MonadWriter Any m => FUM.Login -> (PMUser, P.Employee) -> HtmlT m ()
     processBoth login (pm, p) = tr_ $ do
@@ -245,21 +253,18 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
 
             toHtml $ formatDateSpan pStart pEnd
 
+            {-
             let startDifferent = case (pStart, pmStart) of
                     (Nothing, Nothing) -> False
                     (Nothing, Just _)  -> True
                     (Just _,  Nothing) -> True
                     -- planmill start date could be larger than actual start date.
                     (Just a, Just b)   -> a > b
+            -}
 
-            -- TODO: should be just /=
-            let endDifferent = case (pEnd, pmEnd) of
-                    (Nothing, Nothing) -> False
-                    (Nothing, Just _)  -> False
-                    (Just a,  Nothing) -> a > utctDay now -- TODO?
-                    (Just a, Just b)   -> a /= b
+            let endDifferent = pEnd /= pmEnd
 
-            when (endDifferent || startDifferent) $ do
+            when endDifferent $ do
                 markErrorCell "Contract dates differ"
                 " ≠ "
                 toHtml $ formatDateSpan pmStart pmEnd
@@ -270,7 +275,7 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             let personioNum = p ^. P.employeeHRNumber
             -- only internals at helsinki & tampere -offices
             when (p ^. P.employeeEmploymentType == Just P.Internal && p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $ do
-                traverse_ (toHtml . show) personioNum 
+                traverse_ (toHtml . show) personioNum
                 unless (fromMaybe False $ liftA2 (==) planmillNum personioNum) $do
                     markErrorCell "HR number doesn't match"
                     " ≠ "
@@ -325,6 +330,9 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
                 markErrorCell "Competences don't match"
                 " ≠ "
                 traverse_ toHtml pmCompetence
+
+        -- Actions
+        cell_ mempty
 
     planmillMap :: Map FUM.Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills

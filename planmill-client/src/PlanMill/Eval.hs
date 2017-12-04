@@ -15,6 +15,7 @@ import Network.HTTP.Client
        requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
 import Network.HTTP.Types         (Header, Status (..), statusIsSuccessful)
+import Text.Printf                (printf)
 
 -- Qualified imports
 import qualified Data.ByteString.Base64 as Base64
@@ -83,7 +84,8 @@ evalPlanMill pm = do
             let status@Status {..} = responseStatus res
             let body = responseBody res
             let dur' = timeSpecToSecondsD dur
-            logTrace_ $ "res " <> textShow statusCode <> " " <> textShow statusMessage <> "; took " <> textShow dur'
+            let dur'' = printf "%.06fs" dur'
+            logTrace_ $ "res " <> textShow statusCode <> " " <> textShow statusMessage <> "; took " <> dur'' ^. packed
             liftIO $ mark "PlanMill request"
             if isn't _Empty body
                 then
