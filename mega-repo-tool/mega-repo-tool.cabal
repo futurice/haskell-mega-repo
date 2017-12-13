@@ -70,6 +70,7 @@ library
       Futurice.App.MegaRepoTool
       Futurice.App.MegaRepoTool.Command.BuildDocker
       Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
+      Futurice.App.MegaRepoTool.Config
       Futurice.App.MegaRepoTool.Estimator
       Futurice.App.MegaRepoTool.Scripts
       Futurice.App.MegaRepoTool.Stats

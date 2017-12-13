@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool (defaultMain) where
 
+import Data.Yaml        (decodeFileEither)
 import Futurice.Prelude
 import Prelude ()
 
@@ -8,13 +9,12 @@ import qualified Options.Applicative as O
 
 import Futurice.App.MegaRepoTool.Command.BuildDocker
 import Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
+import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Scripts
 import Futurice.App.MegaRepoTool.Stats
 
--- text argument
-textArgument :: IsString s => O.Mod O.ArgumentFields String -> O.Parser s
-textArgument m = fromString <$> O.strArgument m
+import qualified Data.Map as Map
 
 data Cmd
     = ListSnapshotDependencies
@@ -24,9 +24,18 @@ data Cmd
 listSnapshotDependenciesOptions :: O.Parser Cmd
 listSnapshotDependenciesOptions = pure ListSnapshotDependencies
 
-buildDockerOptions :: O.Parser Cmd
+buildDockerOptions ::O.Parser Cmd
 buildDockerOptions = BuildDocker
-    <$> some (textArgument $ mconcat [ O.metavar ":component", O.help "Component/image to build" ])
+    <$> some (O.strArgument $ mconcat
+        [ O.metavar ":component"
+        , O.help "Component/image to build"
+        , O.completer $ O.listIOCompleter comp
+        ])
+  where
+    comp :: IO [String]
+    comp = either (const []) mk <$> decodeFileEither "mega-repo-tool.yaml"
+
+    mk = map (view unpacked) . Map.keys . _mrtApps
 
 packdepsOptions :: O.Parser Cmd
 packdepsOptions = pure $ Action packdepsScript
@@ -39,7 +48,7 @@ statsOptions =  pure $ Action stats
 
 estimatorOptions :: O.Parser Cmd
 estimatorOptions = fmap Action $ estimator
-    <$> textArgument (mconcat [ O.metavar ":file", O.help "TODO File" ])
+    <$> O.strArgument (mconcat [ O.metavar ":file", O.help "TODO File" ])
 
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
@@ -61,8 +70,7 @@ main' (BuildDocker imgs)       = buildDocker imgs
 main' (Action x)               = x
 
 defaultMain :: IO ()
-defaultMain =
-    O.execParser opts >>= main'
+defaultMain = O.execParser opts >>= main'
   where
     opts = O.info (O.helper <*> optsParser) $ mconcat
         [ O.fullDesc
