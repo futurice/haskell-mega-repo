@@ -10,36 +10,18 @@
     - If you didn't clone recursively, fetch the submodules with `git submodule update --init`
 2. Install native dependencies:
     - macOS:
-        - `brew install fftw pkg-config`
+        - `brew install fftw pkg-config python3`
     - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
-3. Install [haskell stack](https://docs.haskellstack.org/en/stable/install_and_upgrade/)
-    - macOS:
-        - `stack setup`
-        - `stack install alex happy`
-        - https://postgresapp.com/ and `source env-postgres-osx.sh`
-4. Build and run *theme-app*
-    - theme-app is a small app without external integrations.
-    - `stack build --fast theme-app`
-    - `stack exec -- theme-app-server`
-
-## Alternative cabal new-build process
-
-1. As above
-2. As above
 3. Install cabal and ghc
     - Ubuntu: See https://launchpad.net/~hvr/+archive/ubuntu/ghc
-        - `apt-get install ghc-8.2.1 cabal-install-head`
+        - `apt-get install ghc-8.2.2 cabal-install-head`
     - macOS:
-        - get `cabal` from https://haskell.futurice.com/
-        - GHC: download from https://www.haskell.org/ghc/download_ghc_8_2_1.html#binaries
-        - `sudo mkdir -p /usr/local/ghc/8.2.1 && sudo chown -R $(logname):admin /usr/local/ghc/`
-        - `./configure --prefix=/usr/local/ghc/8.2.1/ && make install`
-        - Add `echo /usr/local/ghc/8.2.1/bin | sudo tee /etc/paths.d/ghc`
-4. `cabal-head new-run theme-app-server`
+	- From [haskell.futurice.com](https://haskell.futurice.com/): `curl -sL https://haskell.futurice.com/haskell-on-macos.py | python3 - --make-dirs --paths.d --ghc-alias=8.2.2 --cabal-alias=head install ghc-8.0.2 ghc-8.2.2 cabal-install-head`
+4. `cabal new-run theme-app-server`
 
 We use `new-` commands, e.g.
-- `cabal-head new-repl theme-app` to run GHCi repl in the `theme-app` library.
-- `cabal-head new-test dynmap-cache` to run tests of `dynmap-cache`.
+- `cabal new-repl theme-app` to run GHCi repl in the `theme-app` library.
+- `cabal new-test dynmap-cache` to run tests of `dynmap-cache`.
 
 ## Building docker images
 
