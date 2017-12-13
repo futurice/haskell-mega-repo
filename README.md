@@ -23,6 +23,15 @@ We use `new-` commands, e.g.
 - `cabal new-repl theme-app` to run GHCi repl in the `theme-app` library.
 - `cabal new-test dynmap-cache` to run tests of `dynmap-cache`.
 
+## Goodies
+
+Haskell's `optparse-applicative` based cli interfaces support auto completion.
+If you use *oh my zsh*, then you have most things set-up already, you only need to
+
+```zsh
+mega-repo-tool --zsh-completion-script $(which mega-repo-tool) > $HOME/.oh-my-zsh/completions/_mega-repo-tool
+```
+
 ## Building docker images
 
 Install `mega-repo-tool` from the repo.
