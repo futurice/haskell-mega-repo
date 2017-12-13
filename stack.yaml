@@ -1,1 +1,86 @@
-stack-ghc-8.0.2.yaml
+resolver: nightly-2017-12-01
+packages:
+- ansi-pretty/
+# - avar/
+- avatar-app/
+#- base64-bytestring-type/
+- checklist-app/
+- contacts-api/
+- dynmap-cache/
+- email-proxy/
+- env-config/
+- favicon-app/
+#- flowdock-cli/
+- flowdock-grep/
+- flowdock-rest/
+- fum-api/
+- fum-carbon-app/
+- fum-client/
+- fum-types/
+- futurice-constants/
+- futurice-foundation/
+- futurice-github/
+- futurice-integrations/
+- futurice-logo/
+- futurice-metrics/
+- futurice-postgres/
+- futurice-prelude/
+- futurice-pure-trans/
+- futurice-reports/
+- futurice-servant/
+- futurice-tribes/
+- github-proxy/
+- github-sync/
+- haxl-fxtra/
+- hours-api/
+- kleene/
+- log-cloudwatch/
+- mega-repo-tool/
+- monad-http/
+- optparse-sop/
+- periocron/
+- personio-client/
+- planmill-client/
+- planmill-proxy/
+#- postgresql-simple-url/
+- proxy-app/
+- proxy-mgmt-app/
+- reports-app/
+- servant-algebraic-graphs/
+- servant-Chart/
+- servant-dashdo/
+- servant-binary-tagged/
+- smileys-app/
+- sms-proxy/
+# - tdigest/tdigest/
+# - tdigest/tdigest-Chart/
+# - tdigest/tdigest-bench/
+- tajna/
+- theme-app/
+
+- location: vendor/chart/chart
+  extra-dep: true
+- location: vendor/diffusionkinetics-open/dashdo
+  extra-dep: true
+- location: vendor/diffusionkinetics-open/plotlyhs
+  extra-dep: true
+- location: vendor/diffusionkinetics-open/lucid-extras
+  extra-dep: true
+extra-deps:
+- boring-0
+- cassava-0.5.1.0
+- fin-0
+- http-types-0.10
+- nf-1.0.1.0
+- pretty-compact-3.0
+- servant-0.12
+- servant-cassava-0.10
+- servant-client-0.12
+- servant-client-core-0.12
+- servant-server-0.12
+- servant-swagger-1.1.4
+- servant-swagger-ui-0.2.4.3.4.0
+- vec-0
+flags:
+  cassava:
+    bytestring--lt-0_10_4: false
