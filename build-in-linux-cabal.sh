@@ -46,7 +46,7 @@ GITHASH=$(git log --pretty=format:'%h' -n 1)
 # Copy binaries to ./build/exe/exe
 # We put binaries in separate directories to speed-up docker image creation
 mkdir -p $ROOTDIR/build
-for fullexe in $(cabal-plan --builddir=$BUILDDIR list-bin|grep ':exe:'|awk '{print $2}'); do
+for fullexe in $(cabal-plan --builddir=$BUILDDIR list-bins|grep ':exe:'|awk '{print $2}'); do
     if [ $(echo $fullexe | sed "s:^$ROOTDIR/.*$:matches:") = "matches" ]; then
         exe=$(basename $fullexe)
         mkdir -p  $ROOTDIR/build/$exe
