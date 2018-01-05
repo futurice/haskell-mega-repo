@@ -25,7 +25,7 @@ import qualified Data.Map.Strict               as Map
 import qualified Graphics.Rendering.Chart.Easy as C
 import qualified PlanMill                      as PM
 
-type MissingHoursChartData = (Integer, Int, Int, PM.Interval Day, Map Tribe (Sum Count, Map YearWeek (NDT 'Hours Centi)))
+type MissingHoursChartData = (Integer, Int, Integer, Int, PM.Interval Day, Map Tribe (Sum Count, Map YearWeek (NDT 'Hours Centi)))
 
 missingHoursChartData
     :: forall m env.
@@ -38,11 +38,14 @@ missingHoursChartData contractTypes = do
     -- interval: from beginning of the year
     today <- currentDay
     let (currYear, currWeek, _) = toWeekDate today
-    let weekA = max 1 (currWeek - 13)
-        weekB = max 1 (currWeek - 1)
+    let normaliseWeek year week
+            | week < 1 = normaliseWeek (year - 1) (week + 52)
+            | otherwise = (year, week)
+    let (yearA, weekA) = normaliseWeek currYear (currWeek - 21)
+        (yearB, weekB) = normaliseWeek currYear (currWeek - 1)
     let interval =
-            fromWeekDate currYear weekA 1 ...
-            fromWeekDate currYear weekB 7
+            fromWeekDate yearA weekA 1 ...
+            fromWeekDate yearB weekB 7
 
     -- people: do not include only some contracts
     fpm0 <- snd <$$> fumPlanmillMap
@@ -55,19 +58,26 @@ missingHoursChartData contractTypes = do
         <*> missingHoursForUser interval u
     let trs = arrangeReports trs'
 
-    pure (currYear, weekA, weekB, interval, trs)
+    pure (yearA, weekA, yearB, weekB, interval, trs)
 
 missingHoursChartRender :: MissingHoursChartData -> Chart "missing-hours"
-missingHoursChartRender (currYear, weekA, weekB, interval, trs) = Chart . C.toRenderable $ do
+missingHoursChartRender (yearA, weekA, yearB, weekB, interval, trs) = Chart . C.toRenderable $ do
     C.layout_title .= "Missing hours per employee per week: " ++ show interval
     flip evalStateT lineStyles $ ifor_ trs $ \tribe (count, hours) -> do
         let scale :: NDT 'Hours Centi -> Double
             scale x = realToFrac (getNDT x) / fromIntegral (getSum count)
         lineStyle <- nextLineStyle
         lift $ C.plot $ line' lineStyle (tribeToText tribe ^. unpacked) $ singleton $ do
-            week <- [weekA .. weekB]
-            let day = fromWeekDate currYear week 1
-            pure (day, maybe 0 scale $ hours ^? ix (currYear, week))
+            (year, week) <- weeks
+            let day = fromWeekDate year week 1
+            pure (day, maybe 0 scale $ hours ^? ix (year, week))
+  where
+    weeks
+      | yearA == yearB = [ (yearA, w) | w <- [ weekA .. weekB ] ]
+      | otherwise =
+          [ (yearA, w) | w <- [ weekA .. 52 ] ] ++
+          [ (y,     w) | y <- [ yearA + 1 .. yearB - 1 ], w <- [1, 52] ] ++
+          [ (yearB, w) | w <- [ 1 .. weekB ] ]
 
 type Count = Int
 type YearWeek = (Integer, Int)
