@@ -123,7 +123,7 @@ updateAllTimereports ctx = runLIO ctx $ do
 
 updateTimereportsForUser :: Ctx -> PM.UserId -> LIO ()
 updateTimereportsForUser ctx uid = do
-    let interval = $(mkDay "2015-01-01") ... $(mkDay "2017-12-31")
+    let interval = $(mkDay "2015-01-01") ... $(mkDay "2018-12-31")
     let q = QueryTimereports (Just interval) uid
     --
     -- Fetch timereports from planmill
