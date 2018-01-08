@@ -33,6 +33,8 @@ utzChartData = do
 utzChartRender :: Map (Integer, Int) Double -> Chart "utz"
 utzChartRender utzs = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
+    C.plot $ C.line "2018"
+        [[(w, fromMaybe 0 $ utzs ^? ix (2018, w)) | w <- [1..53]]]
     C.plot $ C.line "2017"
         [[(w, fromMaybe 0 $ utzs ^? ix (2017, w)) | w <- [1..53]]]
     C.plot $ C.line "2016"
