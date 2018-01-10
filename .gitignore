@@ -7,6 +7,7 @@ dist-newstyle-prod/
 .stack-root/
 dist-newstyle/
 
+mega-repo-tool.config.local
 tajna.local.yaml
 
 venv/
