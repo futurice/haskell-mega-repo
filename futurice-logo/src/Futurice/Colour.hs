@@ -24,6 +24,7 @@ module Futurice.Colour (
     colourRGB8,
     colourCMYK8,
     colourClay,
+    colourToDataColour,
     -- * Colour Combinations
     infographicsColours,
     ColourCombination(..),
@@ -41,6 +42,8 @@ import Prelude ()
 import Clay.Color          (Color, rgba)
 import Codec.Picture.Types (PixelCMYK8 (..), PixelRGB8 (..))
 import Data.Swagger        (ToParamSchema (..), format)
+
+import qualified Data.Colour.SRGB as DC
 
 #if MIN_VERSION_servant(0,5,0)
 import Servant.API (FromHttpApiData (..), ToHttpApiData (..))
@@ -194,6 +197,16 @@ colourClay :: Colour -> Color
 colourClay = f . colourRGB8
   where
     f (PixelRGB8 r g b) = rgba (toInteger r) (toInteger g) (toInteger b) 255
+
+-- |
+--
+-- >>> DC.sRGB24show $ colourToDataColour FutuGreen
+-- "#329e41"
+--
+colourToDataColour :: (Floating a, Ord a) => Colour -> DC.Colour a
+colourToDataColour = f . colourRGB8
+  where
+    f (PixelRGB8 r g b) = DC.sRGB24 r g b
 
 ------------------------------------------------------------------------------
 -- Colour combinations

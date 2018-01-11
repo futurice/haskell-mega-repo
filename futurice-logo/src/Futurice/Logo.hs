@@ -16,7 +16,7 @@ import           Data.Word
 import Futurice.Colour
 
 logoTemplate :: BS.ByteString
-logoTemplate = $(embedFile "futu-favicon-template.png")
+logoTemplate = $(makeRelativeToProject "futu-favicon-template.png" >>= embedFile)
 
 logoTemplateImage :: Image PixelRGBA8
 logoTemplateImage =
