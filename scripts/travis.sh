@@ -97,6 +97,7 @@ build)
 
         # Run doctest on selected packages
         doctest --fast fum-types/src
+        doctest --fast futurice-logo/src
         ;;
 
     esac
