@@ -12,6 +12,7 @@ import Control.Concurrent.STM     (atomically, newTVarIO, readTVarIO, writeTVar)
 import Futurice.Integrations
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
 import Network.HTTP.Client        (managerConnCount)
@@ -23,8 +24,9 @@ import Futurice.App.HoursApi.Config
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
-       projectEndpoint, userEndpoint)
+       projectEndpoint, settingsEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
+import Futurice.App.HoursApi.Types  (SettingsResponse)
 
 import qualified Data.HashMap.Strict as HM
 import qualified FUM
@@ -47,6 +49,7 @@ v1Server ctx =
     :<|> (\mfum eu     -> authorisedUser ctx mfum "entry"   (entryEndpoint eu))
     :<|> (\mfum eid eu -> authorisedUser ctx mfum "edit"    (entryEditEndpoint eid eu))
     :<|> (\mfum eid    -> authorisedUser ctx mfum "delete"  (entryDeleteEndpoint eid))
+    :<|> (\mfun        -> settingsHandler ctx mfun)
 
 authorisedUser
     :: Ctx
@@ -66,6 +69,15 @@ authorisedUser ctx mfum meterName action =
         runLogT "auth" (ctxLogger ctx) $
             logAttention ("Unauthorised user " <> FUM.loginToText login) login
         throwError err403
+
+settingsHandler
+  :: Ctx
+  -> Maybe FUM.Login
+  -> Handler [SettingsResponse]
+settingsHandler ctx mfum =
+  mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
+    liftIO $ mark "Request settings"
+    liftIO $ runLogT "logic" (ctxLogger ctx) $ settingsEndpoint ctx (Just fumUsername)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -97,6 +109,9 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         let pmCfg = cfgPlanmillCfg config
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
 
+        let psqlCfg = cfgPostgresConnInfo config
+        pp <- createPostgresPool psqlCfg
+
         pure $ flip (,) [job] Ctx
             { ctxFumPlanmillMap  = fpmTVar
             , ctxPlanmillCfg     = cfgPlanmillCfg config
@@ -106,4 +121,5 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             , ctxCache           = cache
             , ctxIntegrationsCfg = integrConfig
             , ctxWorkers         = ws
+            , ctxPostgresPool    = pp
             }

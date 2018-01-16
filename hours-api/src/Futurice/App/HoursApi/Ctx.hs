@@ -4,6 +4,7 @@ module Futurice.App.HoursApi.Ctx where
 import Control.Concurrent.STM (TVar)
 import Futurice.Cache         (Cache)
 import Futurice.Integrations
+import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
 
@@ -20,4 +21,8 @@ data Ctx = Ctx
     , ctxWorkers         :: !PM.Workers
     , ctxPlanmillCfg     :: !PM.Cfg
     , ctxIntegrationsCfg :: !(IntegrationsConfig '[I, I, Proxy, Proxy, Proxy, Proxy])
+    , ctxPostgresPool    :: !(Pool Connection)
     }
+
+instance HasPostgresPool Ctx where
+  postgresPool = ctxPostgresPool

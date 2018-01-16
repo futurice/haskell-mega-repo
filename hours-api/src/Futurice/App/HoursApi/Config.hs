@@ -9,13 +9,15 @@ import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
+import           Database.PostgreSQL.Simple (ConnectInfo)
 import qualified FUM
-import qualified PlanMill as PM
+import qualified PlanMill                   as PM
 
 data Config = Config
     { cfgIntegrationsCfg :: !(IntegrationsConfig '[I, I, Proxy, Proxy, Proxy, Proxy])
     , cfgPlanmillCfg     :: !PM.Cfg
     , cfgMockUser        :: !(Maybe FUM.Login)
+    , cfgPostgresConnInfo  :: !ConnectInfo
     }
 
 instance Configure Config where
@@ -23,3 +25,4 @@ instance Configure Config where
         <$> configure
         <*> configure
         <*> optionalAlt (envVar "MOCKUSER")
+        <*> envConnectInfo

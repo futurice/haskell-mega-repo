@@ -41,6 +41,7 @@ library
     , futurice-foundation
     , futurice-integrations
     , futurice-metrics
+    , futurice-postgres
     , futurice-prelude
     , futurice-reports
     , futurice-servant

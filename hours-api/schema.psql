@@ -1,0 +1,8 @@
+CREATE SCHEMA hours;
+
+CREATE TABLE hours.preferences (
+       weekly_view BOOL NOT NULL,
+       show_graphs BOOL NOT NULL,
+       username TEXT NOT NULL,
+       PRIMARY KEY (username)
+);

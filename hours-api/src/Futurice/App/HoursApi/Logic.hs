@@ -12,10 +12,14 @@ module Futurice.App.HoursApi.Logic (
     entryEndpoint,
     entryEditEndpoint,
     entryDeleteEndpoint,
+    settingsEndpoint,
     ) where
 
 import Control.Lens              (maximumOf, (<&>))
+import FUM.Types.Login           (Login)
+import Futurice.App.HoursApi.Ctx
 import Futurice.Monoid           (Average (..))
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), TimeUnit (..))
 import Numeric.Interval.NonEmpty (Interval, (...))
@@ -23,9 +27,10 @@ import Prelude ()
 
 import Futurice.App.HoursApi.Types
 
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import qualified PlanMill as PM
+import qualified Data.Map                   as Map
+import qualified Data.Set                   as Set
+import qualified Database.PostgreSQL.Simple as Postgres
+import qualified PlanMill                   as PM
 
 -- Note: we don't import .Monad!
 import qualified Futurice.App.HoursApi.Class as H
@@ -94,6 +99,12 @@ entryDeleteEndpoint eid = do
     _ <- H.deleteTimereport eid
     entryUpdateResponse (tr ^. H.timereportDay)
 
+-- | @GET /settings@
+settingsEndpoint :: Ctx -> Maybe Login -> LogT IO [SettingsResponse]
+--settingsEndpoint = undefined
+settingsEndpoint ctx fumUserName = safePoolQuery ctx
+    "SELECT weekly_view, show_graphs FROM hours.preferences WHERE username = ?;"
+    (Postgres.Only fumUserName)
 -------------------------------------------------------------------------------
 -- Logic
 -------------------------------------------------------------------------------

@@ -12,8 +12,6 @@
 -- /NOTE:/ Golang backend LatestEntry is Entry with a Date
 module Futurice.App.HoursApi.Types where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (foldOf, imap, sumOf)
 import Data.Aeson                (Value (..), withText)
 import Data.Aeson.Types          (typeMismatch)
@@ -21,14 +19,19 @@ import Data.Fixed                (Centi)
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Monoid           (Average (..))
+import Futurice.Prelude
 import Futurice.Time
 import Futurice.Time.Month       (dayToMonth)
 import Numeric.Interval.NonEmpty (Interval, inf, sup)
+import Prelude ()
 import Test.QuickCheck           (arbitraryBoundedEnum)
 
+import qualified Data.Map        as Map
+import qualified PlanMill        as PM
 import qualified Test.QuickCheck as QC
-import qualified Data.Map as Map
-import qualified PlanMill as PM
+
+import Database.PostgreSQL.Simple.FromRow (FromRow (..), field)
+import Database.PostgreSQL.Simple.ToRow   (ToRow (..))
 
 -------------------------------------------------------------------------------
 -- Project
@@ -174,6 +177,12 @@ data HoursResponse = HoursResponse
     }
   deriving (Eq, Show, Typeable, Generic)
 
+data SettingsResponse = SettingsResponse
+    { _settingsResponseWeeklyView :: !Bool
+    , _settingsResponseShowGraphs :: !Bool
+    }
+  deriving (Eq, Show, Typeable, Generic)
+
 -------------------------------------------------------------------------------
 -- Generics and Lenses
 -------------------------------------------------------------------------------
@@ -212,6 +221,9 @@ deriveGeneric ''HoursMonth
 
 makeLenses ''HoursResponse
 deriveGeneric ''HoursResponse
+
+makeLenses ''SettingsResponse
+deriveGeneric ''SettingsResponse
 
 -------------------------------------------------------------------------------
 -- Smart constructors
@@ -426,3 +438,13 @@ instance ToJSON HoursResponse where
     toEncoding = sopToEncoding
 instance FromJSON HoursResponse where parseJSON = sopParseJSON
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema
+
+instance ToJSON SettingsResponse where
+    toJSON = sopToJSON
+    toEncoding = sopToEncoding
+instance FromJSON SettingsResponse where parseJSON = sopParseJSON
+instance ToSchema SettingsResponse where declareNamedSchema = sopDeclareNamedSchema
+instance FromRow SettingsResponse where
+  fromRow = SettingsResponse <$> field <*> field
+instance ToRow SettingsResponse where
+  toRow (SettingsResponse a b) = toRow (a,b)
