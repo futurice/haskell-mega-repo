@@ -25,6 +25,7 @@ type FutuhoursV1API =
     :<|> "entry" :> SSOUser :> Capture "id" PM.TimereportId :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] EntryUpdateResponse
     :<|> "entry" :> SSOUser :> Capture "id" PM.TimereportId :> Delete '[JSON] EntryUpdateResponse
     :<|> "settings" :> SSOUser :> Get '[JSON] [SettingsResponse]
+    :<|> "settings" :> SSOUser :> ReqBody '[JSON] SettingsResponse :> Post '[JSON] SettingsUpdateResponse
 
 type FutuhoursAPI = Get '[JSON] Text
     :<|> "api" :> "v1" :> FutuhoursV1API

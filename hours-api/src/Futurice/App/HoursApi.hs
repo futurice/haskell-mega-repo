@@ -24,9 +24,9 @@ import Futurice.App.HoursApi.Config
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
-       projectEndpoint, settingsEndpoint, userEndpoint)
+       projectEndpoint, settingsEndpoint, updateSettingsEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
-import Futurice.App.HoursApi.Types  (SettingsResponse)
+import Futurice.App.HoursApi.Types  (SettingsResponse, SettingsUpdateResponse)
 
 import qualified Data.HashMap.Strict as HM
 import qualified FUM
@@ -49,7 +49,8 @@ v1Server ctx =
     :<|> (\mfum eu     -> authorisedUser ctx mfum "entry"   (entryEndpoint eu))
     :<|> (\mfum eid eu -> authorisedUser ctx mfum "edit"    (entryEditEndpoint eid eu))
     :<|> (\mfum eid    -> authorisedUser ctx mfum "delete"  (entryDeleteEndpoint eid))
-    :<|> (\mfun        -> settingsHandler ctx mfun)
+    :<|> settingsHandler ctx
+    :<|> updateSettingsHandler ctx
 
 authorisedUser
     :: Ctx
@@ -77,7 +78,17 @@ settingsHandler
 settingsHandler ctx mfum =
   mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
     liftIO $ mark "Request settings"
-    liftIO $ runLogT "logic" (ctxLogger ctx) $ settingsEndpoint ctx (Just fumUsername)
+    liftIO $ runLogT "logic" (ctxLogger ctx) $ settingsEndpoint ctx fumUsername
+
+updateSettingsHandler
+  :: Ctx
+  -> Maybe FUM.Login
+  -> SettingsResponse
+  -> Handler SettingsUpdateResponse
+updateSettingsHandler ctx mfum set =
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
+     liftIO $ mark "Request edit settings"
+     liftIO $ runLogT "logic" (ctxLogger ctx) $ updateSettingsEndpoint ctx fumUsername set
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

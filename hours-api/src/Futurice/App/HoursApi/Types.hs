@@ -183,6 +183,12 @@ data SettingsResponse = SettingsResponse
     }
   deriving (Eq, Show, Typeable, Generic)
 
+data SettingsUpdateResponse = SettingsUpdateResponse
+    { _settingsUpdateStatus :: !Text
+    , _settingsUpdateUnused :: !()
+    }
+  deriving (Show)
+
 -------------------------------------------------------------------------------
 -- Generics and Lenses
 -------------------------------------------------------------------------------
@@ -224,6 +230,8 @@ deriveGeneric ''HoursResponse
 
 makeLenses ''SettingsResponse
 deriveGeneric ''SettingsResponse
+
+deriveGeneric ''SettingsUpdateResponse
 
 -------------------------------------------------------------------------------
 -- Smart constructors
@@ -448,3 +456,8 @@ instance FromRow SettingsResponse where
   fromRow = SettingsResponse <$> field <*> field
 instance ToRow SettingsResponse where
   toRow (SettingsResponse a b) = toRow (a,b)
+
+instance ToJSON SettingsUpdateResponse where
+  toJSON = sopToJSON
+  toEncoding = sopToEncoding
+instance ToSchema SettingsUpdateResponse where declareNamedSchema = sopDeclareNamedSchema

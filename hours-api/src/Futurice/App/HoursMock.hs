@@ -20,6 +20,8 @@ import Futurice.App.HoursMock.Config (Config (..))
 import Futurice.App.HoursMock.Ctx
 import Futurice.App.HoursMock.Monad
 
+import Futurice.App.HoursApi.Types
+
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours mock api"
     :<|> v1Server ctx
@@ -34,8 +36,20 @@ v1Server ctx =
     :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
     :<|> (\_        -> settingsHandler ctx)
+    :<|> (\_ a      -> updateSettingsHandler ctx a)
 
-settingsHandler = undefined
+--settingsHandler = undefined
+settingsHandler :: Ctx -> Handler [SettingsResponse]
+settingsHandler ctx = return [SettingsResponse
+                               { _settingsResponseWeeklyView = False
+                               , _settingsResponseShowGraphs = False
+                               }]
+
+updateSettingsHandler :: Ctx -> SettingsResponse -> Handler SettingsUpdateResponse
+updateSettingsHandler ctx set = return SettingsUpdateResponse
+                                { _settingsUpdateStatus = "OK"
+                                , _settingsUpdateUnused = ()
+                                }
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
