@@ -4,14 +4,14 @@ module Futurice.App.HoursApi.Config (
     Config(..),
     ) where
 
+import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
-import           Database.PostgreSQL.Simple (ConnectInfo)
 import qualified FUM
-import qualified PlanMill                   as PM
+import qualified PlanMill as PM
 
 data Config = Config
     { cfgIntegrationsCfg :: !(IntegrationsConfig '[I, I, Proxy, Proxy, Proxy, Proxy])

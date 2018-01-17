@@ -72,23 +72,23 @@ authorisedUser ctx mfum meterName action =
         throwError err403
 
 settingsHandler
-  :: Ctx
-  -> Maybe FUM.Login
-  -> Handler [SettingsResponse]
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler [SettingsResponse]
 settingsHandler ctx mfum =
-  mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-    liftIO $ mark "Request settings"
-    liftIO $ runLogT "logic" (ctxLogger ctx) $ settingsEndpoint ctx fumUsername
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> liftIO $ do
+        mark "Request settings"
+        runLogT "logic" (ctxLogger ctx) $ settingsEndpoint ctx fumUsername
 
 updateSettingsHandler
-  :: Ctx
-  -> Maybe FUM.Login
-  -> SettingsResponse
-  -> Handler SettingsUpdateResponse
-updateSettingsHandler ctx mfum set =
-    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-     liftIO $ mark "Request edit settings"
-     liftIO $ runLogT "logic" (ctxLogger ctx) $ updateSettingsEndpoint ctx fumUsername set
+    :: Ctx
+    -> Maybe FUM.Login
+    -> SettingsResponse
+    -> Handler SettingsUpdateResponse
+updateSettingsHandler ctx mfum sr =
+    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> liftIO $ do
+        mark "Request edit settings"
+        runLogT "logic" (ctxLogger ctx) $ updateSettingsEndpoint ctx fumUsername sr
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -120,8 +120,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         let pmCfg = cfgPlanmillCfg config
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
 
-        let psqlCfg = cfgPostgresConnInfo config
-        pp <- createPostgresPool psqlCfg
+        pp <- createPostgresPool $ cfgPostgresConnInfo config
 
         pure $ flip (,) [job] Ctx
             { ctxFumPlanmillMap  = fpmTVar

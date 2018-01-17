@@ -25,4 +25,4 @@ data Ctx = Ctx
     }
 
 instance HasPostgresPool Ctx where
-  postgresPool = ctxPostgresPool
+    postgresPool = ctxPostgresPool

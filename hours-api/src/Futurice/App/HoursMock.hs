@@ -38,7 +38,6 @@ v1Server ctx =
     :<|> (\_        -> settingsHandler ctx)
     :<|> (\_ a      -> updateSettingsHandler ctx a)
 
---settingsHandler = undefined
 settingsHandler :: Ctx -> Handler [SettingsResponse]
 settingsHandler ctx = return [SettingsResponse
                                { _settingsResponseWeeklyView = False
