@@ -89,7 +89,7 @@ library
     , semigroups
     , servant
     , servant-algebraic-graphs
-    , servant-cassava ==0.9.*
+    , servant-cassava
     , servant-Chart
     , servant-dashdo
     , servant-lucid
@@ -204,7 +204,7 @@ executable reports-app-server
     , semigroups
     , servant
     , servant-algebraic-graphs
-    , servant-cassava ==0.9.*
+    , servant-cassava
     , servant-Chart
     , servant-dashdo
     , servant-lucid
