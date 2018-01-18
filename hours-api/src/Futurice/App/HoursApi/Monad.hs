@@ -21,9 +21,11 @@ import Data.List                 (maximumBy)
 import Data.Maybe                (isJust)
 import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
+import FUM                       (Login)
 import Futurice.Cache            (Cache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Integrations     (IntegrationsConfig (..))
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
 import Numeric.Interval.NonEmpty ((...))
@@ -34,6 +36,7 @@ import Futurice.App.HoursApi.Class
 import Futurice.App.HoursApi.Ctx
 
 import qualified Data.Text                   as T
+import qualified Database.PostgreSQL.Simple  as Postgres
 import qualified Futurice.App.HoursApi.Types as T
 import qualified Futurice.Time               as Time
 import qualified Haxl.Core                   as Haxl
@@ -47,6 +50,7 @@ data Env = Env
     { _envNow            :: !UTCTime
     , _envPmUser         :: !PM.User
     , _envProfilePicture :: !Text
+    , _envFumUser        :: !FUM.Login
     }
 
 makeLenses ''Env
@@ -58,15 +62,16 @@ makeLenses ''Env
 newtype Hours a = Hours { _unHours :: ReaderT Env (Haxl.GenHaxl ()) a }
   deriving (Functor, Applicative, Monad)
 
-runHours :: Ctx -> PM.User -> Text -> Hours a -> Handler a
-runHours ctx pmUser profilePic (Hours m) = liftIO $ do
+runHours :: Ctx -> Login -> PM.User -> Text -> Hours a -> Handler a
+runHours ctx login pmUser profilePic (Hours m) = liftIO $ do
     -- We ask current time only once.
     now <- currentTime
-    let env = Env now pmUser profilePic
+    let env = Env now pmUser profilePic login
     let haxl = runReaderT m env
     let stateStore
             = Haxl.stateSet (PMQ.initDataSourceBatch lgr mgr pmReq)
             . Haxl.stateSet (PlanMillDataState lgr cache ws)
+            . Haxl.stateSet (PostgresState lgr login pp)
             $ Haxl.stateEmpty
     haxlEnv <- Haxl.initEnv stateStore ()
     -- TODO: catch ServantErr
@@ -77,6 +82,7 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
     I pmReq = integrCfgPlanmillProxyBaseRequest (ctxIntegrationsCfg ctx)
     cache   = ctxCache ctx
     ws      = ctxWorkers ctx
+    pp      = ctxPostgresPool ctx
 
 -------------------------------------------------------------------------------
 -- Utilities
@@ -154,7 +160,53 @@ instance NFData a => NFData (Wrapped a) where
     rnf (Wrap (Right x))                = rnf x
     rnf (Wrap (Left (SomeException e))) = seq e ()
 
+data PostgresRequest a where
+    FetchSettings :: PostgresRequest T.SettingsResponse
+    EditSettings :: T.SettingsResponse -> T.SettingsResponse -> PostgresRequest T.SettingsResponse
 
+deriving instance Show (PostgresRequest a)
+deriving instance Typeable PostgresRequest
+deriving instance Eq (PostgresRequest a)
+
+instance Hashable (PostgresRequest a) where
+    hashWithSalt salt FetchSettings = salt `hashWithSalt` (0::Int)
+    hashWithSalt salt (EditSettings a b) = salt `hashWithSalt` (1::Int,a,b)
+
+instance Haxl.StateKey PostgresRequest where
+    data State PostgresRequest = PostgresState Logger Login (Pool Connection)
+
+instance Haxl.DataSourceName PostgresRequest where
+  dataSourceName _ = "PostgresRequest"
+
+instance Haxl.ShowP PostgresRequest where showp = show
+
+newtype PostgresException = PostgresException String deriving (Show)
+
+instance Exception PostgresException
+-- TODO batch requests?
+instance Haxl.DataSource u PostgresRequest where
+    fetch (PostgresState logger login pool) _f _u blockedFetches = Haxl.SyncFetch $ for_ blockedFetches single where
+        single :: Haxl.BlockedFetch PostgresRequest -> IO ()
+        single (Haxl.BlockedFetch FetchSettings v) = do
+                res <- runLogT "settings" logger $ safePoolQuery pool
+                    "SELECT weekly_view, show_graphs FROM hours.preferences WHERE username IN ?;" $ Postgres.Only login :: IO [T.SettingsResponse]
+                case listToMaybe res of
+                  (Just s) -> Haxl.putSuccess v s
+                  Nothing -> Haxl.putSuccess v default_settings
+                  where
+                    default_settings = T.SettingsResponse False False
+        single (Haxl.BlockedFetch (EditSettings old new) v) = do
+            res <- runLogT "settings" logger $ safePoolQuery pool
+                    "SELECT weekly_view, show_graphs FROM hours.preferences WHERE username IN ?;" $ Postgres.Only login :: IO [T.SettingsResponse]
+            case listToMaybe res of
+              (Just s) -> case s == old of
+                False -> Haxl.putFailure v $ PostgresException "Data changed in database"
+                True -> do
+                    _ <- runLogT "editSettings" logger $ safePoolExecute pool "UPDATE hours.preferences SET weekly_view=?, show_graphs=? WHERE username = ?;" $
+                        searchParams new login
+                    Haxl.putSuccess v new
+                      where searchParams (T.SettingsResponse w s) login = (w,s,login)
+              Nothing -> undefined
 -------------------------------------------------------------------------------
 -- Instance
 -------------------------------------------------------------------------------
@@ -295,6 +347,10 @@ instance MonadHours Hours where
 
         reports <- cachedPlanmillAction (PM.timereportsFromIntervalFor resultInterval pmUid)
         traverse convertTimereport (toList reports)
+
+    settings = Hours $ lift $ Haxl.dataFetch FetchSettings
+
+    editSettings a b = void $ Hours $ lift $ Haxl.dataFetch $ EditSettings a b
 
 -------------------------------------------------------------------------------
 -- Helpers

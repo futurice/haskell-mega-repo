@@ -48,6 +48,7 @@ module Futurice.App.HoursApi.Class (
 
 import Data.Fixed                (Centi)
 import Data.Time                 (addDays)
+import FUM                       (Login)
 import Futurice.Prelude
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, (...))
@@ -137,6 +138,16 @@ class (MonadTime m) => MonadHours m where
     timereportsLast28 = do
         today <- currentDay
         timereports (addDays (-28) today ... today)
+
+    -- | Settings
+    --
+    -- Return user preferences
+    settings :: m T.SettingsResponse
+
+    -- | Edit settings
+    --
+    -- Edit user settings
+    editSettings :: T.SettingsResponse -> T.SettingsResponse -> m ()
 
 -------------------------------------------------------------------------------
 -- Data

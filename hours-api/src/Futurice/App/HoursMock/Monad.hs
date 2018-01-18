@@ -14,7 +14,8 @@ import Prelude ()
 import Servant                     (Handler)
 
 import Futurice.App.HoursApi.Class
-import Futurice.App.HoursApi.Types     (EntryType (..))
+import Futurice.App.HoursApi.Types
+       (EntryType (..), SettingsResponse (..), SettingsUpdateResponse (..))
 import Futurice.App.HoursMock.Ctx
 import Futurice.App.HoursMock.MockData
 import Futurice.App.HoursMock.World
@@ -144,3 +145,9 @@ instance MonadHours Hours where
     editTimereport tid ntr = do
         deleteTimereport tid
         addTimereport ntr
+
+    settings = return SettingsResponse
+                      { _settingsResponseWeeklyView = False
+                      , _settingsResponseShowGraphs = False
+                      }
+    editSettings o n = return ()

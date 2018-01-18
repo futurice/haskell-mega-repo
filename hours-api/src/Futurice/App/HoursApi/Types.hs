@@ -456,6 +456,7 @@ instance FromRow SettingsResponse where
   fromRow = SettingsResponse <$> field <*> field
 instance ToRow SettingsResponse where
   toRow (SettingsResponse a b) = toRow (a,b)
+instance Hashable SettingsResponse
 
 instance ToJSON SettingsUpdateResponse where
   toJSON = sopToJSON

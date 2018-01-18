@@ -35,20 +35,8 @@ v1Server ctx =
     :<|> (\_ eu     -> runHours ctx (entryEndpoint eu))
     :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
-    :<|> (\_        -> settingsHandler ctx)
-    :<|> (\_ a      -> updateSettingsHandler ctx a)
-
-settingsHandler :: Ctx -> Handler [SettingsResponse]
-settingsHandler ctx = return [SettingsResponse
-                               { _settingsResponseWeeklyView = False
-                               , _settingsResponseShowGraphs = False
-                               }]
-
-updateSettingsHandler :: Ctx -> SettingsResponse -> Handler SettingsUpdateResponse
-updateSettingsHandler ctx set = return SettingsUpdateResponse
-                                { _settingsUpdateStatus = "OK"
-                                , _settingsUpdateUnused = ()
-                                }
+    :<|> (\_        -> runHours ctx settingsEndpoint)
+    :<|> (\_ (o,n)  -> runHours ctx (settingsEditEndpoint o n))
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

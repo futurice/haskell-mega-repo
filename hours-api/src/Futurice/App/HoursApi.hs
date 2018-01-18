@@ -24,7 +24,7 @@ import Futurice.App.HoursApi.Config
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
-       projectEndpoint, settingsEndpoint, updateSettingsEndpoint, userEndpoint)
+       projectEndpoint, settingsEditEndpoint, settingsEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
 import Futurice.App.HoursApi.Types  (SettingsResponse, SettingsUpdateResponse)
 
@@ -43,14 +43,14 @@ server ctx = pure "This is futuhours api"
 
 v1Server :: Ctx -> Server FutuhoursV1API
 v1Server ctx =
-         (\mfum        -> authorisedUser ctx mfum "project" projectEndpoint)
-    :<|> (\mfum        -> authorisedUser ctx mfum "user"    userEndpoint)
-    :<|> (\mfum a b    -> authorisedUser ctx mfum "hours"   (hoursEndpoint a b))
-    :<|> (\mfum eu     -> authorisedUser ctx mfum "entry"   (entryEndpoint eu))
-    :<|> (\mfum eid eu -> authorisedUser ctx mfum "edit"    (entryEditEndpoint eid eu))
-    :<|> (\mfum eid    -> authorisedUser ctx mfum "delete"  (entryDeleteEndpoint eid))
-    :<|> settingsHandler ctx
-    :<|> updateSettingsHandler ctx
+         (\mfum           -> authorisedUser ctx mfum "project"      projectEndpoint)
+    :<|> (\mfum           -> authorisedUser ctx mfum "user"         userEndpoint)
+    :<|> (\mfum a b       -> authorisedUser ctx mfum "hours"        (hoursEndpoint a b))
+    :<|> (\mfum eu        -> authorisedUser ctx mfum "entry"        (entryEndpoint eu))
+    :<|> (\mfum eid eu    -> authorisedUser ctx mfum "edit"         (entryEditEndpoint eid eu))
+    :<|> (\mfum eid       -> authorisedUser ctx mfum "delete"       (entryDeleteEndpoint eid))
+    :<|> (\mfum           -> authorisedUser ctx mfum "settings"     settingsEndpoint)
+    :<|> (\mfum (old,new) -> authorisedUser ctx mfum "editSettings" (settingsEditEndpoint old new))
 
 authorisedUser
     :: Ctx
@@ -63,32 +63,13 @@ authorisedUser ctx mfum meterName action =
         pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
         (fumUser, pmUser) <- maybe (unauthorised fumUsername) pure $ pmData ^. at fumUsername
         liftIO $ mark $ "Request " <> meterName
-        runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
+        runHours ctx fumUsername pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
   where
     unauthorised :: FUM.Login -> Handler a
     unauthorised login = do
         runLogT "auth" (ctxLogger ctx) $
             logAttention ("Unauthorised user " <> FUM.loginToText login) login
         throwError err403
-
-settingsHandler
-    :: Ctx
-    -> Maybe FUM.Login
-    -> Handler [SettingsResponse]
-settingsHandler ctx mfum =
-    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> liftIO $ do
-        mark "Request settings"
-        runLogT "logic" (ctxLogger ctx) $ settingsEndpoint ctx fumUsername
-
-updateSettingsHandler
-    :: Ctx
-    -> Maybe FUM.Login
-    -> SettingsResponse
-    -> Handler SettingsUpdateResponse
-updateSettingsHandler ctx mfum sr =
-    mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> liftIO $ do
-        mark "Request edit settings"
-        runLogT "logic" (ctxLogger ctx) $ updateSettingsEndpoint ctx fumUsername sr
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

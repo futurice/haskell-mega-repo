@@ -13,7 +13,7 @@ module Futurice.App.HoursApi.Logic (
     entryEditEndpoint,
     entryDeleteEndpoint,
     settingsEndpoint,
-    updateSettingsEndpoint,
+    settingsEditEndpoint,
     ) where
 
 import Control.Lens              (maximumOf, (<&>))
@@ -101,25 +101,17 @@ entryDeleteEndpoint eid = do
     entryUpdateResponse (tr ^. H.timereportDay)
 
 -- | @GET /settings@
-settingsEndpoint :: Ctx -> Login -> LogT IO [SettingsResponse]
---settingsEndpoint = undefined
-settingsEndpoint ctx fumUserName = safePoolQuery ctx
-    "SELECT weekly_view, show_graphs FROM hours.preferences WHERE username = ?;"
-    (Postgres.Only fumUserName)
-
---data SettingsResponse = SettingsResponse
---    { _settingsResponseWeeklyView :: !Bool
---    , _settingsResponseShowGraphs :: !Bool
---    }
+settingsEndpoint :: H.MonadHours m => m SettingsResponse
+settingsEndpoint = H.settings
 
 -- | @POST /settings@
-updateSettingsEndpoint :: Ctx -> Login -> SettingsResponse -> LogT IO SettingsUpdateResponse
-updateSettingsEndpoint ctx mfum set = do
-  _ <- safePoolExecute ctx "UPDATE hours.preferences SET weekly_view=?, show_graphs=? WHERE username = ?;" set
-  pure SettingsUpdateResponse
-    { _settingsUpdateStatus = "OK"
-    , _settingsUpdateUnused = ()
-    }
+settingsEditEndpoint :: H.MonadHours m => SettingsResponse -> SettingsResponse -> m SettingsUpdateResponse
+settingsEditEndpoint old new = do
+    _ <- H.editSettings old new
+    pure SettingsUpdateResponse
+        { _settingsUpdateStatus = "OK"
+        , _settingsUpdateUnused = ()
+        }
 
 -------------------------------------------------------------------------------
 -- Logic
