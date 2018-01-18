@@ -38,7 +38,7 @@ data MRTConfig' a = MRTConfig
     , _mrtApps            :: !(Map AppName ImageDefinition)
     , _mrtDebs            :: [DebName]
     , _mrtDockerfileTmpl  :: a
-    , _mrtEnvVars         :: !(Map Text Text)
+    , _mrtEnvVars         :: !(Map Text (Either Text Text))
     }
   deriving (Show, Generic, Functor)
 
@@ -94,14 +94,15 @@ parseConfig contents config = do
             imageDefinition <- execStateT (traverse application fs) (ImageDefinition "" "")
             mrtApps . at appName ?= imageDefinition
 
-        | name == "environment-variables" = pure ()
-            -- TODO
+        | name == "environment-variables" = do
+            envVars <- Map.fromList <$>  traverse parseEnvVar fs
+            mrtEnvVars %= (envVars <>)
 
         | otherwise =
             lift $ Left $ "unknown section " ++ show name ++ " at " ++ P.showPos pos
 
     application (P.Section (P.Name pos name) _ _) =
-        throwError $ "unexpected sub-section in application section" ++ show name ++ " at " ++ P.showPos pos
+        throwError $ "unexpected sub-section in application section " ++ show name ++ " at " ++ P.showPos pos
     application (P.Field (P.Name pos name) fls)
         | name == "docker"     = idDockerImage .=  fls'
         | name == "executable" = idExecutable .=  fls'
@@ -112,6 +113,15 @@ parseConfig contents config = do
 
     parseAppName [P.SecArgName _ name] = pure $ decodeUtf8Lenient name
     parseAppName _                     = throwError "Invalid or omitten application name"
+
+    parseEnvVar (P.Section (P.Name pos name) _ _) =
+        throwError $ "unexpected subsection in environment-variables section " ++ show name ++ " at " ++ P.showPos pos
+    parseEnvVar (P.Field (P.Name _ name) fls) = case T.uncons fls' of
+        Just ('$', var) -> return (name', Left var)
+        _               -> return (name', Right fls')
+      where
+        name' = T.toUpper $ decodeUtf8Lenient name
+        fls' = T.strip $ decodeUtf8Lenient $ foldMap fieldLineContents fls
 
 fieldLineContents :: P.FieldLine ann -> ByteString
 fieldLineContents (P.FieldLine _ bs) = bs

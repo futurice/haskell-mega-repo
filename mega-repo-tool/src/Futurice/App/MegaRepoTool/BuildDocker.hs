@@ -129,6 +129,5 @@ makeDockerfile exe cfg = do
         , "exe" .= exe
         ]
 
-
 onIOError :: Monad m => a -> IOError -> m a
 onIOError v _ = return v
