@@ -58,6 +58,7 @@ library
     , optparse-applicative
     , parsec
     , process
+    , process-extras
     , regex-applicative
     , regex-applicative-text
     , semigroups
@@ -76,6 +77,9 @@ library
       Futurice.App.MegaRepoTool.BuildDocker
       Futurice.App.MegaRepoTool.Config
       Futurice.App.MegaRepoTool.Estimator
+      Futurice.App.MegaRepoTool.Exec
+      Futurice.App.MegaRepoTool.GenPass
+      Futurice.App.MegaRepoTool.Keys
       Futurice.App.MegaRepoTool.Scripts
       Futurice.App.MegaRepoTool.Stats
 
