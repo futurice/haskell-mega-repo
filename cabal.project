@@ -1,12 +1,12 @@
-index-state: 2017-11-22T11:24:01Z
+index-state: 2018-01-16T14:18:11Z
 
 constraints:
-  http-types >= 0.10,
-  github >= 0.18,
-  log-base >= 0.7.4.0,
-  servant-client >= 0.12.0.1,
-  servant-server >= 0.12,
-  servant-swagger-ui >= 0.2.4.3.4.0
+  http-types         ^>= 0.11,
+  github             ^>= 0.18,
+  log-base           ^>= 0.7.4.0,
+  servant-client     ^>= 0.12.0.1,
+  servant-server     ^>= 0.12,
+  servant-swagger-ui ^>= 0.2.4.3.4.0
 
 packages:
   ansi-pretty/
