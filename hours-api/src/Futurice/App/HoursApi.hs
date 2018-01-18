@@ -50,7 +50,7 @@ v1Server ctx =
     :<|> (\mfum eid eu    -> authorisedUser ctx mfum "edit"         (entryEditEndpoint eid eu))
     :<|> (\mfum eid       -> authorisedUser ctx mfum "delete"       (entryDeleteEndpoint eid))
     :<|> (\mfum           -> authorisedUser ctx mfum "settings"     settingsEndpoint)
-    :<|> (\mfum (old,new) -> authorisedUser ctx mfum "editSettings" (settingsEditEndpoint old new))
+    :<|> (\mfum a         -> authorisedUser ctx mfum "editSettings" (settingsEditEndpoint a))
 
 authorisedUser
     :: Ctx

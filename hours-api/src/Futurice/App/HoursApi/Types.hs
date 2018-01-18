@@ -183,11 +183,17 @@ data SettingsResponse = SettingsResponse
     }
   deriving (Eq, Show, Typeable, Generic)
 
+data SettingsUpdate = SettingsUpdate
+    { _oldSettings :: !SettingsResponse
+    , _newSettings :: !SettingsResponse
+    }
+    deriving Show
+
 data SettingsUpdateResponse = SettingsUpdateResponse
     { _settingsUpdateStatus :: !Text
     , _settingsUpdateUnused :: !()
     }
-  deriving (Show)
+    deriving (Show)
 
 -------------------------------------------------------------------------------
 -- Generics and Lenses
@@ -230,6 +236,9 @@ deriveGeneric ''HoursResponse
 
 makeLenses ''SettingsResponse
 deriveGeneric ''SettingsResponse
+
+makeLenses ''SettingsUpdate
+deriveGeneric ''SettingsUpdate
 
 deriveGeneric ''SettingsUpdateResponse
 
@@ -457,6 +466,9 @@ instance FromRow SettingsResponse where
 instance ToRow SettingsResponse where
   toRow (SettingsResponse a b) = toRow (a,b)
 instance Hashable SettingsResponse
+
+instance ToSchema SettingsUpdate where declareNamedSchema = sopDeclareNamedSchema
+instance FromJSON SettingsUpdate where parseJSON = sopParseJSON
 
 instance ToJSON SettingsUpdateResponse where
   toJSON = sopToJSON

@@ -36,7 +36,7 @@ v1Server ctx =
     :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
     :<|> (\_        -> runHours ctx settingsEndpoint)
-    :<|> (\_ (o,n)  -> runHours ctx (settingsEditEndpoint o n))
+    :<|> (\_ a      -> runHours ctx (settingsEditEndpoint a))
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

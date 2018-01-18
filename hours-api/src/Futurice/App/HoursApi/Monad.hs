@@ -199,14 +199,19 @@ instance Haxl.DataSource u PostgresRequest where
             res <- runLogT "settings" logger $ safePoolQuery pool
                     "SELECT weekly_view, show_graphs FROM hours.preferences WHERE username IN ?;" $ Postgres.Only login :: IO [T.SettingsResponse]
             case listToMaybe res of
-              (Just s) -> case s == old of
-                False -> Haxl.putFailure v $ PostgresException "Data changed in database"
-                True -> do
-                    _ <- runLogT "editSettings" logger $ safePoolExecute pool "UPDATE hours.preferences SET weekly_view=?, show_graphs=? WHERE username = ?;" $
+              (Just s) ->
+                  if s == old then
+                    do
+                        _ <- runLogT "editSettings" logger $ safePoolExecute pool "UPDATE hours.preferences SET weekly_view=?, show_graphs=? WHERE username = ?;" $
+                            searchParams new login
+                        Haxl.putSuccess v new
+                  else
+                    Haxl.putFailure v $ PostgresException "Data changed in database"
+              Nothing -> do
+                  _ <- runLogT "editSettings" logger $ safePoolExecute pool "INSERT INTO hours.preferences (weekly_view, show_graphs, username) VALUES (?,?,?);" $
                         searchParams new login
-                    Haxl.putSuccess v new
-                      where searchParams (T.SettingsResponse w s) login = (w,s,login)
-              Nothing -> undefined
+                  Haxl.putSuccess v new
+              where searchParams (T.SettingsResponse w s) login = (w,s,login)
 -------------------------------------------------------------------------------
 -- Instance
 -------------------------------------------------------------------------------

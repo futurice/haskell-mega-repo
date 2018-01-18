@@ -105,8 +105,8 @@ settingsEndpoint :: H.MonadHours m => m SettingsResponse
 settingsEndpoint = H.settings
 
 -- | @POST /settings@
-settingsEditEndpoint :: H.MonadHours m => SettingsResponse -> SettingsResponse -> m SettingsUpdateResponse
-settingsEditEndpoint old new = do
+settingsEditEndpoint :: H.MonadHours m => SettingsUpdate -> m SettingsUpdateResponse
+settingsEditEndpoint (SettingsUpdate old new) = do
     _ <- H.editSettings old new
     pure SettingsUpdateResponse
         { _settingsUpdateStatus = "OK"
