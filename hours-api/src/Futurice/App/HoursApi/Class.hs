@@ -147,7 +147,7 @@ class (MonadTime m) => MonadHours m where
     -- | Edit settings
     --
     -- Edit user settings
-    editSettings :: T.SettingsResponse -> T.SettingsResponse -> m ()
+    editSettings :: T.SettingsResponse -> T.SettingsResponse -> m Bool
 
 -------------------------------------------------------------------------------
 -- Data

@@ -162,7 +162,7 @@ instance NFData a => NFData (Wrapped a) where
 
 data PostgresRequest a where
     FetchSettings :: PostgresRequest T.SettingsResponse
-    EditSettings :: T.SettingsResponse -> T.SettingsResponse -> PostgresRequest T.SettingsResponse
+    EditSettings :: T.SettingsResponse -> T.SettingsResponse -> PostgresRequest Bool
 
 deriving instance Show (PostgresRequest a)
 deriving instance Typeable PostgresRequest
@@ -170,13 +170,13 @@ deriving instance Eq (PostgresRequest a)
 
 instance Hashable (PostgresRequest a) where
     hashWithSalt salt FetchSettings = salt `hashWithSalt` (0::Int)
-    hashWithSalt salt (EditSettings a b) = salt `hashWithSalt` (1::Int,a,b)
+    hashWithSalt salt (EditSettings a b) = salt `hashWithSalt` (1::Int, a, b)
 
 instance Haxl.StateKey PostgresRequest where
     data State PostgresRequest = PostgresState Logger Login (Pool Connection)
 
 instance Haxl.DataSourceName PostgresRequest where
-  dataSourceName _ = "PostgresRequest"
+    dataSourceName _ = "PostgresRequest"
 
 instance Haxl.ShowP PostgresRequest where showp = show
 
@@ -204,13 +204,13 @@ instance Haxl.DataSource u PostgresRequest where
                     do
                         _ <- runLogT "editSettings" logger $ safePoolExecute pool "UPDATE hours.preferences SET weekly_view=?, show_graphs=? WHERE username = ?;" $
                             searchParams new login
-                        Haxl.putSuccess v new
+                        Haxl.putSuccess v True
                   else
-                    Haxl.putFailure v $ PostgresException "Data changed in database"
+                    Haxl.putSuccess v False
               Nothing -> do
                   _ <- runLogT "editSettings" logger $ safePoolExecute pool "INSERT INTO hours.preferences (weekly_view, show_graphs, username) VALUES (?,?,?);" $
                         searchParams new login
-                  Haxl.putSuccess v new
+                  Haxl.putSuccess v True
               where searchParams (T.SettingsResponse w s) login = (w,s,login)
 -------------------------------------------------------------------------------
 -- Instance
@@ -355,7 +355,7 @@ instance MonadHours Hours where
 
     settings = Hours $ lift $ Haxl.dataFetch FetchSettings
 
-    editSettings a b = void $ Hours $ lift $ Haxl.dataFetch $ EditSettings a b
+    editSettings a b = Hours $ lift $ Haxl.uncachedRequest $ EditSettings a b
 
 -------------------------------------------------------------------------------
 -- Helpers

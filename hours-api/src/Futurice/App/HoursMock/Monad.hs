@@ -147,7 +147,8 @@ instance MonadHours Hours where
         addTimereport ntr
 
     settings = return SettingsResponse
-                      { _settingsResponseWeeklyView = False
-                      , _settingsResponseShowGraphs = False
-                      }
-    editSettings o n = return ()
+        { _settingsResponseWeeklyView = False
+        , _settingsResponseShowGraphs = False
+        }
+
+    editSettings o n = return True
