@@ -1,13 +1,21 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.MegaRepoTool.Config where
 
-import Data.Aeson
-       (FromJSON (..), withObject, withText, (.:))
+import Control.Lens
+import Control.Monad.Catch       (handleIOError)
+import Control.Monad.Trans.State (StateT, execStateT)
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Data.ByteString  as BS
+import qualified Data.Map         as Map
 import qualified Text.Microstache as M
+
+import qualified Data.Text                  as T
+import qualified Distribution.Parsec.Common as P
+import qualified Distribution.Parsec.Parser as P
 
 -------------------------------------------------------------------------------
 -- Types
@@ -16,38 +24,104 @@ import qualified Text.Microstache as M
 type AppName = Text
 type DebName = Text
 
-newtype MustacheT = MustacheT M.Template
-  deriving (Show)
-
-instance FromJSON MustacheT where
-    parseJSON = withText "Mustache template"
-        $ either (fail . show) (pure . MustacheT)
-        . M.compileMustacheText "<input>" . view lazy
-
 data ImageDefinition = ImageDefinition
     { _idDockerImage :: !Text
     , _idExecutable  :: !Text
     }
-  deriving (Show)
+  deriving (Show, Generic)
 
-instance FromJSON ImageDefinition where
-    parseJSON = withObject "ImageDefinition" $ \obj -> ImageDefinition
-        <$> obj .: "docker"
-        <*> obj .: "executable"
+instance AnsiPretty ImageDefinition
+makeLenses ''ImageDefinition
 
-data MRTConfig = MRTConfig
-    { mrtDockerBaseImage :: !Text
-    , _mrtApps           :: !(Map AppName ImageDefinition)
-    , mtrDebs           :: [DebName]
-    , mrtDockerfileTmpl :: MustacheT
+data MRTConfig' a = MRTConfig
+    { _mrtDockerBaseImage :: !Text
+    , _mrtApps            :: !(Map AppName ImageDefinition)
+    , _mrtDebs            :: [DebName]
+    , _mrtDockerfileTmpl  :: a
+    , _mrtEnvVars         :: !(Map Text (Either Text Text))
     }
-  deriving (Show)
+  deriving (Show, Generic, Functor)
 
-makeLenses ''MRTConfig
+type MRTConfig = MRTConfig' M.Template
 
-instance FromJSON MRTConfig where
-    parseJSON = withObject "MRTConfig" $ \obj -> MRTConfig
-        <$> obj .: "docker-base-image"
-        <*> obj .: "apps"
-        <*> obj .: "debs"
-        <*> obj .: "dockerfile-template"
+emptyMRTConfig :: MRTConfig
+emptyMRTConfig = MRTConfig "" mempty mempty emptyTemplate mempty
+
+emptyTemplate :: M.Template
+emptyTemplate = M.Template "empty" $ Map.singleton "empty" []
+
+instance AnsiPretty a => AnsiPretty (MRTConfig' a)
+makeLenses ''MRTConfig'
+
+-------------------------------------------------------------------------------
+-- Parse
+-------------------------------------------------------------------------------
+
+readConfig :: IO MRTConfig
+readConfig = do
+    let config0 = emptyMRTConfig
+
+    contents1 <- handleIOError (const $ pure "") $ BS.readFile "./mega-repo-tool.config"
+    config1 <- either fail pure $ parseConfig contents1 config0
+
+    contents2 <- handleIOError (const $ pure "") $ BS.readFile "./mega-repo-tool.config.local"
+    either fail pure $ parseConfig contents2 config1
+
+parseConfig :: BS.ByteString -> MRTConfig -> Either String MRTConfig
+parseConfig contents config = do
+    fs <- first show $ P.readFields contents
+    execStateT (traverse field fs) config
+  where
+    field :: P.Field P.Position -> StateT MRTConfig (Either String) ()
+    field (P.Field (P.Name pos name) fls)
+        | name == "dockerfile-base-image" =
+            mrtDockerBaseImage .= T.strip fls'
+        | name == "dockerfile-template" = do
+            t <- lift $ first show $ M.compileMustacheText "<input>" (fls' ^. lazy)
+            mrtDockerfileTmpl .= t
+        | name == "deb-packages" = do
+            let pkgs = map (T.strip . decodeUtf8Lenient . fieldLineContents) fls
+            mrtDebs %= (++ pkgs)
+
+        | otherwise =
+            throwError $ "unknown field " ++ show name ++ " at " ++ P.showPos pos
+      where
+        fls' = T.unlines $ map (decodeUtf8Lenient . fieldLineContents) fls
+
+    field (P.Section (P.Name pos name) args fs)
+        | name == "application" = do
+            appName <- parseAppName args
+            imageDefinition <- execStateT (traverse application fs) (ImageDefinition "" "")
+            mrtApps . at appName ?= imageDefinition
+
+        | name == "environment-variables" = do
+            envVars <- Map.fromList <$>  traverse parseEnvVar fs
+            mrtEnvVars %= (envVars <>)
+
+        | otherwise =
+            lift $ Left $ "unknown section " ++ show name ++ " at " ++ P.showPos pos
+
+    application (P.Section (P.Name pos name) _ _) =
+        throwError $ "unexpected sub-section in application section " ++ show name ++ " at " ++ P.showPos pos
+    application (P.Field (P.Name pos name) fls)
+        | name == "docker"     = idDockerImage .=  fls'
+        | name == "executable" = idExecutable .=  fls'
+        | otherwise =
+            throwError $ "unknown application field " ++ show name ++ " at " ++ P.showPos pos
+      where
+        fls' = T.strip $ decodeUtf8Lenient $ foldMap fieldLineContents fls
+
+    parseAppName [P.SecArgName _ name] = pure $ decodeUtf8Lenient name
+    parseAppName _                     = throwError "Invalid or omitten application name"
+
+    parseEnvVar (P.Section (P.Name pos name) _ _) =
+        throwError $ "unexpected subsection in environment-variables section " ++ show name ++ " at " ++ P.showPos pos
+    parseEnvVar (P.Field (P.Name _ name) fls) = case T.uncons fls' of
+        Just ('$', var) -> return (name', Left var)
+        _               -> return (name', Right fls')
+      where
+        name' = T.toUpper $ decodeUtf8Lenient name
+        fls' = T.strip $ decodeUtf8Lenient $ foldMap fieldLineContents fls
+
+fieldLineContents :: P.FieldLine ann -> ByteString
+fieldLineContents (P.FieldLine _ bs) = bs

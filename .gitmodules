@@ -25,9 +25,6 @@
 [submodule "tdigest"]
 	path = tdigest
 	url = https://github.com/futurice/haskell-tdigest.git
-[submodule "tajna"]
-	path = tajna
-	url = https://github.com/phadej/tajna.git
 [submodule "vendor/chart"]
 	path = vendor/chart
 	url = https://github.com/timbod7/haskell-chart.git
