@@ -18,7 +18,7 @@ import System.Process           (callProcess, readProcess)
 packdepsScript :: IO ()
 packdepsScript = do
     args   <- runT $ source ["."] ~> directoryWalk' dirPredicate ~> files ~> filtered filePredicate
-    callProcess "packdeps" args
+    callProcess "packdeps" ("-q" : args)
   where
     dirPredicate d = not . any ($ d) $
         [ isSuffixOf ".git"
