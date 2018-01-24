@@ -11,7 +11,7 @@ cmdGenPass = generatePassword 32
   where
     chars :: String
     chars = -- ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "!@#?-_,."
-        "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        ".-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
     generatePassword :: Int -> IO ()
     generatePassword l = do
