@@ -39,6 +39,7 @@ packages:
   github-proxy/
   github-sync/
   haxl-fxtra/
+  hc-app/
   hours-api/
   kleene/
   log-cloudwatch/
