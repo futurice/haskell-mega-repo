@@ -44,6 +44,11 @@ module Futurice.App.HoursApi.Class (
     raFinish,
     raProjectId,
     raTaskId,
+    Absence (..),
+    absenceProject,
+    absenceStart,
+    absenceFinish,
+    absenceAbsenceType,
     ) where
 
 import Data.Fixed                (Centi)
@@ -138,6 +143,11 @@ class (MonadTime m) => MonadHours m where
         today <- currentDay
         timereports (addDays (-28) today ... today)
 
+    -- | Absences
+    --
+    -- Return all absences
+    absences :: Interval Day -> m [Absence]
+
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
@@ -145,7 +155,7 @@ class (MonadTime m) => MonadHours m where
 data ReportableAssignment = ReportableAssignment
     { _raProjectId :: !PM.ProjectId
     , _raTaskId    :: !PM.TaskId
-    , _raFinish    :: !UTCTime
+    , _raFinish    :: !Day
     }
   deriving (Eq, Show, Generic)
 
@@ -153,7 +163,7 @@ data Task = Task
     { _taskId        :: !PM.TaskId
     , _taskName      :: !Text
     , _taskProjectId :: !PM.ProjectId
-    , _taskFinish    :: !UTCTime
+    , _taskFinish    :: !Day
     }
   deriving (Eq, Show, Generic)
 
@@ -192,6 +202,14 @@ data Capacity = Capacity
     }
   deriving (Eq, Show, Generic)
 
+data Absence = Absence
+    { _absenceProject          :: !PM.ProjectId
+    , _absenceStart            :: !Day
+    , _absenceFinish           :: !Day
+    , _absenceAbsenceType      :: !Text
+    }
+    deriving (Eq, Show, Generic)
+
 -------------------------------------------------------------------------------
 -- Lenses
 -------------------------------------------------------------------------------
@@ -202,3 +220,4 @@ makeLenses ''Project
 makeLenses ''ReportableAssignment
 makeLenses ''Task
 makeLenses ''Timereport
+makeLenses ''Absence

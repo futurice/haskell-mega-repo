@@ -43,7 +43,7 @@ taskDevelopment = Task
     { _taskId = PM.Ident 1
     , _taskName = "Development"
     , _taskProjectId = projectFoo ^. projectId
-    , _taskFinish = UTCTime $(mkDay "2018-12-31") 0 -- in the future!
+    , _taskFinish = $(mkDay "2018-12-31") -- in the future!
     }
 
 taskDesign :: Task
@@ -51,7 +51,7 @@ taskDesign = Task
     { _taskId = PM.Ident 2
     , _taskName = "Design"
     , _taskProjectId = projectFoo ^. projectId
-    , _taskFinish = UTCTime $(mkDay "2018-12-31") 0 -- in the future!
+    , _taskFinish = $(mkDay "2018-12-31") -- in the future!
     }
 
 -------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ taskInternal = Task
     { _taskId = PM.Ident 3
     , _taskName = "Training"
     , _taskProjectId = projectInternal ^. projectId
-    , _taskFinish = UTCTime $(mkDay "2018-12-31") 0 -- in the future!
+    , _taskFinish = $(mkDay "2018-12-31") -- in the future!
     }
 
 -------------------------------------------------------------------------------
