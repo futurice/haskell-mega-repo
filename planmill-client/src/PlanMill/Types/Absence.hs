@@ -17,9 +17,10 @@ module PlanMill.Types.Absence (
     ) where
 
 import PlanMill.Internal.Prelude
-import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
-import PlanMill.Types.Project    (ProjectId)
-import PlanMill.Types.User       (UserId)
+import PlanMill.Types.Enumeration (EnumValue)
+import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
+import PlanMill.Types.Project     (ProjectId)
+import PlanMill.Types.User        (UserId)
 
 type AbsenceId = Identifier Absence
 type Absences = Vector Absence
@@ -30,6 +31,7 @@ data Absence = Absence
     , absenceProject          :: !ProjectId
     , absenceStart            :: !Day
     , absenceFinish           :: !Day
+    , absenceAbsenceType      :: !(EnumValue Absence "absenceType")
     {-
       2016-10-26, phadej:
       We don't actually use those fields, so let's not parse or
@@ -43,7 +45,6 @@ data Absence = Absence
     , absenceDescription      :: !(Maybe Text)
     , absenceVacationYear     :: !(Maybe Int)
     , absenceVacationLength   :: !Int
-    , absenceAbsenceType      :: !Int  -- TODO
     , absenceModified         :: !(Maybe UTCTime)
     , absenceSubstitutePerson :: !(Maybe UserId)
     , absenceStatus           :: !Int  -- TODO
@@ -71,6 +72,7 @@ instance FromJSON Absence where
         <*> obj .: "project"
         <*> (dayFromZ <$> obj .: "start")
         <*> (dayFromZ <$> obj .: "finish")
+        <*> obj .: "absenceType"
         {-
         <*> obj .: "accepterPerson"
         -- TODO: I'd add a combinator to aeson-extra to make this prettier
@@ -79,7 +81,6 @@ instance FromJSON Absence where
         <*> obj .: "description"
         <*> obj .: "vacationYear"
         <*> obj .: "vacationLength"
-        <*> obj .: "absenceType"
         <*> (getU <$$> obj .:? "modified")
         <*> obj .: "substitutePerson"
         <*> obj .: "status"

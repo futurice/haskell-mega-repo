@@ -23,9 +23,10 @@ import Prelude ()
 
 import Futurice.App.HoursApi.Types
 
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import qualified PlanMill as PM
+import qualified Data.Map         as Map
+import qualified Data.Set         as Set
+import qualified PlanMill         as PM
+import qualified PlanMill.Queries as PMQ
 
 -- Note: we don't import .Monad!
 import qualified Futurice.App.HoursApi.Class as H
@@ -150,15 +151,17 @@ hoursResponse interval = do
 
     markedProject :: PM.ProjectId -> Set PM.TaskId -> m (Project MarkedTask)
     markedProject pid tids = do
-        now <- currentTime
+        now <- currentDay
         p <- H.project pid
+        absences <- H.absences interval
         tasks <- for (toList tids) $ \tid -> do
             t <- H.task tid
+            let isAbsence =  p ^. H.projectAbsence
             pure MarkedTask
                 { _mtaskId      = tid
-                , _mtaskName    = t ^. H.taskName
+                , _mtaskName    = if isAbsence then searchAbsenceType t absences $ t ^. H.taskName else t ^. H.taskName
                 , _mtaskClosed  = now > t ^. H.taskFinish
-                , _mtaskAbsence = p ^. H.projectAbsence
+                , _mtaskAbsence = isAbsence
                 }
         pure Project
             { _projectId     = pid
@@ -166,13 +169,18 @@ hoursResponse interval = do
             , _projectTasks  = tasks
             , _projectClosed = p ^. H.projectClosed
             }
+          where searchAbsenceType :: H.Task -> [H.Absence] -> Text -> Text
+                searchAbsenceType t abs def = case listToMaybe $ filter (\ab -> ab ^. H.absenceStart >= t ^. H.taskFinish
+                                                                             && ab ^. H.absenceFinish <= t ^. H.taskFinish) abs of
+                                                   (Just a) -> a ^. H.absenceAbsenceType
+                                                   Nothing -> def
 
 reportableProjects :: H.MonadHours m => m [Project ReportableTask]
 reportableProjects = do
-    now <- currentTime
+    now <- currentDay
 
     -- Ask Planmill for reportable assignments
-    reportable <- filter (\ra -> now < ra ^. H.raFinish) <$> H.reportableAssignments
+    reportable <- filter (\ra -> now <= ra ^. H.raFinish) <$> H.reportableAssignments
 
     -- Tasks per project
     let tasksPerProject :: Map PM.ProjectId (NonEmpty PM.TaskId)
