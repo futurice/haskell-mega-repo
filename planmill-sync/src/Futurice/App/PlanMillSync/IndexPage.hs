@@ -38,12 +38,12 @@ itoListWithOf :: IndexedGetting i (Endo [x]) s a -> (i -> a -> x) ->  s -> [x]
 itoListWithOf l f s = appEndo (ifoldMapOf l (\i a -> Endo (f i a :)) s) []
 
 indexPage
-    :: UTCTime
+    :: Day
     -> [PMUser]
     -> Map FUM.Login FUM.User
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage now planmills fums personios = page_ "PlanMill sync" $ do
+indexPage today planmills fums personios = page_ "PlanMill sync" $ do
     div_ [ class_ "top-bar" ] $ do
         div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu" ] $ do
             li_ [ class_ "menu-text"] $ "Personio ⇒ PlanMill sync"
@@ -120,7 +120,7 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
             th_ "HR Number"
 
         tbody_ $ iforOf_ (ifolded . _That) employees $ \login p -> do
-            when (P.employeeIsActive now p) $ tr_ $ do
+            when (P.employeeIsActive today p) $ tr_ $ do
                 td_ $ toHtml login
                 personioHtml p
 
@@ -135,7 +135,7 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
                 th_ "Contract span"
                 th_ "HR Number"
             tbody_ $ for_ personios $ \p ->
-                when (P.employeeIsActive now p && isNothing (p ^. P.employeeLogin)) $
+                when (P.employeeIsActive today p && isNothing (p ^. P.employeeLogin)) $
                     tr_ $ personioHtml p
 
     fullRow_ $ do
@@ -190,7 +190,7 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
         -- td_ $ toHtml $ p ^. P.employeeOffice
 
         cell_ $ do
-            let pActive = P.employeeIsActive now p
+            let pActive = P.employeeIsActive today p
 
             if pActive then "Active" else "Inactive"
 

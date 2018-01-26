@@ -48,7 +48,7 @@ contacts
        )
     => m [Contact Text]
 contacts = contacts'
-    <$> currentTime
+    <$> currentDay
     <*> Personio.personio Personio.PersonioEmployees
     <*> fumEmployeeList
     <*> githubDetailedMembers
@@ -56,14 +56,14 @@ contacts = contacts'
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
-    :: UTCTime
+    :: Day
     -> [Personio.Employee]
     -> Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
     -> [Contact Text]
-contacts' now employees users githubMembers flowdockOrg =
-    let employees' = filter (Personio.employeeIsActive now) employees
+contacts' today employees users githubMembers flowdockOrg =
+    let employees' = filter (Personio.employeeIsActive today) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1

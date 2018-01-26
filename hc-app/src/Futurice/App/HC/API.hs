@@ -9,6 +9,7 @@ import Prelude ()
 import Servant
 
 type HCAPI = SSOUser :> Get '[HTML] (HtmlPage "index-page")
+    :<|> SSOUser :> "personio-validation" :> Get '[HTML] (HtmlPage "personio-validation")
 
 hcApi :: Proxy HCAPI
 hcApi = Proxy

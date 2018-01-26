@@ -24,15 +24,16 @@ library
   build-depends:
       base >= 4.9 && <4.11,
       env-config,
+      fum-types,
       futurice-foundation,
       futurice-integrations,
       futurice-prelude,
       futurice-servant,
       personio-client,
       planmill-client,
-      fum-types,
       servant,
-      servant-server
+      servant-server,
+      time
  
   exposed-modules:
       Futurice.App.HC
@@ -40,6 +41,7 @@ library
       Futurice.App.HC.IndexPage
       Futurice.App.HC.Config
       Futurice.App.HC.Ctx
+      Futurice.App.HC.PersonioValidation
   default-language: Haskell2010
 
 executable hc-app-server
