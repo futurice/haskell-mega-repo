@@ -42,6 +42,8 @@ library
       Futurice.App.HC.Config
       Futurice.App.HC.Ctx
       Futurice.App.HC.PersonioValidation
+      Futurice.App.HC.PrivateContacts
+
   default-language: Haskell2010
 
 executable hc-app-server

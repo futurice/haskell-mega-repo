@@ -25,10 +25,12 @@ import Futurice.App.HC.Config
 import Futurice.App.HC.Ctx
 import Futurice.App.HC.IndexPage
 import Futurice.App.HC.PersonioValidation
+import Futurice.App.HC.PrivateContacts
 
 server :: Ctx -> Server HCAPI
 server ctx = indexPageAction ctx
     :<|> personioValidationAction ctx
+    :<|> personioPrivateContactsAction ctx
 
 indexPageAction
     :: Ctx
@@ -53,6 +55,23 @@ personioValidationAction ctx mfu = case mfu <|> cfgMockUser cfg of
             today <- currentDay
             vs <- personio P.PersonioValidations
             return (validationReport vs today)
+    _       -> return page404
+  where
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+
+personioPrivateContactsAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "private-contacts")
+personioPrivateContactsAction ctx mfu = case mfu <|> cfgMockUser cfg of
+    -- TODO: access control
+    Just fu -> do
+        now <- currentTime
+        liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+            es <- personio P.PersonioEmployees
+            return (privateContacts es)
     _       -> return page404
   where
     cfg = ctxConfig ctx
