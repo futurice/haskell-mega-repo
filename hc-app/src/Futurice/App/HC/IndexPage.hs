@@ -19,3 +19,6 @@ indexPage fu = page_ "HC app" $ do
             li_ $ do
                 a_ [href_ "/personio-validation"] "Personio validations"
                 " - report about incorrect or missing data in Personio"
+            li_ $ do
+                a_ [href_ "/private-contacts"] "Private concacts"
+                " - people private email and phone number on a single page"
