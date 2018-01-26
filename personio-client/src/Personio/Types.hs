@@ -99,9 +99,9 @@ data Employee = Employee
 --
 -- * it's status is 'Acitve' or 'Leave'.
 --
-employeeIsActive :: UTCTime -> Employee -> Bool
-employeeIsActive now e =
-    maybe True (utctDay now <) (_employeeEndDate e)
+employeeIsActive :: Day -> Employee -> Bool
+employeeIsActive today e =
+    maybe True (today <) (_employeeEndDate e)
     && (_employeeStatus e == Active || _employeeStatus e == Leave)
 
 makeLenses ''Employee

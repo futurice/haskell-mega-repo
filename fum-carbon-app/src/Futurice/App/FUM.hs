@@ -20,7 +20,6 @@ import Futurice.App.FUM.Machine
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.Server
 import Futurice.App.FUM.Report.CompareOldFum
-import Futurice.App.FUM.Report.Validation
 
 import qualified Futurice.IdMap as IdMap
 import qualified Personio
@@ -31,7 +30,6 @@ import qualified Personio
 
 server :: Ctx -> Server FumCarbonApi
 server ctx = pagesServer ctx
-    :<|> validationReportImpl ctx
     :<|> compareOldFumReportImpl ctx
     :<|> commandServer ctx
     :<|> machineServer ctx
@@ -39,9 +37,6 @@ server ctx = pagesServer ctx
 -------------------------------------------------------------------------------
 -- Reports
 -------------------------------------------------------------------------------
-
-validationReportImpl :: Ctx -> Handler (HtmlPage "validation-report")
-validationReportImpl = liftIO . validationReport
 
 compareOldFumReportImpl :: Ctx -> Handler (HtmlPage "compare-old-fum-report")
 compareOldFumReportImpl = liftIO . compareOldFumReport

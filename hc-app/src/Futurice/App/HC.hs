@@ -10,21 +10,25 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.HC (defaultMain) where
 
-import Prelude ()
+import Futurice.Integrations     (personio, runIntegrations)
+import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
 import Futurice.Prelude
 import Futurice.Servant
-import Futurice.Lucid.Foundation (HtmlPage, h1_, fullRow_, page_)
+import Prelude ()
 import Servant
 
 import qualified FUM.Types.Login as FUM
+import qualified Personio        as P
 
 import Futurice.App.HC.API
 import Futurice.App.HC.Config
 import Futurice.App.HC.Ctx
 import Futurice.App.HC.IndexPage
+import Futurice.App.HC.PersonioValidation
 
 server :: Ctx -> Server HCAPI
 server ctx = indexPageAction ctx
+    :<|> personioValidationAction ctx
 
 indexPageAction
     :: Ctx
@@ -35,7 +39,25 @@ indexPageAction ctx mfu = case mfu <|> cfgMockUser cfg of
     Just fu -> return (indexPage fu)
     _       -> return page404
   where
-    cfg = ctx
+    cfg = ctxConfig ctx
+
+personioValidationAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "personio-validation")
+personioValidationAction ctx mfu = case mfu <|> cfgMockUser cfg of
+    -- TODO: access control
+    Just fu -> do
+        now <- currentTime
+        liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+            today <- currentDay
+            vs <- personio P.PersonioValidations
+            return (validationReport vs today)
+    _       -> return page404
+  where
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
 
 page404 :: HtmlPage a
 page404 = page_ "HC - Unauthorised" $
@@ -52,6 +74,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx      .~ "HCAPP"
   where
     makeCtx :: () -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx () cfg _lgr _mgr _cache = do
-        let ctx = cfg
+    makeCtx () cfg lgr mgr _cache = do
+        let ctx = Ctx cfg lgr mgr
         pure (ctx, [])

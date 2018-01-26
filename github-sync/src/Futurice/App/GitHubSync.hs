@@ -34,9 +34,10 @@ indexPageAction
 indexPageAction ctx _mfu = do
     -- TODO: restrict access to IT only
     now <- currentTime
-    (gh, p) <- liftIO $
-        runIntegrations mgr lgr now (cfgIntegrationsConfig cfg) fetcher
-    pure $ indexPage now (cfgPinnedUsers cfg) gh p
+    liftIO $ runIntegrations mgr lgr now (cfgIntegrationsConfig cfg) $ do
+        today <- currentDay
+        (gh, p) <- fetcher
+        pure $ indexPage today (cfgPinnedUsers cfg) gh p
   where
     cfg = ctxConfig ctx
     lgr = ctxLogger ctx

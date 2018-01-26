@@ -12,4 +12,10 @@ indexPage :: FUM.Login -> HtmlPage "index-page"
 indexPage fu = page_ "HC app" $ do
     fullRow_ $ h1_ "HC"
 
-    fullRow_ $ "Hello " <> toHtml fu
+    fullRow_ $ do
+        "Hello " <> toHtml fu
+        br_ []
+        ul_ $ do
+            li_ $ do
+                a_ [href_ "/personio-validation"] "Personio validations"
+                " - report about incorrect or missing data in Personio"

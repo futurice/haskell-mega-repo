@@ -138,7 +138,6 @@ library
       Futurice.App.FUM.Pages.ViewEmployee
       Futurice.App.FUM.Pages.ViewGroup
       Futurice.App.FUM.Report.CompareOldFum
-      Futurice.App.FUM.Report.Validation
       Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Customer

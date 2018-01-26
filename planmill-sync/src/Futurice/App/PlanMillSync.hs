@@ -51,11 +51,12 @@ indexPageAction ctx mfu = do
     case mfu <|> cfgMockUser cfg of
         Just fu | Set.member fu fus -> do
             -- Data fetch
-            (pm, fum, p) <- liftIO $ cachedIO lgr cache 300 () $
-                runIntegrations' mgr lgr now ws (cfgIntegrationsConfig cfg) fetcher
+            (today, (pm, fum, p)) <- liftIO $ cachedIO lgr cache 300 () $
+                runIntegrations' mgr lgr now ws (cfgIntegrationsConfig cfg) $ 
+                    liftA2 (,) currentDay fetcher
 
             -- Render
-            pure $ indexPage now pm fum p
+            pure $ indexPage today pm fum p
 
         _ -> pure page404 -- TODO: log unauhtorised access?
   where

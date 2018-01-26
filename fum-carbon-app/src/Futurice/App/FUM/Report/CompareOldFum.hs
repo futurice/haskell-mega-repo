@@ -27,9 +27,10 @@ compareOldFumReport ctx = do
     let lgr = ctxLogger ctx
     let integrCfg = cfgIntegrationsConfig $ ctxConfig ctx
     now <- currentTime
+    let today = utctDay now
 
     ps' <- readTVarIO $ ctxPersonio ctx
-    let ps = filter (Personio.employeeIsActive now) (toList ps')
+    let ps = filter (Personio.employeeIsActive today) (toList ps')
     fs <- runIntegrations mgr lgr now integrCfg (toList <$> fumEmployeeList)
 
     let loginPs :: Map Login Personio.Employee
