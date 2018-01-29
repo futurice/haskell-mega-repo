@@ -95,13 +95,13 @@ class FromEnvVar a where
     fromEnvVar :: String -> Maybe a
 
 class FromEnvVarList a where
-    fromEnvVarList :: String -> [a]
+    fromEnvVarList :: String -> Maybe [a]
 
 instance FromEnvVarList a => FromEnvVar [a] where
-    fromEnvVar = Just . fromEnvVarList
+    fromEnvVar = fromEnvVarList
 
 instance (FromEnvVarList a, Ord a) => FromEnvVar (Set a) where
-    fromEnvVar = Just . Set.fromList . fromEnvVarList
+    fromEnvVar = fmap Set.fromList . fromEnvVarList
 
 -------------------------------------------------------------------------------
 -- CP
@@ -182,10 +182,10 @@ envAwsCredentials pfx = AWS.FromKeys
 -------------------------------------------------------------------------------
 
 instance FromEnvVarList Char where
-    fromEnvVarList = id
+    fromEnvVarList = Just
 
 instance FromEnvVarList Int where
-    fromEnvVarList =  mapMaybe fromEnvVar . splitOn ","
+    fromEnvVarList =  traverse fromEnvVar . splitOn ","
 
 instance FromEnvVar Text where
     fromEnvVar = Just . view packed

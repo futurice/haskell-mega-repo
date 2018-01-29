@@ -24,12 +24,15 @@ css = do
     h3 ? do
         fontSize (pt 13)
         fontWeight bold
-    ".login" ?
+    ".login" ? do
         color "#46289A"
-    ".personio" ?
+        textDecoration underline
+    ".personio" ? do
         color "#005A4B"
-    ".planmill" ?
+        textDecoration underline
+    ".planmill" ? do
         color "#500A5A"
+        textDecoration underline
 
     -- mimicking foundation styles
     ".select2" ? do
