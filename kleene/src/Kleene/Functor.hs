@@ -7,6 +7,7 @@ import Prelude.Compat
 
 import Algebra.Lattice     ((\/))
 import Control.Applicative (Alternative (..), liftA2)
+import Data.Foldable       (toList)
 import Data.RangeSet.List  (RSet)
 import Data.Semigroup      (Semigroup (..))
 import Data.String         (IsString (..))
@@ -80,6 +81,11 @@ instance Alternative (Kleene c) where
 -- ^[^]$
 kleeneAnyChar :: (Ord c, Enum c, Bounded c) => Kleene c c
 kleeneAnyChar = KleeneChar RSet.full
+
+-- | >>> putStrLn $ kleeneToJS $ kleeneElem ("foobar" :: [Char])
+-- ^[a-bfor]$
+kleeneElem :: (Ord c, Enum c, Foldable f) => f c -> Kleene c c
+kleeneElem = KleeneChar . RSet.fromList . toList
 
 -- | >>> putStrLn $ kleeneToJS kleeneDotChar
 -- ^.$
