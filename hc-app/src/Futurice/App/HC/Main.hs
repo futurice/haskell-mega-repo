@@ -8,8 +8,9 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
-module Futurice.App.HC (defaultMain) where
+module Futurice.App.HC.Main (defaultMain) where
 
+import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations     (personio, runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
 import Futurice.Prelude
@@ -17,6 +18,7 @@ import Futurice.Servant
 import Prelude ()
 import Servant
 
+import qualified Data.Set        as Set
 import qualified FUM.Types.Login as FUM
 import qualified Personio        as P
 
@@ -48,14 +50,17 @@ personioValidationAction
     -> Maybe FUM.Login
     -> Handler (HtmlPage "personio-validation")
 personioValidationAction ctx mfu = case mfu <|> cfgMockUser cfg of
-    -- TODO: access control
+    Nothing -> return page404
     Just fu -> do
         now <- currentTime
         liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
-            today <- currentDay
-            vs <- personio P.PersonioValidations
-            return (validationReport vs today)
-    _       -> return page404
+            fus <- mconcat <$> traverse (fum6 . FUMGroupEmployees) (cfgAccessGroups cfg)
+            if fu `Set.notMember` fus
+            then return page404
+            else do
+                today <- currentDay
+                vs <- personio P.PersonioValidations
+                return (validationReport vs today)
   where
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
@@ -66,13 +71,16 @@ personioPrivateContactsAction
     -> Maybe FUM.Login
     -> Handler (HtmlPage "private-contacts")
 personioPrivateContactsAction ctx mfu = case mfu <|> cfgMockUser cfg of
-    -- TODO: access control
+    Nothing -> return page404
     Just fu -> do
         now <- currentTime
         liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
-            es <- personio P.PersonioEmployees
-            return (privateContacts es)
-    _       -> return page404
+            fus <- mconcat <$> traverse (fum6 . FUMGroupEmployees) (cfgAccessGroups cfg)
+            if fu `Set.notMember` fus
+            then return page404
+            else do
+                es <- personio P.PersonioEmployees
+                return (privateContacts es)
   where
     cfg = ctxConfig ctx
     mgr = ctxManager ctx

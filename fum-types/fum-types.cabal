@@ -40,6 +40,8 @@ library
     , futurice-prelude
     , kleene
     , lucid
+    , parsers
+    , parsec
     , postgresql-simple
     , QuickCheck
     , regex-applicative-text

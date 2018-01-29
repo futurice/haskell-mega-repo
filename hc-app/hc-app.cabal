@@ -23,7 +23,9 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.9 && <4.11,
+      containers,
       env-config,
+      fum-api,
       fum-types,
       futurice-foundation,
       futurice-integrations,
@@ -36,7 +38,7 @@ library
       time
  
   exposed-modules:
-      Futurice.App.HC
+      Futurice.App.HC.Main
       Futurice.App.HC.API
       Futurice.App.HC.IndexPage
       Futurice.App.HC.Config
