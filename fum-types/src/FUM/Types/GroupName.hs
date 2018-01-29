@@ -14,13 +14,16 @@ import Control.Monad               ((>=>))
 import Data.Aeson.Types
        (FromJSONKey (..), FromJSONKeyFunction (..), ToJSONKey (..),
        toJSONKeyText)
-import Futurice.EnvConfig          (FromEnvVar (..))
+import Futurice.EnvConfig          (FromEnvVar (..), FromEnvVarList (..))
 import Futurice.Generics
 import Futurice.Prelude
+import Kleene                      (Kleene, kleeneElem, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..))
 import Prelude ()
-import Text.Regex.Applicative.Text (RE', psym)
+import Text.Parser.Char            (CharParsing (..))
+import Text.Parser.Combinators     (Parsing (..), sepBy1)
+import Text.Regex.Applicative.Text (RE')
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Csv                             as Csv
@@ -29,6 +32,7 @@ import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified Test.QuickCheck                      as QC
+import qualified Text.Parsec                          as Parsec
 
 -- | GroupName name. @[a-zA-Z0-9 _.-]+@.
 newtype GroupName = GroupName Text
@@ -68,22 +72,24 @@ groupNameToText (GroupName l) = l
 
 -- | Parse group name identifier
 parseGroupName' :: Text -> Either String GroupName
-parseGroupName' t
-    | not (1 <= len)         = Left $ "group name of invalid length: " ++ show len
-    | T.any isInvalidChar t  = Left $ "group name with invalid characters: " ++ show (T.take 3 (T.filter isInvalidChar t))
-    | otherwise              = Right (GroupName t)
-  where
-    len = T.length t
-    isInvalidChar = (`notElem` validChars)
+parseGroupName' = first show . Parsec.parse groupNameParser "<input>"
 
 validChars :: String
 validChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0' .. '9'] ++ " ._-"
+
+groupNameKleene :: Kleene Char GroupName
+groupNameKleene =  GroupName . T.pack <$> some (kleeneElem validChars)
+
+groupNameParser :: CharParsing m => m GroupName
+groupNameParser = GroupName . T.pack <$> some c where
+    c :: CharParsing m => m Char
+    c = satisfy (`elem` validChars) <?> "group name character [a-zA-Z0-9 ._-]"
 
 -- | Regexp for group name
 --
 -- /Note:/ use `parseGroupName` if possible, as it provides better errors.
 groupNameRegexp :: RE' GroupName
-groupNameRegexp = GroupName . T.pack <$> some (psym (`elem` validChars))
+groupNameRegexp = kleeneToRA groupNameKleene
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -145,3 +151,8 @@ instance Postgres.FromField GroupName where
 instance FromEnvVar GroupName where
     fromEnvVar = fromEnvVar >=> parseGroupName
 
+instance FromEnvVarList GroupName where
+    fromEnvVarList = either (const Nothing) Just . Parsec.parse p "<input>"
+      where
+        p = groupNameParser `sepBy1` comma
+        comma = char ',' <?> "comma"

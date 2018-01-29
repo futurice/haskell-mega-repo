@@ -18,9 +18,9 @@ supervisorsGraph
     :: forall m. (MonadTime m, MonadPersonio m)
     => m (Graph Emp "supervisors")
 supervisorsGraph = do
-    now <- currentTime
+    today <- currentDay
     es0 <- P.personio P.PersonioEmployees
-    let es = filter (P.employeeIsActive now) es0
+    let es = filter (P.employeeIsActive today) es0
     let m = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) es
     let g = edges (mapMaybe (f m) es)
     pure $ Graph g

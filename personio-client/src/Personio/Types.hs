@@ -84,6 +84,7 @@ data Employee = Employee
     , _employeeEmploymentType :: !(Maybe EmploymentType)
     , _employeeContractType   :: !(Maybe ContractType)
     , _employeeHomePhone      :: !(Maybe Text)
+    , _employeeHomeEmail      :: !(Maybe Text)
     , _employeePosition       :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
     , _employeeWeeklyHours    :: !(NDT 'Hours Centi)
     , _employeeExpat          :: !Bool
@@ -99,9 +100,9 @@ data Employee = Employee
 --
 -- * it's status is 'Acitve' or 'Leave'.
 --
-employeeIsActive :: UTCTime -> Employee -> Bool
-employeeIsActive now e =
-    maybe True (utctDay now <) (_employeeEndDate e)
+employeeIsActive :: Day -> Employee -> Bool
+employeeIsActive today e =
+    maybe True (today <) (_employeeEndDate e)
     && (_employeeStatus e == Active || _employeeStatus e == Leave)
 
 makeLenses ''Employee
@@ -160,6 +161,7 @@ parseEmployeeObject obj' = Employee
     <*> parseAttribute obj "employment_type"
     <*> optional (parseDynamicAttribute obj "Contract type")
     <*> parseDynamicAttribute obj "Private phone"
+    <*> parseDynamicAttribute obj "Private email"
     <*> parseAttribute obj "position"
     <*> fmap getWeeklyHours (parseAttribute obj "weekly_working_hours")
     <*> fmap getExpat (parseDynamicAttribute obj  "Expat")

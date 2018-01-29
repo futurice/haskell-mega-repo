@@ -16,12 +16,12 @@ import qualified GitHub   as GH
 import qualified Personio as P
 
 indexPage
-    :: UTCTime
+    :: Day
     -> Pinned
     -> [GH.User]
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage now (Pin pinned) githubs personios = page_ "GitHub sync" $ do
+indexPage today (Pin pinned) githubs personios = page_ "GitHub sync" $ do
     fullRow_ $ h1_ "Personio ⇒ GitHub sync"
 
     fullRow_ $ h2_ "Only in GitHub, not in Personio"
@@ -63,7 +63,7 @@ indexPage now (Pin pinned) githubs personios = page_ "GitHub sync" $ do
                 td_ "GitHub"
             tbody_ $ for_ personios $ \e ->
                 for_ (e ^. P.employeeGithub) $ \glogin ->
-                    when (P.employeeIsActive now e && not (githubLogins ^. contains glogin)) $ tr_ $ do
+                    when (P.employeeIsActive today e && not (githubLogins ^. contains glogin)) $ tr_ $ do
                         td_ $ checkbox_ False []
                         td_ $ toHtml $ e ^. P.employeeId
                         td_ $ toHtml $ e ^. P.employeeFullname
@@ -76,7 +76,7 @@ indexPage now (Pin pinned) githubs personios = page_ "GitHub sync" $ do
     githubLogins = setOf (folded . getter GH.userLogin) githubs
 
     personioLogins :: Set (GH.Name GH.User)
-    personioLogins = setOf (folded . filtered (P.employeeIsActive now) . P.employeeGithub . _Just) personios
+    personioLogins = setOf (folded . filtered (P.employeeIsActive today) . P.employeeGithub . _Just) personios
         -- add pinned users to personio set, so we don't remove them
         <> setOf folded pinned
 
