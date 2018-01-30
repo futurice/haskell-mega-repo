@@ -1,17 +1,28 @@
-index-state: 2018-01-29T13:41:58Z
+index-state: 2018-01-30T08:29:35Z
 
 constraints:
-  http-types         ^>= 0.12,
   github             ^>= 0.18,
+  http-types         ^>= 0.12,
+  lens               ^>= 4.16,
   log-base           ^>= 0.7.4.0,
+  semigroupoids      ^>= 5.2.2,
   servant-client     ^>= 0.12.0.1,
   servant-server     ^>= 0.12,
   servant-swagger-ui ^>= 0.2.4.3.4.0
 
-allow-newer:
-  *:http-types
+-- https://github.com/brendanhay/amazonka/issues/446
 constraints:
-  semigroupoids < 5.2.2
+  http-conduit <2.3.0
+
+allow-newer:
+  -- waiting for servant-0.13
+  servant:http-types,
+  servant-server:http-types,
+  servant-client:http-types,
+  servant-client-core:http-types,
+
+  -- this might take some time
+  *:lens
 
 packages:
   ansi-pretty/
