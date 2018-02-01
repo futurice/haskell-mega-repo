@@ -2,17 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Binary.Tagged
+import Futurice.Prelude
 import GHC.TypeLits          (natVal)
+import Prelude ()
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
-import qualified Futurice.GitHub      as GH
-import qualified PlanMill.Types       as PM
-import qualified PlanMill.Types.Query as PM
 import qualified Data.ByteString.Base16.Lazy as Base16
+import qualified Futurice.GitHub             as GH
+import qualified PlanMill.Types              as PM
+import qualified PlanMill.Types.Query        as PM
 
 main :: IO ()
 main = defaultMain tests
@@ -41,13 +41,13 @@ binaryTagTests = testGroup "BinaryTagged tags" $ map mk tags
     tags :: [BTTest]
     tags =
         [ BTTest "PlanMill.SomeResponse" (Proxy :: Proxy PM.SomeResponse)
-            0 "695397a115a20d8eb68cdeafc6f44476dce0b4e3"
+            0 "4c39408478af8aee8664ccd5ec8a44104e636336"
         , BTTest "planmill-haxl endpoint" (Proxy :: Proxy [Either Text PM.SomeResponse])
-            0 "10703fb8de8a96a4d529a6d9dd096bef7bf4ec77"
+            0 "4756aadcbb45b19a0f4d0d0aa133733ce62071db"
         , BTTest "PlanMill.Projects" (Proxy :: Proxy PM.Projects)
             0 "23a7e05940eb50f2b32177a4d66aab0bae4dad80"
         , BTTest "PlanMill.Tasks" (Proxy :: Proxy PM.Tasks)
-            0 "6f624274e2fdac20a4581177c66e194b460169a1"
+            0 "3e2a0ccee3c5e185019a407cab80db82ba304309"
         , BTTest "PlanMill.CapacityCalendars" (Proxy :: Proxy PM.CapacityCalendars)
             0 "1fde910b8a5fc395de41cf0cda34f17fe9d141cd"
         , BTTest "GitHub.SomeResponse" (Proxy :: Proxy GH.SomeResponse)

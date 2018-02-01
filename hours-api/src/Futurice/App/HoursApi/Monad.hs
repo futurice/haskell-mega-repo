@@ -304,10 +304,10 @@ instance MonadHours Hours where
               convertAbsence a = do
                   text <- absenceTypeToText a
                   pure Absence
-                      { _absenceProject     = PM.absenceProject a
-                      , _absenceStart       = PM.absenceStart a
-                      , _absenceFinish      = PM.absenceFinish a
-                      , _absenceAbsenceType = text
+                      { _absenceProject = PM.absenceProject a
+                      , _absenceStart   = PM.absenceStart a
+                      , _absenceFinish  = PM.absenceFinish a
+                      , _absenceType    = text
                       }
               absenceTypeToText :: PM.Absence -> Hours Text
               absenceTypeToText a = PMQ.enumerationValue (PM.absenceAbsenceType a) (fromString "Unknown absence type")

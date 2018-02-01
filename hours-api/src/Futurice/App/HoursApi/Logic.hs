@@ -23,10 +23,11 @@ import Prelude ()
 
 import Futurice.App.HoursApi.Types
 
-import qualified Data.Map         as Map
-import qualified Data.Set         as Set
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
+import qualified Data.Map                  as Map
+import qualified Data.Set                  as Set
+import qualified Numeric.Interval.NonEmpty as Interval
+import qualified PlanMill                  as PM
+import qualified PlanMill.Queries          as PMQ
 
 -- Note: we don't import .Monad!
 import qualified Futurice.App.HoursApi.Class as H
@@ -153,13 +154,13 @@ hoursResponse interval = do
     markedProject pid tids = do
         now <- currentDay
         p <- H.project pid
-        absences <- H.absences interval
         tasks <- for (toList tids) $ \tid -> do
             t <- H.task tid
             let isAbsence =  p ^. H.projectAbsence
+            name <- if isAbsence then searchAbsenceType t (t ^. H.taskName) else return (t ^. H.taskName)
             pure MarkedTask
                 { _mtaskId      = tid
-                , _mtaskName    = if isAbsence then searchAbsenceType t absences $ t ^. H.taskName else t ^. H.taskName
+                , _mtaskName    = name
                 , _mtaskClosed  = now > t ^. H.taskFinish
                 , _mtaskAbsence = isAbsence
                 }
@@ -169,11 +170,15 @@ hoursResponse interval = do
             , _projectTasks  = tasks
             , _projectClosed = p ^. H.projectClosed
             }
-          where searchAbsenceType :: H.Task -> [H.Absence] -> Text -> Text
-                searchAbsenceType t abs def = case listToMaybe $ filter (\ab -> ab ^. H.absenceStart >= t ^. H.taskFinish
-                                                                             && ab ^. H.absenceFinish <= t ^. H.taskFinish) abs of
-                                                   (Just a) -> a ^. H.absenceAbsenceType
-                                                   Nothing -> def
+      where
+        searchAbsenceType :: H.Task -> Text -> m Text
+        searchAbsenceType t def = do
+            -- we ask for absences only if we need them
+            absences <- H.absences interval
+            -- find an absence which interval s pan includes task finish day
+            return $ case filter (\ab -> Interval.member (t ^. H.taskFinish) (ab ^. H.absenceInterval)) absences of
+                (a:_) -> a ^. H.absenceType
+                []    -> def
 
 reportableProjects :: H.MonadHours m => m [Project ReportableTask]
 reportableProjects = do
