@@ -30,6 +30,7 @@ data Absence = Absence
     , absenceProject          :: !ProjectId
     , absenceStart            :: !Day
     , absenceFinish           :: !Day
+    , absenceCreated          :: !UTCTime
     {-
       2016-10-26, phadej:
       We don't actually use those fields, so let's not parse or
@@ -71,6 +72,7 @@ instance FromJSON Absence where
         <*> obj .: "project"
         <*> (dayFromZ <$> obj .: "start")
         <*> (dayFromZ <$> obj .: "finish")
+        <*> obj .: "created"
         {-
         <*> obj .: "accepterPerson"
         -- TODO: I'd add a combinator to aeson-extra to make this prettier
