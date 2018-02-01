@@ -48,14 +48,16 @@ module Futurice.App.HoursApi.Class (
     absenceProject,
     absenceStart,
     absenceFinish,
-    absenceAbsenceType,
+    absenceType,
+    absenceInterval,
     ) where
 
+import Control.Lens              ((<&>))
 import Data.Fixed                (Centi)
 import Data.Time                 (addDays)
 import Futurice.Prelude
 import Futurice.Time
-import Numeric.Interval.NonEmpty (Interval, (...))
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 
 import qualified Futurice.App.HoursApi.Types as T
@@ -203,10 +205,10 @@ data Capacity = Capacity
   deriving (Eq, Show, Generic)
 
 data Absence = Absence
-    { _absenceProject          :: !PM.ProjectId
-    , _absenceStart            :: !Day
-    , _absenceFinish           :: !Day
-    , _absenceAbsenceType      :: !Text
+    { _absenceProject :: !PM.ProjectId
+    , _absenceStart   :: !Day
+    , _absenceFinish  :: !Day
+    , _absenceType    :: !Text
     }
     deriving (Eq, Show, Generic)
 
@@ -221,3 +223,12 @@ makeLenses ''ReportableAssignment
 makeLenses ''Task
 makeLenses ''Timereport
 makeLenses ''Absence
+
+-------------------------------------------------------------------------------
+-- Manual lenses
+-------------------------------------------------------------------------------
+
+absenceInterval :: Lens' Absence (Interval Day)
+absenceInterval f a = f (_absenceStart a ... _absenceFinish a) <&> \i ->
+    a { _absenceStart = inf i, _absenceFinish = sup i }
+{-# INLINE absenceInterval #-}
