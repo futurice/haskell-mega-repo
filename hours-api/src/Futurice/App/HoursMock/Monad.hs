@@ -144,3 +144,5 @@ instance MonadHours Hours where
     editTimereport tid ntr = do
         deleteTimereport tid
         addTimereport ntr
+
+    absences interval = pure []

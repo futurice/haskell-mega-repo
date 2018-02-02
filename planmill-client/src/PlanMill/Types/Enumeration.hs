@@ -18,7 +18,6 @@ module PlanMill.Types.Enumeration (
 
 import PlanMill.Internal.Prelude
 
-import Data.Aeson.Types                 (Parser)
 import Futurice.Constraint.ForallSymbol (Dict (..), ForallFSymbol (..))
 import Futurice.EnvConfig
 import Futurice.Reflection.TypeLits     (reifyTypeableSymbol)
@@ -84,14 +83,18 @@ instance FromEnvVarList (EnumValue entity field) where
 
 newtype IM a = IM { getIM :: IntMap a }
 
-instance FromJSON a => FromJSON (IM a) where
-    parseJSON v = IM <$> (parseJSON v >>= toIM)
-      where
-        toIM :: HashMap String a -> Parser (IntMap a)
-        toIM = fmap IM.fromList . (traverse . _1) parseInt . HM.toList
 
-        parseInt :: String -> Parser Int
-        parseInt = maybe (fail "Cannot parse integral key") pure . readMaybe
+-- | Filtering non-Int:s away as meta json sometimes have useless "optgroup"
+-- string values
+instance FromJSON a => FromJSON (IM a) where
+    parseJSON v = IM . toIM <$> parseJSON v
+      where
+        toIM :: HashMap String a -> IntMap a
+        toIM xs = IM.fromList
+            [ (i, a)
+            | (s, a) <- HM.toList xs
+            , Just i <- [readMaybe s]
+            ]
 
 -------------------------------------------------------------------------------
 -- Template Haskell
