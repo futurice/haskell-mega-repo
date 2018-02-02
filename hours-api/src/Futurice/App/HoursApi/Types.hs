@@ -12,8 +12,6 @@
 -- /NOTE:/ Golang backend LatestEntry is Entry with a Date
 module Futurice.App.HoursApi.Types where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (foldOf, imap, sumOf)
 import Data.Aeson                (Value (..), withText)
 import Data.Aeson.Types          (typeMismatch)
@@ -21,14 +19,16 @@ import Data.Fixed                (Centi)
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Monoid           (Average (..))
+import Futurice.Prelude
 import Futurice.Time
 import Futurice.Time.Month       (dayToMonth)
-import Numeric.Interval.NonEmpty (Interval, inf, sup)
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
+import Prelude ()
 import Test.QuickCheck           (arbitraryBoundedEnum)
 
+import qualified Data.Map        as Map
+import qualified PlanMill        as PM
 import qualified Test.QuickCheck as QC
-import qualified Data.Map as Map
-import qualified PlanMill as PM
 
 -------------------------------------------------------------------------------
 -- Project

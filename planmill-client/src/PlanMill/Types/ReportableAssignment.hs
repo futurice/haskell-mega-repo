@@ -27,8 +27,8 @@ data ReportableAssignment = ReportableAssignment
     , raTaskName              :: !Text
     , raProject               :: !ProjectId
     , raProjectName           :: !Text
-    , raTaskStart             :: !UTCTime
-    , raTaskFinish            :: !UTCTime
+    , raTaskStart             :: !Day
+    , raTaskFinish            :: !Day
     , raLastTimereportCreated :: !UTCTime
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
@@ -54,6 +54,6 @@ instance FromJSON ReportableAssignment where
             <*> obj .: "taskName"
             <*> obj .: "project"
             <*> obj .: "projectName"
-            <*> (getU <$> obj .: "taskStart")
-            <*> (getU <$> obj .: "taskFinish")
+            <*> (dayFromZ <$> obj .: "taskStart")
+            <*> (dayFromZ <$> obj .: "taskFinish")
             <*> (getU <$> obj .: "lastTimereportCreated")

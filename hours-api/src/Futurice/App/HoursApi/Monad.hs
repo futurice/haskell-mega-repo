@@ -296,6 +296,22 @@ instance MonadHours Hours where
         reports <- cachedPlanmillAction (PM.timereportsFromIntervalFor resultInterval pmUid)
         traverse convertTimereport (toList reports)
 
+    absences interval = do
+        absences <- planmillAction $ PM.absencesFromInterval (PM.ResultInterval PM.IntervalStart interval)
+        pmUid <- viewHours (envPmUser . PM.identifier)
+        traverse convertAbsence (filter (\a -> PM.absencePerson a == pmUid) (toList absences))
+        where convertAbsence :: PM.Absence -> Hours Absence
+              convertAbsence a = do
+                  text <- absenceTypeToText a
+                  pure Absence
+                      { _absenceProject = PM.absenceProject a
+                      , _absenceStart   = PM.absenceStart a
+                      , _absenceFinish  = PM.absenceFinish a
+                      , _absenceType    = text
+                      }
+              absenceTypeToText :: PM.Absence -> Hours Text
+              absenceTypeToText a = PMQ.enumerationValue (PM.absenceAbsenceType a) (fromString "Unknown absence type")
+
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------

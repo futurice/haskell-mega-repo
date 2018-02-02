@@ -15,8 +15,8 @@ module PlanMill.Types.Task (
 
 import PlanMill.Internal.Prelude
 
-import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
-import PlanMill.Types.Project         (ProjectId)
+import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
+import PlanMill.Types.Project    (ProjectId)
 
 type TaskId = Identifier Task
 type Tasks = Vector Task
@@ -29,7 +29,7 @@ data Task = Task
     , taskBillableStatus  :: !(Maybe Int)
     , taskDescription     :: !(Maybe String)
     , taskDutyType        :: !(Maybe Int)
-    , taskFinish          :: !UTCTime
+    , taskFinish          :: !Day
     , taskFinishOld       :: !(Maybe UTCTime)
     , taskOriginalFinish  :: !(Maybe UTCTime)
     , taskOriginalStart   :: !(Maybe UTCTime)
@@ -37,7 +37,7 @@ data Task = Task
     , taskPredecessorTask :: !(Maybe Int)
     , taskPriceType       :: !(Maybe Int)
     , taskProject         :: !(Maybe ProjectId) -- TODO: Unset?
-    , taskStart           :: !UTCTime
+    , taskStart           :: !Day
     -- , taskStatus          :: !(Maybe Int)
     -- TODO: In /project/:project_id/tasks returns as String,
     --       in /tasks/:task_id returns Int
@@ -73,7 +73,7 @@ instance FromJSON Task where
         <*> obj .: "billableStatus"
         <*> obj .:? "description"
         <*> obj .: "dutyType"
-        <*> (getU <$> obj .: "finish")
+        <*> (dayFromZ <$> obj .: "finish")
         <*> (getU <$$> obj .:? "finishOld")
         <*> (getU <$$> obj .:? "originalFinish")
         <*> (getU <$$> obj .:? "originalStart")
@@ -81,7 +81,7 @@ instance FromJSON Task where
         <*> obj .:? "predecessorTask"
         <*> obj .:? "priceType"
         <*> obj .:? "project"
-        <*> (getU <$> obj .: "start")
+        <*> (dayFromZ <$> obj .: "start")
         -- <*> obj .: "status"
         <*> obj .:? "targetEffort"
         <*> (getU <$$> obj .:? "tempFinish")

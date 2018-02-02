@@ -11,12 +11,12 @@
 ## Test usage
 
 ```
-$ stack ghci
-:m *PlanMill.Test PlanMill.EndPoints.Timereports PlanMill.EndPoints.Projects Data.Time.TH
+$ cabal new-repl
+:m *PlanMill.Test PlanMill PlanMill.Endpoints PlanMill.Types.Cfg PlanMill.Types.Identifier Data.Time.TH
 ```
 
 ```hs
-let cfg = Cfg (Ident 42) "secret" mockEndpoint)
+let cfg = Cfg (Ident 42) "secret" mockEndpoint
 ts <- evalPlanMillIO cfg $ timereportsFromInterval $ ResultInterval IntervalStart $(mkUTCTime "2015-12-01T00:00:00+03:00") $(mkUTCTime "2016-01-01T00:00:00+03:00")
 print ts
 ```

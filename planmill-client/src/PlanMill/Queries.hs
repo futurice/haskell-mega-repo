@@ -40,7 +40,7 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
-       (Absences, Account, AccountId, CapacityCalendars, Me, Project,
+       (Absence, Absences, Account, AccountId, CapacityCalendars, Me, Project,
        ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
        Timereports, User, UserCapacities, UserId, Users)
 import PlanMill.Types.Enumeration
@@ -258,6 +258,10 @@ class HasMeta entity where
 
 instance HasMeta User where
     metaPath _ = t "users" // t "meta"
+      where t = id :: Text -> Text
+
+instance HasMeta Absence where
+    metaPath _ = t "absences" // t "meta"
       where t = id :: Text -> Text
 
 meta :: MonadPlanMillQuery m => HasMeta entity => Proxy entity -> m Meta

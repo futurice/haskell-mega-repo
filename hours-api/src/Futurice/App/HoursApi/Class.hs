@@ -44,13 +44,20 @@ module Futurice.App.HoursApi.Class (
     raFinish,
     raProjectId,
     raTaskId,
+    Absence (..),
+    absenceProject,
+    absenceStart,
+    absenceFinish,
+    absenceType,
+    absenceInterval,
     ) where
 
+import Control.Lens              ((<&>))
 import Data.Fixed                (Centi)
 import Data.Time                 (addDays)
 import Futurice.Prelude
 import Futurice.Time
-import Numeric.Interval.NonEmpty (Interval, (...))
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 
 import qualified Futurice.App.HoursApi.Types as T
@@ -138,6 +145,11 @@ class (MonadTime m) => MonadHours m where
         today <- currentDay
         timereports (addDays (-28) today ... today)
 
+    -- | Absences
+    --
+    -- Return all absences
+    absences :: Interval Day -> m [Absence]
+
 -------------------------------------------------------------------------------
 -- Data
 -------------------------------------------------------------------------------
@@ -145,7 +157,7 @@ class (MonadTime m) => MonadHours m where
 data ReportableAssignment = ReportableAssignment
     { _raProjectId :: !PM.ProjectId
     , _raTaskId    :: !PM.TaskId
-    , _raFinish    :: !UTCTime
+    , _raFinish    :: !Day
     }
   deriving (Eq, Show, Generic)
 
@@ -153,7 +165,7 @@ data Task = Task
     { _taskId        :: !PM.TaskId
     , _taskName      :: !Text
     , _taskProjectId :: !PM.ProjectId
-    , _taskFinish    :: !UTCTime
+    , _taskFinish    :: !Day
     }
   deriving (Eq, Show, Generic)
 
@@ -192,6 +204,14 @@ data Capacity = Capacity
     }
   deriving (Eq, Show, Generic)
 
+data Absence = Absence
+    { _absenceProject :: !PM.ProjectId
+    , _absenceStart   :: !Day
+    , _absenceFinish  :: !Day
+    , _absenceType    :: !Text
+    }
+    deriving (Eq, Show, Generic)
+
 -------------------------------------------------------------------------------
 -- Lenses
 -------------------------------------------------------------------------------
@@ -202,3 +222,13 @@ makeLenses ''Project
 makeLenses ''ReportableAssignment
 makeLenses ''Task
 makeLenses ''Timereport
+makeLenses ''Absence
+
+-------------------------------------------------------------------------------
+-- Manual lenses
+-------------------------------------------------------------------------------
+
+absenceInterval :: Lens' Absence (Interval Day)
+absenceInterval f a = f (_absenceStart a ... _absenceFinish a) <&> \i ->
+    a { _absenceStart = inf i, _absenceFinish = sup i }
+{-# INLINE absenceInterval #-}
