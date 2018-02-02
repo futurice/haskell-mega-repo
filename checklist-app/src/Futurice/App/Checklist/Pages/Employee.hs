@@ -3,13 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (forOf_, re)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import Prelude ()
 import Servant.API               (safeLink)
 import Web.HttpApiData           (toQueryParam)
 
@@ -32,7 +32,7 @@ employeePage
     -> Employee
     -> [P.Employee]
     -> HtmlPage "employee"
-employeePage world authUser employee _personios = checklistPage_ (view nameText employee) authUser $ do
+employeePage world authUser employee personios = checklistPage_ (view nameText employee) authUser $ do
     -- Title
     header (employee ^. nameText) []
 
@@ -107,11 +107,13 @@ employeePage world authUser employee _personios = checklistPage_ (view nameText 
             textarea_ [ futuId_ "employee-info", rows_ "5" ] $ toHtml $ employee ^. employeeInfo
         row_ $ large_ 12 $ label_ $ do
             "Phone"
+            hasDifferentPersonioPhone (personioEmployee personios (employee ^. employeePersonio)) (employee ^. employeePhone)
             -- TODO: maybe it's simpler to just define empty value
             input_ $ [ futuId_ "employee-phone", type_ "tel" ] ++
                 catMaybes [ value_ <$> employee ^. employeePhone ]
         row_ $ large_ 12 $ label_ $ do
             "Private email"
+            hasDifferentPersonioEmail (personioEmployee personios (employee ^. employeePersonio)) (employee ^. employeeContactEmail)
             input_ $ [ futuId_ "employee-contact-email", type_ "email" ] ++
                 catMaybes [ value_ <$> employee ^. employeeContactEmail ]
         row_ $ large_ 12 $ label_ $ do
@@ -159,6 +161,27 @@ employeePage world authUser employee _personios = checklistPage_ (view nameText 
 
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
+
+    personioEmployee :: [P.Employee] -> Maybe P.EmployeeId -> Maybe P.Employee
+    personioEmployee _ Nothing = Nothing
+    personioEmployee ps (Just pid) = listToMaybe $ filter (\p -> p ^. P.employeeId == pid) ps
+
+    personioText :: Maybe Text -> Text -> Text
+    personioText Nothing _ = ""
+    personioText (Just t) attr = " Personio " <> attr <> " " <> t
+
+    wrapToWarningLabel :: Text -> HtmlT Identity ()
+    wrapToWarningLabel x = label_ [ class_ "label warning" ] (toHtml x)
+
+    hasDifferentPersonioPhone :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
+    hasDifferentPersonioPhone Nothing _ = pure ()
+    hasDifferentPersonioPhone (Just p) Nothing =  wrapToWarningLabel $ personioText (p ^. P.employeeHomePhone) "phone"
+    hasDifferentPersonioPhone (Just p) oldp = if (p ^. P.employeeHomePhone) == oldp then "" else wrapToWarningLabel $ personioText (p ^. P.employeeHomePhone) "phone"
+
+    hasDifferentPersonioEmail :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
+    hasDifferentPersonioEmail Nothing _ = pure ()
+    hasDifferentPersonioEmail (Just p) Nothing = wrapToWarningLabel $ personioText (p ^. P.employeeHomeEmail) "email"
+    hasDifferentPersonioEmail (Just p) oldp = if (p ^. P.employeeHomeEmail) == oldp then "" else wrapToWarningLabel $ personioText (p ^. P.employeeHomeEmail) "email"
 
 encodeToText :: ToJSON a => a -> Text
 encodeToText = view strict . encodeToLazyText
