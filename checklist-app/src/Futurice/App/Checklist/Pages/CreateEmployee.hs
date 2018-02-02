@@ -62,9 +62,8 @@ personioToTemplate es e = Tmpl
     , tmplSupervisor   = fromMaybe "" $ do
         suid <- e ^. Personio.employeeSupervisorId
         es ^? ix suid . Personio.employeeFullname
-    -- TODO: private phone and email
-    , tmplPhone        = Nothing
-    , tmplEmail        = Nothing
+    , tmplPhone        = e ^. Personio.employeeHomePhone
+    , tmplEmail        = e ^. Personio.employeeHomeEmail
     , tmplLogin        = e ^. Personio.employeeLogin
     , tmplHRNumber     = zeroToNothing $ e ^. Personio.employeeHRNumber
     }
