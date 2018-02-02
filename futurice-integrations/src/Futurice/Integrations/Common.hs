@@ -31,7 +31,6 @@ import Futurice.Integrations.Types
 import Futurice.Prelude
 import Futurice.Tribe                (defaultTribe)
 import Prelude ()
-import Text.Regex.Applicative.Text   (match)
 
 import qualified Data.HashMap.Strict as HM
 
@@ -128,9 +127,7 @@ personioPlanmillMap = do
     combine ps pms = HM.intersectionWith (,) ps' pms'
       where
         ps' = HM.fromList $ flip mapMaybe ps $ \e -> (,e) <$> e ^. P.employeeLogin
-        pms' = HM.fromList $ flip mapMaybe pms $ \u -> (,u) <$> match loginRe (PM.uUserName u)
-
-        loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
+        pms' = HM.fromList $ flip mapMaybe pms $ \u -> (,u) <$> PM.userLogin u
 
 -- | Get a mapping fum username to planmill user
 --
@@ -157,11 +154,9 @@ fumPlanmillMap =
 
         extract :: (PM.User, PM.User) -> Maybe (FUM.Login, (FUM.User, PM.User))
         extract (pmUser', pmUser) = do
-            name <- match loginRe (PM.uUserName pmUser)
+            name <- PM.userLogin pmUser
             fumUser <- fumNames ^. at name
             pure (name, (fumUser, update pmUser' pmUser))
-
-        loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
 
     -- workaround for https://github.com/planmill/api/issues/11
     -- some data is present in users output but not in per-user
@@ -171,8 +166,6 @@ fumPlanmillMap =
         }
 
 -- | Get information about employee from planmill
---
--- /TODO/: use applicative
 planmillEmployee
     :: (MonadPlanMillQuery m, MonadPersonio m)
     => PM.UserId
@@ -181,7 +174,7 @@ planmillEmployee uid = do
     u <- PMQ.user uid
 
     -- tribe
-    t <- case match loginRe (PM.uUserName u) of
+    t <- case PM.userLogin u of
         Nothing -> pure defaultTribe
         Just l  -> do
             ps <- P.personio P.PersonioEmployees
@@ -191,10 +184,8 @@ planmillEmployee uid = do
     -- contract
     c <- PMQ.enumerationValue (PM.uContractType u) "Unknown Contract"
 
-    return $ Employee
+    return Employee
         { employeeName     = PM.uFirstName u <> " " <> PM.uLastName u
         , employeeTribe    = t
         , employeeContract = c
         }
- where
-   loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
