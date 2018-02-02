@@ -55,6 +55,7 @@ library
     , DRBG
     , env-config
     , exceptions
+    , fum-types
     , futurice-constants
     , futurice-metrics
     , futurice-prelude

@@ -23,18 +23,37 @@ library
   ghc-options: -Wall
   build-depends:
       base >= 4.9 && <4.11,
+      aeson,
+      base16-bytestring,
+      base64-bytestring-type,
+      binary,
       containers,
+      cryptohash-sha512,
+      email-proxy-client,
+      entropy,
       env-config,
+      file-embed,
       fum-api,
       fum-types,
       futurice-foundation,
       futurice-integrations,
       futurice-prelude,
       futurice-servant,
+      futurice-tribes,
+      http-api-data,
+      intervals,
+      lattices,
+      lens,
+      microstache,
       personio-client,
       planmill-client,
+      range-set-list,
       servant,
+      servant-client,
       servant-server,
+      swagger2,
+      template-haskell,
+      text,
       time
  
   exposed-modules:
@@ -43,6 +62,9 @@ library
       Futurice.App.HC.IndexPage
       Futurice.App.HC.Config
       Futurice.App.HC.Ctx
+      Futurice.App.HC.EarlyCaring.Page
+      Futurice.App.HC.EarlyCaring.Types
+      Futurice.App.HC.EarlyCaring.Template
       Futurice.App.HC.PersonioValidation
       Futurice.App.HC.PrivateContacts
 
