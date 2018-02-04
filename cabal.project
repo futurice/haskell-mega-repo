@@ -32,6 +32,7 @@ packages:
   contacts-api/
   dynmap-cache/
   email-proxy/
+  email-proxy-client/
   env-config/
   favicon-app/
   flowdock-grep/
