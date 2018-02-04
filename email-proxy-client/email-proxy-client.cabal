@@ -1,8 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
-name:           email-proxy
+name:           email-proxy-client
 version:        0
 synopsis:       Email Proxy
 description:    Make an email-proxy of everything
@@ -35,41 +31,20 @@ library
     , amazonka-ses
     , base-compat
     , bytestring
-    , email-proxy-client
     , env-config
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , http-client
     , http-types
     , lens
-    , semigroups
     , servant-server
+    , servant-client
+    , semigroups
     , text
     , time
   exposed-modules:
-      Futurice.App.EmailProxy.Main
-      Futurice.App.EmailProxy.Mock
-      Futurice.App.EmailProxy.Config
-      Futurice.App.EmailProxy.Ctx
-      Futurice.App.EmailProxy.Logic
-  default-language: Haskell2010
-
-executable email-proxy-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -threaded -rtsopts
-  build-depends:
-      base
-    , email-proxy
-  default-language: Haskell2010
-
-executable email-proxy-mock
-  main-is: Main.hs
-  hs-source-dirs:
-      mock
-  ghc-options: -Wall -threaded -rtsopts
-  build-depends:
-      base
-    , email-proxy
+      Futurice.App.EmailProxy.API
+      Futurice.App.EmailProxy.Client
+      Futurice.App.EmailProxy.Types
   default-language: Haskell2010

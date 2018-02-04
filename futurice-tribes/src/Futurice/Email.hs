@@ -12,6 +12,7 @@ module Futurice.Email (
 import Data.Aeson
        (FromJSON (..), FromJSONKey (..), FromJSONKeyFunction (..), ToJSON (..),
        ToJSONKey (..), withText)
+import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Prelude
 import Kleene                      (Kleene, kleeneEverything1, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
@@ -23,7 +24,7 @@ import Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Csv     as Csv
 import qualified Data.Swagger as S
-import qualified Data.Text as T
+import qualified Data.Text    as T
 
 -- | Futurice email. i.e. @someone@@futurice.com@.
 newtype Email = Email Text
@@ -62,6 +63,10 @@ instance Arbitrary Email where
 
 instance NFData Email where
     rnf (Email x) = rnf x
+
+instance Binary Email where
+    put (Email x) = put x
+    get = Email <$> get
 
 instance Hashable Email where
     hashWithSalt salt (Email x) = hashWithSalt salt x
@@ -104,6 +109,9 @@ instance Csv.ToField Email where
 
 instance Csv.FromField Email where
     parseField x = Csv.parseField x >>= parseEmail
+
+instance FromEnvVar Email where
+    fromEnvVar s = emailFromText (s ^. packed)
 
 -------------------------------------------------------------------------------
 -- helpers

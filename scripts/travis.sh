@@ -59,6 +59,7 @@ install)
     # common data
     cp futurice-constants/constants.sample.json futurice-constants/constants.json
     cp futurice-tribes/tribes.sample.json futurice-tribes/tribes.json
+    cp hc-app/early-caring.template.sample hc-app/early-caring.template
 
     case $BUILD in
     stack)
