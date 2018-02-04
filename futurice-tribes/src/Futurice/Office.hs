@@ -59,6 +59,7 @@ _Office :: Prism' Text Office
 _Office = enumPrism ei
 
 instance NFData Office
+instance Binary Office
 
 instance Arbitrary Office where
     arbitrary = sopArbitrary

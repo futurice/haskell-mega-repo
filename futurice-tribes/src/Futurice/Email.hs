@@ -63,6 +63,10 @@ instance Arbitrary Email where
 instance NFData Email where
     rnf (Email x) = rnf x
 
+instance Binary Email where
+    put (Email x) = put x
+    get = Email <$> get
+
 instance Hashable Email where
     hashWithSalt salt (Email x) = hashWithSalt salt x
 
