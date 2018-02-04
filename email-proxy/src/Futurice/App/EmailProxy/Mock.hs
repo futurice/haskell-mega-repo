@@ -7,22 +7,29 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Futurice.App.EmailProxy(defaultMain) where
+module Futurice.App.EmailProxy.Mock (defaultMain) where
 
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
 
-import qualified Network.AWS as AWS
-
 import Futurice.App.EmailProxy.API
-import Futurice.App.EmailProxy.Config
-import Futurice.App.EmailProxy.Ctx
-import Futurice.App.EmailProxy.Logic
+import Futurice.App.EmailProxy.Types
+
+type Config = ()
+type Ctx = Logger
+
+ctxLogger :: Ctx -> Logger
+ctxLogger = id
+
+sendEmail :: (MonadIO m, MonadLog m) => Ctx -> Req -> m NoContent
+sendEmail _ req = do
+    logInfo "Sending mail" req
+    pure NoContent
 
 server :: Ctx -> Server EmailProxyAPI
-server ctx = pure "This is email proxy. See /swagger-ui/"
+server ctx = pure "This is email proxy mock. See /swagger-ui/"
     :<|> (nt . sendEmail ctx)
   where
     nt :: forall x. LogT Handler x -> Handler x
@@ -30,15 +37,11 @@ server ctx = pure "This is email proxy. See /swagger-ui/"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName              .~ "Email Proxy"
+    & serverName              .~ "Email Proxy Mock"
     & serverDescription       .~ "Send Emails"
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp emailProxyApi .~ server
     & serverEnvPfx            .~ "EMAILPROXY"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg logger _mgr _cache = do
-        env' <- AWS.newEnv (cfgSesCreds cfg)
-        -- SES is only in Ireland in Europe
-        let env = env' & AWS.envRegion .~ AWS.Ireland
-        return (Ctx logger cfg env, [])
+    makeCtx _cfg logger _mgr _cache = return (logger, [])
