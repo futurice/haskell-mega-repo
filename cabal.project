@@ -28,10 +28,12 @@ packages:
   ansi-pretty/
   arcola/
   avatar-app/
+  base64-bytestring-type/
   checklist-app/
   contacts-api/
   dynmap-cache/
   email-proxy/
+  email-proxy-client/
   env-config/
   favicon-app/
   flowdock-grep/

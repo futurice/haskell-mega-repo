@@ -16,6 +16,7 @@ module PlanMill.Types.User (
     User(..),
     UserId,
     Users,
+    userLogin,
     -- * Team
     Team(..),
     TeamId,
@@ -31,6 +32,9 @@ import PlanMill.Types.CapacityCalendar (CapacityCalendarId)
 import PlanMill.Types.Enumeration      (EnumValue)
 import PlanMill.Types.Identifier
        (HasIdentifier (..), Identifier (..), IdentifierToHtml (..))
+import Text.Regex.Applicative.Text     (match)
+
+import qualified FUM.Types.Login as FUM
 
 instance IdentifierToHtml User where
     identifierToHtml (Ident i) = a_ attrs (toHtml t)
@@ -79,6 +83,10 @@ data User = User
     , uOperationalId     :: !(Maybe Int)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
+
+userLogin :: User -> Maybe FUM.Login
+userLogin = match loginRe . uUserName where
+    loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
 
 instance Hashable User
 instance NFData User

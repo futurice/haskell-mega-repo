@@ -127,6 +127,10 @@ _Tribe = prism' tribeToText tribeFromText
 instance NFData Tribe where
     rnf (Tribe i) = rnf i
 
+instance Binary Tribe where
+    put (Tribe i) = put i
+    get = Tribe <$> get
+
 instance Arbitrary Tribe where
     arbitrary = QC.elements [ Tribe i | i <- [0 .. V.length tribeInfos - 1] ]
 

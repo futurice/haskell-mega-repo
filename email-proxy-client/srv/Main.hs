@@ -1,4 +1,4 @@
 module Main (main) where
-import Futurice.App.EmailProxy.Main
+import Futurice.App.EmailProxy
 main :: IO ()
 main = defaultMain

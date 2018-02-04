@@ -9,4 +9,5 @@ data Ctx = Ctx
     { ctxConfig  :: Config
     , ctxLogger  :: Logger
     , ctxManager :: Manager
+    , ctxSecret  :: ByteString
     }

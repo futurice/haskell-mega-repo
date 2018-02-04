@@ -18,12 +18,15 @@ css = do
     h1 ? do
         fontSize (pt 20)
         fontWeight bold
+        marginTop (px 20)
     h2 ? do
         fontSize (pt 15)
         fontWeight bold
+        marginTop (px 15)
     h3 ? do
         fontSize (pt 13)
         fontWeight bold
+        marginTop (px 10)
     ".login" ? do
         color "#46289A"
         textDecoration underline

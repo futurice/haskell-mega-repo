@@ -7,6 +7,9 @@ import Prelude ()
 import Data.Aeson (withText)
 import Futurice.Prelude
 import Futurice.Generics
+import Futurice.Email
+
+import qualified Data.List.NonEmpty as NE
 
 -------------------------------------------------------------------------------
 -- Email address
@@ -14,6 +17,9 @@ import Futurice.Generics
 
 newtype EmailAddress = EmailAddress { getEmailAddress :: Text }
   deriving (Show)
+
+fromEmail :: Email -> EmailAddress
+fromEmail = EmailAddress . emailToText
 
 makePrisms ''EmailAddress
 deriveGeneric ''EmailAddress
@@ -41,6 +47,13 @@ data Req = Req
     , _reqBody    :: !Text
     }
   deriving (Show)
+
+emptyReq :: EmailAddress -> Req
+emptyReq x = Req (pure x) Nothing Nothing Nothing mempty mempty
+
+-- TODO: move to futurice-prelude or even lens.
+nonEmpty :: Iso [a] [b] (Maybe (NonEmpty a)) (Maybe (NonEmpty b))
+nonEmpty = iso NE.nonEmpty (maybe [] NE.toList)
 
 makeLenses ''Req
 deriveGeneric ''Req

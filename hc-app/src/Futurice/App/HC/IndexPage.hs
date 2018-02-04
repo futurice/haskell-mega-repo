@@ -22,3 +22,5 @@ indexPage fu = page_ "HC app" $ do
             li_ $ do
                 a_ [href_ "/private-contacts"] "Private concacts"
                 " - people private email and phone number on a single page"
+            li_ $
+                a_ [href_ "/early-caring"] "Early caring report"
