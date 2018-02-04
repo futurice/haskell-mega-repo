@@ -90,6 +90,9 @@ type ConfigParser = CP EnvVarP
 class Configure cfg where
     configure :: ConfigParser cfg
 
+instance Configure () where
+    configure = pure ()
+
 -- | Class to parse env variables
 class FromEnvVar a where
     fromEnvVar :: String -> Maybe a
