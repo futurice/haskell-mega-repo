@@ -2,14 +2,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Tasks (tasksPage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (filtered, foldMapOf, forOf_, has, re)
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import Prelude ()
 import Text.Printf               (printf)
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+import Futurice.App.Checklist.Types.TaskTag (taskTagToText)
 
 tasksPage
     :: World       -- ^ the world
@@ -66,6 +67,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                 th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
                 th_ [ title_ "Role" ]                       "Role"
                 th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
+                th_ [ title_ "Tags added to task" ]         "Tags"
                 th_ [ title_ "Active employees todo/done" ] "Empl"
                 th_ [ title_ "Checklists with the task" ]   "Checklists"
 
@@ -77,6 +79,9 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                 td_ $ roleHtml mlist $ task ^. taskRole
                 td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     taskLink prereqTask
+                    br_ []
+                td_ $ for_ (task ^. taskTags) $ \tag -> do
+                    toHtml $ taskTagToText tag
                     br_ []
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of

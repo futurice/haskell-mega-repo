@@ -14,14 +14,15 @@ import Futurice.Generics
 import Futurice.Graph     (IsNode (..))
 import Futurice.IdMap     (HasKey (..))
 import Futurice.Office
-import Futurice.Tribe
 import Futurice.Prelude
+import Futurice.Tribe
 import Prelude ()
 
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
+import Futurice.App.Checklist.Types.TaskTag
 
 import qualified Data.Text       as T
 import qualified FUM.Types.Login as FUM
@@ -80,6 +81,7 @@ data Task = Task
       -- ^ Tasks can be fullfilled by different roles.
     , _taskComment      :: !Bool
       -- ^ Whether we render a comment field for this task.
+    , _taskTags         :: !(Set TaskTag)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 

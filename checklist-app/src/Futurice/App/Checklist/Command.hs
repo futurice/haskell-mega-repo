@@ -72,6 +72,7 @@ data TaskEdit f = TaskEdit
     , teRole    :: !(f TaskRole)
     , tePrereqs :: !(f :$ Set :$ Identifier Task)
     , teComment :: !(f :$ Bool)
+    , teTags    :: !(f :$ Set TaskTag)
     }
 
 deriveGeneric ''TaskEdit
@@ -83,8 +84,9 @@ applyTaskEdit te
     . maybe id (Lens.set taskRole) (teRole te)
     . maybe id (Lens.set taskPrereqs) (tePrereqs te)
     . maybe id (Lens.set taskComment) (teComment te)
+    . maybe id (Lens.set taskTags) (teTags te)
 
-type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool]
+type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool, Set TaskTag]
 
 deriving instance SOP.All (SOP.Compose Eq f) TaskEditTypes => Eq (TaskEdit f)
 deriving instance SOP.All (SOP.Compose Show f) TaskEditTypes => Show (TaskEdit f)
@@ -120,12 +122,14 @@ instance
                 <*> obj .:? "role"
                 <*> obj .:? "prereqs"
                 <*> obj .:? "comment"
+                <*> obj .:? "tags"
             Nothing -> TaskEdit
                 <$> obj .: "name"
                 <*> obj .:? "info" .!= pure mempty
                 <*> obj .: "role"
                 <*> obj .:? "prereqs" .!= pure mempty
                 <*> obj .:? "comment" .!= pure False
+                <*> obj .:? "tags" .!= pure mempty
 
 -------------------------------------------------------------------------------
 -- PersonioID wrapper

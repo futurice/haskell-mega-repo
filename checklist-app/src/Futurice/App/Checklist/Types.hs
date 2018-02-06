@@ -25,6 +25,7 @@ module Futurice.App.Checklist.Types (
     AnnTaskItem (..),
     TaskAppliance(..),
     TaskComment(..),
+    TaskTag(..),
     -- ** Wrappers
     Identifier(..),
     identifierToText,
@@ -44,7 +45,7 @@ module Futurice.App.Checklist.Types (
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
     -- ** Task
-    taskName, taskInfo, taskPrereqs, taskRole, taskComment,
+    taskName, taskInfo, taskPrereqs, taskRole, taskComment, taskTags,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
@@ -52,6 +53,8 @@ module Futurice.App.Checklist.Types (
     _TaskRoleIT, _TaskRoleHR, _TaskRoleSupervisor,
     taskRoleToText, taskRoleFromText,
     PerTaskRole (..),
+    -- ** TaskTag
+    _TaskTag,
     -- ** Checklist
     checklistName, checklistTasks,
     -- ** TaskItem
@@ -86,20 +89,21 @@ module Futurice.App.Checklist.Types (
     module Futurice.Tribe,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Futurice.Office
+import Futurice.Prelude
 import Futurice.Tribe
+import Prelude ()
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
-import Futurice.App.Checklist.Types.TaskItem
-import Futurice.App.Checklist.Types.World
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskComment
+import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.TaskRole
+import Futurice.App.Checklist.Types.TaskTag
+import Futurice.App.Checklist.Types.World
 
 import qualified FUM.Types.Login as FUM (Login)
 

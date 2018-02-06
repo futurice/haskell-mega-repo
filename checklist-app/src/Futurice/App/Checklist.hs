@@ -198,8 +198,10 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Nothing       -> pure notFoundPage
         Just employee -> do
             now <- currentTime
-            employees <- getPersonioEmployees now ctx
-            pure (employeePage world userInfo employee employees)
+            pemployees <- do
+                employees <- getPersonioEmployees now ctx
+                pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
+            pure (employeePage world userInfo employee pemployees)
 
 archivePageImpl
     :: Ctx

@@ -112,6 +112,7 @@ library
       Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem
       Futurice.App.Checklist.Types.TaskRole
+      Futurice.App.Checklist.Types.TaskTag
       Futurice.App.Checklist.Types.World
   default-language: Haskell2010
 
