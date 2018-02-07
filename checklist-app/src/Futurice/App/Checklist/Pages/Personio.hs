@@ -84,7 +84,7 @@ employeeTable hire world employees = fullRow_ $ table_ $ do
         td_ $ button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText
-            $ safeLink checklistApi createEmployeePageEndpoint Nothing (e ^? Personio.employeeId)
+            $ safeLink checklistApi createEmployeePageEndpoint Nothing (e ^? Personio.employeeId) $ if hire then False else True
             ]
             "Import"
   where

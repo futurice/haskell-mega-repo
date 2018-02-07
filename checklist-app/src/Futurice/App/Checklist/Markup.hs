@@ -171,7 +171,7 @@ createTaskPageHref =
 
 createEmployeePageHref :: Attribute
 createEmployeePageHref =
-    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint Nothing Nothing
+    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint Nothing Nothing False
 
 taskPageHref
     :: (HasIdentifier t Task)

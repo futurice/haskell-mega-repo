@@ -27,6 +27,7 @@ data Tmpl = Tmpl
     , tmplOffice       :: !Office
     , tmplTribe        :: !Tribe
     , tmplStartingDay  :: !(Maybe Day)
+    , tmplEndDay       :: !(Maybe Day)
     , tmplSupervisor   :: !Text
     , tmplPhone        :: !(Maybe Text)
     , tmplEmail        :: !(Maybe Text)
@@ -43,6 +44,7 @@ employeeToTemplate e = Tmpl
     , tmplOffice       = e ^. employeeOffice
     , tmplTribe        = e ^. employeeTribe
     , tmplStartingDay  = Nothing
+    , tmplEndDay       = Nothing
     , tmplSupervisor   = e ^. employeeSupervisor
     , tmplPhone        = e ^. employeePhone
     , tmplEmail        = e ^. employeeContactEmail
@@ -59,6 +61,7 @@ personioToTemplate es e = Tmpl
     , tmplOffice       = e ^. Personio.employeeOffice
     , tmplTribe        = e ^. Personio.employeeTribe
     , tmplStartingDay  = e ^. Personio.employeeHireDate
+    , tmplEndDay       = e ^. Personio.employeeEndDate
     , tmplSupervisor   = fromMaybe "" $ do
         suid <- e ^. Personio.employeeSupervisorId
         es ^? ix suid . Personio.employeeFullname
@@ -90,8 +93,9 @@ createEmployeePage
     -> Maybe Employee
     -> Maybe Personio.Employee
     -> Map Personio.EmployeeId Personio.Employee
+    -> Bool
     -> HtmlPage "create-employee"
-createEmployeePage world authUser memployee pemployee pes = checklistPage_ "Create employee" authUser $ do
+createEmployeePage world authUser memployee pemployee pes leaving = checklistPage_ "Create employee" authUser $ do
     let tmpl = employeeToTemplate <$> memployee
             <|> personioToTemplate pes <$> pemployee
     -- Title
@@ -159,7 +163,7 @@ createEmployeePage world authUser memployee pemployee pes = checklistPage_ "Crea
             input_
                 [ futuId_ "employee-starting-day"
                 , type_ "date"
-                , value_ $ maybe "" toQueryParam (tmpl >>= tmplStartingDay)
+                , value_ $ maybe "" toQueryParam $ if leaving then tmpl >>= tmplEndDay else tmpl >>= tmplStartingDay
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor"

@@ -2,8 +2,8 @@
 {-# LANGUAGE TypeOperators #-}
 module Futurice.App.Checklist.API where
 
-import Prelude ()
 import Futurice.Prelude
+import Prelude ()
 
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant          (SSOUser)
@@ -93,6 +93,7 @@ type CreateEmployeePageEndpoint =
     "create" :>
     QueryParam "copy-employee" (Identifier Employee) :>
     QueryParam "personio-id" Personio.EmployeeId :>
+    QueryFlag "leaving-employee" :>
     Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------
