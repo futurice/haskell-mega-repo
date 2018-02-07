@@ -18,6 +18,8 @@ import Futurice.App.Checklist.API
        employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+import Futurice.App.Checklist.Types.TaskTag (taskTagToText)
+import GitHub                               (SimpleUser, simpleUserLogin)
 
 import qualified Chat.Flowdock.REST as FD
 import qualified Personio           as P
@@ -32,8 +34,9 @@ employeePage
     -> AuthUser
     -> Employee
     -> Map P.EmployeeId P.Employee
+    -> Vector SimpleUser
     -> HtmlPage "employee"
-employeePage world authUser employee personios = checklistPage_ (view nameText employee) authUser $ do
+employeePage world authUser employee personios gemployees = checklistPage_ (view nameText employee) authUser $ do
     -- Title
     header (employee ^. nameText) []
 
@@ -172,7 +175,7 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
                         br_ []
                         case tag of
                            -- temporary solution. Real tag related information will replace these
-                          GithubTask   -> toHtml tag
+                          GithubTask -> isInGithubOrganizationText
                           PlanmillTask -> toHtml tag
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
@@ -198,6 +201,21 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
 
     personioEmployee :: Maybe P.Employee
     personioEmployee = (employee ^. employeePersonio) >>= (\x -> personios ^.at x)
+
+    isInGithubOrganizationText :: HtmlT Identity ()
+    isInGithubOrganizationText = case personioEmployee personios (employee ^. employeePersonio) of
+      Nothing -> span_ [class_ "info label"] "No personio info found"
+      (Just pEmployee) -> case pEmployee ^. P.employeeGithub of
+        Nothing -> span_ [class_ "info label"]  "No Github username in personio"
+        (Just githubUser) -> case listToMaybe $ filter (\g  -> simpleUserLogin g == githubUser) (toList gemployees) of
+          Nothing -> label_ $ do
+              span_ [class_ "info label"] "Not in Futurice Github organization"
+              " Username "
+              toHtml githubUser
+          (Just _) -> label_ $ do
+              span_ [class_ "info label"] "In Futurice Github organization"
+              " Username "
+              toHtml githubUser
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a

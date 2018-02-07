@@ -58,6 +58,7 @@ library
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , github
     , http-api-data
     , lattices >=1.6
     , lens
@@ -153,6 +154,7 @@ executable checklist-app-server
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , github
     , http-api-data
     , lattices >=1.6
     , lens

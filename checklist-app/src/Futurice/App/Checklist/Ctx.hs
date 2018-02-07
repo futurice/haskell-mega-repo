@@ -32,7 +32,7 @@ data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxManager         :: !Manager
     , ctxCache           :: !Cache
-    , ctxIntegrationsCfg :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I])
+    , ctxIntegrationsCfg :: !(IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I])
     , ctxWorld           :: TVar World
     , ctxOrigWorld       :: World
     , ctxPostgres        :: Pool Postgres.Connection
@@ -45,7 +45,7 @@ newCtx
     :: Logger
     -> Manager
     -> Cache
-    -> IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I]
+    -> IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I]
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World
