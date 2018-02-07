@@ -11,12 +11,14 @@ import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
-       (IntegrationsConfig, MonadPersonio (..), runIntegrations)
+       (IntegrationsConfig, MonadPersonio (..), githubOrganisationMembers,
+       runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import Futurice.Stricter
+import GitHub                    (SimpleUser)
 import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
@@ -202,7 +204,8 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
             pemployees <- do
                 employees <- getPersonioEmployees now ctx
                 pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
-            pure (employeePage world userInfo employee pemployees)
+            gemployees <- getGithubEmployees now ctx
+            pure (employeePage world userInfo employee pemployees gemployees)
 
 archivePageImpl
     :: Ctx
@@ -258,6 +261,17 @@ getPersonioEmployees now ctx = liftIO $ cachedIO lgr cache 180 () $
     mgr = ctxManager ctx
     cfg = ctxIntegrationsCfg ctx
     cache = ctxCache ctx
+
+-------------------------------------------------------------------------------
+-- Github helper
+-------------------------------------------------------------------------------
+
+getGithubEmployees :: MonadIO m => UTCTime -> Ctx -> m (Vector SimpleUser)
+getGithubEmployees now ctx = liftIO $ runIntegrations mgr lgr now cfg githubOrganisationMembers
+  where
+    lgr = ctxLogger ctx
+    mgr = ctxManager ctx
+    cfg = ctxIntegrationsCfg ctx
 
 -------------------------------------------------------------------------------
 -- Audit
@@ -417,7 +431,7 @@ makeCtx Config {..} lgr mgr cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I]
+    -> IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I]
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do
