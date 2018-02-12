@@ -26,8 +26,8 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
 
-    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment)) ls -> do
-        worldTasks . at tid ?= Task tid n i pr role comment
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment) (Identity t)) ls -> do
+        worldTasks . at tid ?= Task tid n i pr role comment t
         for_ ls $ \(TaskAddition cid app) -> addTask cid tid app
 
     CmdAddTask cid tid app -> addTask cid tid app

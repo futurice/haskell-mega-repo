@@ -220,6 +220,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
+      tags: { sel: "select[data-futu-id=task-tags", check: isArrayCheck },
       comment: { sel: "input[data-futu-id=task-comment" },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
       app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]", check: applianceCheck },
@@ -242,6 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
         info: values.info,
         role: values.role,
         prereqs: values.prereqs,
+        tags: values.tags
       };
 
       cmdCreateTask(edit, lists);
@@ -258,6 +260,7 @@ document.addEventListener("DOMContentLoaded", function () {
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]" },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
+      tags: { sel: "select[data-futu-id=task-tags", check: isArrayCheck },
       comment: { sel: "input[data-futu-id=task-comment" },
     };
 

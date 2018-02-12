@@ -3,10 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.CreateTask (createTaskPage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (forOf_, lengthOf, re)
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import Prelude ()
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
@@ -51,6 +51,13 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                     optionSelected_ False
                         [ value_ $ t ^. identifierText ]
                         $ toHtml $ t ^. nameText
+        row_ $ large_ 12 $ label_ $ do
+            "Tags"
+            select_ [ futuId_ "task-tags", multiple_ "multiple" ] $
+                for_ [minBound .. maxBound] $ \tag -> do
+                    optionSelected_ False
+                        [ value_ $ tag ^. re _TaskTag ]
+                        $ toHtml $ tag ^. re _TaskTag
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 1"
