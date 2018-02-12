@@ -2,11 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Task (taskPage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (contains, forOf_, lengthOf, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import Prelude ()
 import Servant.API               (safeLink)
 import Web.HttpApiData           (toUrlPiece)
 
@@ -72,6 +72,13 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                     optionSelected_ (task ^. taskPrereqs . contains (t ^. identifier))
                         [ value_ $ t ^. identifierText ]
                         $ toHtml $ t ^. nameText
+        row_ $ large_ 12 $ label_ $ do
+            "Tags"
+            select_ [ futuId_ "task-tags", multiple_ "multiple" ] $
+                for_ [minBound .. maxBound] $ \tag -> do
+                    optionSelected_ (task ^. taskTags . contains tag)
+                        [ value_ $ tag ^. re _TaskTag ]
+                        $ toHtml $ tag ^. re _TaskTag
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"

@@ -50,21 +50,20 @@ employeeToTemplate e = Tmpl
     , tmplHRNumber     = e ^. employeeHRNumber
     }
 
-personioToTemplate :: Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
-personioToTemplate es e = Tmpl
+personioToTemplate :: Bool -> Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
+personioToTemplate leaving es e = Tmpl
     { tmplPersonioId   = Just $ e ^. Personio.employeeId
     , tmplFirst        = e ^. Personio.employeeFirst
     , tmplLast         = e ^. Personio.employeeLast
     , tmplContractType = contractType
     , tmplOffice       = e ^. Personio.employeeOffice
     , tmplTribe        = e ^. Personio.employeeTribe
-    , tmplStartingDay  = e ^. Personio.employeeHireDate
+    , tmplStartingDay  = if leaving then e ^. Personio.employeeEndDate else e ^. Personio.employeeHireDate
     , tmplSupervisor   = fromMaybe "" $ do
         suid <- e ^. Personio.employeeSupervisorId
         es ^? ix suid . Personio.employeeFullname
-    -- TODO: private phone and email
-    , tmplPhone        = Nothing
-    , tmplEmail        = Nothing
+    , tmplPhone        = e ^. Personio.employeeHomePhone
+    , tmplEmail        = e ^. Personio.employeeHomeEmail
     , tmplLogin        = e ^. Personio.employeeLogin
     , tmplHRNumber     = zeroToNothing $ e ^. Personio.employeeHRNumber
     }
@@ -91,10 +90,11 @@ createEmployeePage
     -> Maybe Employee
     -> Maybe Personio.Employee
     -> Map Personio.EmployeeId Personio.Employee
+    -> Bool
     -> HtmlPage "create-employee"
-createEmployeePage world authUser memployee pemployee pes = checklistPage_ "Create employee" authUser $ do
+createEmployeePage world authUser memployee pemployee pes leaving = checklistPage_ "Create employee" authUser $ do
     let tmpl = employeeToTemplate <$> memployee
-            <|> personioToTemplate pes <$> pemployee
+            <|> personioToTemplate leaving pes <$> pemployee
     -- Title
     header "Create employee" []
 
@@ -160,7 +160,7 @@ createEmployeePage world authUser memployee pemployee pes = checklistPage_ "Crea
             input_
                 [ futuId_ "employee-starting-day"
                 , type_ "date"
-                , value_ $ maybe "" toQueryParam (tmpl >>= tmplStartingDay)
+                , value_ $ maybe "" toQueryParam $ tmpl >>= tmplStartingDay
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor"

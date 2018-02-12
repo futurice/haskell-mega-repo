@@ -139,8 +139,9 @@ createEmployeePageImpl
     -> Maybe FUM.Login
     -> Maybe (Identifier Employee)
     -> Maybe Personio.EmployeeId
+    -> Bool
     -> Handler (HtmlPage "create-employee")
-createEmployeePageImpl ctx fu meid mpeid = withAuthUser ctx fu impl
+createEmployeePageImpl ctx fu meid mpeid leaving = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         let memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
@@ -151,7 +152,7 @@ createEmployeePageImpl ctx fu meid mpeid = withAuthUser ctx fu impl
 
         pure $ createEmployeePage world userInfo memployee
             (mpeid >>= \eid -> pemployees ^? ix eid)
-            pemployees
+            pemployees leaving
 
 checklistsPageImpl
     :: Ctx
@@ -198,8 +199,10 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Nothing       -> pure notFoundPage
         Just employee -> do
             now <- currentTime
-            employees <- getPersonioEmployees now ctx
-            pure (employeePage world userInfo employee employees)
+            pemployees <- do
+                employees <- getPersonioEmployees now ctx
+                pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
+            pure (employeePage world userInfo employee pemployees)
 
 archivePageImpl
     :: Ctx
