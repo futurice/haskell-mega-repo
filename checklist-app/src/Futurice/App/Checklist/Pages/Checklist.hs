@@ -10,7 +10,6 @@ import Prelude ()
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.TaskTag (taskTagToText)
 
 import qualified Futurice.IdMap as IdMap
 
@@ -90,7 +89,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                         taskLink prereqTask
                         br_ []
                 td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
-                    li_ $ toHtml $ taskTagToText tag
+                    li_ $ toHtml tag
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j ->

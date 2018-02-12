@@ -18,7 +18,6 @@ import Futurice.App.Checklist.API
        employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.TaskTag (taskTagToText)
 
 import qualified Personio as P
 
@@ -150,8 +149,8 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
                         br_ []
                         case tag of
                            -- temporary solution. Real tag related information will replace these
-                          GithubTask -> toHtml $ taskTagToText tag
-                          PlanmillTask -> toHtml $ taskTagToText tag
+                          GithubTask   -> toHtml tag
+                          PlanmillTask -> toHtml tag
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
                 td_ $ taskCommentInput_ world employee task
