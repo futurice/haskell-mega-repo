@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -17,10 +16,16 @@ import Futurice.App.HoursApi.Types
 
 import qualified PlanMill as PM
 
+type HoursEndpoint = "hours" :> SSOUser
+    :> Description "Get hours for given interval"
+    :> QueryParam' '[Required] "start-date" Day
+    :> QueryParam' '[Required] "end-date" Day
+    :> Get '[JSON] HoursResponse
+
 type FutuhoursV1API =
     "projects" :> SSOUser :> Get '[JSON] [Project ReportableTask]
     :<|> "user" :> SSOUser :> Get '[JSON] User
-    :<|> "hours" :> SSOUser :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> Get '[JSON] (HoursResponse)
+    :<|> HoursEndpoint
     :<|> "entry" :> SSOUser :> ReqBody '[JSON] EntryUpdate :> Post '[JSON] EntryUpdateResponse
     :<|> "entry" :> SSOUser :> Capture "id" PM.TimereportId :> ReqBody '[JSON] EntryUpdate :> Put '[JSON] EntryUpdateResponse
     :<|> "entry" :> SSOUser :> Capture "id" PM.TimereportId :> Delete '[JSON] EntryUpdateResponse
