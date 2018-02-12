@@ -27,7 +27,6 @@ data Tmpl = Tmpl
     , tmplOffice       :: !Office
     , tmplTribe        :: !Tribe
     , tmplStartingDay  :: !(Maybe Day)
-    , tmplEndDay       :: !(Maybe Day)
     , tmplSupervisor   :: !Text
     , tmplPhone        :: !(Maybe Text)
     , tmplEmail        :: !(Maybe Text)
@@ -44,7 +43,6 @@ employeeToTemplate e = Tmpl
     , tmplOffice       = e ^. employeeOffice
     , tmplTribe        = e ^. employeeTribe
     , tmplStartingDay  = Nothing
-    , tmplEndDay       = Nothing
     , tmplSupervisor   = e ^. employeeSupervisor
     , tmplPhone        = e ^. employeePhone
     , tmplEmail        = e ^. employeeContactEmail
@@ -52,16 +50,15 @@ employeeToTemplate e = Tmpl
     , tmplHRNumber     = e ^. employeeHRNumber
     }
 
-personioToTemplate :: Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
-personioToTemplate es e = Tmpl
+personioToTemplate :: Bool -> Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
+personioToTemplate leaving es e = Tmpl
     { tmplPersonioId   = Just $ e ^. Personio.employeeId
     , tmplFirst        = e ^. Personio.employeeFirst
     , tmplLast         = e ^. Personio.employeeLast
     , tmplContractType = contractType
     , tmplOffice       = e ^. Personio.employeeOffice
     , tmplTribe        = e ^. Personio.employeeTribe
-    , tmplStartingDay  = e ^. Personio.employeeHireDate
-    , tmplEndDay       = e ^. Personio.employeeEndDate
+    , tmplStartingDay  = if leaving then e ^. Personio.employeeEndDate else e ^. Personio.employeeHireDate
     , tmplSupervisor   = fromMaybe "" $ do
         suid <- e ^. Personio.employeeSupervisorId
         es ^? ix suid . Personio.employeeFullname
@@ -97,7 +94,7 @@ createEmployeePage
     -> HtmlPage "create-employee"
 createEmployeePage world authUser memployee pemployee pes leaving = checklistPage_ "Create employee" authUser $ do
     let tmpl = employeeToTemplate <$> memployee
-            <|> personioToTemplate pes <$> pemployee
+            <|> personioToTemplate leaving pes <$> pemployee
     -- Title
     header "Create employee" []
 
@@ -163,7 +160,7 @@ createEmployeePage world authUser memployee pemployee pes leaving = checklistPag
             input_
                 [ futuId_ "employee-starting-day"
                 , type_ "date"
-                , value_ $ maybe "" toQueryParam $ if leaving then tmpl >>= tmplEndDay else tmpl >>= tmplStartingDay
+                , value_ $ maybe "" toQueryParam $ tmpl >>= tmplStartingDay
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor"

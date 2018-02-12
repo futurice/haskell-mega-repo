@@ -77,7 +77,7 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
         -- Tasks
         ts' <- for ts $ \(TaskD n r) -> do
             taskId <- Identifier <$> lift newUUID
-            tellCmd $ CmdCreateTask (pure taskId) (TaskEdit (pure n) (pure "") (pure r) (pure mempty) (pure False)) []
+            tellCmd $ CmdCreateTask (pure taskId) (TaskEdit (pure n) (pure "") (pure r) (pure mempty) (pure False) (pure mempty)) []
             pure taskId
 
         -- Checklists
@@ -91,7 +91,7 @@ dataToCommands (Data cls ts) = ($ []) <$> execStateT action id
                     tellCmd $ CmdAddTask checklistId taskId top
                 TaskD' (TaskD n' r) -> do
                     taskId <- Identifier <$> lift newUUID
-                    tellCmd $ CmdCreateTask (pure taskId) (TaskEdit (pure n') (pure "") (pure r) (pure mempty) (pure False)) []
+                    tellCmd $ CmdCreateTask (pure taskId) (TaskEdit (pure n') (pure "") (pure r) (pure mempty) (pure False) (pure mempty)) []
                     tellCmd $ CmdAddTask checklistId taskId top
 
     tellCmd :: Command pure -> StateT ([Command pure] -> [Command pure]) m ()

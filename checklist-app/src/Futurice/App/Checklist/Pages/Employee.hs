@@ -76,14 +76,14 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             input_ [ futuId_ "employee-lastname", type_ "text", value_ $ employee ^. employeeLastName ]
         row_ $ large_ 12 $ label_ $ do
             "Contract "
-            hasDifferentPersonioContractType (personioEmployee personios (employee ^. employeePersonio)) (Just ((employee ^. employeeContractType) ^. re _ContractType))
+            hasDifferentPersonioContractType personioEmployee (Just ((employee ^. employeeContractType) ^. re _ContractType))
             select_ [ futuId_ "employee-contract-type" ] $ for_ [ minBound .. maxBound ] $ \x ->
                 optionSelected_ (x == employee ^. employeeContractType)
                     [ value_ $ x ^. re _ContractType ]
                     $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
             "Office "
-            hasDifferentPersonioOffice (personioEmployee personios (employee ^. employeePersonio)) (Just ((employee ^. employeeOffice) ^. re _Office))
+            hasDifferentPersonioOffice personioEmployee (Just ((employee ^. employeeOffice) ^. re _Office))
             select_ [ futuId_ "employee-location" ] $ for_ [ minBound .. maxBound ] $ \x ->
                 optionSelected_ (x == employee ^. employeeOffice)
                     [ value_ $ x ^. re _Office ]
@@ -97,11 +97,11 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             input_ [ futuId_ "employee-starting-day", type_ "date", value_ $ toQueryParam $ employee ^. employeeStartingDay  ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor "
-            hasDifferentPersonioSupervisor (personioEmployee personios (employee ^. employeePersonio)) (Just $ toQueryParam $ employee ^. employeeSupervisor) personios
+            hasDifferentPersonioSupervisor personioEmployee (Just $ toQueryParam $ employee ^. employeeSupervisor) personios
             input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor, data_ "futu-values" $ encodeToText supervisors ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe "
-            hasDifferentPersonioTribe (personioEmployee personios (employee ^. employeePersonio)) (Just $ toQueryParam $ employee ^. employeeTribe)
+            hasDifferentPersonioTribe personioEmployee (Just $ toQueryParam $ employee ^. employeeTribe)
             select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
                 for_ [ minBound .. maxBound ] $ \tribe ->
                     optionSelected_ (tribe == employee ^. employeeTribe)
@@ -112,13 +112,13 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             textarea_ [ futuId_ "employee-info", rows_ "5" ] $ toHtml $ employee ^. employeeInfo
         row_ $ large_ 12 $ label_ $ do
             "Phone "
-            hasDifferentPersonioPhone (personioEmployee personios (employee ^. employeePersonio)) (employee ^. employeePhone)
+            hasDifferentPersonioPhone personioEmployee (employee ^. employeePhone)
             -- TODO: maybe it's simpler to just define empty value
             input_ $ [ futuId_ "employee-phone", type_ "tel" ] ++
                 catMaybes [ value_ <$> employee ^. employeePhone ]
         row_ $ large_ 12 $ label_ $ do
             "Private email "
-            hasDifferentPersonioEmail (personioEmployee personios (employee ^. employeePersonio)) (employee ^. employeeContactEmail)
+            hasDifferentPersonioEmail personioEmployee (employee ^. employeeContactEmail)
             input_ $ [ futuId_ "employee-contact-email", type_ "email" ] ++
                 catMaybes [ value_ <$> employee ^. employeeContactEmail ]
         row_ $ large_ 12 $ label_ $ do
@@ -174,9 +174,8 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
-    personioEmployee :: Map P.EmployeeId P.Employee -> Maybe P.EmployeeId -> Maybe P.Employee
-    personioEmployee _ Nothing = Nothing
-    personioEmployee m (Just i) = m ^.at i
+    personioEmployee :: Maybe P.Employee
+    personioEmployee = (employee ^. employeePersonio) >>= (\x -> personios ^.at x)
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a
@@ -199,26 +198,26 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
     hasDifferentPersonioInfo info locali t = if info == locali then "" else wrapToWarningLabel $ personioText info t
 
     hasDifferentPersonioPhone :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioPhone info locali = maybe (pure ()) (\x -> hasDifferentPersonioInfo (x ^. P.employeeHomePhone) locali "phone") info
+    hasDifferentPersonioPhone info locali = for_ info $ \x -> hasDifferentPersonioInfo (x ^. P.employeeHomePhone) locali "phone"
 
     hasDifferentPersonioEmail :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioEmail info locali = maybe (pure ()) (\x -> hasDifferentPersonioInfo (x ^. P.employeeHomeEmail) locali "email") info
+    hasDifferentPersonioEmail info locali = for_ info $ \x -> hasDifferentPersonioInfo (x ^. P.employeeHomeEmail) locali "email"
 
     hasDifferentPersonioTribe :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioTribe info locali = maybe (pure ()) (\x -> hasDifferentPersonioInfo (Just $ toQueryParam $ x ^. P.employeeTribe) locali "tribe") info
+    hasDifferentPersonioTribe info locali = for_ info $ \x -> hasDifferentPersonioInfo (Just $ toQueryParam $ x ^. P.employeeTribe) locali "tribe"
 
     hasDifferentPersonioContractType :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioContractType info locali = maybe (pure ()) (\x -> hasDifferentPersonioInfo (toQueryParam <$> contractType x) locali "contract") info
+    hasDifferentPersonioContractType info locali = for_ info $ \x -> hasDifferentPersonioInfo (toQueryParam <$> contractType x) locali "contract"
 
     hasDifferentPersonioOffice :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioOffice info locali = maybe (pure ()) (\x -> hasDifferentPersonioInfo (Just $ toQueryParam $ x ^. P.employeeOffice) locali "office") info
+    hasDifferentPersonioOffice info locali = for_ info $ \x -> hasDifferentPersonioInfo (Just $ toQueryParam $ x ^. P.employeeOffice) locali "office"
 
     hasDifferentPersonioSupervisor :: Maybe P.Employee -> Maybe Text -> Map P.EmployeeId P.Employee -> HtmlT Identity ()
     hasDifferentPersonioSupervisor info locali es = let toName :: P.Employee -> Maybe Text
                                                         toName x = do
                                                             suid <- x ^. P.employeeSupervisorId
                                                             es ^? ix suid . P.employeeFullname
-                                                    in maybe (pure ()) (\x -> hasDifferentPersonioInfo (toName x) locali "supervisor") info
+                                                    in for_ info $ \x -> hasDifferentPersonioInfo (toName x) locali "supervisor"
 
 encodeToText :: ToJSON a => a -> Text
 encodeToText = view strict . encodeToLazyText

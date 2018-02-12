@@ -89,9 +89,8 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                     for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
                         taskLink prereqTask
                         br_ []
-                td_ $ for_ (task ^. taskTags) $ \tag -> do
-                    toHtml $ taskTagToText tag
-                    br_ []
+                td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
+                    li_ $ toHtml $ taskTagToText tag
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j ->
