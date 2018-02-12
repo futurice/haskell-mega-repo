@@ -12,12 +12,9 @@ import Futurice.Postgres (createPostgresPool)
 import Futurice.Prelude
 import Prelude ()
 
-import Data.Pool          (createPool)
 import Futurice.Periocron
 import Futurice.Servant
 import Servant
-
-import qualified Database.PostgreSQL.Simple as Postgres
 
 -- PlanmillProxy modules
 import Futurice.App.GitHubProxy.API
