@@ -203,7 +203,7 @@ employeePage world authUser employee personios gemployees = checklistPage_ (view
     personioEmployee = (employee ^. employeePersonio) >>= (\x -> personios ^.at x)
 
     isInGithubOrganizationText :: HtmlT Identity ()
-    isInGithubOrganizationText = case personioEmployee personios (employee ^. employeePersonio) of
+    isInGithubOrganizationText = case personioEmployee of
       Nothing -> span_ [class_ "info label"] "No personio info found"
       (Just pEmployee) -> case pEmployee ^. P.employeeGithub of
         Nothing -> span_ [class_ "info label"]  "No Github username in personio"
