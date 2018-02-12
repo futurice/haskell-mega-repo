@@ -132,6 +132,8 @@ type EmployeeAuditPageEndpoint =
 type PersonioPageEndpoint =
     SSOUser :>
     "personio" :>
+    QueryFlag "starting-desc-order" :>
+    QueryFlag "leaving-desc-order" :>
     Get '[HTML] (HtmlPage "personio")
 
 -------------------------------------------------------------------------------

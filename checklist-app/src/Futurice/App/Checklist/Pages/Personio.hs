@@ -9,7 +9,8 @@ import Futurice.Prelude
 import Prelude ()
 import Servant.API               (safeLink)
 
-import Futurice.App.Checklist.API    (checklistApi, createEmployeePageEndpoint)
+import Futurice.App.Checklist.API
+       (checklistApi, createEmployeePageEndpoint, personioPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -20,8 +21,10 @@ personioPage
     -> AuthUser    -- ^ logged in user
     -> UTCTime     -- ^ now
     -> [Personio.Employee]
+    -> Bool
+    -> Bool
     -> HtmlPage "personio"
-personioPage world authUser now employees0 = checklistPage_ "Import from personio" authUser $ do
+personioPage world authUser now employees0 startingDescOrder leavingDescOrder = checklistPage_ "Import from personio" authUser $ do
     -- Title
     header "Import from Personio" []
 
@@ -31,11 +34,11 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
 
     -- Table
     subheader_ "Starting"
-    employeeTable True world startingEmployees
+    employeeTable True world startingEmployees startingDescOrder leavingDescOrder
 
     -- Table
     subheader_ "Leaving"
-    employeeTable False world leavingEmployees
+    employeeTable False world leavingEmployees startingDescOrder leavingDescOrder
 
   where
     today = utctDay now
@@ -43,7 +46,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
 
     startingEmployees = employees0
         & filter predicate
-        & sortOn (Down . view Personio.employeeHireDate)
+        & (if startingDescOrder then sortOn (Down . view Personio.employeeHireDate) else sortOn (view Personio.employeeHireDate))
       where
         predicate e = case e ^. Personio.employeeHireDate of
             Nothing -> False
@@ -51,14 +54,14 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
 
     leavingEmployees = employees0
         & filter predicate
-        & sortOn (Down . view Personio.employeeEndDate)
+        & (if leavingDescOrder then sortOn (Down . view Personio.employeeEndDate) else sortOn (view Personio.employeeEndDate))
       where
         predicate e = case e ^. Personio.employeeEndDate of
             Nothing -> False
             Just d  -> today <= d
 
-employeeTable :: Monad m => Bool -> World -> [Personio.Employee] -> HtmlT m ()
-employeeTable hire world employees = fullRow_ $ table_ $ do
+employeeTable :: Monad m => Bool -> World -> [Personio.Employee] -> Bool -> Bool -> HtmlT m ()
+employeeTable hire world employees startingDescOrder leavingDescOrder = fullRow_ $ table_ $ do
     thead_ $ tr_ $ do
         th_ "Personio ID"
         th_ "Name"
@@ -67,7 +70,10 @@ employeeTable hire world employees = fullRow_ $ table_ $ do
         th_ "Tribe"
         th_ "Office"
         th_ "Internal"
-        th_ $ if hire then "Hire date" else "End Date"
+        th_ $ if hire then
+                a_ [href_ $ linkToText $ safeLink checklistApi personioPageEndpoint (not startingDescOrder) leavingDescOrder ] "Hire date"
+              else
+                a_ [href_ $ linkToText $ safeLink checklistApi personioPageEndpoint startingDescOrder (not leavingDescOrder) ] "End Date"
         th_ "Create"
 
     tbody_ $ for_ employees $ \e -> tr_ $ do

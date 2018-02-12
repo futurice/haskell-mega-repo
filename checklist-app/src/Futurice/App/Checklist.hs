@@ -214,11 +214,13 @@ archivePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
 personioPageImpl
     :: Ctx
     -> Maybe FUM.Login
+    -> Bool
+    -> Bool
     -> Handler (HtmlPage "personio")
-personioPageImpl ctx fu = withAuthUser ctx fu $ \world userInfo -> do
+personioPageImpl ctx fu startingDescOrder leavingDescOrder = withAuthUser ctx fu $ \world userInfo -> do
     now <- currentTime
     employees <- getPersonioEmployees now ctx
-    pure (personioPage world userInfo now employees)
+    pure (personioPage world userInfo now employees startingDescOrder leavingDescOrder)
 
 
 reportPageImpl

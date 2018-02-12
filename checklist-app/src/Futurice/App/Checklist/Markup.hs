@@ -204,7 +204,7 @@ archivePageHref :: Attribute
 archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint
 
 personioPageHref :: Attribute
-personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint
+personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint False False
 
 -------------------------------------------------------------------------------
 -- Links
