@@ -44,6 +44,7 @@ packages:
   fum-client/
   fum-types/
   futurice-constants/
+  futurice-enum-generator/
   futurice-foundation/
   futurice-github/
   futurice-integrations/

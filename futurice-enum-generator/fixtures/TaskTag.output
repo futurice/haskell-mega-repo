@@ -1,0 +1,93 @@
+-- This module is generated with futurice-enum-generator
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+module Futurice.App.Checklist.Types.TaskTag (
+    TaskTag (..),
+    _TaskTag,
+    taskTagToText,
+    taskTagFromText,
+    ) where
+
+import Futurice.Generics
+import Futurice.Generics.Enum
+import Futurice.Prelude
+import Lucid                  (ToHtml (..))
+import Prelude ()
+
+import qualified Data.Csv as Csv
+
+data TaskTag
+    = GithubTask    -- ^ This task relates to Github
+    | PlanmillTask  -- ^ This task relates to Planmill
+
+instance ToHtml TaskTag where
+    toHtmlRaw = toHtml
+    toHtml GithubTask   = "GitHub"
+    toHtml PlanmillTask = "PlanMill"
+
+
+makePrisms    ''TaskTag
+deriveGeneric ''TaskTag
+deriveLift    ''TaskTag
+
+ei :: EnumInstances TaskTag
+ei = sopEnumInstances $
+    K "github" :*
+    K "planmill" :*
+    Nil
+
+taskTagToText :: TaskTag -> Text
+taskTagToText = enumToText ei
+
+taskTagFromText :: Text -> Maybe TaskTag
+taskTagFromText = enumFromText ei
+
+deriving instance Eq TaskTag
+deriving instance Ord TaskTag
+deriving instance Show TaskTag
+deriving instance Read TaskTag
+deriving instance Enum TaskTag
+deriving instance Bounded TaskTag
+deriving instance Generic TaskTag
+deriving instance Typeable TaskTag
+
+_TaskTag :: Prism' Text TaskTag
+_TaskTag = enumPrism ei
+
+instance NFData TaskTag
+
+instance Binary TaskTag
+
+instance Arbitrary TaskTag where
+    arbitrary = sopArbitrary
+    shrink    = sopShrink
+
+
+instance ToParamSchema TaskTag where
+    toParamSchema = enumToParamSchema ei
+
+instance ToSchema TaskTag where
+    declareNamedSchema = enumDeclareNamedSchema ei
+
+instance ToJSON TaskTag where
+    toJSON     = enumToJSON ei
+    toEncoding = enumToEncoding ei
+
+instance FromJSON TaskTag where
+    parseJSON = enumParseJSON ei
+
+instance FromHttpApiData TaskTag where
+    parseUrlPiece = enumParseUrlPiece ei
+
+instance ToHttpApiData TaskTag where
+    toUrlPiece = enumToUrlPiece ei
+
+instance Csv.ToField TaskTag where
+    toField = enumCsvToField ei
+
+instance Csv.FromField TaskTag where
+     parseField = enumCsvParseField ei
