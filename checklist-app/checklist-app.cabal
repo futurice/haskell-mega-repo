@@ -1,7 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
+cabal-version:  2.0
 name:           checklist-app
 version:        0
 synopsis:       Over-engineered TODO
@@ -14,7 +11,6 @@ maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 
 source-repository head
   type: git
@@ -24,7 +20,8 @@ library
   hs-source-dirs:
       src
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall
+  ghc-options: -Wall -pgmL futu-enum-gen
+  build-tool-depends: futurice-enum-generator:futu-enum-gen
   build-depends:
       base >= 4.7 && <4.11
     , adjunctions
@@ -33,6 +30,7 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , cassava
     , Chart
     , clay
     , constraints
