@@ -57,7 +57,7 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
                 for_ [minBound .. maxBound] $ \tag -> do
                     optionSelected_ False
                         [ value_ $ tag ^. re _TaskTag ]
-                        $ toHtml $ tag ^. re _TaskTag
+                        $ toHtml tag
         row_ $ do
             large_ 6 $ label_ $ do
                 "Checklist 1"

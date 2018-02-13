@@ -10,7 +10,6 @@ import Text.Printf               (printf)
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.TaskTag (taskTagToText)
 
 tasksPage
     :: World       -- ^ the world
@@ -81,7 +80,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     taskLink prereqTask
                     br_ []
                 td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
-                    li_ $ toHtml $ taskTagToText tag
+                    li_ $ toHtml tag
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j -> do

@@ -78,7 +78,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
                 for_ [minBound .. maxBound] $ \tag -> do
                     optionSelected_ (task ^. taskTags . contains tag)
                         [ value_ $ tag ^. re _TaskTag ]
-                        $ toHtml $ tag ^. re _TaskTag
+                        $ toHtml tag
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
