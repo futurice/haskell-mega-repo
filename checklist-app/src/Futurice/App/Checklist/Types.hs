@@ -24,6 +24,7 @@ module Futurice.App.Checklist.Types (
     TaskAppliance(..),
     TaskComment(..),
     TaskTag(..),
+    PMUser(..),
     -- ** Wrappers
     Identifier(..),
     identifierToText,
