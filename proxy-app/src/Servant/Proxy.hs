@@ -90,7 +90,7 @@ makeProxy
     -> env -> Server public
 makeProxy _ env = convert env' (client proxyPrivate)
   where
-    env' = ClientEnv
+    env' = mkClientEnv
         (env ^. httpManager)
         (env ^. clientBaseurl proxyService)
 

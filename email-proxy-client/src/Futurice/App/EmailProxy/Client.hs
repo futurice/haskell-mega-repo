@@ -9,6 +9,6 @@ import Futurice.App.EmailProxy.Types
 
 sendEmail :: Manager -> BaseUrl -> Req -> IO ()
 sendEmail mgr burl req =
-    runClientM (impl req) (ClientEnv mgr burl) >>= either throwM (\NoContent -> return ())
+    runClientM (impl req) (mkClientEnv mgr burl) >>= either throwM (\NoContent -> return ())
   where
     _ :<|> impl = client emailProxyApi
