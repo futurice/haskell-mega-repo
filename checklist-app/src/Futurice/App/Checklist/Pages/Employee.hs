@@ -18,10 +18,10 @@ import Futurice.App.Checklist.API
        employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.TaskTag (taskTagToText)
-import GitHub                               (SimpleUser, simpleUserLogin)
+import GitHub                        (SimpleUser)
 
 import qualified Chat.Flowdock.REST as FD
+import qualified FUM.Types.Login    as FUM
 import qualified Personio           as P
 
 -- |
@@ -35,8 +35,9 @@ employeePage
     -> Employee
     -> Map P.EmployeeId P.Employee
     -> Vector SimpleUser
+    -> HashMap FUM.Login (P.Employee, PMUser)
     -> HtmlPage "employee"
-employeePage world authUser employee personios gemployees = checklistPage_ (view nameText employee) authUser $ do
+employeePage world authUser employee personios gemployees planEmployees = checklistPage_ (view nameText employee) authUser $ do
     -- Title
     header (employee ^. nameText) []
 
@@ -176,7 +177,7 @@ employeePage world authUser employee personios gemployees = checklistPage_ (view
                         case tag of
                            -- temporary solution. Real tag related information will replace these
                           GithubTask -> isInGithubOrganizationText
-                          PlanmillTask -> toHtml tag
+                          PlanmillTask -> isInPlanmillOrganizationText
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
                 td_ $ taskCommentInput_ world employee task
@@ -202,20 +203,14 @@ employeePage world authUser employee personios gemployees = checklistPage_ (view
     personioEmployee :: Maybe P.Employee
     personioEmployee = (employee ^. employeePersonio) >>= (\x -> personios ^.at x)
 
+    planmillEmployee :: Maybe PMUser
+    planmillEmployee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planEmployees ^.at x)
+
+    isInPlanmillOrganizationText :: HtmlT Identity ()
+    isInPlanmillOrganizationText = isInPlanmillOrganizationHtml planmillEmployee
+
     isInGithubOrganizationText :: HtmlT Identity ()
-    isInGithubOrganizationText = case personioEmployee of
-      Nothing -> span_ [class_ "info label"] "No personio info found"
-      (Just pEmployee) -> case pEmployee ^. P.employeeGithub of
-        Nothing -> span_ [class_ "info label"]  "No Github username in personio"
-        (Just githubUser) -> case listToMaybe $ filter (\g  -> simpleUserLogin g == githubUser) (toList gemployees) of
-          Nothing -> label_ $ do
-              span_ [class_ "info label"] "Not in Futurice Github organization"
-              " Username "
-              toHtml githubUser
-          (Just _) -> label_ $ do
-              span_ [class_ "info label"] "In Futurice Github organization"
-              " Username "
-              toHtml githubUser
+    isInGithubOrganizationText = isInGithubOrganizationHtml personioEmployee gemployees
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a

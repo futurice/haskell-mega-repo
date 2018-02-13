@@ -11,8 +11,8 @@ import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
-       (IntegrationsConfig, MonadPersonio (..), githubOrganisationMembers,
-       runIntegrations)
+       (Integrations, IntegrationsConfig, MonadPersonio (..),
+       githubOrganisationMembers, personioPlanmillMap, runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -53,6 +53,8 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.GroupName        as FUM
 import qualified FUM.Types.Login            as FUM
 import qualified Futurice.FUM.MachineAPI    as FUM
+import qualified PlanMill                   as PM
+import qualified PlanMill.Queries           as PMQ
 
 import qualified Personio
 
@@ -201,11 +203,9 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Nothing       -> pure notFoundPage
         Just employee -> do
             now <- currentTime
-            pemployees <- do
-                employees <- getPersonioEmployees now ctx
-                pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
-            gemployees <- getGithubEmployees now ctx
-            pure (employeePage world userInfo employee pemployees gemployees)
+            (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
+            pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
+            pure (employeePage world userInfo employee pemployeesmap gemployees planEmployees)
 
 archivePageImpl
     :: Ctx
@@ -250,6 +250,35 @@ applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
 
 -------------------------------------------------------------------------------
+-- All integrations helper
+-------------------------------------------------------------------------------
+
+getEmployeeExternalData :: MonadIO m => UTCTime -> Ctx -> m (Vector SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+getEmployeeExternalData now ctx = liftIO $ cachedIO lgr cache 180 () $
+    runIntegrations mgr lgr now cfg fetchEmployeeExternalData
+  where
+    lgr = ctxLogger ctx
+    mgr = ctxManager ctx
+    cfg = ctxIntegrationsCfg ctx
+    cache = ctxCache ctx
+
+type M = Integrations '[I, Proxy, I, I, Proxy, I]
+
+personioPlanmillPMuserMap :: M (HashMap FUM.Login (Personio.Employee, PMUser))
+personioPlanmillPMuserMap = personioPlanmillMap >>= (\persons -> ifor persons $ \ _ (per, plan) -> do
+    passive <- PMQ.enumerationValue (PM.uPassive plan) "-"
+    pure (per, PMUser { pmUser = plan,
+                        pmPassive = passive
+                      }))
+
+fetchEmployeeExternalData :: M (Vector SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+fetchEmployeeExternalData = (,,)
+    <$> githubOrganisationMembers
+    <*> personio Personio.PersonioEmployees
+    <*> personioPlanmillPMuserMap
+
+-- PMQ.enumerationValue (PM.uPassive x) "-"
+-------------------------------------------------------------------------------
 -- Personio helper
 -------------------------------------------------------------------------------
 
@@ -272,6 +301,18 @@ getGithubEmployees now ctx = liftIO $ runIntegrations mgr lgr now cfg githubOrga
     lgr = ctxLogger ctx
     mgr = ctxManager ctx
     cfg = ctxIntegrationsCfg ctx
+
+-------------------------------------------------------------------------------
+-- Planmill helper
+-------------------------------------------------------------------------------
+
+getPlanmillEmployees :: MonadIO m => UTCTime -> Ctx -> m (HashMap FUM.Login (Personio.Employee, PM.User))
+getPlanmillEmployees now ctx = liftIO $ cachedIO lgr cache 180 () $ runIntegrations mgr lgr now cfg personioPlanmillMap
+  where
+    lgr = ctxLogger ctx
+    mgr = ctxManager ctx
+    cfg = ctxIntegrationsCfg ctx
+    cache = ctxCache ctx
 
 -------------------------------------------------------------------------------
 -- Audit
@@ -431,7 +472,7 @@ makeCtx Config {..} lgr mgr cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I]
+    -> IntegrationsConfig '[I, Proxy, I, I, Proxy, I]
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do

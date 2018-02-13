@@ -32,6 +32,8 @@ module Futurice.App.Checklist.Markup (
     contractTypeHtml,
     checklistNameHtml,
     locationHtml,
+    isInPlanmillOrganizationHtml,
+    isInGithubOrganizationHtml,
     -- * Counter
     TodoCounter (..),
     Counter (..),
@@ -55,9 +57,11 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Clay  (pageParams)
 import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
+import GitHub                       (SimpleUser, simpleUserLogin)
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
+import qualified Personio  as P
 
 -------------------------------------------------------------------------------
 -- Navigation
@@ -269,6 +273,26 @@ checklistNameHtml :: Monad m => World -> Maybe Office -> Identifier Checklist ->
 checklistNameHtml world mloc i notDone =
     a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
+
+isInPlanmillOrganizationHtml :: Maybe PMUser -> HtmlT Identity ()
+isInPlanmillOrganizationHtml planmillEmployee = case planmillEmployee of
+                                                  Nothing -> span_ [class_ "info label"] "Person not in Planmill"
+                                                  (Just (PMUser _ passive)) -> span_ [class_ "info label"] $ "Person in Planmill in state " <> (toHtml passive)
+
+isInGithubOrganizationHtml :: Maybe P.Employee -> Vector SimpleUser -> HtmlT Identity ()
+isInGithubOrganizationHtml p gs = case p of
+                                    Nothing -> span_ [class_ "info label"] "No personio info found"
+                                    (Just pEmployee) -> case pEmployee ^. P.employeeGithub of
+                                      Nothing -> span_ [class_ "info label"]  "No Github username in personio"
+                                      (Just githubUser) -> case listToMaybe $ filter (\g  -> simpleUserLogin g == githubUser) (toList gs) of
+                                        Nothing -> label_ $ do
+                                            span_ [class_ "info label"] "Not in Futurice Github organization"
+                                            " Username "
+                                            toHtml githubUser
+                                        (Just _) -> label_ $ do
+                                            span_ [class_ "info label"] "In Futurice Github organization"
+                                            " Username "
+                                            toHtml githubUser
 
 -------------------------------------------------------------------------------
 -- Tasks

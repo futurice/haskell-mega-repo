@@ -67,6 +67,7 @@ library
     , mtl
     , periocron
     , personio-client
+    , planmill-client
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
