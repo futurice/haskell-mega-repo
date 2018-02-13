@@ -1,11 +1,12 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TypeOperators   #-}
 module Futurice.App.SmsProxy.Types where
 
-import Prelude ()
-import Futurice.Prelude
 import Futurice.Generics
+import Futurice.Prelude
+import Prelude ()
 
 data Res = Res
     { _resTo     :: !Text
@@ -29,19 +30,11 @@ makeLenses ''Req
 deriveGeneric ''Res
 deriveGeneric ''Req
 
-instance ToJSON Res where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance ToJSON Req where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+deriveVia [t| ToJSON Res `Via` Sopica Res |]
+deriveVia [t| ToJSON Req `Via` Sopica Req |]
 
-instance FromJSON Res where
-    parseJSON = sopParseJSON
-instance FromJSON Req where
-    parseJSON = sopParseJSON
+deriveVia [t| FromJSON Res `Via` Sopica Res |]
+deriveVia [t| FromJSON Req `Via` Sopica Req |]
 
-instance ToSchema Res where
-    declareNamedSchema = sopDeclareNamedSchema
-instance ToSchema Req where
-    declareNamedSchema = sopDeclareNamedSchema
+instance ToSchema Res where declareNamedSchema = sopDeclareNamedSchema
+instance ToSchema Req where declareNamedSchema = sopDeclareNamedSchema

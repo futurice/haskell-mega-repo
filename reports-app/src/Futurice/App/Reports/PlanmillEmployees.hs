@@ -39,15 +39,12 @@ data PlanmillEmployee = PlanmillEmployee
     , _pmeEmail        :: !Text
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 -- makeLenses ''PlanmillEmployee
 deriveGeneric ''PlanmillEmployee
-
-instance NFData PlanmillEmployee
-instance ToJSON PlanmillEmployee where
-    toJSON     = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON PlanmillEmployee where parseJSON = sopParseJSON
+deriveVia [t| ToJSON PlanmillEmployee   `Via` Sopica PlanmillEmployee |]
+deriveVia [t| FromJSON PlanmillEmployee `Via` Sopica PlanmillEmployee |]
 instance ToSchema PlanmillEmployee where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns PlanmillEmployee where

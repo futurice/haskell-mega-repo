@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.PlanMillProxy.Types (
     Ctx (..),
@@ -49,9 +50,8 @@ data Stats = Stats
 
 deriveGeneric ''Stats
 
-instance ToJSON Stats where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+deriveVia [t| ToJSON Stats   `Via` Sopica Stats |]
+deriveVia [t| FromJSON Stats `Via` Sopica Stats |]
 
 instance ToSchema Stats where
     declareNamedSchema = sopDeclareNamedSchema

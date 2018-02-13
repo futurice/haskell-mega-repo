@@ -33,12 +33,8 @@ instance phase ~ 'Input => HasLomake (RemoveSSHKeyFromEmployee phase) where
         hiddenField "SSHKeyFingerprint" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (RemoveSSHKeyFromEmployee phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (RemoveSSHKeyFromEmployee phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveSSHKeyFromEmployee phase))   `Via` Sopica (RemoveSSHKeyFromEmployee phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveSSHKeyFromEmployee phase)) `Via` Sopica (RemoveSSHKeyFromEmployee phase) |]
 
 instance Command RemoveSSHKeyFromEmployee where
     type CommandTag RemoveSSHKeyFromEmployee = "remove-sshkey-from-employee"

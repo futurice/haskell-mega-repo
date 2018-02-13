@@ -31,12 +31,8 @@ instance phase ~ 'Input => HasLomake (RemoveEditorGroup phase) where
         dynEnumField "Editor group" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (RemoveEditorGroup phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (RemoveEditorGroup phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEditorGroup phase))   `Via` Sopica (RemoveEditorGroup phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEditorGroup phase)) `Via` Sopica (RemoveEditorGroup phase) |]
 
 instance Command RemoveEditorGroup where
     type CommandTag RemoveEditorGroup = "remove-editor-group"

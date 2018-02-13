@@ -53,12 +53,9 @@ data UserInfo = UserInfo
 
 makeLenses ''UserInfo
 deriveGeneric ''UserInfo
-
 instance ToColumns UserInfo
 instance NFData UserInfo
-instance ToJSON UserInfo where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+deriveVia [t| ToJSON UserInfo `Via` Sopica UserInfo |]
 instance ToSchema UserInfo where declareNamedSchema = sopDeclareNamedSchema
 
 -------------------------------------------------------------------------------

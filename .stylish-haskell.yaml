@@ -19,3 +19,6 @@ language_extensions:
   - MultiParamTypeClasses
   - FlexibleContexts
   - ExplicitForAll
+  - DerivingStrategies
+  - DeriveAnyClass
+  - GeneralizedNewtypeDeriving

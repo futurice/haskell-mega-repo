@@ -44,10 +44,13 @@ data GitHubRepo = GitHubRepo
     { _ghRepoOwner :: !(GH.Name GH.Owner)
     , _ghRepoName  :: !(GH.Name GH.Repo)
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 makeLenses ''GitHubRepo
 deriveGeneric ''GitHubRepo
+deriveVia [t| ToJSON GitHubRepo `Via` Sopica GitHubRepo |]
+instance ToSchema GitHubRepo where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns GitHubRepo where
     type Columns GitHubRepo = '[GH.Name GH.Owner, GH.Name GH.Repo]
@@ -64,11 +67,6 @@ instance ReportValue GitHubRepo where
          ownerLink = "https://github.com/" <> o'
          repoLink = ownerLink <> "/" <> r'
 
-instance NFData GitHubRepo
-instance ToJSON GitHubRepo where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance ToSchema GitHubRepo where declareNamedSchema = sopDeclareNamedSchema
 
 
 data IssueInfo = IssueInfo
@@ -77,10 +75,13 @@ data IssueInfo = IssueInfo
     , _issueCreated :: !UTCTime
     , _issueUrl     :: !Text
     }
-    deriving (Eq, Ord, Show, Generic, Typeable)
+  deriving (Eq, Ord, Show, Generic, Typeable)
+  deriving anyclass (NFData)
 
 makeLenses ''IssueInfo
 deriveGeneric ''IssueInfo
+deriveVia [t| ToJSON IssueInfo `Via` Sopica IssueInfo |]
+instance ToSchema IssueInfo where declareNamedSchema = sopDeclareNamedSchema
 
 -- | 'IssueInfo' is just wrapped into column. The creation date is extracted
 -- into additional column though.
@@ -90,12 +91,6 @@ instance ToColumns IssueInfo where
     type Columns IssueInfo = '[IssueInfo, UTCTime]
     columnNames _ = K "issue" :* K "created" :* Nil
     toColumns i = [I i :* I (_issueCreated i) :* Nil]
-
-instance NFData IssueInfo
-instance ToJSON IssueInfo where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance ToSchema IssueInfo where declareNamedSchema = sopDeclareNamedSchema
 
 instance Csv.ToField IssueInfo where
     toField i = Csv.toField $

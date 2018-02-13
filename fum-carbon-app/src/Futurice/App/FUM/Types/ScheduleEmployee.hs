@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TypeOperators   #-}
 module Futurice.App.FUM.Types.ScheduleEmployee where
 
 import FUM.Types.Login
@@ -18,22 +19,17 @@ data ScheduleEmployee = ScheduleEmployee
     , _seEmail           :: !(Maybe Email)
     , _seSupervisorLogin :: !(Maybe Login)
     , _seSupervisorName  :: !(Maybe Text)
-    , _seSueprvisorEmail :: !(Maybe Email)
+    , _seSupervisorEmail :: !(Maybe Email)
     }
   deriving (Show, Typeable, Generic)
 
 makeLenses ''ScheduleEmployee
 deriveGeneric ''ScheduleEmployee
 
-instance ToSchema ScheduleEmployee where
-    declareNamedSchema = sopDeclareNamedSchema
+deriveVia [t| ToJSON ScheduleEmployee   `Via` Sopica ScheduleEmployee |]
+deriveVia [t| FromJSON ScheduleEmployee `Via` Sopica ScheduleEmployee |]
 
-instance FromJSON ScheduleEmployee where
-    parseJSON = sopParseJSON
-
-instance ToJSON ScheduleEmployee where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+instance ToSchema ScheduleEmployee where declareNamedSchema = sopDeclareNamedSchema
 
 fromPersonio :: [P.Employee] -> [ScheduleEmployee]
 fromPersonio es = map mk es
@@ -48,7 +44,7 @@ fromPersonio es = map mk es
         , _seEmail           = e ^. P.employeeEmail
         , _seSupervisorLogin = withSupervisor $ \s -> s ^. P.employeeLogin
         , _seSupervisorName  = withSupervisor $ \s -> s ^? P.employeeFullname
-        , _seSueprvisorEmail = withSupervisor $ \s -> s ^. P.employeeEmail
+        , _seSupervisorEmail = withSupervisor $ \s -> s ^. P.employeeEmail
         }
       where
         withSupervisor :: (P.Employee -> Maybe a) -> Maybe a

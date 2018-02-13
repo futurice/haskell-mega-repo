@@ -44,19 +44,14 @@ data TimereportsStats = TimereportsStats
     , _tsCount  :: !Int
     , _tsMedian :: !(NDT 'Hours Centi)
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''TimereportsStats
-
-instance NFData TimereportsStats
+deriveVia [t| ToJSON TimereportsStats   `Via` Sopica TimereportsStats |]
+deriveVia [t| FromJSON TimereportsStats `Via` Sopica TimereportsStats |]
 instance ToColumns TimereportsStats
 instance ToSchema TimereportsStats where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON TimereportsStats where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON TimereportsStats where
-    parseJSON = sopParseJSON
-
 
 data TimereportsByTask = TimereportsByTask
     { _tbtAccountName    :: !Text
@@ -67,17 +62,13 @@ data TimereportsByTask = TimereportsByTask
     , _tbtHoursCurrMonth :: !TimereportsStats
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 -- makeLenses ''TimereportsByTask
 deriveGeneric ''TimereportsByTask
-
-instance NFData TimereportsByTask
+deriveVia [t| ToJSON TimereportsByTask   `Via` Sopica TimereportsByTask |]
+deriveVia [t| FromJSON TimereportsByTask `Via` Sopica TimereportsByTask |]
 instance ToSchema TimereportsByTask where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON TimereportsByTask where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON TimereportsByTask where
-    parseJSON = sopParseJSON
 
 instance ToColumns TimereportsByTask where
     type Columns TimereportsByTask =
@@ -124,16 +115,12 @@ data TimereportsByTaskParams = TimereportsByTaskParams
     , tbtEndDay    :: !Day
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''TimereportsByTaskParams
-
-instance NFData TimereportsByTaskParams
+deriveVia [t| ToJSON TimereportsByTaskParams   `Via` Sopica TimereportsByTaskParams |]
+deriveVia [t| FromJSON TimereportsByTaskParams `Via` Sopica TimereportsByTaskParams |]
 instance ToSchema TimereportsByTaskParams where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON TimereportsByTaskParams where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON TimereportsByTaskParams where
-    parseJSON = sopParseJSON
 
 instance ToHtml TimereportsByTaskParams where
     toHtmlRaw = toHtml

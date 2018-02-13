@@ -32,12 +32,8 @@ instance phase ~ 'Input => HasLomake (ResetPassword phase) where
         unitField :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (ResetPassword phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (ResetPassword phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (ResetPassword phase))   `Via` Sopica (ResetPassword phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (ResetPassword phase)) `Via` Sopica (ResetPassword phase) |]
 
 instance Command ResetPassword where
     type CommandTag ResetPassword = "reset-password"

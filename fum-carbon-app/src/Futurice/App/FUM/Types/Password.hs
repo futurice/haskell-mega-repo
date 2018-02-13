@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module Futurice.App.FUM.Types.Password where
 
 import Control.Monad             (replicateM)
@@ -27,7 +28,8 @@ data Password = Password
     { _passwordHash    :: !Text
     , _passwordExpires :: !UTCTime
     }
-  deriving (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
 
 makeLenses ''Password
 deriveGeneric ''Password
@@ -36,15 +38,8 @@ deriveGeneric ''Password
 -- Instances
 -------------------------------------------------------------------------------
 
-instance NFData Password where
-    rnf (Password h e) = rnf h `seq` rnf e
-
-instance ToJSON Password where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance FromJSON Password where
-    parseJSON = sopParseJSON
+deriveVia [t| ToJSON Password   `Via` Sopica Password |]
+deriveVia [t| FromJSON Password `Via` Sopica Password |]
 
 -------------------------------------------------------------------------------
 -- Html

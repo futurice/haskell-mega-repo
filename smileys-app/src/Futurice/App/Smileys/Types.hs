@@ -13,6 +13,7 @@ module Futurice.App.Smileys.Types (
     ) where
 
 import Futurice.Generics
+import Futurice.Generics.SOP -- TODO: use deriveVia
 import Futurice.Prelude
 import Prelude ()
 

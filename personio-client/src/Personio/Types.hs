@@ -6,6 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 module Personio.Types (
     module Personio.Types, -- TODO: this exports some unnecessary stuff too.
     module Personio.Types.Cfg,
@@ -114,23 +115,15 @@ employeeFullname = getter $ \e -> _employeeFirst e <> " " <> _employeeLast e
 
 instance NFData Employee
 
-instance Arbitrary Employee where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
 instance HasKey Employee where
     type Key Employee = EmployeeId
     key = employeeId
 
-instance ToSchema Employee where
-    declareNamedSchema = sopDeclareNamedSchema
+deriveVia [t| Arbitrary Employee `Via` Sopica Employee |]
+deriveVia [t| ToJSON Employee    `Via` Sopica Employee |]
+deriveVia [t| FromJSON Employee `Via` Sopica Employee |]
 
-instance FromJSON Employee where
-    parseJSON = sopParseJSON
-
-instance ToJSON Employee where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+instance ToSchema Employee where declareNamedSchema = sopDeclareNamedSchema
 
 parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
@@ -304,11 +297,9 @@ data ValidationMessage
     | SupervisorNotActive !Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 
-
 instance ToJSON ValidationMessage
 instance FromJSON ValidationMessage
-instance ToSchema ValidationMessage where
-    declareNamedSchema = genericDeclareNamedSchemaUnrestricted defaultSchemaOptions
+instance ToSchema ValidationMessage where declareNamedSchema = genericDeclareNamedSchemaUnrestricted defaultSchemaOptions
 
 -- | All fields except 'evMessages' are to help connect the data.
 data EmployeeValidation = EmployeeValidation
@@ -320,15 +311,10 @@ data EmployeeValidation = EmployeeValidation
 makeLenses ''EmployeeValidation
 deriveGeneric ''EmployeeValidation
 
-instance ToSchema EmployeeValidation where
-    declareNamedSchema = sopDeclareNamedSchema
+deriveVia [t| FromJSON EmployeeValidation `Via` Sopica EmployeeValidation |]
+deriveVia [t| ToJSON EmployeeValidation `Via` Sopica EmployeeValidation |]
 
-instance FromJSON EmployeeValidation where
-    parseJSON = sopParseJSON
-
-instance ToJSON EmployeeValidation where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+instance ToSchema EmployeeValidation where declareNamedSchema = sopDeclareNamedSchema
 
 -- | Validate collection of employees.
 postValidatePersonioEmployees :: [EmployeeValidation] -> [EmployeeValidation]

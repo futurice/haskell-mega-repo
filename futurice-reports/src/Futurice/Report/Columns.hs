@@ -35,6 +35,7 @@ import Data.Constraint           (Constraint)
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Generics
+import Futurice.Generics.SOP     (sopRecordFieldNames)
 import Futurice.IsMaybe
 import Futurice.List
 import Futurice.Lucid.Foundation
@@ -97,16 +98,8 @@ instance (NFData params, NFData a) => NFData (Report name params a) where
 -- Report + aeson
 -------------------------------------------------------------------------------
 
-instance (ToJSON a, ToJSON params, IsMaybe a, IsMaybe params)
-    => ToJSON (Report name params a)
-  where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance (FromJSON a, FromJSON params, IsMaybe a, IsMaybe params)
-    => FromJSON (Report name params a)
-  where
-    parseJSON = sopParseJSON
+deriveVia [t| forall name params a. ((ToJSON a, ToJSON params, IsMaybe a, IsMaybe params) => ToJSON (Report name params a))       `Via` Sopica (Report name params a) |]
+deriveVia [t| forall name params a. ((FromJSON a, FromJSON params, IsMaybe a, IsMaybe params) => FromJSON (Report name params a)) `Via` Sopica (Report name params a) |]
 
 instance (ToSchema a, ToSchema params, KnownSymbol name)
     => ToSchema (Report name params a)

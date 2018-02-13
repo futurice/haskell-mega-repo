@@ -1,8 +1,10 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Personio.Types.EmploymentType (
     EmploymentType (..),
     employmentTypeToText,
@@ -11,63 +13,45 @@ module Personio.Types.EmploymentType (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
 import Futurice.Prelude
-import Lucid                  (ToHtml (..))
+import Prelude ()
+
+import qualified Data.Csv as Csv
 
 data EmploymentType
     = Internal
     | External
-    deriving (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
+  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
+  deriving anyclass (NFData, Binary)
 
 makePrisms ''EmploymentType
 deriveGeneric ''EmploymentType
 deriveLift ''EmploymentType
 
-ei :: EnumInstances EmploymentType
-ei = sopEnumInstances $
-    K "internal" :*
-    K "external" :*
-    Nil
+instance TextEnum EmploymentType where
+    type TextEnumNames EmploymentType = '["internal", "external"]
 
 -------------------------------------------------------------------------------
 -- Boilerplate
 -------------------------------------------------------------------------------
 
 employmentTypeToText :: EmploymentType -> Text
-employmentTypeToText = enumToText ei
+employmentTypeToText = enumToText
 
 employmentTypeFromText :: Text -> Maybe EmploymentType
-employmentTypeFromText = enumFromText ei
+employmentTypeFromText = enumFromText
 
 _EmploymentType :: Prism' Text EmploymentType
-_EmploymentType = enumPrism ei
+_EmploymentType = enumPrism
 
-instance NFData EmploymentType
+deriveVia [t| Arbitrary EmploymentType       `Via` Sopica EmploymentType  |]
+deriveVia [t| ToJSON EmploymentType          `Via` Enumica EmploymentType |]
+deriveVia [t| FromJSON EmploymentType        `Via` Enumica EmploymentType |]
+deriveVia [t| ToHttpApiData EmploymentType   `Via` Enumica EmploymentType |]
+deriveVia [t| FromHttpApiData EmploymentType `Via` Enumica EmploymentType |]
+deriveVia [t| Csv.ToField EmploymentType     `Via` Enumica EmploymentType |]
+deriveVia [t| Csv.FromField EmploymentType   `Via` Enumica EmploymentType |]
+deriveVia [t| ToHtml EmploymentType          `Via` Enumica EmploymentType |]
 
-instance Arbitrary EmploymentType where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToHtml EmploymentType where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . enumToText ei
-
-instance ToParamSchema EmploymentType where
-    toParamSchema = enumToParamSchema ei
-
-instance ToSchema EmploymentType where
-    declareNamedSchema = enumDeclareNamedSchema ei
-
-instance ToJSON EmploymentType where
-    toJSON = enumToJSON ei
-
-instance FromJSON EmploymentType where
-    parseJSON = enumParseJSON ei
-
-instance FromHttpApiData EmploymentType where
-    parseUrlPiece = enumParseUrlPiece ei
-
-instance ToHttpApiData EmploymentType where
-    toUrlPiece = enumToUrlPiece ei
-
+instance ToParamSchema EmploymentType where toParamSchema = enumToParamSchema
+instance ToSchema EmploymentType where declareNamedSchema = enumDeclareNamedSchema
