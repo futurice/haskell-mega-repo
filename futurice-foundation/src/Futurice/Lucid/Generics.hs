@@ -10,7 +10,7 @@ module Futurice.Lucid.Generics (
     ) where
 
 import FUM.Types.Login           (Login)
-import Futurice.Generics
+import Futurice.Generics.SOP
 import Futurice.Lucid.Foundation
 import Futurice.Office           (Office)
 import Futurice.Prelude          hiding (from)

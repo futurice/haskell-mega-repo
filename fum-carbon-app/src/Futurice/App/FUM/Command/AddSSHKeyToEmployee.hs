@@ -31,12 +31,8 @@ instance phase ~ 'Input => HasLomake (AddSSHKeyToEmployee phase) where
         textField "SSH Key" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (AddSSHKeyToEmployee phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (AddSSHKeyToEmployee phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddSSHKeyToEmployee phase))   `Via` Sopica (AddSSHKeyToEmployee phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddSSHKeyToEmployee phase)) `Via` Sopica (AddSSHKeyToEmployee phase) |]
 
 instance Command AddSSHKeyToEmployee where
     type CommandTag AddSSHKeyToEmployee = "add-sshkey-to-employee"

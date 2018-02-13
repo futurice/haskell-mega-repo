@@ -1,8 +1,10 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Types.GroupType (
     GroupType (..),
     groupTypeToText,
@@ -12,9 +14,8 @@ module Futurice.App.FUM.Types.GroupType (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
+import Futurice.Lucid.Generics
 import Futurice.Prelude
-import Futurice.Lucid.Foundation (ToHtml (..))
 import Prelude ()
 
 import qualified Data.Csv as Csv
@@ -23,63 +24,40 @@ data GroupType
     = GroupTypeAccess
     | GroupTypeProject
     | GroupTypeServer
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving anyclass (NFData, Binary)
 
 -- makeLenses ''GroupType -- we don't need prisms atm
 deriveGeneric ''GroupType
 -- TODO: remove when we drop support for GHC-7.10
 deriveLift ''GroupType
 
-ei :: EnumInstances GroupType
-ei = sopEnumInstances $
-    K "access" :*
-    K "project" :*
-    K "server" :*
-    Nil
+instance TextEnum GroupType where
+    type TextEnumNames GroupType = '["access", "project", "Server"]
 
 -------------------------------------------------------------------------------
 -- Boilerplate
 -------------------------------------------------------------------------------
 
 groupTypeToText :: GroupType -> Text
-groupTypeToText = enumToText ei
+groupTypeToText = enumToText
 
 groupTypeFromText :: Text -> Maybe GroupType
-groupTypeFromText = enumFromText ei
+groupTypeFromText = enumFromText
 
 _GroupType :: Prism' Text GroupType
-_GroupType = enumPrism ei
+_GroupType = enumPrism
 
-instance NFData GroupType
+deriveVia [t| Arbitrary GroupType       `Via` Sopica GroupType  |]
+deriveVia [t| ToJSON GroupType          `Via` Enumica GroupType |]
+deriveVia [t| FromJSON GroupType        `Via` Enumica GroupType |]
+deriveVia [t| ToHttpApiData GroupType   `Via` Enumica GroupType |]
+deriveVia [t| FromHttpApiData GroupType `Via` Enumica GroupType |]
+deriveVia [t| Csv.ToField GroupType     `Via` Enumica GroupType |]
+deriveVia [t| Csv.FromField GroupType   `Via` Enumica GroupType |]
+deriveVia [t| ToHtml GroupType          `Via` Enumica GroupType |]
 
-instance Arbitrary GroupType where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
+instance ToParamSchema GroupType where toParamSchema = enumToParamSchema
+instance ToSchema GroupType where declareNamedSchema = enumDeclareNamedSchema
 
-instance ToHtml GroupType where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . enumToText ei
-
-instance ToParamSchema GroupType where
-    toParamSchema = enumToParamSchema ei
-
-instance ToSchema GroupType where
-    declareNamedSchema = enumDeclareNamedSchema ei
-
-instance ToJSON GroupType where
-    toJSON = enumToJSON ei
-
-instance FromJSON GroupType where
-    parseJSON = enumParseJSON ei
-
-instance FromHttpApiData GroupType where
-    parseUrlPiece = enumParseUrlPiece ei
-
-instance ToHttpApiData GroupType where
-    toUrlPiece = enumToUrlPiece ei
-
-instance Csv.ToField GroupType where
-    toField = enumCsvToField ei
-
-instance Csv.FromField GroupType where
-    parseField = enumCsvParseField ei
+instance FieldToHtml GroupType

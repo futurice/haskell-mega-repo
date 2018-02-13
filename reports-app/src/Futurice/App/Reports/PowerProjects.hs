@@ -37,31 +37,26 @@ data PowerProject = PowerProject
     , _powerProjectName      :: !Text
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''PowerProject
-
-instance NFData PowerProject
+deriveVia [t| ToJSON PowerProject   `Via` Sopica PowerProject |]
+deriveVia [t| FromJSON PowerProject `Via` Sopica PowerProject |]
 instance ToColumns PowerProject
 instance ToSchema PowerProject where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON PowerProject where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
 
 data PowerAccount = PowerAccount
     { _powerAccountId        :: !PM.AccountId
     , _powerAccountName      :: !Text
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''PowerAccount
-
-instance NFData PowerAccount
+deriveVia [t| ToJSON PowerAccount   `Via` Sopica PowerAccount |]
+deriveVia [t| FromJSON PowerAccount `Via` Sopica PowerAccount |]
 instance ToColumns PowerAccount
 instance ToSchema PowerAccount where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON PowerAccount where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
 
 
 -------------------------------------------------------------------------------
@@ -73,15 +68,13 @@ data PowerProjectsReport = PowerProjectsReport
     , powerAccounts :: !(Vector PowerAccount)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''PowerProjectsReport
-
-instance NFData PowerProjectsReport
+deriveVia [t| ToJSON PowerProjectsReport   `Via` Sopica PowerProjectsReport |]
+deriveVia [t| FromJSON PowerProjectsReport `Via` Sopica PowerProjectsReport |]
 instance ToColumns PowerProjectsReport
 instance ToSchema PowerProjectsReport where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON PowerProjectsReport where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -101,7 +94,7 @@ powerProjectsReport = do
     --
     let aids = toList (setOf (folded . getter PM.pAccount . folded) ps)
     as <- traverse PMQ.account aids 
-    pure $ PowerProjectsReport
+    pure PowerProjectsReport
         { powerProjects = toPower <$> ps
         , powerAccounts = toPowerA <$> as ^. vector
         }

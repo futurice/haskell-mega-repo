@@ -31,12 +31,8 @@ instance phase ~ 'Input => HasLomake (AddEditorGroup phase) where
         dynEnumField "Editor group" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (AddEditorGroup phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (AddEditorGroup phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEditorGroup phase))   `Via` Sopica (AddEditorGroup phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEditorGroup phase)) `Via` Sopica (AddEditorGroup phase) |]
 
 instance Command AddEditorGroup where
     type CommandTag AddEditorGroup = "add-editor-group"

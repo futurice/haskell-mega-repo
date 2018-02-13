@@ -12,6 +12,7 @@ import Data.Aeson.Compat         (withText)
 import Data.Functor.Foldable     (cata, embed)
 import Data.Functor.Foldable.TH
 import Futurice.Generics
+import Futurice.Generics.SOP
 import Futurice.Lucid.Foundation (HtmlT, ToHtml (..), class_, em_, span_)
 import Futurice.Office
 import Futurice.Prelude

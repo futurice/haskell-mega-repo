@@ -1,18 +1,21 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.Checklist.Types.TaskItem where
 
-import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger      (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Map        as Map
-import qualified Data.Text       as T
+import qualified Data.Csv        as Csv
 import qualified FUM.Types.Login as FUM
+
+-------------------------------------------------------------------------------
+-- TaskItem
+-------------------------------------------------------------------------------
 
 -- | States of the tasks
 data TaskItem
@@ -22,6 +25,34 @@ data TaskItem
 
 makePrisms ''TaskItem
 deriveGeneric ''TaskItem
+
+instance TextEnum TaskItem where
+    type TextEnumNames TaskItem = '["done", "todo" ]
+
+taskItemToText :: TaskItem -> Text
+taskItemToText = enumToText
+
+taskItemFromText :: Text -> Maybe TaskItem
+taskItemFromText = enumFromText
+
+_TaskItem :: Prism' Text TaskItem
+_TaskItem = enumPrism
+
+deriveVia [t| Arbitrary TaskItem       `Via` Sopica TaskItem  |]
+deriveVia [t| ToJSON TaskItem          `Via` Enumica TaskItem |]
+deriveVia [t| FromJSON TaskItem        `Via` Enumica TaskItem |]
+deriveVia [t| ToHttpApiData TaskItem   `Via` Enumica TaskItem |]
+deriveVia [t| FromHttpApiData TaskItem `Via` Enumica TaskItem |]
+deriveVia [t| Csv.ToField TaskItem     `Via` Enumica TaskItem |]
+deriveVia [t| Csv.FromField TaskItem   `Via` Enumica TaskItem |]
+deriveVia [t| ToHtml TaskItem          `Via` Enumica TaskItem |]
+
+instance ToParamSchema TaskItem where toParamSchema = enumToParamSchema
+instance ToSchema TaskItem where declareNamedSchema = enumDeclareNamedSchema
+
+-------------------------------------------------------------------------------
+-- AnnTaskItem
+-------------------------------------------------------------------------------
 
 -- | Annotated task item with who and when have done it.
 data AnnTaskItem
@@ -41,38 +72,3 @@ annTaskItemComment = lens g s
     s (AnnTaskItemTodo _)     t = AnnTaskItemTodo t
 
 makePrisms ''AnnTaskItem
-
-instance Arbitrary TaskItem where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-taskItemToText :: TaskItem -> Text
-taskItemToText TaskItemDone = "done"
-taskItemToText TaskItemTodo = "todo"
-
-taskItemFromText :: Text -> Maybe TaskItem
-taskItemFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $ map (\x -> (T.toLower $ taskItemToText x, x)) [minBound .. maxBound]
-
-_TaskItem :: Prism' Text TaskItem
-_TaskItem = prism' taskItemToText taskItemFromText
-
-instance ToParamSchema TaskItem where
-    toParamSchema _ = mempty
-        & type_ .~ SwaggerString
-        & enum_ ?~ (String . taskItemToText <$> [minBound .. maxBound])
-
-instance ToJSON TaskItem where
-    toJSON = String . taskItemToText
-
-instance FromJSON TaskItem where
-    parseJSON = withText "TaskItem" $ \t ->
-        maybe (fail $ "invalid taskItem " <> t ^. unpacked) pure $ t ^? _TaskItem
-
-instance FromHttpApiData TaskItem where
-    parseUrlPiece t =
-        maybe (Left $ "invalid taskItem " <> t) Right $ t ^? _TaskItem
-
-instance ToHttpApiData TaskItem where
-    toUrlPiece = taskItemToText

@@ -1,13 +1,14 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TypeOperators   #-}
 module Futurice.App.EmailProxy.Types where
 
-import Prelude ()
-import Data.Aeson (withText)
-import Futurice.Prelude
-import Futurice.Generics
+import Data.Aeson        (withText)
 import Futurice.Email
+import Futurice.Generics
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Data.List.NonEmpty as NE
 
@@ -16,17 +17,14 @@ import qualified Data.List.NonEmpty as NE
 -------------------------------------------------------------------------------
 
 newtype EmailAddress = EmailAddress { getEmailAddress :: Text }
-  deriving (Show)
+  deriving stock (Show)
+  deriving newtype (ToJSON)
 
 fromEmail :: Email -> EmailAddress
 fromEmail = EmailAddress . emailToText
 
 makePrisms ''EmailAddress
 deriveGeneric ''EmailAddress
-
-instance ToJSON EmailAddress where
-    toJSON     = toJSON . getEmailAddress
-    toEncoding = toEncoding . getEmailAddress
 
 instance FromJSON EmailAddress where
     parseJSON = withText "Email address" $ pure . EmailAddress
@@ -58,12 +56,7 @@ nonEmpty = iso NE.nonEmpty (maybe [] NE.toList)
 makeLenses ''Req
 deriveGeneric ''Req
 
-instance ToJSON Req where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
+deriveVia [t| ToJSON Req   `Via` Sopica Req |]
+deriveVia [t| FromJSON Req `Via` Sopica Req |]
 
-instance FromJSON Req where
-    parseJSON = sopParseJSON
-
-instance ToSchema Req where
-    declareNamedSchema = sopDeclareNamedSchema
+instance ToSchema Req where declareNamedSchema = sopDeclareNamedSchema

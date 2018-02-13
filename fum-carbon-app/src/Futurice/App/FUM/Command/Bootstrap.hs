@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.Bootstrap (Bootstrap) where
 
@@ -43,12 +44,8 @@ instance phase ~ 'Input => HasLomake (Bootstrap phase) where
         unitField :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (Bootstrap phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (Bootstrap phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (Bootstrap phase))   `Via` Sopica (Bootstrap phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (Bootstrap phase)) `Via` Sopica (Bootstrap phase) |]
 
 instance Command Bootstrap where
     type CommandTag Bootstrap = "bootstrap"

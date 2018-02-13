@@ -43,16 +43,14 @@ data PowerUser = PowerUser
     , _powerUserEnd            :: !(Maybe Day)
     , _powerUserActive         :: !Text
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''PowerUser
-
-instance NFData PowerUser
+deriveVia [t| ToJSON PowerUser   `Via` Sopica PowerUser |]
+deriveVia [t| FromJSON PowerUser `Via` Sopica PowerUser |]
 instance ToColumns PowerUser
 instance ToSchema PowerUser where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON PowerUser where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
 
 -- instance DefaultOrdered PowerUser where headerOrder = sopHeaderOrder
 -- instance ToNamedRecord PowerUser where toNamedRecord = sopToNamedRecord
@@ -108,7 +106,7 @@ powerUser
 powerUser supervisors fumLogin u = do
     t <- traverse PMQ.team (PM.uTeam u)
     a <- PMQ.enumerationValue (PM.uPassive u) "-"
-    pure $ PowerUser
+    pure PowerUser
         { _powerUserUsername       = fumLogin
         , _powerUserFirst          = PM.uFirstName u
         , _powerUserLast           = PM.uLastName u

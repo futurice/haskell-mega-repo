@@ -31,12 +31,8 @@ instance phase ~ 'Input => HasLomake (ChangeGroupMatch phase) where
         textField "Employee match" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (ChangeGroupMatch phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (ChangeGroupMatch phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (ChangeGroupMatch phase))   `Via` Sopica (ChangeGroupMatch phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (ChangeGroupMatch phase)) `Via` Sopica (ChangeGroupMatch phase) |]
 
 instance Command ChangeGroupMatch where
     type CommandTag ChangeGroupMatch = "change-group-match"
