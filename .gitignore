@@ -20,3 +20,10 @@ repos.txt
 
 Z_dependencies/
 tags
+
+# VIM
+*.swp
+*.swo
+*.swn
+
+\#*\#
