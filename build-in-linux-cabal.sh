@@ -24,7 +24,7 @@ if [ ! -z "$(git status --porcelain)" ]; then
 fi
 
 # GHC version
-GHCVER=${GHCVER-8.0.2}
+GHCVER=${GHCVER-8.2.2}
 export PATH=/opt/ghc/$GHCVER/bin:$PATH
 HC=ghc-$GHCVER
 
