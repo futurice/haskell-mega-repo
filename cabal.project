@@ -1,4 +1,4 @@
-index-state: 2018-01-30T08:29:35Z
+index-state: 2018-02-12T13:03:16Z
 
 constraints:
   github             ^>= 0.18,
@@ -6,23 +6,24 @@ constraints:
   lens               ^>= 4.16,
   log-base           ^>= 0.7.4.0,
   semigroupoids      ^>= 5.2.2,
-  servant-client     ^>= 0.12.0.1,
-  servant-server     ^>= 0.12,
-  servant-swagger-ui ^>= 0.2.4.3.4.0
+  servant-lucid      ^>= 0.8,
+  servant-client     ^>= 0.13,
+  servant-server     ^>= 0.13,
+  servant-swagger-ui ^>= 0.2.5.3.9.1
 
--- https://github.com/brendanhay/amazonka/issues/446
+-- https://github.com/brendanhay/amazonka/pull/448
 constraints:
-  http-conduit <2.3.0
+  conduit < 1.3
 
+-- lens-4.16
 allow-newer:
-  -- waiting for servant-0.13
-  servant:http-types,
-  servant-server:http-types,
-  servant-client:http-types,
-  servant-client-core:http-types,
-
-  -- this might take some time
-  *:lens
+  Chart:lens,
+  Chart-diagrams:lens,
+  diagrams-postscript:lens,
+  diagrams-core:lens,
+  diagrams-lib:lens,
+  diagrams-svg:lens,
+  vec:lens
 
 packages:
   ansi-pretty/

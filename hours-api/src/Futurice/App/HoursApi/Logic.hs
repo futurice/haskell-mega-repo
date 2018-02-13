@@ -41,18 +41,12 @@ projectEndpoint :: H.MonadHours m => m [Project ReportableTask]
 projectEndpoint = reportableProjects
 
 -- | @GET /hours@
-hoursEndpoint :: H.MonadHours m => Maybe Day -> Maybe Day -> m HoursResponse
-hoursEndpoint ma mb = do
-    today <- currentDay
-    let a = fromMaybe today ma
-        b = fromMaybe today mb
-        interval = a ... b
-    hoursResponse interval
+hoursEndpoint :: H.MonadHours m => Day -> Day -> m HoursResponse
+hoursEndpoint a b = hoursResponse (a ... b)
 
 -- | @GET /user@
 userEndpoint :: H.MonadHours m => m User
 userEndpoint = userResponse
-
 
 -- | Create new entry: @POST /entry@
 entryEndpoint :: H.MonadHours m => EntryUpdate -> m EntryUpdateResponse
