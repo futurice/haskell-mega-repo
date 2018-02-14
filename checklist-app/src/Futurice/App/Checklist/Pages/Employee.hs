@@ -175,7 +175,6 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
                     for_ (task ^. taskTags) $ \tag -> do
                         br_ []
                         case tag of
-                           -- temporary solution. Real tag related information will replace these
                           GithubTask -> isInGithubOrganizationText
                           PlanmillTask -> isInPlanmillOrganizationText
                 td_ $ roleHtml mlist (task ^. taskRole)
@@ -207,7 +206,7 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
     planmillEmployee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planEmployees ^.at x)
 
     isInPlanmillOrganizationText :: HtmlT Identity ()
-    isInPlanmillOrganizationText = isInPlanmillOrganizationHtml planmillEmployee
+    isInPlanmillOrganizationText = isInPlanmillOrganizationHtml planmillEmployee (employee ^. employeeHRNumber)
 
     isInGithubOrganizationText :: HtmlT Identity ()
     isInGithubOrganizationText = isInGithubOrganizationHtml personioEmployee gemployees

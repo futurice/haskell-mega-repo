@@ -97,7 +97,10 @@ indexPageImpl ctx fu loc cid tid showDone showOld = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         today <- currentDay
-        pure $ indexPage world today userInfo loc checklist task showDone showOld
+        now <- currentTime
+        (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
+        pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
+        pure $ indexPage world today userInfo gemployees pemployeesmap planEmployees loc checklist task showDone showOld
       where
         checklist = do
             cid' <- cid
