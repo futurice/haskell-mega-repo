@@ -3,27 +3,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Index (indexPage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens
        (filtered, has, hasn't, ifoldMapOf, only, re, united)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import GitHub                    (SimpleUser)
+import Prelude ()
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+
+import qualified FUM.Types.Login as FUM
+
+import qualified Personio
 
 indexPage
     :: World       -- ^ the world
     -> Day         -- ^ today
     -> AuthUser    -- ^ logged in user
+    -> Vector SimpleUser
+    -> Map Personio.EmployeeId Personio.Employee
+    -> HashMap FUM.Login (Personio.Employee, PMUser)
     -> Maybe Office
     -> Maybe Checklist
     -> Maybe Task
     -> Bool  -- ^ done
     -> Bool  -- ^ old
     -> HtmlPage "indexpage"
-indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showOld =
+indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemployees mloc mlist mtask showDone showOld =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeOffice . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
@@ -45,6 +53,12 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
         taskInChecklist task (Just cl) = has (checklistTasks . ix (task ^. identifier)) cl
 
         cutoffDate = addDays (-60) today
+
+        personioEmployee :: Employee -> Maybe Personio.Employee
+        personioEmployee employee = (employee ^. employeePersonio) >>= (\x -> peremployees ^.at x)
+
+        planmillEmployee :: Employee -> Maybe PMUser
+        planmillEmployee employee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planemployees ^.at x)
 
     in checklistPage_ "Employees" authUser $ do
         -- Title
@@ -136,7 +150,14 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeOffice
-                    td_ $ employeeLink employee
+                    td_ $ do
+                        employeeLink employee
+                        mcase mtask "" $ \task -> do
+                            for_ (task ^. taskTags) $ \tag -> do
+                                br_ []
+                                case tag of
+                                  GithubTask -> isInGithubOrganizationHtml (personioEmployee employee) gemployees
+                                  PlanmillTask -> isInPlanmillOrganizationHtml (planmillEmployee employee) (employee ^. employeeHRNumber)
                     td_ $ case tribeOffices (employee ^. employeeTribe) of
                         [off] | off == employee ^. employeeOffice ->
                             toHtml $ employee ^. employeeTribe

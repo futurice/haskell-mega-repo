@@ -274,10 +274,12 @@ checklistNameHtml world mloc i notDone =
     a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
-isInPlanmillOrganizationHtml :: Maybe PMUser -> HtmlT Identity ()
-isInPlanmillOrganizationHtml planmillEmployee = case planmillEmployee of
-                                                  Nothing -> span_ [class_ "info label"] "Person not in Planmill"
-                                                  (Just (PMUser _ passive)) -> span_ [class_ "info label"] $ "Person in Planmill in state " <> (toHtml passive)
+isInPlanmillOrganizationHtml :: Maybe PMUser -> Maybe Int -> HtmlT Identity ()
+isInPlanmillOrganizationHtml planmillEmployee hrnumber = let hntext = maybe "" (\number -> ", Personio HR number: " <> toHtml (show number)) hrnumber in
+                                                           case planmillEmployee of
+                                                             Nothing -> span_ [class_ "info label"] "Person not in Planmill" <> hntext
+                                                             (Just (PMUser _ passive)) ->
+                                                                 span_ [class_ "info label"] $ "In Planmill, state: " <> toHtml passive <> hntext
 
 isInGithubOrganizationHtml :: Maybe P.Employee -> Vector SimpleUser -> HtmlT Identity ()
 isInGithubOrganizationHtml p gs = case p of
