@@ -122,9 +122,7 @@ library
       Futurice.App.Reports.Config
       Futurice.App.Reports.Dashdo
       Futurice.App.Reports.FumFlowdock
-      Futurice.App.Reports.GithubIssues
       Futurice.App.Reports.GithubReposDashdo
-      Futurice.App.Reports.GithubUsers
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
       Futurice.App.Reports.MissingHoursChart

@@ -1,16 +1,12 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
-#endif
 module Futurice.App.Reports (defaultMain) where
 
 import Control.Lens               (_5)
@@ -23,16 +19,11 @@ import Futurice.Prelude
 import Futurice.Servant
 import Generics.SOP               (All, hcmap, hcollapse)
 import GHC.TypeLits               (KnownSymbol, symbolVal)
-import Network.HTTP.Client        (httpLbs, parseUrlThrow, responseBody)
 import Numeric.Interval.NonEmpty  ((...))
 import Prelude ()
 import Servant
 import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
-
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text            as T
-import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
@@ -41,10 +32,6 @@ import Futurice.App.Reports.Config
 import Futurice.App.Reports.Dashdo            (makeDashdoServer)
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
-import Futurice.App.Reports.GithubIssues
-       (GitHubRepo (..), IssueReport, issueReport)
-import Futurice.App.Reports.GithubUsers
-       (GithubUsersReport, githubUsersReport)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
@@ -86,16 +73,6 @@ runIntegrations' (_, mgr, lgr, cfg, _) m = do
 -- Note: we cachedIO with () :: () as a key. It's ok as 'Cache'
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
-
-serveIssues :: Ctx -> IO IssueReport
-serveIssues ctx@(_, mgr, _, cfg, _) = cachedIO' ctx () $ do
-    repos' <- repos mgr (cfgReposUrl cfg)
-    runIntegrations' ctx
-        (issueReport repos')
-
-serveGithubUsersReport :: Ctx -> IO GithubUsersReport
-serveGithubUsersReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx githubUsersReport
 
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
 serveFumFlowdockReport ctx = cachedIO' ctx () $
@@ -142,9 +119,7 @@ cachedIO' (cache, _, logger, _, _) = cachedIO logger cache 600
 -- this is used for api 'server' and pericron
 reports :: NP ReportEndpoint Reports
 reports =
-    ReportEndpoint serveIssues :*
     ReportEndpoint serveFumFlowdockReport :*
-    ReportEndpoint serveGithubUsersReport :*
     ReportEndpoint (serveMissingHoursReport True) :*
     ReportEndpoint (serveMissingHoursReport False) :*
     ReportEndpoint serveTimereportsByTaskReport :*
@@ -232,18 +207,3 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         $ shifted (2 * 60) $ every $ 10 * 60
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
-
--------------------------------------------------------------------------------
--- Temporary
--------------------------------------------------------------------------------
-
--- | We download the list
-repos :: Manager -> Text -> IO [GitHubRepo]
-repos mgr url = do
-    req <- parseUrlThrow $ T.unpack url
-    res <- decodeUtf8Lenient . LBS.toStrict . responseBody <$> httpLbs req mgr
-    return $ mapMaybe f $ T.lines res
-  where
-    f line = case T.words line of
-      [o, n] -> Just $ GitHubRepo (GH.mkOwnerName o) (GH.mkRepoName n)
-      _      -> Nothing
