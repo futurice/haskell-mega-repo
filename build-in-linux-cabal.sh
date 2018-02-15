@@ -23,6 +23,19 @@ if [ ! -z "$(git status --porcelain)" ]; then
     exit 1
 fi
 
+# Check that we have proper data files in place
+#
+# To update:
+#
+# $ sha256sum futurice-constants/constants.json futurice-tribes/tribes.json hc-app/early-caring.template > data.sha256sums 
+#
+if sha256sum -c data.sha256sums; then
+    echo "Data files OK"
+else
+    echo "Invalid datafiles"
+    exit 1
+fi
+
 # GHC version
 GHCVER=${GHCVER-8.2.2}
 export PATH=/opt/ghc/$GHCVER/bin:$PATH
