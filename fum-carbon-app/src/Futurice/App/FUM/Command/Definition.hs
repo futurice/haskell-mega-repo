@@ -14,12 +14,13 @@ module Futurice.App.FUM.Command.Definition (
     ) where
 
 import Futurice.Generics
+import Futurice.Generics.SOP     (strippedFieldNames)
 import Futurice.Lomake
-import Futurice.Lucid.Foundation  (HtmlT)
+import Futurice.Lucid.Foundation (HtmlT)
 import Futurice.Prelude
-import Futurice.Servant           (SSOUser)
-import Futurice.Stricter (StricterT)
-import GHC.TypeLits               (KnownSymbol, Symbol, symbolVal)
+import Futurice.Servant          (SSOUser)
+import Futurice.Stricter         (StricterT)
+import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Prelude ()
 import Servant.API
 

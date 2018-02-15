@@ -81,7 +81,8 @@ data Balance = Balance
     { _balanceHours        :: !(NDT 'Hours Centi)
     , _balanceMissingHours :: !(NDT 'Hours Centi)
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 instance ToColumns Balance where
     type Columns Balance =
@@ -95,30 +96,21 @@ instance ToColumns Balance where
 
 makeLenses ''Balance
 deriveGeneric ''Balance
-
-instance NFData Balance
-instance ToJSON Balance where
-    toJSON     = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON Balance where parseJSON = sopParseJSON
+deriveVia [t| ToJSON Balance   `Via` Sopica Balance |]
+deriveVia [t| FromJSON Balance `Via` Sopica Balance |]
 instance ToSchema Balance where declareNamedSchema = sopDeclareNamedSchema
 
 
 newtype Supervisor = Supervisor Text
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving newtype (NFData, ToJSON, FromJSON)
 
 deriveGeneric ''Supervisor
 
 instance ToColumns Supervisor where
     columnNames _ = K "supervisor" :* Nil
 
-instance NFData Supervisor
-instance ToJSON Supervisor where
-    toJSON (Supervisor t) = toJSON t
-    toEncoding (Supervisor t) = toEncoding t
-instance FromJSON Supervisor where
-    parseJSON = fmap Supervisor . parseJSON
-instance ToSchema Supervisor where declareNamedSchema = sopDeclareNamedSchema
+instance ToSchema Supervisor where declareNamedSchema = newtypeDeclareNamedSchema
 
 -------------------------------------------------------------------------------
 -- Report

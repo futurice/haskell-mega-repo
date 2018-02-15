@@ -23,6 +23,9 @@ source-repository head
 library
   hs-source-dirs:
       src
+  default-extensions:
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.11

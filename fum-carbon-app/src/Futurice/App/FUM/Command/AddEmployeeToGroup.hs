@@ -30,12 +30,8 @@ instance phase ~ 'Input => HasLomake (AddEmployeeToGroup phase) where
         dynEnumField "Employee" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (AddEmployeeToGroup phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (AddEmployeeToGroup phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEmployeeToGroup phase))   `Via` Sopica (AddEmployeeToGroup phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEmployeeToGroup phase)) `Via` Sopica (AddEmployeeToGroup phase) |]
 
 instance Command AddEmployeeToGroup where
     type CommandTag AddEmployeeToGroup = "add-employee-to-group"

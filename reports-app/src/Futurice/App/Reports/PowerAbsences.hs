@@ -53,16 +53,14 @@ data PowerAbsence = PowerAbsence
     , _powerAbsenceCapacities   :: !(Map Day :$ NDT 'Hours Centi)
     , _powerAbsenceBusinessDays :: !(NDT 'Days Int)
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 makeLenses ''PowerAbsence
 deriveGeneric ''PowerAbsence
-
-instance NFData PowerAbsence
+deriveVia [t| ToJSON PowerAbsence   `Via` Sopica PowerAbsence |]
+deriveVia [t| FromJSON PowerAbsence `Via` Sopica PowerAbsence |]
 instance ToSchema PowerAbsence where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON PowerAbsence where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
 
 instance ToColumns PowerAbsence where
     type Columns PowerAbsence =

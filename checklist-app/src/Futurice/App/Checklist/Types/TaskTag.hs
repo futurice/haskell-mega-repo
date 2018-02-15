@@ -1,15 +1,26 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
-module Futurice.App.Checklist.Types.TaskTag where
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
+module Futurice.App.Checklist.Types.TaskTag (
+    TaskTag (..),
+    -- * Prisms
+    _TaskTag,
+    _GithubTask,
+    _PlanmillTask,
+    -- * Conversion functions
+    taskTagToText,
+    taskTagFromText,
+    ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
-import Futurice.Lucid.Foundation (ToHtml (..))
 import Futurice.Prelude
 import Prelude ()
+
+import qualified Data.Csv as Csv
 
 data TaskTag
     = GithubTask    -- ^ This task relates to Github
@@ -20,51 +31,26 @@ makePrisms ''TaskTag
 deriveGeneric ''TaskTag
 deriveLift ''TaskTag
 
-ei :: EnumInstances TaskTag
-ei = sopEnumInstances $
-    K "github" :*
-    K "planmill" :*
-    Nil
-
--------------------------------------------------------------------------------
--- Boilerplate
--------------------------------------------------------------------------------
+instance TextEnum TaskTag where
+    type TextEnumNames TaskTag = '["GitHub", "PlanMill"]
 
 taskTagToText :: TaskTag -> Text
-taskTagToText = enumToText ei
+taskTagToText = enumToText
 
 taskTagFromText :: Text -> Maybe TaskTag
-taskTagFromText = enumFromText ei
+taskTagFromText = enumFromText
 
 _TaskTag :: Prism' Text TaskTag
-_TaskTag = enumPrism ei
+_TaskTag = enumPrism
 
-instance NFData TaskTag
+deriveVia [t| Arbitrary TaskTag       `Via` Sopica TaskTag  |]
+deriveVia [t| ToJSON TaskTag          `Via` Enumica TaskTag |]
+deriveVia [t| FromJSON TaskTag        `Via` Enumica TaskTag |]
+deriveVia [t| ToHttpApiData TaskTag   `Via` Enumica TaskTag |]
+deriveVia [t| FromHttpApiData TaskTag `Via` Enumica TaskTag |]
+deriveVia [t| Csv.ToField TaskTag     `Via` Enumica TaskTag |]
+deriveVia [t| Csv.FromField TaskTag   `Via` Enumica TaskTag |]
+deriveVia [t| ToHtml TaskTag          `Via` Enumica TaskTag |]
 
-instance Arbitrary TaskTag where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
--- This isn't copy paste
-instance ToHtml TaskTag where
-    toHtmlRaw = toHtml
-    toHtml GithubTask   = "GitHub"
-    toHtml PlanmillTask = "PlanMill"
-
-instance ToParamSchema TaskTag where
-    toParamSchema = enumToParamSchema ei
-
-instance ToSchema TaskTag where
-    declareNamedSchema = enumDeclareNamedSchema ei
-
-instance ToJSON TaskTag where
-    toJSON = enumToJSON ei
-
-instance FromJSON TaskTag where
-    parseJSON = enumParseJSON ei
-
-instance FromHttpApiData TaskTag where
-    parseUrlPiece = enumParseUrlPiece ei
-
-instance ToHttpApiData TaskTag where
-    toUrlPiece = enumToUrlPiece ei
+instance ToParamSchema TaskTag where toParamSchema = enumToParamSchema
+instance ToSchema TaskTag where declareNamedSchema = enumDeclareNamedSchema

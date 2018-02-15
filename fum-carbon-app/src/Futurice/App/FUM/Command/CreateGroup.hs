@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.CreateGroup (CreateGroup(..)) where
 
@@ -36,12 +37,8 @@ instance phase ~ 'Input => HasLomake (CreateGroup phase) where
         -- todo description
         Nil
 
-instance phase ~ 'Internal => ToJSON (CreateGroup phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (CreateGroup phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (CreateGroup phase))   `Via` Sopica (CreateGroup phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (CreateGroup phase)) `Via` Sopica (CreateGroup phase) |]
 
 instance Command CreateGroup where
     type CommandTag CreateGroup = "create-group"

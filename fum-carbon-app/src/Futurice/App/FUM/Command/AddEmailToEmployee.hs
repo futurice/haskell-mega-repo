@@ -31,12 +31,8 @@ instance phase ~ 'Input => HasLomake (AddEmailToEmployee phase) where
         textFieldWithRegexp "Email address" emailKleene :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (AddEmailToEmployee phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (AddEmailToEmployee phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEmailToEmployee phase))   `Via` Sopica (AddEmailToEmployee phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEmailToEmployee phase)) `Via` Sopica (AddEmailToEmployee phase) |]
 
 instance Command AddEmailToEmployee where
     type CommandTag AddEmailToEmployee = "add-email-to-employee"

@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.CreateEmployee (CreateEmployee (..)) where
 
@@ -40,12 +41,8 @@ instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
         textFieldWithRegexp "email" emailKleene :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (CreateEmployee phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (CreateEmployee phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (CreateEmployee phase))   `Via` Sopica (CreateEmployee phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (CreateEmployee phase)) `Via` Sopica (CreateEmployee phase) |]
 
 instance Command CreateEmployee where
     type CommandTag CreateEmployee = "create-employee"

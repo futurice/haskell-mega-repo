@@ -1,69 +1,59 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.Checklist.Types.TaskRole where
 
 import Control.Lens      (Index, IxValue, Ixed (..))
-import Data.Aeson.Compat (Value (String), withText)
 import Data.Distributive (Distributive (..))
 import Data.Functor.Rep  (Representable (..), distributeRep, liftR2, pureRep)
-import Data.Swagger      (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
+import qualified Data.Csv as Csv
 
 -- | States of the tasks
 data TaskRole
     = TaskRoleIT
     | TaskRoleHR
     | TaskRoleSupervisor
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving anyclass (NFData, Binary)
 
 makePrisms ''TaskRole
 deriveGeneric ''TaskRole
+deriveLift ''TaskRole
 
-instance NFData TaskRole
-
-instance Arbitrary TaskRole where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
+instance TextEnum TaskRole where
+    type TextEnumNames TaskRole =
+        '["IT"
+        , "HR"
+        , "Supervisor"
+        ]
 
 taskRoleToText :: TaskRole -> Text
-taskRoleToText TaskRoleIT         = "IT"
-taskRoleToText TaskRoleHR         = "HR"
-taskRoleToText TaskRoleSupervisor = "Supervisor"
+taskRoleToText = enumToText
 
 taskRoleFromText :: Text -> Maybe TaskRole
-taskRoleFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $ map (\x -> (T.toLower $ taskRoleToText x, x)) [minBound .. maxBound]
+taskRoleFromText = enumFromText
 
 _TaskRole :: Prism' Text TaskRole
-_TaskRole = prism' taskRoleToText taskRoleFromText
+_TaskRole = enumPrism
 
-instance ToParamSchema TaskRole where
-    toParamSchema _ = mempty
-        & type_ .~ SwaggerString
-        & enum_ ?~ (String . taskRoleToText <$> [minBound .. maxBound])
+deriveVia [t| Arbitrary TaskRole       `Via` Sopica TaskRole  |]
+deriveVia [t| ToJSON TaskRole          `Via` Enumica TaskRole |]
+deriveVia [t| FromJSON TaskRole        `Via` Enumica TaskRole |]
+deriveVia [t| ToHttpApiData TaskRole   `Via` Enumica TaskRole |]
+deriveVia [t| FromHttpApiData TaskRole `Via` Enumica TaskRole |]
+deriveVia [t| Csv.ToField TaskRole     `Via` Enumica TaskRole |]
+deriveVia [t| Csv.FromField TaskRole   `Via` Enumica TaskRole |]
+deriveVia [t| ToHtml TaskRole          `Via` Enumica TaskRole |]
 
-instance ToJSON TaskRole where
-    toJSON = String . taskRoleToText
-
-instance FromJSON TaskRole where
-    parseJSON = withText "TaskRole" $ \t ->
-        maybe (fail $ "invalid taskRole " <> t ^. unpacked) pure $ t ^? _TaskRole
-
-instance FromHttpApiData TaskRole where
-    parseUrlPiece t =
-        maybe (Left $ "invalid taskRole " <> t) Right $ t ^? _TaskRole
-
-instance ToHttpApiData TaskRole where
-    toUrlPiece = taskRoleToText
+instance ToParamSchema TaskRole where toParamSchema = enumToParamSchema
+instance ToSchema TaskRole where declareNamedSchema = enumDeclareNamedSchema
 
 -------------------------------------------------------------------------------
 -- PerTaskRole container

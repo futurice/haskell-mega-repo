@@ -20,16 +20,11 @@ data Employee = Employee
     , employeeTribe    :: !Tribe
     , employeeContract :: !Text
     }
- deriving (Eq, Show, Typeable, Generic)
-
-instance NFData Employee
+  deriving stock (Eq, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''Employee
-
-instance ToColumns Employee
-
+deriving anyclass instance  ToColumns Employee
 instance ToSchema Employee where declareNamedSchema = sopDeclareNamedSchema
-instance FromJSON Employee where parseJSON = sopParseJSON
-instance ToJSON Employee where
-    toJSON     = sopToJSON
-    toEncoding = sopToEncoding
+deriveVia [t| ToJSON Employee   `Via` Sopica Employee |]
+deriveVia [t| FromJSON Employee `Via` Sopica Employee |]

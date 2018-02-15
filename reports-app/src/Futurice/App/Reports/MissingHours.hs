@@ -51,20 +51,16 @@ import qualified PlanMill.Queries    as PMQ
 -------------------------------------------------------------------------------
 
 data MissingHour = MissingHour
-   { _missingHourDay      :: !Day
-   , _missingHourCapacity :: !(NDT 'Hours Centi)
-   }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+    { _missingHourDay      :: !Day
+    , _missingHourCapacity :: !(NDT 'Hours Centi)
+    }
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 makeLenses ''MissingHour
 deriveGeneric ''MissingHour
-
-instance NFData MissingHour
-
-instance ToJSON MissingHour where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON MissingHour where parseJSON = sopParseJSON
+deriveVia [t| ToJSON MissingHour   `Via` Sopica MissingHour |]
+deriveVia [t| FromJSON MissingHour `Via` Sopica MissingHour |]
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns MissingHour where
@@ -89,17 +85,13 @@ data MissingHoursParams = MissingHoursParams
     , _mhpToDay        :: !Day
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''MissingHoursParams
 makeLenses ''MissingHoursParams
-
-instance NFData MissingHoursParams
+deriveVia [t| ToJSON MissingHoursParams   `Via` Sopica MissingHoursParams |]
+deriveVia [t| FromJSON MissingHoursParams `Via` Sopica MissingHoursParams |]
 instance ToSchema MissingHoursParams where declareNamedSchema = sopDeclareNamedSchema
-instance ToJSON MissingHoursParams where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON MissingHoursParams where
-    parseJSON = sopParseJSON
 
 instance ToHtml MissingHoursParams where
     toHtmlRaw = toHtml

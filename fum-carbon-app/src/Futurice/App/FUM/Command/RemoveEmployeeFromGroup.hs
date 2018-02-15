@@ -30,12 +30,8 @@ instance phase ~ 'Input => HasLomake (RemoveEmployeeFromGroup phase) where
         dynEnumField "Employee" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (RemoveEmployeeFromGroup phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (RemoveEmployeeFromGroup phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEmployeeFromGroup phase))   `Via` Sopica (RemoveEmployeeFromGroup phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEmployeeFromGroup phase)) `Via` Sopica (RemoveEmployeeFromGroup phase) |]
 
 instance Command RemoveEmployeeFromGroup where
     type CommandTag RemoveEmployeeFromGroup = "remove-employee-from-group"

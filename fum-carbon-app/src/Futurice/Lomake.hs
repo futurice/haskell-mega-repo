@@ -4,8 +4,8 @@
 {-# LANGUAGE OverloadedStrings       #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TypeFamilies            #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE UndecidableInstances    #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 -- | Simple but awesome form library.
 --
 -- /TODO:/ mode to @futurice-prelude@ after stabilised.
@@ -21,6 +21,7 @@ import Data.Maybe                (isNothing)
 import Data.Monoid               (Sum (..))
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
+import Futurice.Generics.SOP     (strippedFieldNames)
 import Futurice.List             (UnSingleton)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude

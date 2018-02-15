@@ -3,13 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module Futurice.Lucid.Select2 (
     Select2Data (..),
     Select2Result (..),
     ) where
 
 import Data.Aeson        (object, pairs, (.=))
-import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -23,10 +23,9 @@ data Select2Data = Select2Data
 
 deriveGeneric ''Select2Data
 
-instance ToJSON Select2Data where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON Select2Data where parseJSON          = sopParseJSON
+deriveVia [t| ToJSON Select2Data   `Via` Sopica Select2Data |]
+deriveVia [t| FromJSON Select2Data `Via` Sopica Select2Data |]
+
 instance ToSchema Select2Data where declareNamedSchema = sopDeclareNamedSchema
 
 -- | See <https://select2.org/data-sources/formats>.
@@ -40,5 +39,4 @@ instance ToJSON Select2Result where
     toEncoding (Select2Result xs) = pairs $ "results" .= xs
 
 -- | TODO: incorrect
-instance ToSchema Select2Result where
-    declareNamedSchema _ = return $ NamedSchema (Just "Select2 Result") mempty
+instance ToSchema Select2Result where declareNamedSchema = emptyDeclareNamedSchema

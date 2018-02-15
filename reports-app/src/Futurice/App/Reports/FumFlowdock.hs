@@ -39,36 +39,13 @@ data FlowdockUser = FlowdockUser
     , _fdNick      :: !Text
     , _fdUserId    :: !FD.UserId
     }
-    deriving (Eq, Ord, Show, Typeable, Generic)
-
-data FUMUser = FUMUser
-    { _fumUserName    :: !Text
-    , _fumUserLogin   :: !FUM.Login
-    , _fumFlowdockUid :: !(Maybe FD.UserId)
-    }
-    deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 --makeLenses ''FlowdockUser
---makeLenses ''FUMUser
-
 deriveGeneric ''FlowdockUser
-deriveGeneric ''FUMUser
-
-instance NFData FlowdockUser
-instance NFData FUMUser
-
-instance ToJSON FlowdockUser where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance ToJSON FUMUser where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance ToSchema FlowdockUser where
-    declareNamedSchema = sopDeclareNamedSchema
-instance ToSchema FUMUser where
-    declareNamedSchema = sopDeclareNamedSchema
+deriveVia [t| ToJSON FlowdockUser `Via` Sopica FlowdockUser |]
+instance ToSchema FlowdockUser where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns FlowdockUser where
     columnNames _ =
@@ -76,6 +53,20 @@ instance ToColumns FlowdockUser where
         K "fd-nick" :*
         K "fd-uid":*
         Nil
+
+
+data FUMUser = FUMUser
+    { _fumUserName    :: !Text
+    , _fumUserLogin   :: !FUM.Login
+    , _fumFlowdockUid :: !(Maybe FD.UserId)
+    }
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
+
+--makeLenses ''FUMUser
+deriveGeneric ''FUMUser
+deriveVia [t| ToJSON FUMUser      `Via` Sopica FUMUser |]
+instance ToSchema FUMUser where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns FUMUser where
     columnNames _ =
