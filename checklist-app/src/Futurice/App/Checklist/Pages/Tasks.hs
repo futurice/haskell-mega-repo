@@ -88,11 +88,11 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                             "/"
                             toHtml (show j)
                             " = "
-                            if j == 0 then "0" else toHtml (printf ("%.01f") (100 * fromIntegral i / fromIntegral j :: Double) :: String)
+                            if j == 0 then "0" else toHtml (printf "%.01f" (100 * fromIntegral i / fromIntegral j :: Double) :: String)
                             "%"
                 td_ $ forWith_
                     (br_ [])
-                    (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l))
+                    (world ^.. worldLists . folded . filtered (has (checklistTasks . ix tid)))
                     checklistLink
  where
   countUsers AnnTaskItemDone {} = Counter 1 1

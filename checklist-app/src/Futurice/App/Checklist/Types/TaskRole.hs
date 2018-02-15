@@ -72,7 +72,7 @@ type instance IxValue (PerTaskRole a) = a
 instance Ixed (PerTaskRole a) where
     ix TaskRoleIT f (PerTaskRole x y z) = (\a -> PerTaskRole a y z) <$> f x
     ix TaskRoleHR f (PerTaskRole x y z) = (\a -> PerTaskRole x a z) <$> f y
-    ix TaskRoleSupervisor f (PerTaskRole x y z) = (\a -> PerTaskRole x y a) <$> f z
+    ix TaskRoleSupervisor f (PerTaskRole x y z) = PerTaskRole x y <$> f z
 
 instance Semigroup a => Semigroup (PerTaskRole a) where
     (<>) = liftR2 (<>)

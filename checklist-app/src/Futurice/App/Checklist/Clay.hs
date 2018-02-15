@@ -3,7 +3,7 @@
 module Futurice.App.Checklist.Clay where
 
 import Prelude ()
-import Futurice.Prelude          hiding ((&), (**))
+import Futurice.Prelude          hiding ((&))
 import Clay
 import Futurice.Lucid.Foundation
        (PageParams, defPageParams, embedJS, pageCss, pageJQuery,
