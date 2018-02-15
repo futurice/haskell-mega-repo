@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections   #-}
 module Futurice.App.Reports.MissingHoursChart (
     MissingHoursChartData,
     missingHoursChartData,
