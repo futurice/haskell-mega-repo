@@ -13,7 +13,7 @@ createChecklistPage
     :: World
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "create-checklist"
-createChecklistPage _world authUser = checklistPage_ ("Create checklist") authUser $ do
+createChecklistPage _world authUser = checklistPage_ "Create checklist" authUser $ do
     -- Title
     header "Create checklist" []
 
