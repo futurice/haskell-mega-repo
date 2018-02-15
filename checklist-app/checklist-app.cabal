@@ -48,6 +48,7 @@ library
     , deepseq
     , distributive
     , env-config
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation

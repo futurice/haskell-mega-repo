@@ -19,7 +19,8 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified Personio as P
+import qualified Chat.Flowdock.REST as FD
+import qualified Personio           as P
 
 -- |
 --
@@ -64,6 +65,17 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             , data_ "futu-employee-id" $ employee ^. identifierText
             ]
             "Archive employee"
+
+    -- Personio info
+    for_ personioEmployee $ \p -> fullRow_ $ table_ $ tbody_ $ do
+        -- TODO: this could be shared with fum-carbon
+        vertRow_ "Office"   $ toHtml $ p ^. P.employeeOffice
+        vertRow_ "Tribe"    $ toHtml $ p ^. P.employeeTribe
+        vertRow_ "Phone"    $ traverse_ phoneToHtml $ p ^. P.employeeWorkPhone
+        vertRow_ "Email"    $ traverse_ toHtml $ p ^. P.employeeEmail
+        vertRow_ "Int/Ext"  $ traverse_ toHtml $ p ^. P.employeeEmploymentType
+        vertRow_ "GitHub"   $ traverse_ toHtml $ p ^. P.employeeGithub
+        vertRow_ "Flowdock" $ traverse_ fdToHtml $ p ^. P.employeeFlowdock
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
@@ -110,7 +122,7 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             "Info"
             textarea_ [ futuId_ "employee-info", rows_ "5" ] $ toHtml $ employee ^. employeeInfo
         row_ $ large_ 12 $ label_ $ do
-            "Phone "
+            "Private Phone "
             hasDifferentPersonioPhone personioEmployee (employee ^. employeePhone)
             -- TODO: maybe it's simpler to just define empty value
             input_ $ [ futuId_ "employee-phone", type_ "tel" ] ++
@@ -190,7 +202,7 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             Nothing                      -> Nothing
             Just P.PermanentAllIn -> Just ContractTypePermanent
             Just P.FixedTerm      -> Just ContractTypeFixedTerm
-            Just P.Permanent      -> Nothing -- TODO!
+            Just P.Permanent      -> Nothing -- TODO! ambigious choice, cann't pick one.
 
     hasDifferentPersonioInfo :: Maybe Text -> Maybe Text -> Text -> HtmlT Identity ()
     hasDifferentPersonioInfo info Nothing t = wrapToWarningLabel $ personioText info t
@@ -220,3 +232,11 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
 
 encodeToText :: ToJSON a => a -> Text
 encodeToText = view strict . encodeToLazyText
+
+phoneToHtml :: Monad m => Text -> HtmlT m ()
+phoneToHtml t = a_ [ href_ $ "tel://" <> t ] $ toHtml t
+
+fdToHtml :: Monad m => FD.Identifier Word64 res -> HtmlT m ()
+fdToHtml i = a_ [ href_ $ "https://www.flowdock.com/app/private/" <> t ] $ toHtml t
+  where
+    t = textShow (FD.getIdentifier i)
