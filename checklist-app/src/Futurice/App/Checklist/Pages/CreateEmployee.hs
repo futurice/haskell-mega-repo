@@ -36,7 +36,7 @@ data Tmpl = Tmpl
 
 employeeToTemplate :: Employee -> Tmpl
 employeeToTemplate e = Tmpl
-    { tmplPersonioId   = Nothing
+    { tmplPersonioId   = e ^. employeePersonio
     , tmplFirst        = e ^. employeeFirstName
     , tmplLast         = e ^. employeeLastName
     , tmplContractType = Just $ e ^. employeeContractType
