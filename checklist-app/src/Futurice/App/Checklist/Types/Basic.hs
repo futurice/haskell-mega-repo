@@ -187,14 +187,6 @@ deriveGeneric ''Task
 deriveGeneric ''CheckResult
 deriveGeneric ''Checklist
 
-instance Arbitrary Employee where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance Arbitrary Checklist where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance Arbitrary Task where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
+deriveVia [t| Arbitrary Employee  `Via` Sopica Employee |]
+deriveVia [t| Arbitrary Checklist `Via` Sopica Checklist |]
+deriveVia [t| Arbitrary Task      `Via` Sopica Task |]

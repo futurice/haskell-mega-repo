@@ -1,9 +1,10 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ImpredicativeTypes    #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Personio.Types.Status (
     Status(..),
     statusToText,
@@ -12,10 +13,10 @@ module Personio.Types.Status (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
 import Futurice.Prelude
-import Lucid                  (ToHtml (..))
 import Prelude ()
+
+import qualified Data.Csv as Csv
 
 -- | Employee contractual status with initial state being Onboarding
 -- Personio changes status to Inactive on reaching Employee.endDate
@@ -24,58 +25,37 @@ data Status
     | Inactive
     | Onboarding
     | Leave
-    deriving (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
+  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
+  deriving anyclass (NFData, Binary)
 
-makePrisms ''Status
+-- makePrisms ''Status
 deriveGeneric ''Status
 deriveLift ''Status
 
-ei :: EnumInstances Status
-ei = sopEnumInstances $
-    K "Active" :*
-    K "Inactive" :*
-    K "Onboarding" :*
-    K "Leave" :*
-    Nil
+instance TextEnum Status where
+    type TextEnumNames Status = '["Active", "Inactive", "Onboarding", "Leave"]
 
 -------------------------------------------------------------------------------
 -- Boilerplate
 -------------------------------------------------------------------------------
 
 statusToText :: Status -> Text
-statusToText = enumToText ei
+statusToText = enumToText
 
 statusFromText :: Text -> Maybe Status
-statusFromText = enumFromText ei
+statusFromText = enumFromText
 
 _Status :: Prism' Text Status
-_Status = enumPrism ei
+_Status = enumPrism
 
-instance NFData Status
+deriveVia [t| Arbitrary Status       `Via` Sopica Status  |]
+deriveVia [t| ToJSON Status          `Via` Enumica Status |]
+deriveVia [t| FromJSON Status        `Via` Enumica Status |]
+deriveVia [t| ToHttpApiData Status   `Via` Enumica Status |]
+deriveVia [t| FromHttpApiData Status `Via` Enumica Status |]
+deriveVia [t| Csv.ToField Status     `Via` Enumica Status |]
+deriveVia [t| Csv.FromField Status   `Via` Enumica Status |]
+deriveVia [t| ToHtml Status          `Via` Enumica Status |]
 
-instance Arbitrary Status where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToHtml Status where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . enumToText ei
-
-instance ToParamSchema Status where
-    toParamSchema = enumToParamSchema ei
-
-instance ToSchema Status where
-    declareNamedSchema = enumDeclareNamedSchema ei
-
-instance ToJSON Status where
-    toJSON = enumToJSON ei
-
-instance FromJSON Status where
-    parseJSON = enumParseJSON ei
-
-instance FromHttpApiData Status where
-    parseUrlPiece = enumParseUrlPiece ei
-
-instance ToHttpApiData Status where
-    toUrlPiece = enumToUrlPiece ei
-
+instance ToParamSchema Status where toParamSchema = enumToParamSchema
+instance ToSchema Status where declareNamedSchema = enumDeclareNamedSchema

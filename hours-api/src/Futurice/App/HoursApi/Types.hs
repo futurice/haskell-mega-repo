@@ -178,6 +178,8 @@ data HoursResponse = HoursResponse
 -- Generics and Lenses
 -------------------------------------------------------------------------------
 
+deriveGeneric ''EntryType
+
 makeLenses ''Project
 deriveGeneric ''Project
 
@@ -274,108 +276,60 @@ latestEntryFromEntry e = LatestEntry
 -- Instances
 -------------------------------------------------------------------------------
 
+instance TextEnum EntryType where
+    type TextEnumNames EntryType = '["billable", "non-billable", "absence"]
+
 instance Arbitrary EntryType where
     arbitrary = arbitraryBoundedEnum
     shrink EntryTypeBillable = []
     shrink et                = [ EntryTypeBillable .. pred et ]
 
 entryTypeText :: EntryType -> Text
-entryTypeText EntryTypeBillable    = "billable"
-entryTypeText EntryTypeNotBillable = "non-billable"
-entryTypeText EntryTypeAbsence     = "absence"
+entryTypeText = enumToText
 
-instance ToJSON EntryType where
-    toJSON = String . entryTypeText
+deriveVia [t| ToJSON EntryType   `Via` Enumica EntryType |]
+deriveVia [t| FromJSON EntryType `Via` Enumica EntryType |]
+instance ToParamSchema EntryType where toParamSchema = enumToParamSchema
+instance ToSchema EntryType where declareNamedSchema = enumDeclareNamedSchema
 
-instance FromJSON EntryType where
-    parseJSON = withText "EntryType" $ \t -> maybe
-        (fail $ "Invalid entry type: " <> t ^. unpacked)
-        pure
-        (lookup t m)
-      where
-        m = [ (entryTypeText et, et) | et <- [ minBound .. maxBound ] ]
-
-instance ToSchema EntryType where
-    declareNamedSchema _ = pure $ NamedSchema (Just "EntryType") mempty
-
-instance Arbitrary task => Arbitrary (Project task) where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON task => ToJSON (Project task) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON task => FromJSON (Project task) where parseJSON = sopParseJSON
+deriveVia [t| forall task. (Arbitrary task => Arbitrary (Project task)) `Via` Sopica (Project task) |]
+deriveVia [t| forall task. (ToJSON task => ToJSON (Project task))       `Via` Sopica (Project task) |]
+deriveVia [t| forall task. (FromJSON task => FromJSON (Project task))   `Via` Sopica (Project task) |]
 instance ToSchema task => ToSchema (Project task) where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary ReportableTask where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON ReportableTask where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON ReportableTask where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary ReportableTask `Via` Sopica ReportableTask |]
+deriveVia [t| ToJSON ReportableTask    `Via` Sopica ReportableTask |]
+deriveVia [t| FromJSON ReportableTask  `Via` Sopica ReportableTask |]
 instance ToSchema ReportableTask where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary MarkedTask where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON MarkedTask where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON MarkedTask where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary MarkedTask `Via` Sopica MarkedTask |]
+deriveVia [t| ToJSON MarkedTask    `Via` Sopica MarkedTask |]
+deriveVia [t| FromJSON MarkedTask  `Via` Sopica MarkedTask |]
 instance ToSchema MarkedTask where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary LatestEntry where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON LatestEntry where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON LatestEntry where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary LatestEntry `Via` Sopica LatestEntry |]
+deriveVia [t| ToJSON LatestEntry    `Via` Sopica LatestEntry |]
+deriveVia [t| FromJSON LatestEntry  `Via` Sopica LatestEntry |]
 instance ToSchema LatestEntry where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary Entry where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON Entry where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON Entry where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary Entry `Via` Sopica Entry |]
+deriveVia [t| ToJSON Entry    `Via` Sopica Entry |]
+deriveVia [t| FromJSON Entry  `Via` Sopica Entry |]
 instance ToSchema Entry where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary EntryUpdate where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON EntryUpdate where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON EntryUpdate where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary EntryUpdate `Via` Sopica EntryUpdate |]
+deriveVia [t| ToJSON EntryUpdate    `Via` Sopica EntryUpdate |]
+deriveVia [t| FromJSON EntryUpdate  `Via` Sopica EntryUpdate |]
 instance ToSchema EntryUpdate where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary EntryUpdateResponse where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON EntryUpdateResponse where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON EntryUpdateResponse where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary EntryUpdateResponse `Via` Sopica EntryUpdateResponse |]
+deriveVia [t| ToJSON EntryUpdateResponse    `Via` Sopica EntryUpdateResponse |]
+deriveVia [t| FromJSON EntryUpdateResponse  `Via` Sopica EntryUpdateResponse |]
 instance ToSchema EntryUpdateResponse where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary User where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON User where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON User where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary User `Via` Sopica User |]
+deriveVia [t| ToJSON User    `Via` Sopica User |]
+deriveVia [t| FromJSON User  `Via` Sopica User |]
 instance ToSchema User where declareNamedSchema = sopDeclareNamedSchema
 
 instance Arbitrary DayType where
@@ -397,32 +351,17 @@ instance FromJSON DayType where
 instance ToSchema DayType where
     declareNamedSchema _ = pure $ NamedSchema (Just "Day type") mempty
 
-instance Arbitrary HoursDay where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON HoursDay where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON HoursDay where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary HoursDay `Via` Sopica HoursDay |]
+deriveVia [t| ToJSON HoursDay    `Via` Sopica HoursDay |]
+deriveVia [t| FromJSON HoursDay  `Via` Sopica HoursDay |]
 instance ToSchema HoursDay where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary HoursMonth where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON HoursMonth where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON HoursMonth where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary HoursMonth `Via` Sopica HoursMonth |]
+deriveVia [t| ToJSON HoursMonth    `Via` Sopica HoursMonth |]
+deriveVia [t| FromJSON HoursMonth  `Via` Sopica HoursMonth |]
 instance ToSchema HoursMonth where declareNamedSchema = sopDeclareNamedSchema
 
-instance Arbitrary HoursResponse where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToJSON HoursResponse where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-instance FromJSON HoursResponse where parseJSON = sopParseJSON
+deriveVia [t| Arbitrary HoursResponse `Via` Sopica HoursResponse |]
+deriveVia [t| ToJSON HoursResponse    `Via` Sopica HoursResponse |]
+deriveVia [t| FromJSON HoursResponse  `Via` Sopica HoursResponse |]
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema

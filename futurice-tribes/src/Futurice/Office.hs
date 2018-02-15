@@ -1,8 +1,10 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.Office (
     Office (..),
     officeToText,
@@ -12,9 +14,7 @@ module Futurice.Office (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
 import Futurice.Prelude
-import Lucid                  (ToHtml (..))
 import Prelude ()
 
 import qualified Data.Csv as Csv
@@ -27,68 +27,45 @@ data Office
     | OffStockholm
     | OffMunich
     | OffOther
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving anyclass (NFData, Binary)
 
--- makeLenses ''Office -- we don't need prisms atm
+-- makePrism ''Office
 deriveGeneric ''Office
--- TODO: remove when we drop support for GHC-7.10
 deriveLift ''Office
 
-ei :: EnumInstances Office
-ei = sopEnumInstances $
-    K "Helsinki" :*
-    K "Tampere" :*
-    K "Berlin" :*
-    K "London" :*
-    K "Stockholm" :*
-    K "Munich" :*
-    K "Other" :*
-    Nil
+instance TextEnum Office where
+    type TextEnumNames Office =
+        '["Helsinki"
+        , "Tampere"
+        , "Berlin"
+        , "London"
+        , "Stockholm"
+        , "Munich"
+        , "Other"
+        ]
 
 -------------------------------------------------------------------------------
 -- Boilerplate
 -------------------------------------------------------------------------------
 
 officeToText :: Office -> Text
-officeToText = enumToText ei
+officeToText = enumToText
 
 officeFromText :: Text -> Maybe Office
-officeFromText = enumFromText ei
+officeFromText = enumFromText
 
 _Office :: Prism' Text Office
-_Office = enumPrism ei
+_Office = enumPrism
 
-instance NFData Office
-instance Binary Office
+deriveVia [t| Arbitrary Office       `Via` Sopica Office  |]
+deriveVia [t| ToJSON Office          `Via` Enumica Office |]
+deriveVia [t| FromJSON Office        `Via` Enumica Office |]
+deriveVia [t| ToHttpApiData Office   `Via` Enumica Office |]
+deriveVia [t| FromHttpApiData Office `Via` Enumica Office |]
+deriveVia [t| Csv.ToField Office     `Via` Enumica Office |]
+deriveVia [t| Csv.FromField Office   `Via` Enumica Office |]
+deriveVia [t| ToHtml Office          `Via` Enumica Office |]
 
-instance Arbitrary Office where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToHtml Office where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . enumToText ei
-
-instance ToParamSchema Office where
-    toParamSchema = enumToParamSchema ei
-
-instance ToSchema Office where
-    declareNamedSchema = enumDeclareNamedSchema ei
-
-instance ToJSON Office where
-    toJSON = enumToJSON ei
-
-instance FromJSON Office where
-    parseJSON = enumParseJSON ei
-
-instance FromHttpApiData Office where
-    parseUrlPiece = enumParseUrlPiece ei
-
-instance ToHttpApiData Office where
-    toUrlPiece = enumToUrlPiece ei
-
-instance Csv.ToField Office where
-    toField = enumCsvToField ei
-
-instance Csv.FromField Office where
-    parseField = enumCsvParseField ei
+instance ToParamSchema Office where toParamSchema = enumToParamSchema
+instance ToSchema Office where declareNamedSchema = enumDeclareNamedSchema

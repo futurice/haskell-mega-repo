@@ -1,20 +1,17 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
--- TODO: use Futurice.Generics.Enum
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.Checklist.Types.ContractType where
 
-import Data.Aeson.Compat         (Value (String), withText)
-import Data.Swagger              (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
-import Futurice.Lucid.Foundation hiding (type_)
-import Futurice.Lucid.Generics   (FieldToHtml)
+import Futurice.Lucid.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
+import qualified Data.Csv as Csv
 
 -- | Contract type affect what's need to be done.
 data ContractType
@@ -23,53 +20,41 @@ data ContractType
     | ContractTypeFixedTerm
     | ContractTypePartTimer
     | ContractTypeSummerWorker
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving anyclass (NFData, Binary)
 
 makePrisms ''ContractType
 deriveGeneric ''ContractType
+deriveLift ''ContractType
 
-instance NFData ContractType
-
-instance Arbitrary ContractType where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
+instance TextEnum ContractType where
+    type TextEnumNames ContractType =
+        '["permanent"
+        , "external"
+        , "fixed-term"
+        , "part-timer"
+        , "summer-worker"
+        ]
 
 contractTypeToText :: ContractType -> Text
-contractTypeToText ContractTypePermanent    = "permanent"
-contractTypeToText ContractTypeExternal     = "external"
-contractTypeToText ContractTypeFixedTerm    = "fixed-term"
-contractTypeToText ContractTypePartTimer    = "part-timer"
-contractTypeToText ContractTypeSummerWorker = "summer-worker"
+contractTypeToText = enumToText
 
 contractTypeFromText :: Text -> Maybe ContractType
-contractTypeFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $ map (\x -> (T.toLower $ contractTypeToText x, x)) [minBound .. maxBound]
+contractTypeFromText = enumFromText
 
 _ContractType :: Prism' Text ContractType
-_ContractType = prism' contractTypeToText contractTypeFromText
+_ContractType = enumPrism
 
-instance ToHtml ContractType where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . contractTypeToText
+deriveVia [t| Arbitrary ContractType       `Via` Sopica ContractType  |]
+deriveVia [t| ToJSON ContractType          `Via` Enumica ContractType |]
+deriveVia [t| FromJSON ContractType        `Via` Enumica ContractType |]
+deriveVia [t| ToHttpApiData ContractType   `Via` Enumica ContractType |]
+deriveVia [t| FromHttpApiData ContractType `Via` Enumica ContractType |]
+deriveVia [t| Csv.ToField ContractType     `Via` Enumica ContractType |]
+deriveVia [t| Csv.FromField ContractType   `Via` Enumica ContractType |]
+deriveVia [t| ToHtml ContractType          `Via` Enumica ContractType |]
+
+instance ToParamSchema ContractType where toParamSchema = enumToParamSchema
+instance ToSchema ContractType where declareNamedSchema = enumDeclareNamedSchema
 
 instance FieldToHtml ContractType
-
-instance ToParamSchema ContractType where
-    toParamSchema _ = mempty
-          & type_ .~ SwaggerString
-          & enum_ ?~ (String . contractTypeToText <$> [minBound .. maxBound])
-
-instance ToJSON ContractType where
-    toJSON = String . contractTypeToText
-
-instance FromJSON ContractType where
-    parseJSON = withText "ContractType" $ \t ->
-        maybe (fail $ "invalid contractType " <> t ^. unpacked) pure $ t ^? _ContractType
-
-instance FromHttpApiData ContractType where
-    parseUrlPiece t =
-        maybe (Left $ "invalid contractType " <> t) Right $ t ^? _ContractType
-
-instance ToHttpApiData ContractType where
-    toUrlPiece = contractTypeToText

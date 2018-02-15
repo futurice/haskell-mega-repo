@@ -31,12 +31,8 @@ instance phase ~ 'Input => HasLomake (RemoveEmailFromEmployee phase) where
         hiddenField "Email address" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (RemoveEmailFromEmployee phase) where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance phase ~ 'Internal => FromJSON (RemoveEmailFromEmployee phase) where
-    parseJSON = sopParseJSON
+deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEmailFromEmployee phase))   `Via` Sopica (RemoveEmailFromEmployee phase) |]
+deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEmailFromEmployee phase)) `Via` Sopica (RemoveEmailFromEmployee phase) |]
 
 instance Command RemoveEmailFromEmployee where
     type CommandTag RemoveEmailFromEmployee = "remove-email-from-employee"

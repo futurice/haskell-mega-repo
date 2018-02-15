@@ -1,74 +1,59 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
-module Personio.Types.ContractType ( 
-    ContractType (..), 
-    contractTypeToText, 
-    contractTypeFromText, 
-    _ContractType
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
+module Personio.Types.ContractType (
+    ContractType (..),
+    -- * Prisms
+    _PermanentAllIn,
+    _Permanent,
+    _FixedTerm,
+    _ContractType,
+    -- * Conversion functions
+    contractTypeToText,
+    contractTypeFromText,
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
 import Futurice.Prelude
-import Lucid                  (ToHtml (..))
+import Prelude ()
+
+import qualified Data.Csv as Csv
 
 data ContractType
     = PermanentAllIn
     | Permanent
     | FixedTerm
-    deriving (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
+  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
+  deriving anyclass (NFData, Binary)
 
 makePrisms ''ContractType
 deriveGeneric ''ContractType
 deriveLift ''ContractType
 
-ei :: EnumInstances ContractType
-ei = sopEnumInstances $ 
-    K "permanent all-in" :*
-    K "permanent"        :*
-    K "fixed term"       :*
-    Nil
-
--------------------------------------------------------------------------------
--- Boilerplate
--------------------------------------------------------------------------------
+instance TextEnum ContractType where
+    type TextEnumNames ContractType = '["permanent all-in", "permanent", "fixed term"]
 
 contractTypeToText :: ContractType -> Text
-contractTypeToText = enumToText ei
+contractTypeToText = enumToText
 
 contractTypeFromText :: Text -> Maybe ContractType
-contractTypeFromText = enumFromText ei
+contractTypeFromText = enumFromText
 
 _ContractType :: Prism' Text ContractType
-_ContractType = enumPrism ei
+_ContractType = enumPrism
 
-instance NFData ContractType
+deriveVia [t| Arbitrary ContractType       `Via` Sopica ContractType  |]
+deriveVia [t| ToJSON ContractType          `Via` Enumica ContractType |]
+deriveVia [t| FromJSON ContractType        `Via` Enumica ContractType |]
+deriveVia [t| ToHttpApiData ContractType   `Via` Enumica ContractType |]
+deriveVia [t| FromHttpApiData ContractType `Via` Enumica ContractType |]
+deriveVia [t| Csv.ToField ContractType     `Via` Enumica ContractType |]
+deriveVia [t| Csv.FromField ContractType   `Via` Enumica ContractType |]
+deriveVia [t| ToHtml ContractType          `Via` Enumica ContractType |]
 
-instance Arbitrary ContractType where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance ToHtml ContractType where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . enumToText ei
-
-instance ToParamSchema ContractType where
-    toParamSchema = enumToParamSchema ei
-
-instance ToSchema ContractType where
-    declareNamedSchema = enumDeclareNamedSchema ei
-
-instance ToJSON ContractType where
-    toJSON = enumToJSON ei
-
-instance FromJSON ContractType where
-    parseJSON = enumParseJSON ei
-
-instance FromHttpApiData ContractType where
-    parseUrlPiece = enumParseUrlPiece ei
-
-instance ToHttpApiData ContractType where
-    toUrlPiece = enumToUrlPiece ei
+instance ToParamSchema ContractType where toParamSchema = enumToParamSchema
+instance ToSchema ContractType where declareNamedSchema = enumDeclareNamedSchema

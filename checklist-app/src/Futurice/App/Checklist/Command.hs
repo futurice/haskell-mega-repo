@@ -46,6 +46,7 @@ import Futurice.Aeson
        (FromJSONField1, fromJSONField1, object, withBool, withObject, (.!=),
        (.:), (.:?), (.=))
 import Futurice.Generics
+import Futurice.Generics.SOP
 import Futurice.IsMaybe
 import Futurice.Lucid.Generics
 import Futurice.Prelude
