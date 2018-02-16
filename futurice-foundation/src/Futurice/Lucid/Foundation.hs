@@ -18,6 +18,7 @@ module Futurice.Lucid.Foundation (
     fullRow_,
     -- * Table
     table_,
+    condensedTable_,
     vertRow_,
     -- * Form
     optionSelected_,
@@ -94,6 +95,9 @@ fullRow_ = row_ . large_ 12
 
 table_ :: Term arg result => arg ->  result
 table_ = termWith "table" [ class_ "hover " ]
+
+condensedTable_ :: Term arg result => arg ->  result
+condensedTable_ = termWith "table" [ class_ "hover condensed " ]
 
 -- | Row in a vertical table.
 --

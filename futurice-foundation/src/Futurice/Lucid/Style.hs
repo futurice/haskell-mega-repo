@@ -3,6 +3,7 @@ module Futurice.Lucid.Style where
 
 import Clay
 import Prelude hiding (div, rem, span)
+import Data.Foldable (for_)
 
 css :: Css
 css = do
@@ -12,7 +13,7 @@ css = do
     ".empasize2" & td ? do
         fontStyle italic
         background ("#efe" :: Color)
-    h1 ? h2 ? h3 ? h4? li ? td ? div ? span ? b ? do
+    for_ [h1, h2, h3, h4, li, td, div, span, b ] $ \el -> el ? do
         fontFamily ["Lucida Grande", "Helvetica", "Arial"] [sansSerif]
     star ? fontSize (pt 11)
     h1 ? do
@@ -40,3 +41,7 @@ css = do
     -- mimicking foundation styles
     ".select2" ? do
         marginBottom $ rem 1
+
+    for_ [td, th] $ \tdh -> ".condensed" & tdh ? do
+        paddingTop $ rem 0.1
+        paddingBottom $ rem 0.1

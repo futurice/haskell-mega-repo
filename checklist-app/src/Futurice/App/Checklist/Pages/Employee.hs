@@ -67,15 +67,22 @@ employeePage world authUser employee personios = checklistPage_ (view nameText e
             "Archive employee"
 
     -- Personio info
-    for_ personioEmployee $ \p -> fullRow_ $ table_ $ tbody_ $ do
+    for_ personioEmployee $ \p -> fullRow_ $ condensedTable_ $ tbody_ $ do
         -- TODO: this could be shared with fum-carbon
-        vertRow_ "Office"   $ toHtml $ p ^. P.employeeOffice
-        vertRow_ "Tribe"    $ toHtml $ p ^. P.employeeTribe
-        vertRow_ "Phone"    $ traverse_ phoneToHtml $ p ^. P.employeeWorkPhone
-        vertRow_ "Email"    $ traverse_ toHtml $ p ^. P.employeeEmail
-        vertRow_ "Int/Ext"  $ traverse_ toHtml $ p ^. P.employeeEmploymentType
-        vertRow_ "GitHub"   $ traverse_ toHtml $ p ^. P.employeeGithub
-        vertRow_ "Flowdock" $ traverse_ fdToHtml $ p ^. P.employeeFlowdock
+        vertRow_ "Name"      $ toHtml $ p ^. P.employeeFullname
+        vertRow_ "Office"    $ toHtml $ p ^. P.employeeOffice
+        vertRow_ "Role"      $ toHtml $ p ^. P.employeeRole
+        vertRow_ "Tribe"     $ toHtml $ p ^. P.employeeTribe
+        vertRow_ "CC"        $ traverse_ toHtml $ p ^. P.employeeCostCenter
+        vertRow_ "Phone"     $ traverse_ phoneToHtml $ p ^. P.employeeWorkPhone
+        vertRow_ "Email"     $ traverse_ toHtml $ p ^. P.employeeEmail
+        vertRow_ "Int/Ext"   $ traverse_ toHtml $ p ^. P.employeeEmploymentType
+        vertRow_ "HR Number" $ traverse_ (toHtml . show) $ p ^. P.employeeHRNumber
+        vertRow_ "FUM"       $ traverse_ toHtml $ p ^. P.employeeLogin
+        vertRow_ "GitHub"    $ traverse_ toHtml $ p ^. P.employeeGithub
+        vertRow_ "Flowdock"  $ traverse_ fdToHtml $ p ^. P.employeeFlowdock
+        vertRow_ "Private phone"   $ traverse_ toHtml $ p ^. P.employeeHomePhone
+        vertRow_ "Private email"   $ traverse_ toHtml $ p ^. P.employeeHomeEmail
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-edit", data_ "futu-employee-id" $ employee ^. identifierText ] $ do
