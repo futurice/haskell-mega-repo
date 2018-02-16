@@ -18,8 +18,6 @@ module Futurice.App.FUM.Types.Status (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.Enum
-import Futurice.Lucid.Foundation (ToHtml (..))
 import Futurice.Prelude
 import Prelude ()
 
