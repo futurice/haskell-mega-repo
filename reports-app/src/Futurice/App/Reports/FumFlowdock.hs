@@ -105,7 +105,7 @@ fumFlowdockReport = do
     fumKey u = Key
         (u ^? FUM.userFlowdock . lazy . _Just . getter (FD.mkIdentifier . fromIntegral))
         (u ^.FUM.userFirst <> " " <> u ^. FUM.userLast)
-        (fromMaybe ((FUM.loginToText $ u ^. FUM.userName) <> "@futurice.com") $ u ^. FUM.userEmail . lazy)
+        (fromMaybe (FUM.loginToText (u ^. FUM.userName) <> "@futurice.com") $ u ^. FUM.userEmail . lazy)
 
     fdKey :: FD.OrgUser -> Key
     fdKey u = Key (Just $ u ^. FD.userId) (u ^. FD.userName) (u ^. FD.userEmail)
