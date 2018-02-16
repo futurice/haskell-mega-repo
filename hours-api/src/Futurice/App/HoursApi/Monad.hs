@@ -297,9 +297,9 @@ instance MonadHours Hours where
         traverse convertTimereport (toList reports)
 
     absences interval = do
-        absences <- cachedPlanmillAction $ PM.absencesFromInterval (PM.ResultInterval PM.IntervalStart interval)
         pmUid <- viewHours (envPmUser . PM.identifier)
-        traverse convertAbsence (filter (\a -> PM.absencePerson a == pmUid) (toList absences))
+        absences <- cachedPlanmillAction $ PM.absencesFromIntervalFor (PM.ResultInterval PM.IntervalStart interval) pmUid
+        traverse convertAbsence $ filter (\a -> PM.absencePerson a == pmUid) $ toList absences
       where
         convertAbsence :: PM.Absence -> Hours Absence
         convertAbsence a = absenceTypeToText a <&> \text -> Absence
