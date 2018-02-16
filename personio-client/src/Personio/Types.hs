@@ -89,6 +89,7 @@ data Employee = Employee
     , _employeePosition       :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
     , _employeeWeeklyHours    :: !(NDT 'Hours Centi)
     , _employeeExpat          :: !Bool
+    , _employeeBirthday       :: !(Maybe Day)
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
 #endif
@@ -137,7 +138,7 @@ parseEmployeeObject obj' = Employee
     <$> parseAttribute obj "id"
     <*> parseAttribute obj "first_name"
     <*> parseAttribute obj "last_name"
-    <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
+    <*> fmap2 zonedDay (parseAttribute obj "hire_date")
     <*> endDate
     <*> parseDynamicAttribute obj "Primary role"
     <*> optional (parseAttribute obj "email")
@@ -158,6 +159,7 @@ parseEmployeeObject obj' = Employee
     <*> parseAttribute obj "position"
     <*> fmap getWeeklyHours (parseAttribute obj "weekly_working_hours")
     <*> fmap getExpat (parseDynamicAttribute obj  "Expat")
+    <*> fmap2 zonedDay (parseDynamicAttribute obj "Birthday")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif
@@ -170,6 +172,8 @@ parseEmployeeObject obj' = Employee
         b <- fmap (fmap zonedDay) (parseAttribute obj "termination_date")
         return $ fmap getMin $ fmap Min a <> fmap Min b
 
+fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
+fmap2 = fmap . fmap
 
 newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 

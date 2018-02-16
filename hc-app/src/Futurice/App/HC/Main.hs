@@ -32,6 +32,7 @@ import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
 import Futurice.App.HC.API
+import Futurice.App.HC.Anniversaries
 import Futurice.App.HC.Config
 import Futurice.App.HC.Ctx
 import Futurice.App.HC.EarlyCaring.Page
@@ -44,6 +45,7 @@ server :: Ctx -> Server HCAPI
 server ctx = indexPageAction ctx
     :<|> personioValidationAction ctx
     :<|> personioPrivateContactsAction ctx
+    :<|> anniversariesAction ctx
     :<|> earlyCaringAction ctx
     :<|> earlyCaringSubmitAction ctx
 
@@ -96,6 +98,15 @@ personioPrivateContactsAction
 personioPrivateContactsAction = withAuthUser $ \_ -> do
     es <- personio P.PersonioEmployees
     return (privateContacts es)
+
+anniversariesAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "anniversaries")
+anniversariesAction = withAuthUser $ \_ -> do
+    today <- currentDay
+    es <- personio P.PersonioEmployees
+    return (anniversaries es today)
 
 earlyCaringAction
     :: Ctx
