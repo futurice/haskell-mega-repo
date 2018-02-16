@@ -15,7 +15,7 @@ createTaskPage
     :: World
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "create-task"
-createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
+createTaskPage world authUser = checklistPage_ "Create task" authUser $ do
     -- Title
     header "Create task" []
 
