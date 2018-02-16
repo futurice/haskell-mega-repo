@@ -29,29 +29,45 @@ validationReport validations0 today = do
         fullRow_ $ div_ [ class_ "callout info" ] $ ul_ $ do
             li_ $ toHtml $ show (length validations) ++ " employees with incorrect or missing data:"
             li_ "Note: this report only checks data in Personio. For example it doesn't show if FUM login doesn't exist."
+            li_ $ do
+                "There are separate lists for "
+                a_ [ href_ "#employees" ] "Employees"
+                " and "
+                a_ [ href_ "#externals" ] "Externals"
 
-        row_ $ large_ 12 $ table_ $ do
-            thead_ $ tr_ $ do
-                th_ "id"
-                th_ "name"
-                th_ "fum"
-                th_ "status"
-                th_ "hire-date"
-                th_ "end-date"
-                th_ "internal"
-                th_ "type"
-                th_ "warnings"
+        fullRow_ $ a_ [ name_ "employees" ] $ h2_ "Employees"
+        fullRow_ $ showValidations $ filter isInternal validations
 
-            tbody_ $ for_ validations $ \(P.EmployeeValidation e msgs) -> tr_ $ do
-                td_ $ toHtml $ e ^. P.employeeId
-                td_ $ toHtml $ e ^. P.employeeFullname
-                td_ $ traverse_ toHtml $ e ^. P.employeeLogin
-                td_ $ toHtml $ e ^. P.employeeStatus
-                td_ $ toHtml $ maybe "-" show $ e ^. P.employeeHireDate
-                td_ $ toHtml $ maybe "-" show $ e ^. P.employeeEndDate
-                td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeEmploymentType
-                td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeContractType
-                td_ $ showMessages msgs
+        fullRow_ $ a_ [ name_ "externals" ] $ h2_ "Externals"
+        fullRow_ $ showValidations $ filter (not . isInternal) validations
+  where
+    isInternal :: P.EmployeeValidation -> Bool
+    isInternal v = Just P.Internal == v ^. P.evEmployee . P.employeeEmploymentType
+
+
+showValidations :: (Foldable f, Monad m)  => f P.EmployeeValidation -> HtmlT m ()
+showValidations validations = fullRow_ $ table_ $ do
+    thead_ $ tr_ $ do
+        th_ "id"
+        th_ "name"
+        th_ "fum"
+        th_ "status"
+        th_ "hire-date"
+        th_ "end-date"
+        th_ "internal"
+        th_ "type"
+        th_ "warnings"
+
+    tbody_ $ for_ validations $ \(P.EmployeeValidation e msgs) -> tr_ $ do
+        td_ $ toHtml $ e ^. P.employeeId
+        td_ $ toHtml $ e ^. P.employeeFullname
+        td_ $ traverse_ toHtml $ e ^. P.employeeLogin
+        td_ $ toHtml $ e ^. P.employeeStatus
+        td_ $ toHtml $ maybe "-" show $ e ^. P.employeeHireDate
+        td_ $ toHtml $ maybe "-" show $ e ^. P.employeeEndDate
+        td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeEmploymentType
+        td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeContractType
+        td_ $ showMessages msgs
 
 showMessages :: Monad m => [P.ValidationMessage] -> HtmlT m ()
 showMessages msgs = ul_ $ traverse_ (li_ . showMessage) msgs where
