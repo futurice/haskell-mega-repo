@@ -21,22 +21,22 @@ module Futurice.App.Reports.Balances (
     balanceHours, balanceMissingHours,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (sumOf)
 import Data.Fixed                (Centi)
 import Data.Ord                  (comparing)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
 import Futurice.Report.Columns
 import Futurice.Time
+import Prelude ()
 
 import qualified Data.Csv            as Csv
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Tuple.Strict   as S
 import qualified Data.Vector         as V
-import qualified FUM                 as FUM
+import qualified FUM
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -164,7 +164,7 @@ balanceReport interval = do
         us' = toList us
 
         mk u = (,) (u ^. FUM.userName) <$>
-            (join $ flip HM.lookup ss <$> u ^. FUM.userSupervisor . lazy)
+            join (flip HM.lookup ss <$> u ^. FUM.userSupervisor . lazy)
 
         -- id to name map
         ss :: HashMap Int Text

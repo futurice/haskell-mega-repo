@@ -98,7 +98,7 @@ instance ToHtml MissingHoursParams where
     toHtml MissingHoursParams {..} = dl_ $ do
         dd_ $ do
             "Generated at "
-            i_ ("(Note: data is pulled from caches, so it is few hours old at worst)")
+            i_ "(Note: data is pulled from caches, so it is few hours old at worst)"
         dt_ $ toHtml $ formatHumanHelsinkiTime _mhpGenerated
 
         dd_ "Interval"

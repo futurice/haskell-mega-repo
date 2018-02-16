@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -20,8 +19,6 @@ import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
 import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
-import Futurice.App.Reports.GithubIssues      (IssueReport)
-import Futurice.App.Reports.GithubUsers       (GithubUsersReport)
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursTitle, MissingHoursTitleFilt)
 import Futurice.App.Reports.PlanmillEmployees (PlanmillEmployeesReport)
@@ -36,9 +33,7 @@ type ReportTypes = '[HTML, CSV, JSON]
 data R (path :: Symbol) (report :: *)
 
 type Reports =
-    '[ R "issues"             IssueReport
-    , R "fum-flowdock"        FumFlowdockReport
-    , R "github-users"        GithubUsersReport
+    '[R "fum-flowdock"        FumFlowdockReport
     , R "missing-hours"       (MissingHoursReport MissingHoursTitle)
     , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
     , R "hours-by-task"       TimereportsByTaskReport
