@@ -96,22 +96,18 @@ entryDeleteEndpoint eid = do
 
 hoursResponse :: forall m. H.MonadHours m => Interval Day -> m HoursResponse
 hoursResponse interval = do
-    reports <- H.timereports interval
+    -- no ApplicativeDo for now yet
+    (reports, reportable, holidayNames, wh) <- (,,,)
+        <$> H.timereports interval
+        <*> reportableProjects                          -- reportable projects; the ones we can report
+        <*> (mkHolidayNames <$> H.capacities interval)  -- holiday names
+        <*> H.workingHours                              -- working hours
 
-    let entries = reportToEntry <$>  toList reports
+    let entries = reportToEntry <$> toList reports
 
     let markedTaskIds = Map.fromListWith (<>) $
             entries <&> \e -> (e ^. entryProjectId, Set.singleton (e ^. entryTaskId))
     marked <- toList <$> itraverse markedProject markedTaskIds
-
-    -- reportable projects; the ones we can report
-    reportable <- reportableProjects
-
-    -- holiday names
-    holidayNames <- mkHolidayNames <$> H.capacities interval
-
-    -- working hours
-    wh <- H.workingHours
 
     pure HoursResponse
         { _hoursResponseDefaultWorkHours   = wh
