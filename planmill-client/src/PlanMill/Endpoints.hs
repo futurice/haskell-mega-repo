@@ -7,6 +7,7 @@ module PlanMill.Endpoints (
     -- * Absences
     absences,
     absencesFromInterval,
+    absencesFromIntervalFor,
     absence,
     -- * Accounts
     accounts,
@@ -73,6 +74,18 @@ absencesFromInterval ri =
     planMillPagedGetQs qs $ t "absences"
   where
     qs = intervalToQueryString ri
+
+-- | Get a list of absences from specified time interval.
+--
+-- /Note:/ This is uncodumented usage but seems to work.
+absencesFromIntervalFor :: ResultInterval -> UserId -> PlanMill Absences
+absencesFromIntervalFor ri (Ident uid) =
+    planMillPagedGetQs (qs <> qs') $ t "absences"
+  where
+    qs = intervalToQueryString ri
+    qs' = Map.fromList
+        [ ("person", fromString $ show uid)
+        ]
 
 -- | View details of single absence
 --
