@@ -70,7 +70,7 @@ type SupervisorMap = HashMap P.EmployeeId P.Employee
 
 powerUserReport
     :: forall m env.
-        ( PM.MonadTime m, MonadFUM m, MonadPersonio m, MonadPlanMillQuery m
+        ( PM.MonadTime m, MonadPersonio m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => m PowerUserReport
