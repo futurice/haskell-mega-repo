@@ -68,6 +68,7 @@ employeeTable hire world employees = fullRow_ $ table_ $ do
         th_ "Office"
         th_ "Internal"
         th_ $ if hire then "Hire date" else "End Date"
+        th_ "Job offer accepted"
         th_ "Create"
 
     tbody_ $ for_ employees $ \e -> tr_ $ do
@@ -81,6 +82,7 @@ employeeTable hire world employees = fullRow_ $ table_ $ do
         td_ $ toHtml $ e ^. Personio.employeeOffice
         td_ $ traverse_ toHtml $ e ^. Personio.employeeEmploymentType
         td_ $ traverse_ (toHtml . show) $ e ^. if hire then Personio.employeeHireDate else Personio.employeeEndDate
+        td_ $ traverse_ (toHtml . show) $ e ^. Personio.employeeJobOfferAccepted
         td_ $ button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText

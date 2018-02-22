@@ -245,6 +245,10 @@
       "label": "Birthday",
       "value": "1849-01-01T00:00:00+01:00"
     },
+    "dynamic_27190": {
+      "label": "Job offer accepted",
+      "value": "1849-01-01T00:00:00+01:00"
+    },
     "dynamic_72967": {
       "label": "Additional benefits",
       "value": ""
