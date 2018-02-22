@@ -17,6 +17,12 @@ fi
 
 cd $ROOTDIR
 
+# Check that we don't have cabal.project.local
+if [ -f cabal.project.local ]; then
+	echo "Cannot do production build with cabal.project.local"
+	exit 1
+fi
+
 # Check that we have somewhat clean working dir
 if [ ! -z "$(git status --porcelain)" ]; then
     echo "DIRTY WORKINGDIR"
