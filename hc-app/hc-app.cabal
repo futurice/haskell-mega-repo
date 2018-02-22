@@ -57,6 +57,7 @@ library
       time
  
   exposed-modules:
+      Futurice.App.HC.Anniversaries
       Futurice.App.HC.Main
       Futurice.App.HC.API
       Futurice.App.HC.IndexPage

@@ -65,6 +65,7 @@ type Collections =
     , SimpleOrganization
     , SimpleTeam
     , SimpleUser
+    , Invitation
     ]
 
 -------------------------------------------------------------------------------

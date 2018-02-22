@@ -19,9 +19,10 @@ indexPage
     :: Day
     -> Pinned
     -> [GH.User]
+    -> [GH.Invitation]
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage today (Pin pinned) githubs personios = page_ "GitHub sync" $ do
+indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub sync" $ do
     fullRow_ $ h1_ "Personio ⇒ GitHub sync"
 
     fullRow_ $ h2_ "Only in GitHub, not in Personio"
@@ -33,8 +34,10 @@ indexPage today (Pin pinned) githubs personios = page_ "GitHub sync" $ do
                 td_ "Username"
                 td_ "Real name"
                 td_ $ "Personio" >> sup_ "?"
+                td_ $ "Name" >> sup_ "?"
                 td_ $ "FUM" >> sup_ "?"
                 td_ $ "Contract end date"  >> sup_ "?"
+
             tbody_ $ for_ githubs $ \u -> do
                 let login = GH.userLogin u
                 unless (personioLogins ^. contains login) $ tr_ $ do
@@ -43,14 +46,41 @@ indexPage today (Pin pinned) githubs personios = page_ "GitHub sync" $ do
                     td_ $ maybe "" toHtml $ GH.userName u
 
                     case personioMap ^? ix login of
-                        Nothing -> td_ mempty >> td_ mempty >> td_ mempty
+                        Nothing -> td_ mempty >> td_ mempty >> td_ mempty >> td_ mempty
                         Just e -> do
                             td_ $ toHtml $ e ^. P.employeeId
+                            td_ $ toHtml $ e ^. P.employeeFullname
                             td_ $ traverse_ toHtml $ e ^. P.employeeLogin
                             td_ $ traverse_ (toHtml . show) $ e ^. P.employeeEndDate
 
         div_ [ class_ "button-group" ] $
             button_ [ class_ "button alert"] "Remove"
+
+    fullRow_ $ h2_ "Pending invitations"
+    fullRow_ $
+        table_ $ do
+            thead_ $ tr_ $ do
+                td_ "Username"
+                td_ "Email"
+                td_ "Invited at"
+                td_ $ "Personio" >> sup_ "?"
+                td_ $ "Name" >> sup_ "?"
+                td_ $ "FUM" >> sup_ "?"
+                td_ $ "Contract end date"  >> sup_ "?"
+
+            tbody_ $ for_ githubInvs $ \i -> do
+                tr_ $ do
+                    td_ $ traverse_ toHtml $ GH.invitationLogin i
+                    td_ $ traverse_ (toHtml . show) $ GH.invitationEmail i
+                    td_ $ toHtml . show $  GH.invitationCreatedAt i
+
+                    case GH.invitationLogin i >>= \login -> personioMap ^? ix login of
+                        Nothing -> td_ mempty >> td_ mempty >> td_ mempty >> td_ mempty
+                        Just e -> do
+                            td_ $ toHtml $ e ^. P.employeeId
+                            td_ $ toHtml $ e ^. P.employeeFullname
+                            td_ $ traverse_ toHtml $ e ^. P.employeeLogin
+                            td_ $ traverse_ (toHtml . show) $ e ^. P.employeeEndDate
 
     fullRow_ $ h2_ "Not in GitHub, only in Personio"
     fullRow_ $ i_ "People with GitHub information in Personio, but not added to GitHub"
