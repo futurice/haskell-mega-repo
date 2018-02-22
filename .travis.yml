@@ -41,8 +41,6 @@ before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.cache
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar.idx
-  # stack
-  - rm -rf $(stack --no-terminal --system-ghc --skip-ghc-check path --local-install-root)/bin/*
 
 before_install:
 # We use compiler: to tag caches
