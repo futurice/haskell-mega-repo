@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.GitHubSync (defaultMain) where
 
+import Control.Applicative       (liftA3)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
@@ -36,8 +37,8 @@ indexPageAction ctx _mfu = do
     now <- currentTime
     liftIO $ runIntegrations mgr lgr now (cfgIntegrationsConfig cfg) $ do
         today <- currentDay
-        (gh, p) <- fetcher
-        pure $ indexPage today (cfgPinnedUsers cfg) gh p
+        (gh, ghi, p) <- fetcher
+        pure $ indexPage today (cfgPinnedUsers cfg) gh ghi p
   where
     cfg = ctxConfig ctx
     lgr = ctxLogger ctx
@@ -45,10 +46,13 @@ indexPageAction ctx _mfu = do
 
 type M = Integrations '[Proxy, Proxy, Proxy, I, Proxy, I]
 
-fetcher :: M ([GH.User], [P.Employee])
-fetcher = liftA2 (,) github personioE
+fetcher :: M ([GH.User], [GH.Invitation], [P.Employee])
+fetcher = liftA3 (,,) github githubI personioE
   where
     github = toList <$> githubDetailedMembers
+    githubI = do
+        orgName <- view githubOrganisationName
+        toList <$> githubReq (GH.orgInvitationsR orgName GH.FetchAll)
     personioE = P.personio P.PersonioEmployees
 
 githubDetailedMembers :: M (Vector GH.User)
