@@ -42,6 +42,7 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> ApplianceHelpEndpoint
     -- Command
     :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
+    :<|> StatsPageEndpoint
 
 checklistApi :: Proxy ChecklistAPI
 checklistApi = Proxy
@@ -166,6 +167,16 @@ type ApplianceHelpEndpoint =
     Get '[HTML] (HtmlPage "appliance-help")
 
 -------------------------------------------------------------------------------
+-- Stats
+-------------------------------------------------------------------------------
+
+type StatsPageEndpoint =
+    SSOUser :>
+    "stats" :>
+    QueryFlag "sort-empl-desc" :>
+    Get '[HTML] (HtmlPage "stats")
+
+-------------------------------------------------------------------------------
 -- Proxies
 -------------------------------------------------------------------------------
 
@@ -210,3 +221,6 @@ personioPageEndpoint = Proxy
 
 reportPageEndpoint :: Proxy ReportPageEndpoint
 reportPageEndpoint = Proxy
+
+statsPageEndpoint :: Proxy StatsPageEndpoint
+statsPageEndpoint = Proxy
