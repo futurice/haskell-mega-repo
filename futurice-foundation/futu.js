@@ -49,8 +49,8 @@ futu = (function () {
   }
 
   // global initialisation
-  
-  var onloadCallbacks = []; 
+
+  var onloadCallbacks = [];
 
   function onload(f) {
     onloadCallbacks.push(f);
@@ -60,6 +60,63 @@ futu = (function () {
     btn.disabled = false;
     buttonOnClick(btn, function () {
       location.href = btn.dataset.futuLinkButton;
+    });
+  }
+
+  function sortableTable(tbl) {
+    var thead = $("thead", tbl);
+    var tbody = $("tbody", tbl);
+
+    if (!thead || !tbody) {
+      console.log("warn: no thead or tbody in sortable tble");
+    }
+
+    var index = -1;
+    var order = "asc";
+
+    var children = _.toArray(tbody.children).filter(function (c) {
+      return c.tagName === "TR";
+    });
+
+    function orderTable() {
+      // "metric"
+      function iteratee(tr) {
+        var tds = _.toArray($$("td", tr));
+        var td = tds[index];
+
+        // no cell: return null
+        if (!td) return null;
+
+        // otherwise return inner text
+        return td.innerText;
+      }
+
+      // sort
+      children = _.orderBy(children, [iteratee], [order]);
+
+      // remove children
+      children.forEach(function (c) { tbody.removeChild(c); });
+
+      // put them back
+      // as they are sorted in the array, they will be sorted in DOM.
+      children.forEach(function (c) { tbody.appendChild(c); });
+    }
+
+    // header click handlers
+    $$("th", thead).forEach(function (th, i) {
+      if (!$("a", th)) {
+        th.style.cursor = "pointer";
+        th.addEventListener("click", function () {
+          if (index === i) {
+            order = order === "desc" ? "asc" : "desc";
+          } else {
+            index = i;
+            order = "asc";
+          }
+
+          orderTable();
+        });
+      }
     });
   }
 
@@ -80,6 +137,9 @@ futu = (function () {
 
     // Link buttons
     $$("button[data-futu-link-button]").forEach(linkButton);
+
+    // Sortable tables
+    $$("table[data-futu-sortable-table=true]").forEach(sortableTable);
 
     // registered callbacks
     onloadCallbacks.forEach(function (f) {

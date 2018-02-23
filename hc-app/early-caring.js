@@ -1,6 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
   console.log("Initialising early caring");
 
+  // imports
+  var $$ = futu.$$;
+  var assert = futu.assert;
+  var buttonOnClick = futu.buttonOnClick;
+
   var buttons = $$("button[data-futu-early-caring-mail]");
   buttons.forEach(function (btn) {
       buttonOnClick(btn, function () {
@@ -36,25 +41,4 @@ document.addEventListener("DOMContentLoaded", function () {
               });
       });
   });
-
-  function $$(selector, el) {
-    el = el || document;
-    var res = el.querySelectorAll(selector, el);
-    return Array.prototype.slice.call(res);
-  }
-
-  function assert(cond, msg) {
-    if (!cond) {
-      console.error(msg);
-      throw new Error(msg);
-    }
-  }
-
-  function buttonOnClick(btn, callback) {
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      callback(e);
-      return false;
-    });
-  }
 });
