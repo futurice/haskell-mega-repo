@@ -83,9 +83,9 @@ employeeTable hire world employees = fullRow_ $ sortableTable_ $ do
         td_ $ traverse_ toHtml $ e ^. Personio.employeeEmploymentType
         td_ $ traverse_ (toHtml . show) $ e ^. if hire then Personio.employeeHireDate else Personio.employeeEndDate
         td_ $ traverse_ (toHtml . show) $ e ^. Personio.employeeJobOfferAccepted
-        td_ $ button_
+        td_ $ a_
             [ class_ "button"
-            , data_ "futu-link-button" $ linkToText
+            , href_ $ linkToText
             $ safeLink checklistApi createEmployeePageEndpoint Nothing (e ^? Personio.employeeId) $ not hire
             ]
             "Import"
