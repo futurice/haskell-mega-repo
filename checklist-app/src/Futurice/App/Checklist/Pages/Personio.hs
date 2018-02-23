@@ -58,7 +58,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
             Just d  -> today <= d
 
 employeeTable :: Monad m => Bool -> World -> [Personio.Employee] -> HtmlT m ()
-employeeTable hire world employees = fullRow_ $ table_ $ do
+employeeTable hire world employees = fullRow_ $ sortableTable_ $ do
     thead_ $ tr_ $ do
         th_ "Personio ID"
         th_ "Name"

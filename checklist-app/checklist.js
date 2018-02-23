@@ -1,5 +1,12 @@
-document.addEventListener("DOMContentLoaded", function () {
+futu.onload("DOMContentLoaded", function () {
   console.info("Initialising checklist js");
+
+  // imports
+  var $ = futu.$;
+  var $_ = futu.$_;
+  var $$ = futu.$$;
+  var assert = futu.assert;
+  var buttonOnClick = futu.buttonOnClick;
 
   var SELECT2_OPTS = {
     minimumResultsForSearch: 10,
@@ -15,18 +22,6 @@ document.addEventListener("DOMContentLoaded", function () {
   futuReloadIndicator$.onValue(function (val) {
     futuReloadIndicatorEl.innerText = val.done + "/" + val.total;
     futuReloadIndicatorEl.style.display = val.total === 0 ? "none" : "";
-  });
-
-  // use jQuery datepickers
-  $$("input[type=date]").forEach(function (el) {
-    el.type = "text";
-    jQuery(el). datepicker({
-      dateFormat: "yy-mm-dd",
-      onSelect: function (dateText, inst) {
-        this.value = dateText;
-        this.dispatchEvent(new Event("change"));
-      },
-    });
   });
 
   $$("form").forEach(function (form) {
@@ -773,26 +768,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Utilities
-
-  function $(selector, el) {
-    el = el || document;
-    return el.querySelector(selector, el);
-  }
-
-  // mandatory element
-  function $_(selector, el) {
-    el = el || document;
-    res = el.querySelector(selector, el);
-    assert(res, "Non-existing element for selector: " + selector);
-    return res;
-  }
-
-  function $$(selector, el) {
-    el = el || document;
-    var res = el.querySelectorAll(selector, el);
-    return Array.prototype.slice.call(res);
-  }
-
   function inputValue($el) {
     if ($el.is("input[type=checkbox]")) {
       return $el.prop("checked");
@@ -809,23 +784,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function assert(cond, msg) {
-    if (!cond) {
-      console.error(msg);
-      throw new Error(msg);
-    }
-  }
-
   function traceCall(f, args) {
     var args = [f.name].concat(_.toArray(args));
     console.info.apply(console, args);
-  }
-
-  function buttonOnClick(btn, callback) {
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      callback(e);
-      return false;
-    });
   }
 });
