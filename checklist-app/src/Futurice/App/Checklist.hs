@@ -42,6 +42,7 @@ import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Personio
 import Futurice.App.Checklist.Pages.Report
+import Futurice.App.Checklist.Pages.Stats
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
@@ -75,6 +76,7 @@ server ctx = indexPageImpl ctx
     :<|> doneChartImpl ctx
     :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
+    :<|> statsPageImpl ctx
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -245,6 +247,14 @@ applianceHelpImpl
     -> Handler (HtmlPage "appliance-help")
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
+
+statsPageImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Bool
+    -> Handler (HtmlPage "stats")
+statsPageImpl ctx fu sortDescOrder = withAuthUser ctx fu $ \world userInfo ->
+    pure $ statsPage world userInfo sortDescOrder
 
 -------------------------------------------------------------------------------
 -- Personio helper
