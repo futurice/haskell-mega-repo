@@ -19,6 +19,7 @@ module Futurice.Lucid.Foundation (
     -- * Table
     table_,
     condensedTable_,
+    sortableTable_,
     vertRow_,
     -- * Form
     optionSelected_,
@@ -43,6 +44,7 @@ module Futurice.Lucid.Foundation (
     ) where
 
 import Clay                           (Css, render)
+import Data.FileEmbed                 (embedFile)
 import Data.Swagger                   (NamedSchema (..), ToSchema (..))
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
@@ -95,6 +97,9 @@ fullRow_ = row_ . large_ 12
 
 table_ :: Term arg result => arg ->  result
 table_ = termWith "table" [ class_ "hover " ]
+
+sortableTable_ :: Term arg result => arg ->  result
+sortableTable_ = termWith "table" [ data_ "futu-sortable-table" "true", class_ "hover " ]
 
 condensedTable_ :: Term arg result => arg ->  result
 condensedTable_ = termWith "table" [ class_ "hover condensed " ]
@@ -187,6 +192,7 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
         script_ [ src_ "/vendor/foundation.min.js"] tempty
         script_ [ src_ "/vendor/lodash.js" ] tempty
         script_ [ src_ "/vendor/menrva.standalone.js" ] tempty
+        script_ [ src_ "/vendor/futu.js" ] tempty -- vendor, even done by us :)
 
         -- Futurice styles
         style_ $ view strict $ render css
@@ -203,7 +209,10 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
 -------------------------------------------------------------------------------
 
 vendorFiles :: [(FilePath, ByteString)]
-vendorFiles = $(mkRecursiveEmbedded "vendor")
+vendorFiles
+    = ("/futu.js", $(embedFile "futu.js"))
+    : $(mkRecursiveEmbedded "vendor")
+
 
 vendorServer :: Server Raw
 vendorServer = Tagged $ staticApp $ embeddedSettings vendorFiles
