@@ -53,7 +53,11 @@ futu = (function () {
   var onloadCallbacks = [];
 
   function onload(f) {
-    onloadCallbacks.push(f);
+    if (typeof f === "function") {
+      onloadCallbacks.push(f);
+    } else {
+      console.error("Onload: trying to register a non function", f);
+    }
   }
 
   function linkButton(btn) {
