@@ -13,6 +13,7 @@ import Servant
 
 type GitHubSyncAPI =
     SSOUser :> Get '[HTML] (HtmlPage "index")
+    :<|> SSOUser :> "audit" :> Get '[HTML] (HtmlPage "audit")
 
 githubSyncApi :: Proxy GitHubSyncAPI
 githubSyncApi = Proxy

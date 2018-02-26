@@ -1,0 +1,7 @@
+-- CREATE SCHEMA "github-sync";
+
+CREATE TABLE "github-sync".auditlog (
+  login TEXT,
+  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  action JSONB NOT NULL
+);
