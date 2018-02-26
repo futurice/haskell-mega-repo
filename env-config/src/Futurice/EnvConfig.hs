@@ -169,11 +169,15 @@ envVarWithDefault :: FromEnvVar a => String -> a -> ConfigParser a
 envVarWithDefault name d = envVar name <!> pure d
 
 envConnectInfo :: ConfigParser ConnectInfo
-envConnectInfo = f
-    <$> envVar "POSTGRES_URL"
-    <*> envVar "POSTGRES_PASS"
+envConnectInfo = old <!> new
   where
     f connInfo password = connInfo { connectPassword = password }
+
+    old = f
+        <$> envVar "POSTGRES_URL"
+        <*> envVar "POSTGRES_PASS"
+
+    new = envVar "DB_URL"
 
 envAwsCredentials :: String -> ConfigParser AWS.Credentials
 envAwsCredentials pfx = AWS.FromKeys
