@@ -105,7 +105,7 @@ data Employee = Employee
 --
 employeeIsActive :: Day -> Employee -> Bool
 employeeIsActive today e =
-    maybe True (today <) (_employeeEndDate e)
+    maybe True (today <=) (_employeeEndDate e)
     && (_employeeStatus e == Active || _employeeStatus e == Leave)
 
 makeLenses ''Employee
