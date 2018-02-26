@@ -23,6 +23,13 @@ indexPage
     -> [P.Employee]
     -> HtmlPage "index"
 indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub sync" $ do
+    div_ [ class_ "top-bar" ] $ do
+        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
+            li_ [ class_ "menu-text"] $ "GitHub sync"
+
+            li_ $ a_ [ href_ "/" ] "Report"
+            li_ $ a_ [ href_ "/audit" ] "Audit log"
+
     fullRow_ $ h1_ "Personio ⇒ GitHub sync"
 
     fullRow_ $ h2_ "Only in GitHub, not in Personio"

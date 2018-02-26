@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           github-sync
 version:        0
 synopsis:       Manage GitHub
@@ -33,16 +29,20 @@ library
       base                  >=4.7   && <4.11
     , aeson
     , aeson-compat
+    , containers
     , env-config
+    , fum-api
     , fum-types
     , futurice-foundation
     , futurice-integrations
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , github
     , haxl
     , lens
     , personio-client
+    , postgresql-simple
     , regex-applicative
     , servant
     , servant-lucid
@@ -52,11 +52,12 @@ library
   else
     ghc-options: -fcontext-stack=30
   exposed-modules:
-      Futurice.App.GitHubSync
       Futurice.App.GitHubSync.API
+      Futurice.App.GitHubSync.AuditPage
       Futurice.App.GitHubSync.Config
       Futurice.App.GitHubSync.Ctx
       Futurice.App.GitHubSync.IndexPage
+      Futurice.App.GitHubSync.Main
   default-language: Haskell2010
 
 executable github-sync-server
