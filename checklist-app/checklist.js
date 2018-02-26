@@ -1,4 +1,4 @@
-futu.onload("DOMContentLoaded", function () {
+futu.onload(function () {
   console.info("Initialising checklist js");
 
   // imports

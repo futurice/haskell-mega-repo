@@ -17,6 +17,7 @@ pageParams = defPageParams
     L.& pageJs     .~ [ $(makeRelativeToProject "checklist.js" >>= embedJS) ]
     L.& pageJQuery .~ True
 
+
 css :: Css
 css = do
     header ? do
