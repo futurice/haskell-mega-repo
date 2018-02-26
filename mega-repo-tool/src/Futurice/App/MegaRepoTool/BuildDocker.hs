@@ -112,7 +112,7 @@ buildDocker appnames = do
 
     T.putStrLn "Deploy images by:"
     for_ images $ \(appname, _, image) ->
-        T.putStrLn $ "  futuswarm app:deploy"
+        T.putStrLn $ "  appswarm app:deploy"
             <> " --name " <> appname
             <> " --image " <> image
             <> " --tag " <> githash
