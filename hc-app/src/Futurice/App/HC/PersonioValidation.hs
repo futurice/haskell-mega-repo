@@ -14,7 +14,7 @@ import qualified Personio as P
 validationReport :: [P.EmployeeValidation] -> Day -> HtmlPage "personio-validation"
 validationReport validations0 today = do
     let isActive p = P.employeeIsActive today p
-            || (p ^. P.employeeStatus == P.Onboarding && maybe False ((>= today). addDays (-60)) (p ^. P.employeeHireDate))
+            || (p ^. P.employeeStatus == P.Onboarding && maybe False (>= addDays (-60) today) (p ^. P.employeeHireDate))
 
     -- employees with some validation warnings
     let validations1 = filter (not . null . P._evMessages) validations0
@@ -29,6 +29,7 @@ validationReport validations0 today = do
         fullRow_ $ div_ [ class_ "callout info" ] $ ul_ $ do
             li_ $ toHtml $ show (length validations) ++ " employees with incorrect or missing data:"
             li_ "Note: this report only checks data in Personio. For example it doesn't show if FUM login doesn't exist."
+            li_ $ "Only " <> em_ "Active" <> " and " <> em_ "Onboarding" <> " (hire date >= today - 60 days) people are shown"
             li_ $ do
                 "There are separate lists for "
                 a_ [ href_ "#employees" ] "Employees"
@@ -72,11 +73,13 @@ showValidations validations = fullRow_ $ table_ $ do
 showMessages :: Monad m => [P.ValidationMessage] -> HtmlT m ()
 showMessages msgs = ul_ $ traverse_ (li_ . showMessage) msgs where
     showMessage (P.LoginInvalid _) = i_ "[IT] Invalid FUM Login."
+    showMessage P.WorkPhoneMissing = i_ "[IT] Work phone is missing."
     showMessage (P.EmailInvalid e) = do
         b_ "Invalid email: "
         toHtml e
         i_ " Primary email should be first.last@futurice.com"
     showMessage P.WorkPermitMissing = do
         b_ "Work permit is missing."
+        " "
         i_ "Many don't need work permit, select explicit 'Not needed' for them."
     showMessage m = toHtml (show m)
