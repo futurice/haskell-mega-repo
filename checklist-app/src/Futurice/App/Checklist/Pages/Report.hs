@@ -3,9 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Report (reportPage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import Prelude ()
 import Web.HttpApiData           (toQueryParam)
 
 import Futurice.App.Checklist.Markup
@@ -20,7 +20,7 @@ reportPage
     -> HtmlPage "report"
 reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $ do
     let employees' = sortOn (view employeeStartingDay) $
-            (world ^.. worldArchive . folded . _1)
+            (world ^.. worldArchive . folded . archiveEmployee)
             <> (world ^.. worldEmployees . folded)
 
     let employees = employees'
