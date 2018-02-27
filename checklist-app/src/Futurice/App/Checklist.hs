@@ -281,7 +281,7 @@ employeeAuditPageImpl
 employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
   where
     impl world userInfo =
-        case world ^? worldEmployees . ix eid <|> world ^? worldArchive . ix eid . _1 of
+        case world ^? worldEmployees . ix eid <|> world ^? worldArchive . ix eid . archiveEmployee of
             Nothing -> pure notFoundPage
             Just employee -> do
                 cmds <- fetchEmployeeCommands ctx employee

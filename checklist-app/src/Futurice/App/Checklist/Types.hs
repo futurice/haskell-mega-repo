@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 -- | Types employee in checklist logic.
 --
 -- Currently missing:
@@ -67,6 +67,8 @@ module Futurice.App.Checklist.Types (
     World,
     emptyWorld,
     mkWorld,
+    ArchivedEmployee (..),
+    archiveEmployee,
     -- ** Lenses
     worldEmployees,
     worldArchive,
@@ -83,6 +85,7 @@ module Futurice.App.Checklist.Types (
     Counter (..),
     TodoCounter (..),
     toTodoCounter,
+    taskItemtoTodoCounter,
     -- * Re-exports
     module Futurice.Office,
     module Futurice.Tribe,

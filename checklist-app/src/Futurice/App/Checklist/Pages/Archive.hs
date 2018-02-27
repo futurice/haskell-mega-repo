@@ -3,10 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Archive (archivePage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Futurice.Lucid.Foundation
-import Servant.Utils.Links (safeLink)
+import Futurice.Prelude
+import Prelude ()
+import Servant.Utils.Links       (safeLink)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
@@ -17,7 +17,7 @@ archivePage
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "archive"
 archivePage world authUser@(_, viewerRole) = checklistPage_ "Employees" authUser $ do
-    let employees = sortOn (view $ _1 . employeeStartingDay) $ world ^.. worldArchive . folded
+    let employees = sortOn (view $ archiveEmployee . employeeStartingDay) $ world ^.. worldArchive . folded
 
     -- Title
     header "Archive" []
@@ -34,7 +34,9 @@ archivePage world authUser@(_, viewerRole) = checklistPage_ "Employees" authUser
             viewerItemsHeader viewerRole
             th_ [title_ "Task items todo/done"]        "Tasks"
             th_                                        "Audit"
-        tbody_ $ for_ employees $ \(employee, TodoCounter (Counter i j) perRole ) -> tr_ $ do
+        tbody_ $ for_ employees $ \(ArchivedEmployee employee taskMap) -> tr_ $ do
+            let (TodoCounter (Counter i j) perRole) = ifoldMap (taskItemtoTodoCounter world) taskMap
+
             td_ $ contractTypeHtml $ employee ^. employeeContractType
             td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
             td_ $ employee ^. nameHtml
