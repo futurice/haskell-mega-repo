@@ -287,11 +287,11 @@ isInGithubOrganizationHtml p gs = case p of
   Just pEmployee -> case pEmployee ^. P.employeeGithub of
     Nothing -> span_ [class_ "info label"]  "No Github username in personio"
     Just githubUser -> case listToMaybe $ filter (\g  -> simpleUserLogin g == githubUser) (toList gs) of
-      Nothing -> label_ $ do
+      Nothing -> span_ $ do
           span_ [class_ "info label"] "Not in Futurice Github organization"
           " Username "
           toHtml githubUser
-      Just _ -> label_ $ do
+      Just _ -> span_ $ do
           span_ [class_ "info label"] "In Futurice Github organization"
           " Username "
           toHtml githubUser
