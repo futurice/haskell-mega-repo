@@ -180,7 +180,10 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
         Nothing   -> pure notFoundPage
         Just task -> do
             today <- currentDay
-            pure $ taskPage world today userInfo task
+            now <- currentTime
+            (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
+            pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
+            pure $ taskPage world today userInfo task gemployees pemployeesmap planEmployees
 
 checklistPageImpl
     :: Ctx
