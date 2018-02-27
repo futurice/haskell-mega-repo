@@ -86,6 +86,8 @@ module Futurice.App.Checklist.Types (
     TodoCounter (..),
     toTodoCounter,
     taskItemtoTodoCounter,
+    -- * Helpers
+    SortCriteria (..),
     -- * Re-exports
     module Futurice.Office,
     module Futurice.Tribe,

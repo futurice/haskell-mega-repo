@@ -14,7 +14,7 @@ import Servant.HTML.Lucid        (HTML)
 import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
-       (Checklist, Employee, Identifier, Office, Task, TaskRole)
+       (Checklist, Employee, Identifier, Office, SortCriteria, Task, TaskRole)
 
 import qualified Personio
 
@@ -173,7 +173,8 @@ type ApplianceHelpEndpoint =
 type StatsPageEndpoint =
     SSOUser :>
     "stats" :>
-    QueryFlag "sort-empl-desc" :>
+    QueryParam' '[Required] "sort-criteria" SortCriteria :>
+    QueryFlag "sort-desc" :>
     Get '[HTML] (HtmlPage "stats")
 
 -------------------------------------------------------------------------------
