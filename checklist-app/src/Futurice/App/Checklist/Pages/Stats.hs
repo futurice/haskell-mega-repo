@@ -16,18 +16,21 @@ import Futurice.App.Checklist.Types
 
 import qualified Data.Map as DM
 
-data SortedTask = SortedTask Task Counter Counter
+data SortedTask = SortedTask Task Counter Counter Counter
 
 statsPage
     :: World -- ^ the world
     -> AuthUser -- ^ logged in userError
+    -> SortCriteria
     -> Bool
     -> HtmlPage "stats"
-statsPage world authUser sortDescEmpl =
+statsPage world authUser sortCriteria sortDescEmpl =
     let countUsers AnnTaskItemDone {} = Counter 1 1
         countUsers AnnTaskItemTodo {} = Counter 0 1
 
-        sortByEmpl (SortedTask _ (Counter i j) _) = if j == 0 then 0 else fromIntegral i/ fromIntegral j :: Double
+        sortByEmpl SortByActive  (SortedTask _ (Counter i j) _ _) = if j == 0 then 0 else fromIntegral i/ fromIntegral j :: Double
+        sortByEmpl SortByArchive (SortedTask _ _ (Counter i j) _) = if j == 0 then 0 else fromIntegral i/ fromIntegral j :: Double
+        sortByEmpl SortByBoth    (SortedTask _ _ _ (Counter i j)) = if j == 0 then 0 else fromIntegral i/ fromIntegral j :: Double
 
         tasks' = world ^.. worldTasksSortedByName . folded
         archivedEmployees = world ^. worldArchive
@@ -40,12 +43,14 @@ statsPage world authUser sortDescEmpl =
                                          (maybe 0 length (tasksWithArchivedEmployees ^? ix i))
                                          archivedEmployeesCount
 
-        sortedTask = fmap (\task ->
-                             SortedTask
-                             task
-                             (foldMapOf (worldTaskItems' . ix (task ^. identifier) . folded) countUsers world)
-                             (findArchivedEmployeesForTask (task ^. identifier))) tasks'
-        sortedTask' = sortedTask & (if sortDescEmpl then sortOn $ Down . sortByEmpl else sortOn sortByEmpl)
+        sortedTask = fmap (\task -> let activeCount = (foldMapOf (worldTaskItems' . ix (task ^. identifier) . folded) countUsers world)
+                                        archiveCount = (findArchivedEmployeesForTask (task ^. identifier))
+                                    in  SortedTask
+                                        task
+                                        activeCount
+                                        archiveCount
+                                        (activeCount <> archiveCount)) tasks'
+        sortedTask' = sortedTask & (if sortDescEmpl then sortOn $ Down . (sortByEmpl sortCriteria) else sortOn (sortByEmpl sortCriteria))
 
         showPercentageHtml i j = do
             toHtml (show i)
@@ -61,15 +66,18 @@ statsPage world authUser sortDescEmpl =
        row_ $ large_ 12 $ table_ $ do
            thead_ $ tr_ $ do
                th_ [title_ "Task"] "Task"
-               th_ [title_ "Active employees todo/done"] $ a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint (not sortDescEmpl)] "Active Empl"
-               th_ [title_ "Archived employees todo/done"] $ "Archived Empl"
-               th_ [title_ "Combined employees todo/done"] $ "Both"
+               th_ [title_ "Active employees todo/done"] $
+                   a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActive (if sortCriteria == SortByActive then not sortDescEmpl else False)] "Active Empl"
+               th_ [title_ "Archived employees todo/done"] $
+                   a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByArchive (if sortCriteria == SortByArchive then not sortDescEmpl else False)] "Archived Empl"
+               th_ [title_ "Combined employees todo/done"] $
+                   a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByBoth (if sortCriteria == SortByBoth then not sortDescEmpl else False)] "Both"
 
-           tbody_ $ for_ sortedTask' $ \(SortedTask task (Counter i j) (Counter archi archj)) -> tr_ $ do
+           tbody_ $ for_ sortedTask' $ \(SortedTask task (Counter i j) (Counter archi archj) (Counter bothi bothj)) -> tr_ $ do
                td_ $ taskLink task
                td_ $ do
                    showPercentageHtml i j
                td_ $ do
                    showPercentageHtml archi archj
                td_ $ do
-                   showPercentageHtml (i + archi) (j + archj)
+                   showPercentageHtml (bothi) (bothj)

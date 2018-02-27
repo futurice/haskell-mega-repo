@@ -251,10 +251,11 @@ applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
 statsPageImpl
     :: Ctx
     -> Maybe FUM.Login
+    -> SortCriteria
     -> Bool
     -> Handler (HtmlPage "stats")
-statsPageImpl ctx fu sortDescOrder = withAuthUser ctx fu $ \world userInfo ->
-    pure $ statsPage world userInfo sortDescOrder
+statsPageImpl ctx fu sortCriteria sortDescOrder = withAuthUser ctx fu $ \world userInfo ->
+    pure $ statsPage world userInfo sortCriteria sortDescOrder
 
 -------------------------------------------------------------------------------
 -- Personio helper

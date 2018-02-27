@@ -104,6 +104,10 @@ data Checklist = Checklist
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
+-- | Helper type for stats page sorting
+data SortCriteria = SortByActive | SortByArchive | SortByBoth
+  deriving (Eq, Show, Bounded, Enum, Generic)
+
 -------------------------------------------------------------------------------
 -- Lenses
 -------------------------------------------------------------------------------
@@ -150,6 +154,11 @@ instance Entity Employee  where entityName _ = "Employee"
 instance Entity Task      where entityName _ = "Task"
 instance Entity Checklist where entityName _ = "Checklist"
 
+instance TextEnum SortCriteria where
+    type TextEnumNames SortCriteria = '["active", "archive", "both"]
+
+instance ToParamSchema SortCriteria where toParamSchema = enumToParamSchema
+instance ToSchema SortCriteria where declareNamedSchema = enumDeclareNamedSchema
 -------------------------------------------------------------------------------
 -- Some arbitraries
 -------------------------------------------------------------------------------
@@ -186,7 +195,10 @@ deriveGeneric ''Employee
 deriveGeneric ''Task
 deriveGeneric ''CheckResult
 deriveGeneric ''Checklist
+deriveGeneric ''SortCriteria
 
 deriveVia [t| Arbitrary Employee  `Via` Sopica Employee |]
 deriveVia [t| Arbitrary Checklist `Via` Sopica Checklist |]
 deriveVia [t| Arbitrary Task      `Via` Sopica Task |]
+deriveVia [t| ToHttpApiData SortCriteria `Via` Enumica SortCriteria |]
+deriveVia [t| FromHttpApiData SortCriteria `Via` Enumica SortCriteria |]
