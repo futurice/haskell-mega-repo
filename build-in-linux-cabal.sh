@@ -60,7 +60,7 @@ cabal update
 cabal new-build -j$CONCURRENCY -w $HC --builddir=$BUILDDIR all:exes
 
 # write current git hash, so we know where we are
-GITHASH=$(git log --pretty=format:'%h' -n 1)
+GITHASH=$(git log --pretty=format:'%h' -n 1 --abbrev=8)
 
 # Copy binaries to ./build/exe/exe
 # We put binaries in separate directories to speed-up docker image creation

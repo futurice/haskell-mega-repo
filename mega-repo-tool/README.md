@@ -1,5 +1,5 @@
 # mega-repo-tool
 
 ```
-$ stack exec mega-repo-tool -- -h
+$ cabal new-run mega-repo-tool -- -h
 ```
