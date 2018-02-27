@@ -5,8 +5,7 @@ module Futurice.App.MegaRepoTool.BuildDocker (
     AppName,
     ) where
 
-import Data.Aeson
-       (object, (.=))
+import Data.Aeson       (object, (.=))
 import Futurice.Prelude
 import Prelude ()
 import System.Directory (copyFile)
@@ -62,7 +61,7 @@ buildDocker appnames = do
             Just app -> pure (appname, app)
 
     -- Get the hash of current commit
-    githash' <- readProcess "git" ["log", "--pretty=format:%h", "-n", "1"] ""
+    githash' <- readProcess "git" ["log", "--pretty=format:%h", "-n", "1", "--abbrev=8"] ""
     _        <- readProcess "git" ["rev-parse", "--verify", githash'] ""
     let githash = githash' ^. packed
     T.putStrLn $ "Git hash aka tag for images: " <> githash
