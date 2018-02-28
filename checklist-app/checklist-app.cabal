@@ -110,6 +110,7 @@ library
       Futurice.App.Checklist.Pages.Index
       Futurice.App.Checklist.Pages.Personio
       Futurice.App.Checklist.Pages.Report
+      Futurice.App.Checklist.Pages.Stats
       Futurice.App.Checklist.Pages.Task
       Futurice.App.Checklist.Pages.Tasks
       Futurice.App.Checklist.Types
@@ -117,6 +118,7 @@ library
       Futurice.App.Checklist.Types.ContractType
       Futurice.App.Checklist.Types.Counter
       Futurice.App.Checklist.Types.Identifier
+      Futurice.App.Checklist.Types.SortCriteria
       Futurice.App.Checklist.Types.TaskAppliance
       Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem

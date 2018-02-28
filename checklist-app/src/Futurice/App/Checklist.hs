@@ -44,6 +44,7 @@ import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Personio
 import Futurice.App.Checklist.Pages.Report
+import Futurice.App.Checklist.Pages.Stats
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
@@ -79,6 +80,7 @@ server ctx = indexPageImpl ctx
     :<|> doneChartImpl ctx
     :<|> applianceHelpImpl ctx
     :<|> commandImpl ctx
+    :<|> statsPageImpl ctx
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
@@ -255,6 +257,15 @@ applianceHelpImpl
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
 
+statsPageImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> SortCriteria
+    -> Bool
+    -> Handler (HtmlPage "stats")
+statsPageImpl ctx fu sortCriteria sortDescOrder = withAuthUser ctx fu $ \world userInfo ->
+    pure $ statsPage world userInfo sortCriteria sortDescOrder
+
 -------------------------------------------------------------------------------
 -- All integrations helper
 -------------------------------------------------------------------------------
@@ -308,7 +319,7 @@ employeeAuditPageImpl
 employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
   where
     impl world userInfo =
-        case world ^? worldEmployees . ix eid <|> world ^? worldArchive . ix eid . _1 of
+        case world ^? worldEmployees . ix eid <|> world ^? worldArchive . ix eid . archiveEmployee of
             Nothing -> pure notFoundPage
             Just employee -> do
                 cmds <- fetchEmployeeCommands ctx employee

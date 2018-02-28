@@ -14,7 +14,7 @@ import Servant.HTML.Lucid        (HTML)
 import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
-       (Checklist, Employee, Identifier, Office, Task, TaskRole)
+       (Checklist, Employee, Identifier, Office, SortCriteria, Task, TaskRole)
 
 import qualified Personio
 
@@ -42,6 +42,7 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> ApplianceHelpEndpoint
     -- Command
     :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
+    :<|> StatsPageEndpoint
 
 checklistApi :: Proxy ChecklistAPI
 checklistApi = Proxy
@@ -166,6 +167,17 @@ type ApplianceHelpEndpoint =
     Get '[HTML] (HtmlPage "appliance-help")
 
 -------------------------------------------------------------------------------
+-- Stats
+-------------------------------------------------------------------------------
+
+type StatsPageEndpoint =
+    SSOUser :>
+    "stats" :>
+    QueryParam' '[Required] "sort-criteria" SortCriteria :>
+    QueryFlag "sort-desc" :>
+    Get '[HTML] (HtmlPage "stats")
+
+-------------------------------------------------------------------------------
 -- Proxies
 -------------------------------------------------------------------------------
 
@@ -210,3 +222,6 @@ personioPageEndpoint = Proxy
 
 reportPageEndpoint :: Proxy ReportPageEndpoint
 reportPageEndpoint = Proxy
+
+statsPageEndpoint :: Proxy StatsPageEndpoint
+statsPageEndpoint = Proxy

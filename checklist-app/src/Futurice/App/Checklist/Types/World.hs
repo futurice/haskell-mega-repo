@@ -1,4 +1,5 @@
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE RankNTypes      #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Futurice.App.Checklist.Types.World (
     World,
     emptyWorld,
@@ -16,20 +17,22 @@ module Futurice.App.Checklist.Types.World (
     worldTasksSortedByName,
     -- * Counters
     toTodoCounter,
+    taskItemtoTodoCounter,
     -- * Archive
-    ArchivedEmployee,
+    ArchivedEmployee (..),
+    archiveEmployee,
+    archiveTaskMap,
     Archive,
     ) where
 
 -- import Futurice.Generics
-import Prelude ()
-import Futurice.Prelude
-import Control.DeepSeq  (force)
 import Control.Lens     (contains, filtered, ifiltered, (<&>))
 import Data.Functor.Rep (Representable (..))
-import Futurice.Office
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
+import Futurice.Office
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Data.Set.Lens  as Set
 import qualified Futurice.Graph as Graph
@@ -52,7 +55,13 @@ import qualified FUM.Types.Login as FUM
 -- | Primitive ACL. Given possible username, return the actual username, role and location.
 type AuthCheck = Maybe FUM.Login -> Maybe (FUM.Login, TaskRole, Office)
 
-type ArchivedEmployee = (Employee, TodoCounter)
+data ArchivedEmployee = ArchivedEmployee
+    { _archiveEmployee :: !Employee
+    , _archiveTaskMap  :: !(Map (Identifier Task) TaskItem)
+    }
+
+makeLenses ''ArchivedEmployee
+
 type Archive = Map (Identifier Employee) ArchivedEmployee
 
 -- | World desribes the state of the db.
@@ -140,7 +149,7 @@ mkWorld es ts ls is arc =
         -- TODO: validate is
 
         swappedIs = swapMapMap is
-    in World es' (Graph.fromIdMap ts') ls' is (force arc) swappedIs
+    in World es' (Graph.fromIdMap ts') ls' is arc swappedIs
 
 {-
 
@@ -213,6 +222,19 @@ toTodoCounter world tid td =
         (Just role, AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mk role 0
         (Nothing,   AnnTaskItemDone {}) -> TodoCounter (Counter 1 1) $ mempty
         (Nothing,   AnnTaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mempty
+  where
+    mk :: TaskRole -> Int -> PerTaskRole Counter
+    mk role value = tabulate $ \role' -> if role == role'
+        then Counter value 1
+        else mempty
+
+taskItemtoTodoCounter :: World -> Identifier Task -> TaskItem -> TodoCounter
+taskItemtoTodoCounter world tid td =
+    case (world ^? worldTasks . ix tid . taskRole, td) of
+        (Just role, TaskItemDone {}) -> TodoCounter (Counter 1 1) $ mk role 1
+        (Just role, TaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mk role 0
+        (Nothing,   TaskItemDone {}) -> TodoCounter (Counter 1 1) $ mempty
+        (Nothing,   TaskItemTodo {}) -> TodoCounter (Counter 0 1) $ mempty
   where
     mk :: TaskRole -> Int -> PerTaskRole Counter
     mk role value = tabulate $ \role' -> if role == role'
