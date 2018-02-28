@@ -26,6 +26,7 @@ import Futurice.App.Checklist.Types.TaskTag
 
 import qualified Data.Text       as T
 import qualified FUM.Types.Login as FUM
+import qualified PlanMill        as PM
 import qualified Test.QuickCheck as QC
 
 import qualified Personio as P
@@ -103,6 +104,15 @@ data Checklist = Checklist
     , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+
+-- | Helper structure for carrying Planmill user
+data PMUser = PMUser
+    { pmUser     :: !PM.User
+    , pmPassive  :: !Text
+    }
+  deriving (Show, Generic)
+
+instance NFData PMUser
 
 -------------------------------------------------------------------------------
 -- Lenses
