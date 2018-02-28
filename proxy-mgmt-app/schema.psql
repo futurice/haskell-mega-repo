@@ -33,3 +33,6 @@ CREATE FUNCTION proxyapp.pass_crypt() RETURNS trigger AS $pass_crypt$
 
 CREATE TRIGGER pass_crypt BEFORE INSERT OR UPDATE ON proxyapp.credentials
   FOR EACH ROW EXECUTE PROCEDURE proxyapp.pass_crypt();
+
+ALTER TABLE proxyapp.credentials
+  ADD COLUMN usertype TEXT NOT NULL DEFAULT 'user';
