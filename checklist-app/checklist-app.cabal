@@ -58,6 +58,7 @@ library
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , github
     , http-api-data
     , lattices >=1.6
     , lens
@@ -66,6 +67,7 @@ library
     , mtl
     , periocron
     , personio-client
+    , planmill-client
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -153,6 +155,7 @@ executable checklist-app-server
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , github
     , http-api-data
     , lattices >=1.6
     , lens

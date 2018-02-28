@@ -11,12 +11,14 @@ import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
-       (IntegrationsConfig, MonadPersonio (..), runIntegrations)
+       (Integrations, IntegrationsConfig, MonadPersonio (..),
+       githubOrganisationMembers, personioPlanmillMap, runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import Futurice.Stricter
+import GitHub                    (SimpleUser)
 import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
@@ -51,6 +53,8 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.GroupName        as FUM
 import qualified FUM.Types.Login            as FUM
 import qualified Futurice.FUM.MachineAPI    as FUM
+import qualified PlanMill                   as PM
+import qualified PlanMill.Queries           as PMQ
 
 import qualified Personio
 
@@ -93,7 +97,10 @@ indexPageImpl ctx fu loc cid tid showDone showOld = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         today <- currentDay
-        pure $ indexPage world today userInfo loc checklist task showDone showOld
+        now <- currentTime
+        (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
+        pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
+        pure $ indexPage world today userInfo gemployees pemployeesmap planEmployees loc checklist task showDone showOld
       where
         checklist = do
             cid' <- cid
@@ -173,7 +180,10 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
         Nothing   -> pure notFoundPage
         Just task -> do
             today <- currentDay
-            pure $ taskPage world today userInfo task
+            now <- currentTime
+            (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
+            pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
+            pure $ taskPage world today userInfo task gemployees pemployeesmap planEmployees
 
 checklistPageImpl
     :: Ctx
@@ -199,10 +209,9 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Nothing       -> pure notFoundPage
         Just employee -> do
             now <- currentTime
-            pemployees <- do
-                employees <- getPersonioEmployees now ctx
-                pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
-            pure (employeePage world userInfo employee pemployees)
+            (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
+            pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
+            pure (employeePage world userInfo employee pemployeesmap gemployees planEmployees)
 
 archivePageImpl
     :: Ctx
@@ -245,6 +254,34 @@ applianceHelpImpl
     -> Handler (HtmlPage "appliance-help")
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
+
+-------------------------------------------------------------------------------
+-- All integrations helper
+-------------------------------------------------------------------------------
+
+getEmployeeExternalData :: MonadIO m => UTCTime -> Ctx -> m (Vector SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+getEmployeeExternalData now ctx = liftIO $ cachedIO lgr cache 180 () $
+    runIntegrations mgr lgr now cfg fetchEmployeeExternalData
+  where
+    lgr = ctxLogger ctx
+    mgr = ctxManager ctx
+    cfg = ctxIntegrationsCfg ctx
+    cache = ctxCache ctx
+
+type M = Integrations '[I, Proxy, I, I, Proxy, I]
+
+personioPlanmillPMuserMap :: M (HashMap FUM.Login (Personio.Employee, PMUser))
+personioPlanmillPMuserMap = personioPlanmillMap >>= (\persons -> ifor persons $ \ _ (per, plan) -> do
+    passive <- PMQ.enumerationValue (PM.uPassive plan) "-"
+    pure (per, PMUser { pmUser = plan,
+                        pmPassive = passive
+                      }))
+
+fetchEmployeeExternalData :: M (Vector SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+fetchEmployeeExternalData = (,,)
+    <$> githubOrganisationMembers
+    <*> personio Personio.PersonioEmployees
+    <*> personioPlanmillPMuserMap
 
 -------------------------------------------------------------------------------
 -- Personio helper
@@ -417,7 +454,7 @@ makeCtx Config {..} lgr mgr cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I]
+    -> IntegrationsConfig '[I, Proxy, I, I, Proxy, I]
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do

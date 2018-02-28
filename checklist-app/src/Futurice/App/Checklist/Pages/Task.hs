@@ -6,6 +6,7 @@ import Control.Lens              (contains, forOf_, lengthOf, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
+import GitHub                    (SimpleUser)
 import Prelude ()
 import Servant.API               (safeLink)
 import Web.HttpApiData           (toUrlPiece)
@@ -14,8 +15,11 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified Data.Map       as Map
-import qualified Futurice.IdMap as IdMap
+import qualified Data.Map        as Map
+import qualified FUM.Types.Login as FUM
+import qualified Futurice.IdMap  as IdMap
+
+import qualified Personio
 
 -- |
 --
@@ -27,8 +31,11 @@ taskPage
     -> Day         -- ^ today
     -> AuthUser    -- ^ logged in user
     -> Task
+    -> Vector SimpleUser
+    -> Map Personio.EmployeeId Personio.Employee
+    -> HashMap FUM.Login (Personio.Employee, PMUser)
     -> HtmlPage "task"
-taskPage world today authUser task = checklistPage_ (view nameText task <> " - task") authUser $ do
+taskPage world today authUser task gemployees peremployees planemployees = checklistPage_ (view nameText task <> " - task") authUser $ do
     -- Title
     header (task ^. nameText <> " -  task") []
 
@@ -101,7 +108,13 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             let startingDay = employee ^. employeeStartingDay
             td_ $ contractTypeHtml $ employee ^. employeeContractType
             td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
-            td_ $ employeeLink employee
+            td_ $ do
+                employeeLink employee
+                for_ (task ^. taskTags) $ \tag -> do
+                    br_ []
+                    case tag of
+                      GithubTask -> isInGithubOrganizationHtml (personioEmployee employee) gemployees
+                      PlanmillTask -> isInPlanmillOrganizationHtml (planmillEmployee employee) (employee ^. employeeHRNumber)
             -- TODO: checklist link
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
             td_ $ taskCheckbox_ world employee task
@@ -114,3 +127,9 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
     employees =  sortOn (view employeeStartingDay) $ toList $ Map.intersection
         (IdMap.toMap (world ^. worldEmployees))
         (world ^. worldTaskItems' .ix (task ^. identifier))
+
+    personioEmployee :: Employee -> Maybe Personio.Employee
+    personioEmployee employee = (employee ^. employeePersonio) >>= (\x -> peremployees ^.at x)
+
+    planmillEmployee :: Employee -> Maybe PMUser
+    planmillEmployee employee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planemployees ^.at x)

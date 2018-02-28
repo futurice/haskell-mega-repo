@@ -15,7 +15,7 @@ import qualified FUM.Types.Login     as FUM
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[I, Proxy, I, I, Proxy, I])
     -- ACL Groups
     , cfgFumITGroup         :: !FUM.GroupName
     , cfgFumHRGroup         :: !FUM.GroupName
