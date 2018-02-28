@@ -116,6 +116,7 @@ library
       Futurice.App.Checklist.Types.ContractType
       Futurice.App.Checklist.Types.Counter
       Futurice.App.Checklist.Types.Identifier
+      Futurice.App.Checklist.Types.SortCriteria
       Futurice.App.Checklist.Types.TaskAppliance
       Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem
