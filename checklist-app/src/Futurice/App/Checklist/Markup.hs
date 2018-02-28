@@ -48,6 +48,7 @@ module Futurice.App.Checklist.Markup (
     ) where
 
 import Control.Lens        (has, non, re, _Wrapped)
+import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
 import Servant.Utils.Links (Link, safeLink)
@@ -275,26 +276,28 @@ checklistNameHtml world mloc i notDone =
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 isInPlanmillOrganizationHtml :: Maybe PMUser -> Maybe Int -> HtmlT Identity ()
-isInPlanmillOrganizationHtml planmillEmployee hrnumber = let hntext = maybe "" (\number -> ", Personio HR number: " <> toHtml (show number)) hrnumber in
-                                                           case planmillEmployee of
-                                                             Nothing -> span_ [class_ "info label"] "Person not in Planmill" <> hntext
-                                                             (Just (PMUser _ passive)) ->
-                                                                 span_ [class_ "info label"] $ "In Planmill, state: " <> toHtml passive <> hntext
+isInPlanmillOrganizationHtml planmillEmployee hrnumber =
+    span_ [ class_ "info label" ] $ case planmillEmployee of
+        Nothing                 -> "Person not in Planmill" <> hntext
+        Just (PMUser _ passive) -> "In Planmill, state: " <> toHtml passive <> hntext
+  where
+    hntext = mcase hrnumber "" $ \number ->
+        ", Personio HR number: " <> toHtml (show number)
 
 isInGithubOrganizationHtml :: Maybe P.Employee -> Vector SimpleUser -> HtmlT Identity ()
-isInGithubOrganizationHtml p gs = case p of
-  Nothing -> span_ [class_ "info label"] "No personio info found"
-  Just pEmployee -> case pEmployee ^. P.employeeGithub of
-    Nothing -> span_ [class_ "info label"]  "No Github username in personio"
-    Just githubUser -> case listToMaybe $ filter (\g  -> simpleUserLogin g == githubUser) (toList gs) of
-      Nothing -> span_ $ do
-          span_ [class_ "info label"] "Not in Futurice Github organization"
-          " Username "
-          toHtml githubUser
-      Just _ -> span_ $ do
-          span_ [class_ "info label"] "In Futurice Github organization"
-          " Username "
-          toHtml githubUser
+isInGithubOrganizationHtml p gs = runExit $ do
+    pEmployee  <- exitIfNothing p $
+        span_ [class_ "info label"] "No personio info found"
+    githubUser <- exitIfNothing (pEmployee ^. P.employeeGithub) $
+        span_ [class_ "info label"] "No GitHub username in personio"
+    _ <- exitIfNothing (listToMaybe $ filter (\g -> simpleUserLogin g == githubUser) (toList gs)) $ do
+        span_ [class_ "info label"] $ b_ "Not" <> " in Futurice GitHub organization"
+        ": "
+        toHtml githubUser
+    return $ do
+        span_ [class_ "info label"] $ b_ "In" <> " Futurice GitHub organization"
+        ": "
+        toHtml githubUser
 
 -------------------------------------------------------------------------------
 -- Tasks

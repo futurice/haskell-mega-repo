@@ -127,6 +127,7 @@ taskPage world today authUser task gemployees peremployees planemployees = check
     employees =  sortOn (view employeeStartingDay) $ toList $ Map.intersection
         (IdMap.toMap (world ^. worldEmployees))
         (world ^. worldTaskItems' .ix (task ^. identifier))
+
     personioEmployee :: Employee -> Maybe Personio.Employee
     personioEmployee employee = (employee ^. employeePersonio) >>= (\x -> peremployees ^.at x)
 
