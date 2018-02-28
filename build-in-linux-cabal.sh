@@ -33,7 +33,7 @@ fi
 #
 # To update:
 #
-# $ sha256sum futurice-constants/constants.json futurice-tribes/tribes.json hc-app/early-caring.template > data.sha256sums 
+# $ sha256sum futurice-constants/constants.json futurice-tribes/tribes.json hc-app/early-caring.template > data.sha256sums
 #
 if sha256sum -c data.sha256sums; then
     echo "Data files OK"

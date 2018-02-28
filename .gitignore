@@ -29,3 +29,5 @@ tags
 *.swn
 
 \#*\#
+
+theme-app/private/*

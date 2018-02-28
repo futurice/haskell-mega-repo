@@ -13,20 +13,20 @@ css = do
     ".empasize2" & td ? do
         fontStyle italic
         background ("#efe" :: Color)
-    for_ [h1, h2, h3, h4, li, td, div, span, b ] $ \el -> el ? do
-        fontFamily ["Lucida Grande", "Helvetica", "Arial"] [sansSerif]
+    for_ [h1, h2, h3, h4, li, td, div, span ] $ \el -> el ? do
+        fontFamily ["Futurice Regular", "Lucida Grande", "Helvetica Neue", "Helvetica", "Roboto", "Arial"] [sansSerif]
+    b ? do
+        fontFamily ["Futurice Bold", "Lucida Grande", "Helvetica Neue", "Helvetica", "Roboto", "Arial"] [sansSerif]
+        fontWeight bold
     star ? fontSize (pt 11)
     h1 ? do
         fontSize (pt 20)
-        fontWeight bold
         marginTop (px 20)
     h2 ? do
         fontSize (pt 15)
-        fontWeight bold
         marginTop (px 15)
     h3 ? do
         fontSize (pt 13)
-        fontWeight bold
         marginTop (px 10)
     ".login" ? do
         color "#46289A"
