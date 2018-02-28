@@ -248,7 +248,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
     & serverApp proxyAPI .~ server
     & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
-    & serverEnvPfx       .~ "PROXYMGMT"
+    & serverEnvPfx       .~ "PROX"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
     makeCtx Config {..} logger _mgr _cache = do
@@ -313,7 +313,14 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
                 (user, endpoint)
 
     isSwaggerReg :: RE' Text
-    isSwaggerReg = string "/swagger.json" <|> string "/swagger-ui" *> (T.pack <$> many anySym)
+    isSwaggerReg = choice
+        [ string "/"
+        , string "/favicon.ico"
+        , string "/swagger.json"
+        , string "/swagger-ui" *> (T.pack <$> many anySym)
+        ]
+
+    choice = foldr (<|>) empty
 
     credentialCheck :: String
     credentialCheck = unwords

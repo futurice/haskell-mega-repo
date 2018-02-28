@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           proxy-mgmt-app
 version:        0
 synopsis:       Proxy conf management
@@ -57,11 +53,12 @@ library
     , time
     , vector
   exposed-modules:
-      Futurice.App.ProxyMgmt
       Futurice.App.ProxyMgmt.API
+      Futurice.App.ProxyMgmt.IndexPage
       Futurice.App.ProxyMgmt.Config
       Futurice.App.ProxyMgmt.Ctx
       Futurice.App.ProxyMgmt.Dashdo
+      Futurice.App.ProxyMgmt.Main
   default-language: Haskell2010
 
 executable proxy-mgmt-app-server
