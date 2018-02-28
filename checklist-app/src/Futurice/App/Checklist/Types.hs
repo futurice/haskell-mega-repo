@@ -102,6 +102,7 @@ import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
+import Futurice.App.Checklist.Types.SortCriteria
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskComment
 import Futurice.App.Checklist.Types.TaskItem
