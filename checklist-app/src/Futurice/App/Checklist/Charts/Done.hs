@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
 module Futurice.App.Checklist.Charts.Done (doneChart) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens     (ifoldMapOf, (.=))
+import Futurice.Prelude
+import Prelude ()
 import Servant.Chart    (Chart (..))
 
 import qualified Graphics.Rendering.Chart.Easy as C
@@ -73,5 +73,7 @@ doneChart world _today _ = Chart . C.toRenderable $ do
             (toTodoCounter world)
             world
 
-    mkArchivedPoint :: (Employee, TodoCounter) -> (Day, TodoCounter)
-    mkArchivedPoint (e, counter) = (e ^. employeeStartingDay, counter)
+    mkArchivedPoint :: ArchivedEmployee -> (Day, TodoCounter)
+    mkArchivedPoint (ArchivedEmployee e m) = (e ^. employeeStartingDay, mapToCounter m)
+      where mapToCounter :: Map (Identifier Task) TaskItem -> TodoCounter
+            mapToCounter = ifoldMap (taskItemtoTodoCounter world)

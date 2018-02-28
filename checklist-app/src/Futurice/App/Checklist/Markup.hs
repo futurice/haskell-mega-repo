@@ -94,6 +94,7 @@ navigation (fu, viewerRole) = do
             li_ $ a_ [ createEmployeePageHref ] "Create Employee"
             li_ $ a_ [ personioPageHref ] "... from Personio"
             li_ $ a_ [ archivePageHref ] "Archive"
+            li_ $ a_ [ statsPageHref] "Stats"
         div_ [ class_ "top-bar-right" ] $ span_ [ class_ "menu-text" ] $ do
                 "Hello "
                 toHtml fu
@@ -210,6 +211,9 @@ archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint
 
 personioPageHref :: Attribute
 personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint
+
+statsPageHref :: Attribute
+statsPageHref = href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActive False
 
 -------------------------------------------------------------------------------
 -- Links
