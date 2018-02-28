@@ -283,7 +283,6 @@ fetchEmployeeExternalData = (,,)
     <*> personio Personio.PersonioEmployees
     <*> personioPlanmillPMuserMap
 
--- PMQ.enumerationValue (PM.uPassive x) "-"
 -------------------------------------------------------------------------------
 -- Personio helper
 -------------------------------------------------------------------------------
@@ -291,29 +290,6 @@ fetchEmployeeExternalData = (,,)
 getPersonioEmployees :: MonadIO m => UTCTime -> Ctx -> m [Personio.Employee]
 getPersonioEmployees now ctx = liftIO $ cachedIO lgr cache 180 () $
     runIntegrations mgr lgr now cfg $ personio Personio.PersonioEmployees
-  where
-    lgr = ctxLogger ctx
-    mgr = ctxManager ctx
-    cfg = ctxIntegrationsCfg ctx
-    cache = ctxCache ctx
-
--------------------------------------------------------------------------------
--- Github helper
--------------------------------------------------------------------------------
-
-getGithubEmployees :: MonadIO m => UTCTime -> Ctx -> m (Vector SimpleUser)
-getGithubEmployees now ctx = liftIO $ runIntegrations mgr lgr now cfg githubOrganisationMembers
-  where
-    lgr = ctxLogger ctx
-    mgr = ctxManager ctx
-    cfg = ctxIntegrationsCfg ctx
-
--------------------------------------------------------------------------------
--- Planmill helper
--------------------------------------------------------------------------------
-
-getPlanmillEmployees :: MonadIO m => UTCTime -> Ctx -> m (HashMap FUM.Login (Personio.Employee, PM.User))
-getPlanmillEmployees now ctx = liftIO $ cachedIO lgr cache 180 () $ runIntegrations mgr lgr now cfg personioPlanmillMap
   where
     lgr = ctxLogger ctx
     mgr = ctxManager ctx
