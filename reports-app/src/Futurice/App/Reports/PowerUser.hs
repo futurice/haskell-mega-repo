@@ -44,6 +44,7 @@ data PowerUser = PowerUser
     , _powerUserStart          :: !(Maybe Day)
     , _powerUserEnd            :: !(Maybe Day)
     , _powerUserActive         :: !Text
+    , _powerUserInternal       :: !Bool
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -93,6 +94,7 @@ powerUser today es e = do
             else "Passive"
         , _powerUserSupervisor     = s >>= view P.employeeLogin
         , _powerUserSupervisorName = s <&> view P.employeeFullname
+        , _powerUserInternal       = e ^. P.employeeEmploymentType == Just P.Internal
         }
   where
     s = do
