@@ -13,7 +13,8 @@ import Futurice.Servant
 import Futurice.Lucid.Foundation
 import Servant
 
-type ThemeAPI = Get '[HTML] (HtmlPage "index") :<|> "images" :> Raw
+type ThemeAPI = SSOUser :> Get '[HTML] (HtmlPage "index")
+    :<|> "public" :> Raw
 
 themeApi :: Proxy ThemeAPI
 themeApi = Proxy

@@ -25,11 +25,6 @@ module Futurice.Colour (
     colourCMYK8,
     colourClay,
     colourToDataColour,
-    -- * Colour Combinations
-    infographicsColours,
-    ColourCombination(..),
-    ColourTriple,
-    colourCombinationTriple,
     -- * Type level trickery
     SColour(..),
     SAccentFamily(..),
@@ -58,8 +53,8 @@ import Servant.Common.Text (FromText (..), ToText (..))
 data AccentFamily
     = AF1  -- ^ Greens
     | AF2  -- ^ Violets
-    | AF3  -- ^ Yellow, orange, red
-    | AF4  -- ^ Light warms
+    | AF3  -- ^ Blues
+    | AF4  -- ^ Yellow, orange, red
     | AF5  -- ^ Light colds
     | AF6  -- ^ Light colourfuls
     deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Typeable)
@@ -77,8 +72,8 @@ instance Hashable AccentColour
 data Colour
     = FutuGreen       -- ^ Futurice Green
     | FutuBlack       -- ^ Black
-    | FutuLightGreen  -- ^ Accent Green Light
-    | FutuDarkGreen   -- ^ Accent Green Dark
+    | FutuLightGreen  -- ^ Accent Green Light, not in palette anymore
+    | FutuDarkGreen   -- ^ Accent Green Dark, not in palette anymore
     | FutuAccent AccentFamily AccentColour
       -- ^ Accent Colours
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
@@ -122,21 +117,21 @@ colourPantoneName FutuGreen             = "Pantone 7740"
 colourPantoneName FutuBlack             = "Pantone Black 4"
 colourPantoneName FutuLightGreen        = "Pantone 7738"
 colourPantoneName FutuDarkGreen         = "Pantone 7743"
-colourPantoneName (FutuAccent AF1 AC1)  = "Pantone 574"
+colourPantoneName (FutuAccent AF1 AC1)  = "Pantone 573"
 colourPantoneName (FutuAccent AF1 AC2)  = "Pantone 561"
 colourPantoneName (FutuAccent AF1 AC3)  = "Pantone 548"
 colourPantoneName (FutuAccent AF2 AC1)  = "Pantone 7444"
 colourPantoneName (FutuAccent AF2 AC2)  = "Pantone Violet"
 colourPantoneName (FutuAccent AF2 AC3)  = "Pantone 261"
-colourPantoneName (FutuAccent AF3 AC1)  = "Pantone 113"
-colourPantoneName (FutuAccent AF3 AC2)  = "Pantone 151"
-colourPantoneName (FutuAccent AF3 AC3)  = "Pantone Warm Red"
-colourPantoneName (FutuAccent AF4 AC1)  = "Pantone Warm Gray"
-colourPantoneName (FutuAccent AF4 AC2)  = "Pantone 482"
-colourPantoneName (FutuAccent AF4 AC3)  = "Pantone 410"
-colourPantoneName (FutuAccent AF5 AC1)  = "Pantone 7541"
+colourPantoneName (FutuAccent AF3 AC1)  = "Pantone 7541"
+colourPantoneName (FutuAccent AF3 AC2)  = "Pantone 2156"
+colourPantoneName (FutuAccent AF3 AC3)  = "Pantone 294"
+colourPantoneName (FutuAccent AF4 AC1)  = "Pantone 113"
+colourPantoneName (FutuAccent AF4 AC2)  = "Pantone 197"
+colourPantoneName (FutuAccent AF4 AC3)  = "Pantone Warm Red"
+colourPantoneName (FutuAccent AF5 AC1)  = "Pantone Warm Gray"
 colourPantoneName (FutuAccent AF5 AC2)  = "Pantone 434"
-colourPantoneName (FutuAccent AF5 AC3)  = "Pantone 430"
+colourPantoneName (FutuAccent AF5 AC3)  = "Pantone 482"
 colourPantoneName (FutuAccent AF6 AC1)  = "Pantone 7499"
 colourPantoneName (FutuAccent AF6 AC2)  = "Pantone 600"
 colourPantoneName (FutuAccent AF6 AC3)  = "Pantone 7485"
@@ -153,15 +148,15 @@ colourRGB8 (FutuAccent AF1 AC3)  = PixelRGB8 0 52 65
 colourRGB8 (FutuAccent AF2 AC1)  = PixelRGB8 190 195 230
 colourRGB8 (FutuAccent AF2 AC2)  = PixelRGB8 70 40 154
 colourRGB8 (FutuAccent AF2 AC3)  = PixelRGB8 80 10 90
-colourRGB8 (FutuAccent AF3 AC1)  = PixelRGB8 255 240 70
-colourRGB8 (FutuAccent AF3 AC2)  = PixelRGB8 255 130 30
-colourRGB8 (FutuAccent AF3 AC3)  = PixelRGB8 255 82 64
-colourRGB8 (FutuAccent AF4 AC1)  = PixelRGB8 242 238 230
-colourRGB8 (FutuAccent AF4 AC2)  = PixelRGB8 240 214 195
-colourRGB8 (FutuAccent AF4 AC3)  = PixelRGB8 114 98 95
-colourRGB8 (FutuAccent AF5 AC1)  = PixelRGB8 238 243 245
-colourRGB8 (FutuAccent AF5 AC2)  = PixelRGB8 255 220 220
-colourRGB8 (FutuAccent AF5 AC3)  = PixelRGB8 126 135 139
+colourRGB8 (FutuAccent AF3 AC1)  = PixelRGB8 238 243 245
+colourRGB8 (FutuAccent AF3 AC2)  = PixelRGB8 128 157 175
+colourRGB8 (FutuAccent AF3 AC3)  = PixelRGB8 0 31 92
+colourRGB8 (FutuAccent AF4 AC1)  = PixelRGB8 255 240 70
+colourRGB8 (FutuAccent AF4 AC2)  = PixelRGB8 245 143 145
+colourRGB8 (FutuAccent AF4 AC3)  = PixelRGB8 255 82 64
+colourRGB8 (FutuAccent AF5 AC1)  = PixelRGB8 242 238 230
+colourRGB8 (FutuAccent AF5 AC2)  = PixelRGB8 225 220 220
+colourRGB8 (FutuAccent AF5 AC3)  = PixelRGB8 240 214 195
 colourRGB8 (FutuAccent AF6 AC1)  = PixelRGB8 255 240 210
 colourRGB8 (FutuAccent AF6 AC2)  = PixelRGB8 255 245 175
 colourRGB8 (FutuAccent AF6 AC3)  = PixelRGB8 230 245 220
@@ -180,15 +175,15 @@ colourCMYK8 (FutuAccent AF1 AC3)  = PixelCMYK8 100 21 28 76
 colourCMYK8 (FutuAccent AF2 AC1)  = PixelCMYK8 27 21 0 0
 colourCMYK8 (FutuAccent AF2 AC2)  = PixelCMYK8 90 99 0 0
 colourCMYK8 (FutuAccent AF2 AC3)  = PixelCMYK8 62 100 9 44
-colourCMYK8 (FutuAccent AF3 AC1)  = PixelCMYK8 0 2 83 0
-colourCMYK8 (FutuAccent AF3 AC2)  = PixelCMYK8 0 60 100 0
-colourCMYK8 (FutuAccent AF3 AC3)  = PixelCMYK8 0 83 80 0
-colourCMYK8 (FutuAccent AF4 AC1)  = PixelCMYK8 3 3 6 7
-colourCMYK8 (FutuAccent AF4 AC2)  = PixelCMYK8 4 17 21 7
-colourCMYK8 (FutuAccent AF4 AC3)  = PixelCMYK8 22 33 28 60
-colourCMYK8 (FutuAccent AF5 AC1)  = PixelCMYK8 7 1 3 2
+colourCMYK8 (FutuAccent AF3 AC1)  = PixelCMYK8 8 1 3 4
+colourCMYK8 (FutuAccent AF3 AC2)  = PixelCMYK8 51 23 11 0
+colourCMYK8 (FutuAccent AF3 AC3)  = PixelCMYK8 100 69 7 30
+colourCMYK8 (FutuAccent AF4 AC1)  = PixelCMYK8 0 2 83 0
+colourCMYK8 (FutuAccent AF4 AC2)  = PixelCMYK8 0 55 31 0
+colourCMYK8 (FutuAccent AF4 AC3)  = PixelCMYK8 0 83 80 0
+colourCMYK8 (FutuAccent AF5 AC1)  = PixelCMYK8 3 3 6 8
 colourCMYK8 (FutuAccent AF5 AC2)  = PixelCMYK8 5 11 8 12
-colourCMYK8 (FutuAccent AF5 AC3)  = PixelCMYK8 33 18 13 40
+colourCMYK8 (FutuAccent AF5 AC3)  = PixelCMYK8 4 17 21 7
 colourCMYK8 (FutuAccent AF6 AC1)  = PixelCMYK8 1 2 24 0
 colourCMYK8 (FutuAccent AF6 AC2)  = PixelCMYK8 2 0 39 0
 colourCMYK8 (FutuAccent AF6 AC3)  = PixelCMYK8 9 0 18 0
@@ -207,57 +202,6 @@ colourToDataColour :: (Floating a, Ord a) => Colour -> DC.Colour a
 colourToDataColour = f . colourRGB8
   where
     f (PixelRGB8 r g b) = DC.sRGB24 r g b
-
-------------------------------------------------------------------------------
--- Colour combinations
-------------------------------------------------------------------------------
-
--- | Bright colours in infographics
-infographicsColours :: [Colour]
-infographicsColours =
-    [ FutuGreen
-    , FutuAccent AF3 AC2
-    , FutuAccent AF2 AC2
-    , FutuAccent AF3 AC3
-    , FutuAccent AF1 AC2
-    , FutuAccent AF3 AC1
-    ]
-
-data ColourCombination
-    = SpringDay | Spruce | Forest
-    | LateWnter | Eskimo | GasFlame
-    | South | BeachSand | Morning
-    | Kiwi | Melon | Plum
-    deriving (Eq, Ord, Enum, Bounded, Show, Read, Generic, Typeable)
-
-instance NFData ColourCombination
-instance Hashable ColourCombination
-
-type ColourTriple = (Colour, Colour, Colour)
-
-colourCombinationTriple :: ColourCombination -> ColourTriple
-colourCombinationTriple SpringDay = (toEnum 2, toEnum 10, toEnum 4)
--- TODO: implement me
-colourCombinationTriple _ = (toEnum 0, toEnum 0, toEnum 0)
-{-
-springDay, spruce, forest :: ColourCombination
-lateWinter, eskimo, gasFlame :: ColourCombination
-south, beachSand, morning :: ColourCombination
-kiwi, melon, plum :: ColourCombination
-
-springDay   = (toEnum 2, toEnum 10, toEnum 4)
-spruce      = undefined
-forest      = undefined
-lateWinter  = undefined
-eskimo      = undefined
-gasFlame    = undefined
-south       = undefined
-beachSand   = undefined
-morning     = undefined
-kiwi        = undefined
-melon       = undefined
-plum        = undefined
--}
 
 ------------------------------------------------------------------------------
 -- Type level trickery

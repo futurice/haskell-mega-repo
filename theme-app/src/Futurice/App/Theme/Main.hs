@@ -2,13 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Futurice.App.Theme (defaultMain) where
+module Futurice.App.Theme.Main (defaultMain) where
 
 import Futurice.Prelude
-import Prelude ()
-
 import Futurice.Servant
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
+import Prelude ()
 import Servant
 import Servant.Swagger.UI.Internal    (mkRecursiveEmbedded)
 
@@ -18,10 +17,11 @@ import Futurice.App.Theme.Markup
 
 -- | API server
 server :: () -> Server ThemeAPI
-server _ = pure indexPage :<|> static
+server _ = pure . indexPage
+    :<|> public
 
-static :: Server Raw
-static = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "images")
+public :: Server Raw
+public = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "public")
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
