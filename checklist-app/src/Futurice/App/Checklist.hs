@@ -254,8 +254,9 @@ statsPageImpl
     -> SortCriteria
     -> Bool
     -> Handler (HtmlPage "stats")
-statsPageImpl ctx fu sortCriteria sortDescOrder = withAuthUser ctx fu $ \world userInfo ->
-    pure $ statsPage world userInfo sortCriteria sortDescOrder
+statsPageImpl ctx fu sortCriteria sortDescOrder = withAuthUser ctx fu $ \world userInfo -> do
+    today <- currentDay
+    pure $ statsPage world today userInfo sortCriteria sortDescOrder
 
 -------------------------------------------------------------------------------
 -- Personio helper
