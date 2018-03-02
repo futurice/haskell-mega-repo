@@ -24,8 +24,10 @@ statement (Charset s)         = atKeyword "charset " <> string s <> punct ';' <>
 statement (NestedStatement s) = nestedStatement s
 
 nestedStatement :: NestedStatement -> TS
-nestedStatement (Ruleset r) = ruleset r
-nestedStatement (Page dl) = atKeyword "page" <> declarationList dl
+nestedStatement (Ruleset r)      = ruleset r
+nestedStatement (Page dl)        = atKeyword "page" <> declarationList dl
+nestedStatement (Fontface dl)    = atKeyword "font-face" <> declarationList dl
+nestedStatement (Viewport dl)    = atKeyword "viewport" <> declarationList dl
 nestedStatement (Keyframes n bs) = atKeyword "keyframes"
     <> ident n
     <> braces (foldMap keyframeBlock bs)
@@ -88,6 +90,7 @@ any_ (Number n)      = TS (TokNumber n :)
 any_ (Dimension n u) = TS (TokDimension n u :)
 any_ (Percentage n)  = TS (TokPercentage n :)
 any_ (Delim c)       = punct c
+any_ (URI s)         = ident "url" <> punct '(' <> string s <> punct ')'
 any_  Colon          = punct ':'
 any_ (Hash s)        = TS (TokHash s :)
 any_ (String s)      = string s

@@ -6,11 +6,11 @@
 module LambdaCSS.Parser where
 
 import Control.Applicative (Alternative (..), liftA2, optional, (<**>))
-import Data.Char           (chr)
+import Data.Char           (chr, isControl)
 import Data.Functor        (void)
 import Data.List.NonEmpty  (NonEmpty (..))
 import Text.Trifecta
-       (CharParsing (..), Parsing (..), choice, oneOf, sepBy)
+       (CharParsing (..), Parsing (..), choice, oneOf, sepEndBy)
 
 import qualified Data.Scientific as S
 import qualified Text.Trifecta   as T
@@ -72,15 +72,23 @@ statement = choice
 --
 -- <https://developer.mozilla.org/en-US/docs/Web/CSS/%40charset>
 --
--- === Media
+-- === @media
 --
 -- <https://developer.mozilla.org/en-US/docs/Web/CSS/@media>
 --
--- === Page
+-- === @page
 --
 -- <https://developer.mozilla.org/en-US/docs/Web/CSS/@page>
 --
--- === Keyframes
+-- === @font-face
+--
+-- <https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face>
+--
+-- === @viewport
+--
+-- <https://developer.mozilla.org/en-US/docs/Web/CSS/@viewport>
+--
+-- === @keyframes
 --
 -- Keyframes are specified using the @keyframes at-rule, defined as follows:
 --
@@ -100,6 +108,8 @@ nestedStatement :: CharParsing m => m NestedStatement
 nestedStatement = Ruleset <$> ruleset <|> char '@' *> choice
     [ media
     , page
+    , fontface
+    , viewport
     , keyframes
     ] <?> "nested statement"
   where
@@ -123,8 +133,18 @@ nestedStatement = Ruleset <$> ruleset <|> char '@' *> choice
     page = string "page" *> ws *> page'
     page' = Page <$> braces declarationList
 
-    -- Keyframes
-    keyframes = string "keyframes" *> ws *> keyframes'
+    -- font-face
+    fontface = string "font-face" *> ws *> fontface'
+    fontface' = Fontface <$> braces declarationList
+
+    -- viewport
+    viewportS = string "viewport" <|> string "-ms-viewport"
+    viewport = viewportS *> ws *> viewport'
+    viewport' = Viewport <$> braces declarationList
+
+    -- keyframes
+    keyframesS = string "keyframes" <|> char '-' *> (string "webkit-keyframes" <|> string "o-keyframes")
+    keyframes = keyframesS *> ws *> keyframes'
     keyframes' = Keyframes
         <$> (ident <|> string_) -- todo: custom-ident
         <*  ws
@@ -135,9 +155,9 @@ nestedStatement = Ruleset <$> ruleset <|> char '@' *> choice
         <*> braces declarationList
 
     keyframeSelector = choice
-        [ KeyframeSelectorFrom <$ string "from"
-        , KeyframeSelectorTo <$ string "to"
-        , KeyframeSelectorPercentage <$> num <* char '%'
+        [ KeyframeSelectorFrom <$ string "from" <* ws
+        , KeyframeSelectorTo <$ string "to" <* ws
+        , KeyframeSelectorPercentage <$> num <* char '%' <* ws
         ]
 
 -- |
@@ -169,7 +189,7 @@ ruleset = RS
 --
 -- We don't recognise at-rules inside declaration lists.
 declarationList :: CharParsing m => m DeclarationList
-declarationList = sepBy declaration (semicolon *> ws)
+declarationList = sepEndBy declaration (semicolon *> ws)
 
 -- |
 -- @
@@ -248,7 +268,8 @@ declaration = Declaration
 -- @
 any_ :: CharParsing m => m Any
 any_ = choice
-    [ try $ Ident <$> ident -- we need try as number can start with minus/dash - too
+    [ try (string "url(") *> ws' *> (URI <$> uri) <* char ')'
+    , try $ Ident <$> ident -- we need try as number can start with minus/dash - too
     , try numeric -- dot number
     , Hash <$> hash
     , String <$> string_
@@ -257,6 +278,10 @@ any_ = choice
     , Brackets <$ lbracket <* ws <*> many any_ <* rbracket
     , Delim <$> delim
     ] <* ws
+  where
+    uri = string_ <|> many uriChar
+    uriChar = satisfy $ \c ->
+        not (isControl c) && c `notElem` "'\"()\\ \r\t\n\f"
 
 -- |
 -- @
@@ -278,6 +303,10 @@ numeric = num <**> u where
 ws :: CharParsing m => m ()
 ws = skipMany (void (oneOf " \t\r\n\f") <|> comment)
 
+-- | @[ \t\r\n\f]*@
+ws' :: CharParsing m => m ()
+ws' = skipMany (oneOf " \t\r\n\f")
+
 -- | @S@
 ws1 :: CharParsing m => m ()
 ws1 = skipSome $ oneOf " \t\r\n\f"
@@ -292,9 +321,9 @@ ws1 = skipSome $ oneOf " \t\r\n\f"
 -- escape       {unicode}|\\[^\n\r\f0-9a-f]
 -- @
 ident :: CharParsing m => m String
-ident = mk <$> optional (char '-') <*> nmstart <*> many nmchar <?> "ident"
+ident = mk <$> optional (char '-') <*> optional (char '-') <*> nmstart <*> many nmchar <?> "ident"
   where
-    mk x y zs = maybe id (:) x (y : zs)
+    mk x x' y zs = maybe id (:) x $ maybe id (:) x' $ y : zs
     -- TODO:  nonascii | escape
     nmstart = satisfy $ \c -> c == '_'
         || (c >= 'a' && c <= 'z')
@@ -390,7 +419,7 @@ rbracket = void (char ']')
 --
 -- tmp
 delim :: CharParsing m => m Char
-delim = oneOf ".-=!,>*+^~\\" <?> "delim"
+delim = oneOf ".-=!,>*+^~\\/" <?> "delim"
 
 -- ** CSS utitilities
 

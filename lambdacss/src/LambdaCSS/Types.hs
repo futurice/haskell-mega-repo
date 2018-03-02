@@ -42,6 +42,8 @@ data NestedStatement
     = Ruleset Ruleset                     -- ^ Style rules
     | Media MediaQuery [NestedStatement]  -- ^ @\@media@
     | Page DeclarationList                -- ^ @\@page@
+    | Fontface DeclarationList            -- ^ @\@font-face@
+    | Viewport DeclarationList            -- ^ @\@viewport@
     | Keyframes String [KeyframeBlock]    -- ^ @\@keyframes@
   deriving (Eq, Show, Generic)
 
@@ -128,7 +130,7 @@ data Any
     | Dimension Scientific String
     | String String
     | Delim Char
-    --  URI
+    | URI String
     | Hash String
     --  UnicodeRange
     --  Includes

@@ -39,6 +39,8 @@ instance HasHashes NestedStatement where
     hashes f (Media q x)     = Media q <$> traverse (hashes f) x
     hashes f (Page dl)       = Page <$> traverse (hashes f) dl
     hashes f (Keyframes n x) = Keyframes n <$> traverse (hashes f) x
+    hashes f (Fontface dl)   = Fontface <$> traverse (hashes f) dl
+    hashes f (Viewport dl)   = Viewport <$> traverse (hashes f) dl
 
 instance HasHashes KeyframeBlock where
     hashes f (KeyframeBlock ss dl) = KeyframeBlock ss <$> traverse (hashes f) dl
