@@ -213,7 +213,7 @@ personioPageHref :: Attribute
 personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint
 
 statsPageHref :: Attribute
-statsPageHref = href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActive False
+statsPageHref = href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActiveFuture False
 
 -------------------------------------------------------------------------------
 -- Links
