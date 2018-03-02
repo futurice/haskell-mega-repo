@@ -28,12 +28,15 @@ library
       base                  >=4.7   && <4.11
     , aeson
     , clay
+    , colour
     , file-embed
     , fum-types
+    , futurice-logo
     , futurice-prelude
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , lambdacss
     , language-javascript >= 0.6.0.8 && <0.7
     , lens
     , lucid

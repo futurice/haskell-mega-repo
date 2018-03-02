@@ -35,10 +35,7 @@ taskPage
     -> Map Personio.EmployeeId Personio.Employee
     -> HashMap FUM.Login (Personio.Employee, PMUser)
     -> HtmlPage "task"
-taskPage world today authUser task gemployees peremployees planemployees = checklistPage_ (view nameText task <> " - task") authUser $ do
-    -- Title
-    header (task ^. nameText <> " -  task") []
-
+taskPage world today authUser task gemployees peremployees planemployees = checklistPage_ (view nameText task <> " - task") [] authUser (Just NavTasks) $ do
     row_ $ large_ 12 $ do
         button_
             [ class_ "button"

@@ -24,9 +24,7 @@ checklistPage
     -> AuthUser    -- ^ logged in user
     -> Checklist
     -> HtmlPage "checklist"
-checklistPage world today authUser checklist = checklistPage_ (view nameText checklist <> " - checklist") authUser $ do
-    header (checklist ^. nameText <> " - checklist") []
-
+checklistPage world today authUser checklist = checklistPage_ (view nameText checklist <> " - checklist") [] authUser Nothing $ do
     -- Edit
     futuForm_"checklist-edit" [ data_ "futu-checklist-id" $ checklist ^. identifierText ] $ do
         row_ $ large_ 12 $

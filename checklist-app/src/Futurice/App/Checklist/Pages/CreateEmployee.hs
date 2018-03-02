@@ -16,6 +16,7 @@ import Web.HttpApiData           (toQueryParam)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
+import qualified Data.Text as T
 import qualified Personio
 
 -- Template
@@ -92,12 +93,7 @@ createEmployeePage
     -> Map Personio.EmployeeId Personio.Employee
     -> Bool
     -> HtmlPage "create-employee"
-createEmployeePage world authUser memployee pemployee pes leaving = checklistPage_ "Create employee" authUser $ do
-    let tmpl = employeeToTemplate <$> memployee
-            <|> personioToTemplate leaving pes <$> pemployee
-    -- Title
-    header "Create employee" []
-
+createEmployeePage world authUser memployee pemployee pes leaving = checklistPage_ "Create employee" [mname] authUser (Just NavCreateEmployee) $ do
     for_ (tmplPersonioId =<< tmpl) $ \eid -> row_ $ large_ 12 $ do
         "Using personio employee #"
         toHtml eid
@@ -212,6 +208,15 @@ createEmployeePage world authUser memployee pemployee pes leaving = checklistPag
   where
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
+
+    tmpl = employeeToTemplate <$> memployee
+            <|> personioToTemplate leaving pes <$> pemployee
+
+    mname = do
+        tmpl' <- tmpl
+        guard $ not $ T.null $ tmplFirst tmpl'
+        guard $ not $ T.null $ tmplLast tmpl'
+        return $ tmplFirst tmpl' <> " " <> tmplLast tmpl'
 
 encodeToText :: ToJSON a => a -> Text
 encodeToText = view strict . encodeToLazyText

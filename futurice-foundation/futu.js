@@ -27,6 +27,12 @@ futu = (function () {
     }
   }
 
+  // if _.isEqual is Eq
+  // then compare is Ord
+  function compare(a, b) {
+      return 0; // todo
+  }
+
   function trace() {
     // return;
     var args = ["TRACE"].concat(_.toArray(arguments));

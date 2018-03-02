@@ -60,14 +60,13 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
         planmillEmployee :: Employee -> Maybe PMUser
         planmillEmployee employee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planemployees ^.at x)
 
-    in checklistPage_ "Employees" authUser $ do
-        -- Title
-        header "Active employees"
+        titleParts =
             [ (^. re _Office) <$> mloc
             , (^. nameText) <$> mlist
             , (^. nameText) <$> mtask
             ]
 
+    in checklistPage_ "Employees" titleParts authUser (Just NavIndex) $ do
         -- List filtering controls
         row_ $ form_ [ futuId_ "selector", action_ "/", method_ "get" ] $ do
             largemed_ 3 $ label_ $ do
