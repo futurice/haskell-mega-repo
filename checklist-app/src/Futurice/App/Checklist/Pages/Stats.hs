@@ -24,7 +24,7 @@ statsPage
     -> SortCriteria
     -> Bool
     -> HtmlPage "stats"
-statsPage world today authUser sortCriteria sortDescEmpl = checklistPage_ "Stats" authUser $ do
+statsPage world today authUser sortCriteria sortDescEmpl = checklistPage_ "Stats" [] authUser (Just NavStats) $ do
     let tasks' = world ^.. worldTasksSortedByName . folded
         archivedEmployees = world ^. worldArchive
         tasksWithArchivedEmployees = swapMapMap $ DM.map (\(ArchivedEmployee _ tm) -> tm) archivedEmployees
@@ -60,7 +60,6 @@ statsPage world today authUser sortCriteria sortDescEmpl = checklistPage_ "Stats
                                         (activeCountFuture <> activeCountPast <> archiveCount)) tasks'
         sortedTask' = sortedTask & (if sortDescEmpl then sortOn $ Down . sortByEmpl sortCriteria else sortOn (sortByEmpl sortCriteria))
 
-    header "Stats" []
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Task"] "Task"

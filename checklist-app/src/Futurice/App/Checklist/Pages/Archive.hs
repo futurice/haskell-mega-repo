@@ -16,11 +16,8 @@ archivePage
     :: World       -- ^ the world
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "archive"
-archivePage world authUser@(_, viewerRole) = checklistPage_ "Employees" authUser $ do
+archivePage world authUser@(_, viewerRole) = checklistPage_ "Archive" [] authUser Nothing $ do
     let employees = sortOn (view $ archiveEmployee . employeeStartingDay) $ world ^.. worldArchive . folded
-
-    -- Title
-    header "Archive" []
 
     -- The table
     row_ $ large_ 12 $ table_ $ do

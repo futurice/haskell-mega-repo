@@ -21,10 +21,7 @@ personioPage
     -> UTCTime     -- ^ now
     -> [Personio.Employee]
     -> HtmlPage "personio"
-personioPage world authUser now employees0 = checklistPage_ "Import from personio" authUser $ do
-    -- Title
-    header "Import from Personio" []
-
+personioPage world authUser now employees0 = checklistPage_ "Import from personio" [] authUser (Just NavPersonio) $ do
     fullRow_ $ div_ [ class_ "callout" ] $ ul_ $ do
         li_ "Shows people who start in the next 90 days"
         li_ "Checklist shown when employee personio id or fum login matches"

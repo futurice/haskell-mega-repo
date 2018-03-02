@@ -6,10 +6,12 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 module Futurice.Lucid.Foundation (
     L.commuteHtmlT,
     -- * Vendor
+    VendorAPI,
     vendorServer,
     -- * Grid
     row_,
@@ -44,17 +46,24 @@ module Futurice.Lucid.Foundation (
     ) where
 
 import Clay                           (Css, render)
+import Data.Colour.SRGB               (sRGB24show)
 import Data.FileEmbed                 (embedFile)
 import Data.Swagger                   (NamedSchema (..), ToSchema (..))
+import Futurice.Colour
+       (AccentColour (..), AccentFamily (..), Colour (..), DataColour,
+       colourToDataColour)
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
 import Futurice.Lucid.Style           (css)
 import Futurice.Prelude
 import GHC.TypeLits                   (KnownSymbol, Symbol, symbolVal)
+import LambdaCSS
+       (Stylesheet, hashes, parseLambdaCSS, printLambdaCSS)
 import Lucid                          hiding (for_, table_)
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
-import Servant                        (Raw, Server)
+import Servant
+       ((:<|>) (..), (:>), Accept (..), Get, MimeRender (..), Raw, Server)
 import Servant.Swagger.UI.Internal    (mkRecursiveEmbedded)
 
 import qualified Lucid      as L
@@ -182,7 +191,7 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
         meta_ [httpEquiv_ "x-ua-compatible", content_"ie=edge"]
         -- Stylesheets
-        link_ [ rel_ "stylesheet", href_ "/vendor/foundation.min.css" ]
+        link_ [ rel_ "stylesheet", href_ "/vendor/futu-foundation.min.css" ]
         link_ [ rel_ "stylesheet", href_ "/vendor/jquery-ui.min.css" ]
         link_ [ rel_ "stylesheet", href_ "/vendor/select2.min.css" ]
         -- JS
@@ -213,6 +222,46 @@ vendorFiles
     = ("/futu.js", $(embedFile "futu.js"))
     : $(mkRecursiveEmbedded "vendor")
 
+type VendorAPI =
+    "vendor" :> "futu-foundation.min.css" :> Get '[CSS] Stylesheet
+    :<|> "vendor" :> Raw
 
-vendorServer :: Server Raw
-vendorServer = Tagged $ staticApp $ embeddedSettings vendorFiles
+vendorServer :: Server VendorAPI
+vendorServer =
+    pure foundationCSS
+    :<|> Tagged (staticApp $ embeddedSettings vendorFiles)
+
+-------------------------------------------------------------------------------
+-- Servant CSS
+-------------------------------------------------------------------------------
+
+data CSS
+
+-- | @text/css@
+instance Accept CSS where
+    contentType _ = "text/css"
+
+-- | 'printLambdaCSS`
+instance (a ~ Stylesheet) => MimeRender CSS a where
+    mimeRender _ = printLambdaCSS
+
+foundationCSS :: Stylesheet
+foundationCSS = either (error "foundationCSS") id $ do
+    bs <- maybe (Left "not found") Right $ lookup "/foundation.min.css" vendorFiles
+    ss <- parseLambdaCSS bs
+    return $ ss
+        & hashes %~ changeColors
+  where
+    changeColors "1779ba" = col (FutuAccent AF1 AC3) -- greenish blue
+    changeColors "1468a0" = col (FutuAccent AF1 AC2) -- greenish blue highlight
+    changeColors "cc4b37" = col (FutuAccent AF4 AC3) -- red
+    changeColors "a53b2a" = col (FutuAccent AF3 AC2) -- red highlight
+    changeColors "3adb76" = col FutuGreen            -- green
+    changeColors "22bb5b" = col FutuLightGreen       -- green highlight
+    changeColors "ffae00" = col (FutuAccent AF4 AC1) -- bright yellow
+    changeColors "fff3d3" = col (FutuAccent AF6 AC2) -- light yellow
+    changeColors "cacaca" = col (FutuAccent AF5 AC2) -- gray
+    changeColors c        = c
+  
+    col c = tail $ sRGB24show (colourToDataColour c :: DataColour Double)
+
