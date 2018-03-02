@@ -15,10 +15,7 @@ createTaskPage
     :: World
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "create-task"
-createTaskPage world authUser = checklistPage_ "Create task" authUser $ do
-    -- Title
-    header "Create task" []
-
+createTaskPage world authUser = checklistPage_ "Create task" [] authUser (Just NavCreateTask) $ do
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "task-create" ] $ do
         row_ $ large_ 12 $

@@ -14,10 +14,7 @@ checklistsPage
     :: World       -- ^ the world
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "checklists"
-checklistsPage world authUser = checklistPage_ "Checklists" authUser $ do
-    -- Title
-    header "Checklists" []
-
+checklistsPage world authUser = checklistPage_ "Checklists" [] authUser (Just NavChecklists) $ do
     -- Table
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do

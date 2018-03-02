@@ -37,10 +37,7 @@ employeePage
     -> Vector SimpleUser
     -> HashMap FUM.Login (P.Employee, PMUser)
     -> HtmlPage "employee"
-employeePage world authUser employee personios gemployees planEmployees = checklistPage_ (view nameText employee) authUser $ do
-    -- Title
-    header (employee ^. nameText) []
-
+employeePage world authUser employee personios gemployees planEmployees = checklistPage_ (view nameText employee) [] authUser Nothing $ do
     -- Buttons
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
         for_ (employee ^. employeePersonio) $ \pid ->

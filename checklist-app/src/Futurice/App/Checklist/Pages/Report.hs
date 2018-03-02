@@ -18,7 +18,7 @@ reportPage
     -> Maybe Day
     -> Maybe Day
     -> HtmlPage "report"
-reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $ do
+reportPage world authUser mcid fday tday = checklistPage_ "Report" [] authUser Nothing $ do
     let employees' = sortOn (view employeeStartingDay) $
             (world ^.. worldArchive . folded . archiveEmployee)
             <> (world ^.. worldEmployees . folded)
@@ -27,9 +27,6 @@ reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $
           & maybe id (\d -> filter $ \e -> d <= e ^. employeeStartingDay) fday
           & maybe id (\d -> filter $ \e -> e ^. employeeStartingDay <= d) tday
           & maybe id (\cid -> filter $ \e -> cid == e ^. employeeChecklist) mcid
-
-    -- Title
-    header "Report" []
 
     -- List filtering controls
     row_ $ form_ [ futuId_ "selector", action_ $ "/reports", method_ "get" ] $ do

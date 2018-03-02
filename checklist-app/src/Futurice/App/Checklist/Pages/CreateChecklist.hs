@@ -13,11 +13,7 @@ createChecklistPage
     :: World
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "create-checklist"
-createChecklistPage _world authUser = checklistPage_ "Create checklist" authUser $ do
-    -- Title
-    header "Create checklist" []
-
-    -- Edit
+createChecklistPage _world authUser = checklistPage_ "Create checklist" [] authUser (Just NavCreateChecklist) $ do
     row_ $ large_ 12 $ form_ [ futuId_ "checklist-create" ] $ do
         row_ $ large_ 12 $
             label_ $ do

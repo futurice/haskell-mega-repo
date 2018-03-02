@@ -4,7 +4,7 @@
 module Futurice.App.Checklist.Markup (
     -- * Structure
     checklistPage_,
-    header,
+    Nav (..),
     subheader_,
     -- * Futu id
     futuId_,
@@ -48,6 +48,7 @@ module Futurice.App.Checklist.Markup (
     ) where
 
 import Control.Lens        (has, non, re, _Wrapped)
+import FUM.Types.Login     (loginToText)
 import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
@@ -68,36 +69,56 @@ import qualified Personio  as P
 -- Navigation
 -------------------------------------------------------------------------------
 
-checklistPage_ :: Text -> AuthUser -> Html () -> HtmlPage sym
-checklistPage_ title authUser body =
+data Nav
+    = NavIndex
+    | NavChecklists
+    | NavTasks
+    | NavCreateChecklist
+    | NavCreateTask
+    | NavCreateEmployee
+    | NavPersonio
+    | NavArchive
+    | NavStats
+  deriving (Eq, Enum, Bounded)
+
+navLink :: Nav -> (Attribute, Text)
+navLink NavIndex           = (indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll False, "Employees")
+navLink NavChecklists      = (checklistsPageHref , "Checklists")
+navLink NavTasks           = (tasksPageHref Nothing (Nothing :: Maybe Checklist) , "Tasks")
+navLink NavCreateChecklist = (createChecklistPageHref , "Create List")
+navLink NavCreateTask      = (createTaskPageHref , "Create Task")
+navLink NavCreateEmployee  = (createEmployeePageHref , "Create Employee")
+navLink NavPersonio        = (personioPageHref , "... from Personio")
+navLink NavArchive         = (archivePageHref , "Archive")
+navLink NavStats           = (statsPageHref, "Stats")
+
+checklistPage_ :: Text -> [Maybe Text] -> AuthUser -> Maybe Nav -> Html () -> HtmlPage sym
+checklistPage_ title titleParts authUser nav body =
     page_ (title <> " - Checklist²" ) pageParams $ do
-        navigation authUser
+        navigation authUser nav
         div_ [ futuId_ "error-callout", class_ "callout alert", style_ "display: none" ] $ do
             div_ [ futuId_ "error-callout-content" ] $ pure ()
             button_ [ class_ "button" ] "Close"
-        body
+        header_ (header title titleParts)
+        row_ $ large_ 12 [ class_ "futu-block" ] body
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
-navigation :: Monad m => AuthUser -> HtmlT m ()
-navigation (fu, viewerRole) = do
+navigation :: Monad m => AuthUser -> Maybe Nav -> HtmlT m ()
+navigation (fu, viewerRole) nav' = do
     div_ [ class_ "top-bar" ] $ do
-        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
+        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu horizontal" ] $ do
             li_ [ class_ "menu-text"] $ do
                 "Checklist"
                 sup_ "2"
             li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
-            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll False ] "Employees"
-            li_ $ a_ [ checklistsPageHref ] "Checklists"
-            li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
-            li_ $ a_ [ createChecklistPageHref ] "Create List"
-            li_ $ a_ [ createTaskPageHref ] "Create Task"
-            li_ $ a_ [ createEmployeePageHref ] "Create Employee"
-            li_ $ a_ [ personioPageHref ] "... from Personio"
-            li_ $ a_ [ archivePageHref ] "Archive"
-            li_ $ a_ [ statsPageHref] "Stats"
-        div_ [ class_ "top-bar-right" ] $ span_ [ class_ "menu-text" ] $ do
+            for_ [minBound .. maxBound] $ \nav -> do
+                let (aAttr, t) = navLink nav
+                let liAttrs = if Just nav == nav' then [ class_ "futu-active" ] else []
+                li_ liAttrs $ a_ [ aAttr ] $ toHtml t
+        div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "menu" ] $ do
+              li_ [ class_ "menu-text" ] $ do
                 "Hello "
-                toHtml fu
+                toHtml (loginToText fu)
                 ", you are "
                 toHtml $ viewerRole ^. re _TaskRole
 
