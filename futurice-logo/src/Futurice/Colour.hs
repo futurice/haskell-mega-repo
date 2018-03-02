@@ -25,6 +25,7 @@ module Futurice.Colour (
     colourCMYK8,
     colourClay,
     colourToDataColour,
+    DataColour,
     -- * Type level trickery
     SColour(..),
     SAccentFamily(..),
@@ -202,6 +203,8 @@ colourToDataColour :: (Floating a, Ord a) => Colour -> DC.Colour a
 colourToDataColour = f . colourRGB8
   where
     f (PixelRGB8 r g b) = DC.sRGB24 r g b
+
+type DataColour = DC.Colour
 
 ------------------------------------------------------------------------------
 -- Type level trickery

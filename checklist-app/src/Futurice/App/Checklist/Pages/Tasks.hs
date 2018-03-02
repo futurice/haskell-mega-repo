@@ -30,13 +30,12 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
         checklistPredicate cl task = flip has world $
             worldLists . ix (cl ^. identifier) . checklistTasks . ix (task ^. identifier)
 
-    in checklistPage_ "Tasks" authUser $ do
-        -- Title
-        header "Tasks"
+        titleParts = 
             [ (^. re _TaskRole) <$> mrole
             , (^. nameText ) <$> mlist
             ]
 
+    in checklistPage_ "Tasks"  titleParts authUser (Just NavTasks) $ do
         -- List filtering controls
         row_ $ form_ [ futuId_ "selector", action_ $ "/tasks", method_ "get" ] $ do
             largemed_ 3 $ label_ $ do

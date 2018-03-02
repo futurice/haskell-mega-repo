@@ -14,10 +14,7 @@ helpAppliancePage
     :: World       -- ^ the world
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "appliance-help"
-helpAppliancePage _world authUser = checklistPage_ "Help" authUser $ do
-    -- Title
-    header "Help appliance" []
-
+helpAppliancePage _world authUser = checklistPage_ "Help" [] authUser Nothing $ do
     -- Table
     subheader_ "Examples"
     row_ $ large_ 12 $ ul_ $ do

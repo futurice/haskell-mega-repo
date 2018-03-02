@@ -78,7 +78,7 @@ import Futurice.Colour
 import Futurice.EnvConfig
        (Configure, configure, envAwsCredentials, envVar, envVarWithDefault,
        getConfig', optionalAlt)
-import Futurice.Lucid.Foundation            (vendorServer)
+import Futurice.Lucid.Foundation            (VendorAPI, vendorServer)
 import Futurice.Metrics.RateMeter           (mark, values)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, shifted, spawnPeriocron)
@@ -116,7 +116,7 @@ type FuturiceAPI api colour =
     FutuFaviconAPI colour
     :<|> api
     :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
-    :<|> "vendor" :> Raw
+    :<|> VendorAPI
 
 swaggerDoc
     :: HasSwagger api

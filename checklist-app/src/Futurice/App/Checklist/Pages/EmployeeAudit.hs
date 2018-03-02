@@ -23,11 +23,8 @@ employeeAuditPage
     -> Employee
     -> [(Command Identity, FUM.Login, UTCTime)]
     -> HtmlPage "employee-audit"
-employeeAuditPage world authUser employee cmds = checklistPage_ (view nameText employee) authUser $ do
+employeeAuditPage world authUser employee cmds = checklistPage_ (view nameText employee) [] authUser Nothing $ do
     let eid = employee ^. identifier
-
-    -- Title
-    header (employee ^. nameText) []
 
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
         button_

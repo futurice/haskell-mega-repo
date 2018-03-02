@@ -44,8 +44,8 @@ packages:
   checklist-app/
   contacts-api/
   dynmap-cache/
-  email-proxy/
   email-proxy-client/
+  email-proxy/
   env-config/
   favicon-app/
   flowdock-grep/
@@ -72,6 +72,7 @@ packages:
   hc-app/
   hours-api/
   kleene/
+  lambdacss/
   log-cloudwatch/
   mega-repo-tool/
   monad-http/
