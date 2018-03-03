@@ -29,6 +29,7 @@ library
     , aeson
     , aeson-compat
     , base-compat
+    , clay
     , containers
     , dashdo
     , env-config
@@ -36,6 +37,7 @@ library
     , fum-types
     , futurice-foundation
     , futurice-integrations
+    , futurice-logo
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
@@ -53,12 +55,14 @@ library
     , time
     , vector
   exposed-modules:
+      Futurice.App.ProxyMgmt.AdminPage
       Futurice.App.ProxyMgmt.API
-      Futurice.App.ProxyMgmt.IndexPage
       Futurice.App.ProxyMgmt.Config
       Futurice.App.ProxyMgmt.Ctx
       Futurice.App.ProxyMgmt.Dashdo
+      Futurice.App.ProxyMgmt.IndexPage
       Futurice.App.ProxyMgmt.Main
+      Futurice.App.ProxyMgmt.Markup
   default-language: Haskell2010
 
 executable proxy-mgmt-app-server
