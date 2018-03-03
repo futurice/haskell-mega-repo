@@ -40,6 +40,7 @@ library
     , base-compat
     , bytestring
     , Cabal
+    , cabal-plan
     , case-insensitive
     , containers
     , crypto-api
