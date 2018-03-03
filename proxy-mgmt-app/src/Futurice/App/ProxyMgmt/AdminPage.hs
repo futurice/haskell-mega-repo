@@ -15,6 +15,7 @@ import Prelude ()
 
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
+import Futurice.App.ProxyMgmt.Types
 
 import qualified Data.Map.Strict as Map
 
@@ -43,34 +44,11 @@ instance (Ord k, Semigroup v) => Monoid (UnionWith' k v) where
 -- Data
 -------------------------------------------------------------------------------
 
-data Token = Token
-    { tUsername :: !Text
-    , tActive   :: !Bool
-    , tUsertype :: !Text
-    , tEndpoint :: !Text
-    }
-  deriving (Show, Generic)
-
-instance NFData Token
-instance FromRow Token where
-    fromRow = Token <$> field <*> field <*> field <*> field
-
 fetchTokens :: Ctx f -> IO [Token]
 fetchTokens Ctx {..} =
     cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchTokens" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool
             "SELECT username, passtext is not null, usertype, endpoint FROM proxyapp.credentials;"
-
-data AccessEntry = AccessEntry
-    { aeUser     :: !Text
-    , aeStamp    :: !UTCTime
-    , aeEndpoint :: !Text
-    }
-  deriving (Show, Generic)
-
-instance NFData AccessEntry
-instance FromRow AccessEntry where
-    fromRow = AccessEntry <$> field <*> field <*> field
 
 fetchAccessEntries :: Ctx f -> IO [AccessEntry]
 fetchAccessEntries Ctx {..} =
