@@ -20,14 +20,12 @@ data Nav
   deriving (Eq, Enum, Bounded)
 
 navLink :: Nav -> (Attribute, Text)
-navLink NavIndex = (href_ "/", "Home")
+navLink NavIndex = (href_ "/", "Prox management")
 navLink NavAdmin = (href_ "/admin", "Admin")
 
 navigation_ :: Monad m => Maybe Nav -> HtmlT m ()
-navigation_ nav' = div_ [ class_ "top-bar" ] $ do
+navigation_ nav' = div_ [ class_ "top-bar" ] $ fullRow_ $
     div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu horizontal" ] $ do
-        li_ [ class_ "menu-text"] $
-            "Prox management"
         for_ [minBound .. maxBound] $ \nav -> do
             let (aAttr, t) = navLink nav
             let liAttrs = if Just nav == nav' then [ class_ "futu-active" ] else []
