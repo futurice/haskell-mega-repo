@@ -1,18 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.ProxyMgmt.Markup (
     module Futurice.Lucid.Foundation,
     page_,
     Nav (..),
     ) where
 
-import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), colourClay)
+import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Clay                      as C
 import qualified Futurice.Lucid.Foundation as Lucid
-import qualified Clay as C
 
 data Nav
     = NavIndex
@@ -41,7 +42,7 @@ page_ title nav body = do
 pageParams :: PageParams
 pageParams = defPageParams
     & pageCss    .~ [ css ]
-    -- & pageJs     .~ [ $(makeRelativeToProject "checklist.js" >>= embedJS) ]
+    & pageJs     .~ [ $(makeRelativeToProject "proxy-mgmt.js" >>= embedJS) ]
     -- & pageJQuery .~ True
 
 css :: C.Css

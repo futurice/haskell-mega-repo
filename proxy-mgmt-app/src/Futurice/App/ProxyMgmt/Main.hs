@@ -33,6 +33,7 @@ import Futurice.App.ProxyMgmt.IndexPage
 server :: Ctx Identity -> Server ProxyMgmtAPI
 server ctx =
     (\mfu -> nt False ctx mfu $ indexPageHandler ctx)
+    :<|> (\mfu -> liftIO $ return "NotImplementedYetWillBeSoon")
     :<|> (\mfu -> nt True ctx mfu $ adminPageHandler ctx)
 
 -- Access control adding transformation
