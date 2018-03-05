@@ -66,8 +66,14 @@ tokenPage login entries Token {..} = page_ ("Prox management - " <> loginToText 
         vertRow_ "Active"   $ if tActive then "Active" else "Passive"
         vertRow_ "Endpoint" $ toHtml tEndpoint
 
-    h2_ "Regenerate token - TODO"
-    button_ [ class_ "button" ] "Regenerate"
+    h2_ "Regenerate token"
+    p_ "If you’ve lost or forgotten the token, you can regenerate it, but be aware that any scripts or applications using this token will need to be updated."
+    p_ $ button_ [ id_ "futu-regenerate-token", class_ "button alert", disabled_ "disabled" ] "Regenerate"
+    div_ [ id_ "futu-token-info", class_ "callout success", style_ "display: none" ] $ do
+        p_ "Make sure to copy your new personal access token now. You won’t be able to see it again!"
+        condensedTable_ $ tbody_ $
+            vertRow_ "new token" $
+                code_ [ id_ "futu-token-code" ] "01234567890abcdef01234567890abcd"
 
     h2_ "Last 100 accesses"
     table_ $ do

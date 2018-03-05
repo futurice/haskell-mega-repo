@@ -42,3 +42,17 @@ css = do
     for_ [td, th] $ \tdh -> ".condensed" & tdh ? do
         paddingTop $ rem 0.1
         paddingBottom $ rem 0.1
+
+    -- table
+    table # ".transparent" ? tbody ? do
+        backgroundColor transparent
+
+        -- todo unstriped
+        "tr:nth-child(even)" ? do
+            backgroundColor $ rgba 0 0 0 0.05
+
+    table # ".hover" ? tbody ? tr # ":hover" ? do
+        backgroundColor $ colourClay $ FutuAccent AF6 AC1
+
+    "table.hover:not(.unstriped)" ? "tr:nth-of-type(even):hover" ? do
+        backgroundColor $ colourClay $ FutuAccent AF6 AC1

@@ -10,6 +10,7 @@ import Servant
 
 type ProxyMgmtAPI =
     SSOUser :> Get '[HTML] (HtmlPage "index")
+    :<|> SSOUser :> "regenerate-own-token" :> Post '[JSON] Text
     :<|> SSOUser :> "admin" :> Get '[HTML] (HtmlPage "admin")
 
 proxyMgmtApi :: Proxy ProxyMgmtAPI

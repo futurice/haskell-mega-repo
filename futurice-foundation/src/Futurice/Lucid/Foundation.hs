@@ -111,7 +111,7 @@ sortableTable_ :: Term arg result => arg ->  result
 sortableTable_ = termWith "table" [ data_ "futu-sortable-table" "true", class_ "hover " ]
 
 condensedTable_ :: Term arg result => arg ->  result
-condensedTable_ = termWith "table" [ class_ "hover condensed " ]
+condensedTable_ = termWith "table" [ class_ "hover condensed transparent" ]
 
 -- | Row in a vertical table.
 --
@@ -261,7 +261,7 @@ foundationCSS = either (error "foundationCSS") id $ do
     changeColors "ffae00" = col (FutuAccent AF4 AC1) -- bright yellow
     changeColors "fff3d3" = col (FutuAccent AF6 AC2) -- light yellow
     changeColors "cacaca" = col (FutuAccent AF5 AC2) -- gray
+    changeColors "e1faea" = col (FutuAccent AF6 AC3) -- light green
     changeColors c        = c
   
     col c = tail $ sRGB24show (colourToDataColour c :: DataColour Double)
-
