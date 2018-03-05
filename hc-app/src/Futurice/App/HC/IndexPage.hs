@@ -11,7 +11,7 @@ import Futurice.App.HC.Markup
 
 -- comment to force template-hasksell recompilation
 indexPage :: FUM.Login -> HtmlPage "index-page"
-indexPage fu = page_ "HC app" (Just NavHome) $ do
+indexPage _fu = page_ "HC app" (Just NavHome) $ do
     fullRow_ $ ul_ $ do
         li_ $ do
             a_ [href_ "/personio-validation"] "Personio validations"
