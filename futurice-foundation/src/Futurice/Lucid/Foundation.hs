@@ -255,13 +255,15 @@ foundationCSS = either (error "foundationCSS") id $ do
     changeColors "1779ba" = col (FutuAccent AF1 AC3) -- greenish blue
     changeColors "1468a0" = col (FutuAccent AF1 AC2) -- greenish blue highlight
     changeColors "cc4b37" = col (FutuAccent AF4 AC3) -- red
-    changeColors "a53b2a" = col (FutuAccent AF3 AC2) -- red highlight
+    changeColors "a53b2a" = col (FutuAccent AF4 AC2) -- red highlight
     changeColors "3adb76" = col FutuGreen            -- green
     changeColors "22bb5b" = col FutuLightGreen       -- green highlight
     changeColors "ffae00" = col (FutuAccent AF4 AC1) -- bright yellow
     changeColors "fff3d3" = col (FutuAccent AF6 AC2) -- light yellow
-    changeColors "cacaca" = col (FutuAccent AF5 AC2) -- gray
+    changeColors "cacaca" = col (FutuAccent AF5 AC2) -- darker gray
     changeColors "e1faea" = col (FutuAccent AF6 AC3) -- light green
+    changeColors "eaeaea" = col (FutuAccent AF5 AC1) -- gray
+    changeColors "d7ecfa" = col (FutuAccent AF3 AC1) -- light blue
     changeColors c        = c
   
     col c = tail $ sRGB24show (colourToDataColour c :: DataColour Double)

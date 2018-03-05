@@ -27,6 +27,7 @@ library
       base16-bytestring,
       base64-bytestring-type,
       binary,
+      clay,
       containers,
       cryptohash-sha512,
       email-proxy-client,
@@ -37,6 +38,7 @@ library
       fum-types,
       futurice-foundation,
       futurice-integrations,
+      futurice-logo,
       futurice-prelude,
       futurice-servant,
       futurice-tribes,
@@ -63,6 +65,7 @@ library
       Futurice.App.HC.IndexPage
       Futurice.App.HC.Config
       Futurice.App.HC.Ctx
+      Futurice.App.HC.Markup
       Futurice.App.HC.EarlyCaring.Page
       Futurice.App.HC.EarlyCaring.Types
       Futurice.App.HC.EarlyCaring.Template

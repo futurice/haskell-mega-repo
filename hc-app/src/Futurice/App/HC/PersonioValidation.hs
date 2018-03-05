@@ -5,11 +5,12 @@ module Futurice.App.HC.PersonioValidation (validationReport) where
 
 import Data.Ord                  (Down (..))
 import Data.Time                 (addDays)
-import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 
 import qualified Personio as P
+
+import Futurice.App.HC.Markup
 
 validationReport :: [P.EmployeeValidation] -> Day -> HtmlPage "personio-validation"
 validationReport validations0 today = do
@@ -23,10 +24,8 @@ validationReport validations0 today = do
     -- sort by starting day
     let validations = sortOn (Down . view P.employeeHireDate . P._evEmployee) validations2
 
-    page_ "Personio data validation" $ do
-        fullRow_ $ h1_ "Personio validations"
-
-        fullRow_ $ div_ [ class_ "callout info" ] $ ul_ $ do
+    page_ "Personio data validation" (Just NavPersonioValidation) $ do
+        ul_ $ do
             li_ $ toHtml $ show (length validations) ++ " employees with incorrect or missing data:"
             li_ "Note: this report only checks data in Personio. For example it doesn't show if FUM login doesn't exist."
             li_ $ "Only " <> em_ "Active" <> " and " <> em_ "Onboarding" <> " (hire date >= today - 60 days) people are shown"
@@ -72,8 +71,8 @@ showValidations validations = fullRow_ $ table_ $ do
 
 showMessages :: Monad m => [P.ValidationMessage] -> HtmlT m ()
 showMessages msgs = ul_ $ traverse_ (li_ . showMessage) msgs where
-    showMessage (P.LoginInvalid _) = i_ "[IT] Invalid FUM Login."
-    showMessage P.WorkPhoneMissing = i_ "[IT] Work phone is missing."
+    showMessage (P.LoginInvalid _) = b_ "IT: " <> i_ "Invalid FUM Login."
+    showMessage P.WorkPhoneMissing = b_ "IT: " <> i_ "Work phone is missing."
     showMessage (P.EmailInvalid e) = do
         b_ "Invalid email: "
         toHtml e

@@ -7,7 +7,6 @@ import Data.Fixed                (Deci)
 import Data.Time                 (addDays)
 import FUM.Types.Login           (Login)
 import Futurice.Integrations     (Employee (..))
-import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, (...))
@@ -21,6 +20,7 @@ import qualified PlanMill           as PM
 
 import Futurice.App.HC.EarlyCaring.Template
 import Futurice.App.HC.EarlyCaring.Types
+import Futurice.App.HC.Markup
 
 -- | PlanMill data needed to make early caring report
 data EarlyCaringPlanMill = EarlyCaringPlanMill
@@ -41,9 +41,8 @@ earlyCaringPage
     -> [EarlyCaringPlanMill]
     -> PM.Absences
     -> HtmlPage "early-caring"
-earlyCaringPage secret today interval personioEmployees0 planmillData absences0 = page_ "Early caring report" pageParams $ do
-    fullRow_ $ h1_ "Early caring report"
-    fullRow_ $ div_ [ class_ "callout secondary" ] $ ul_ $ do
+earlyCaringPage secret today interval personioEmployees0 planmillData absences0 = page_ "Early caring report" (Just NavEarlyCaring) $ do
+    ul_ $ do
         li_ $ toHtml $ "To approximate missing hours the PlanMill hour making data from " ++ show interval ++ " is used"
         li_ "Externals are filtered from this report"
         li_ "Sickness absence information is missing"
@@ -52,6 +51,11 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         li_ "Adjacent absences are counted as one. (Weekends separate)"
         li_ "Absence days are counted in the last 365 days (a year)"
         li_ "TODO: Sick days counts weekends and holidays days too"
+
+    fullRow_ $ div_ [ class_ "callout primary" ] $ do
+        p_ "Send early caring emails to the supervisors"
+        ul_ [ id_ "futu-early-caring-all-supervisors" ] mempty
+        button_ [ id_ "futu-early-caring-send-all", class_ "button primary", disabled_ "disabled" ] "Send to all"
 
     for_ balances $ \bs -> do
         let ms = balanceSupervisor $ NE.head bs
@@ -101,7 +105,9 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
                 hr_ []
                 button_
                     [ data_ "futu-early-caring-mail" (decodeUtf8Lenient (Aeson.encode (mkSignedBlob secret email) ^. strict))
+                    , data_ "futu-early-caring-name" $ s ^. P.employeeFullname
                     , class_ "button primary"
+                    , disabled_ "disabled"
                     ]
                     "Send"
 
@@ -178,9 +184,6 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
       where
         PM.TimeBalance balanceMinutes = ecpmBalance pm
         ab = absences (ecpmPMUid pm)
-
-    pageParams = defPageParams
-        & pageJs .~ [ $(makeRelativeToProject "early-caring.js" >>= embedJS) ]
 
 missingHours :: PM.Timereports -> PM.UserCapacities -> NDT 'Hours Deci
 missingHours trs ucs =
