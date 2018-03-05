@@ -3,7 +3,7 @@
 # This script is used to build binaries inside the docker
 # See mega-repo-tool -h
 
-set -ex
+set -e
 
 # This matters
 unset POSIXLY_CORRECT
@@ -31,14 +31,12 @@ fi
 
 # Check that we have proper data files in place
 #
-# To update:
-#
-# $ sha256sum futurice-constants/constants.json futurice-tribes/tribes.json hc-app/early-caring.template > data.sha256sums
-#
 if sha256sum -c data.sha256sums; then
     echo "Data files OK"
 else
-    echo "Invalid datafiles"
+    echo "Invalid datafiles. To update run: "
+	echo ""
+	echo "sha256sum futurice-constants/constants.json futurice-tribes/tribes.json hc-app/early-caring.template > data.sha256sums"
     exit 1
 fi
 

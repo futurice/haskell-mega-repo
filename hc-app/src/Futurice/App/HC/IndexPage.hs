@@ -8,6 +8,7 @@ import Prelude ()
 
 import qualified FUM.Types.Login as FUM
 
+-- comment to force template-hasksell recompilation
 indexPage :: FUM.Login -> HtmlPage "index-page"
 indexPage fu = page_ "HC app" $ do
     fullRow_ $ h1_ "HC"
