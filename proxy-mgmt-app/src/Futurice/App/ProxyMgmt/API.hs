@@ -8,14 +8,10 @@ import Futurice.Servant
 import Prelude ()
 import Servant
 
-type ProxyMgmtAPI = SSOUser :> ProxyMgmtAPI'
-
-type ProxyMgmtAPI' =
-    Get '[HTML] (HtmlPage "index")
-    -- :<|> "dashdo" :> SSOUser :> DashdoAPI
+type ProxyMgmtAPI =
+    SSOUser :> Get '[HTML] (HtmlPage "index")
+    :<|> SSOUser :> "regenerate-own-token" :> Post '[JSON] Text
+    :<|> SSOUser :> "admin" :> Get '[HTML] (HtmlPage "admin")
 
 proxyMgmtApi :: Proxy ProxyMgmtAPI
 proxyMgmtApi = Proxy
-
-proxyMgmtApi' :: Proxy ProxyMgmtAPI'
-proxyMgmtApi' = Proxy

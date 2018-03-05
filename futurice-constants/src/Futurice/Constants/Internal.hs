@@ -10,6 +10,7 @@ data Constants = Constants
     { fumPublicUrl      :: Text
     , personioPublicUrl :: Text
     , planmillPublicUrl :: Text
+    , supportEmailAddr  :: Text
     , competenceMap     :: Map Text Text
     }
   deriving (Eq, Show)
@@ -19,6 +20,7 @@ instance FromJSON Constants where
         <$> obj .: "fumPublicUrl"
         <*> obj .: "personioPublicUrl"
         <*> obj .: "planmillPublicUrl"
+        <*> obj .: "supportEmail"
         <*> obj .: "competenceMap"
 
 -- TODO: remove when we drop support for GHC-7.10

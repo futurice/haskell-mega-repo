@@ -27,6 +27,36 @@ futu = (function () {
     }
   }
 
+  // fetch
+  function fetchJSON(url, postPayload) {
+    var headers = new Headers();
+    headers.append("Accept", "application/json");
+
+    var opts = {
+      method: "GET", // by default GET, if postPayload provided: POST.
+      headers: headers,
+      credentials: "same-origin",
+    };
+
+    if (postPayload !== undefined) {
+      opts.method = "POST";
+      headers.append("Content-Type", "application/json");
+      opts.body = JSON.stringify(postPayload);
+    }
+
+    return fetch(url, opts)
+      .then(function (res) {
+        var contentType = res.headers.get("Content-Type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          return res.json();
+        } else {
+          return res.text().then(function (txt) {
+            throw new Error("Not a JSON: " + txt);
+          });
+        }
+      });
+  }
+
   // if _.isEqual is Eq
   // then compare is Ord
   function compare(a, b) {
@@ -167,5 +197,6 @@ futu = (function () {
     onload: onload,
     buttonOnClick: buttonOnClick,
     trace: trace,
+    fetchJSON: fetchJSON,
   };
 }());

@@ -2,6 +2,7 @@
   "fumPublicUrl": "https://fum.example.com",
   "personioPublicUrl": "https://personio.example.com",
   "planmillPublicUrl": "https://planmill.example.com",
+  "supportEmail": "devnull@example.com",
   "competenceMap": {
   }
 }
