@@ -4,15 +4,15 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Reports.MissingHoursDashdo (missingHoursRDashdo) where
 
-import Control.Lens              (contains, (<&>), _4)
+import Control.Lens              ((<&>))
 import Dashdo.Elements
 import Dashdo.Rdash              (charts)
 import Dashdo.Types
 import Data.Aeson                (toJSON)
 import Data.Ord                  (Down (..))
 import Futurice.Integrations
-       (Employee (..), Integrations, beginningOfPrev2Month, fumPlanmillMap,
-       planmillEmployee, runIntegrations)
+       (Employee (..), Integrations, beginningOfPrev2Month,
+       personioPlanmillMap, planmillEmployee, runIntegrations)
 import Futurice.Prelude
 import Futurice.Servant          (Cache, cachedIO)
 import Futurice.Time             (unNDT)
@@ -25,6 +25,7 @@ import Prelude ()
 
 import qualified Data.Map        as Map
 import qualified Graphics.Plotly as Plotly
+import qualified Personio        as P
 import qualified PlanMill        as PM
 
 import Futurice.App.Reports.Config
@@ -53,13 +54,15 @@ fetchValues :: Ctx -> PM.Interval Day -> IO [Val]
 fetchValues ctx interval = cachedIO' ctx interval $
     runIntegrations' ctx action
   where
-    contractTypes = cfgMissingHoursContracts (view _4 ctx)
+    employeePredicate p = and
+        [ p ^. P.employeeEmploymentType == Just P.Internal
+        ]
 
     action = do
-        -- people: do not include only some contracts
-        fpm0 <- snd <$$> fumPlanmillMap
+        -- people: include only some contracts
+        fpm0 <- personioPlanmillMap
         let fpm1 :: [PM.User]
-            fpm1 = filter (\e -> contractTypes ^. contains (PM.uContractType e)) (toList fpm0)
+            fpm1 = map snd $ filter (employeePredicate . fst) $ toList fpm0
 
         -- timereports
         trs' <- for fpm1 $ \u -> (,)

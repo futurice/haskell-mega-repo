@@ -41,6 +41,7 @@ import Futurice.Office
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Tribe
+import Numeric.Interval.NonEmpty   (Interval, (...))
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
@@ -54,10 +55,11 @@ import Personio.Types.PersonalIdValidations
 import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST            as FD
+import qualified Data.Map.Strict               as Map
 import qualified Data.Text                     as T
 import qualified GitHub                        as GH
+import qualified Numeric.Interval.NonEmpty     as Interval
 import qualified Text.Regex.Applicative.Common as RE
-import qualified Data.Map.Strict as Map
 
 -------------------------------------------------------------------------------
 -- Employee
@@ -107,6 +109,15 @@ employeeIsActive :: Day -> Employee -> Bool
 employeeIsActive today e =
     maybe True (today <=) (_employeeEndDate e)
     && (_employeeStatus e == Active || _employeeStatus e == Leave)
+
+-- | /Note/: this considers only contract dates
+employeeIsActiveInterval :: Interval Day -> Employee -> Bool
+employeeIsActiveInterval interval e =
+    case (_employeeHireDate e, _employeeEndDate e) of
+        (Nothing, Nothing)    -> False
+        (Just hire, Nothing)  -> (hire ... hire) Interval.<=? interval -- exists y in interval, hire <= y
+        (Nothing, Just end)   -> (end  ... end)  Interval.>=? interval
+        (Just hire, Just end) -> (hire ... end)  Interval.==? interval
 
 makeLenses ''Employee
 deriveGeneric ''Employee

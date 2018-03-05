@@ -42,6 +42,7 @@ library
     , futurice-tribes
     , github
     , http-api-data
+    , intervals
     , http-client
     , lens
     , lucid

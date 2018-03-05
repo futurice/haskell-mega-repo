@@ -1,11 +1,11 @@
-{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DataKinds #-}
 module Futurice.App.Reports.MissingHoursChart (
     MissingHoursChartData,
     missingHoursChartData,
     missingHoursChartRender,
     ) where
 
-import Control.Lens                (contains, (.=))
+import Control.Lens                ((.=))
 import Control.Monad.State.Strict  (StateT, evalStateT, state)
 import Data.Fixed                  (Centi)
 import Data.Time.Calendar.WeekDate (fromWeekDate, toWeekDate)
@@ -21,18 +21,18 @@ import Futurice.App.Reports.MissingHours
 
 import qualified Data.Map.Strict               as Map
 import qualified Graphics.Rendering.Chart.Easy as C
+import qualified Personio                      as P
 import qualified PlanMill                      as PM
 
 type MissingHoursChartData = (Integer, Int, Integer, Int, PM.Interval Day, Map Tribe (Sum Count, Map YearWeek (NDT 'Hours Centi)))
 
 missingHoursChartData
-    :: forall m env.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m, MonadPersonio m
-        , MonadReader env m, HasFUMEmployeeListName env
+    :: forall m.
+        ( PM.MonadTime m, MonadPlanMillQuery m, MonadPersonio m
         )
-    => Set (PM.EnumValue PM.User "contractType")
+    => (PM.Interval Day -> P.Employee -> Bool)
     -> m MissingHoursChartData
-missingHoursChartData contractTypes = do
+missingHoursChartData predicate = do
     -- interval: from beginning of the year
     today <- currentDay
     let (currYear, currWeek, _) = toWeekDate today
@@ -46,9 +46,9 @@ missingHoursChartData contractTypes = do
             fromWeekDate yearB weekB 7
 
     -- people: do not include only some contracts
-    fpm0 <- snd <$$> fumPlanmillMap
+    fpm0 <- personioPlanmillMap
     let fpm1 :: [PM.User]
-        fpm1 = filter (\e -> contractTypes ^. contains (PM.uContractType e)) (toList fpm0)
+        fpm1 = map snd $ filter (predicate interval . fst) $ toList fpm0
 
     -- timereports
     trs' <- for fpm1 $ \u -> (,)

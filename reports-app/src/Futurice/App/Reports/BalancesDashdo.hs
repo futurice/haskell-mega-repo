@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Reports.BalancesDashdo (balancesRDashdo) where
 
-import Control.Lens              (contains, (<&>), _4)
+import Control.Lens              ((<&>))
 import Dashdo.Elements
 import Dashdo.Rdash              (charts)
 import Dashdo.Types
@@ -25,7 +25,6 @@ import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
 import qualified Graphics.Plotly as Plotly
 import qualified Personio        as P
 import qualified PlanMill        as PM
@@ -92,10 +91,7 @@ fetchValues :: Ctx -> PM.Interval Day -> IO [Val]
 fetchValues ctx interval = cachedIO' ctx interval $
     runIntegrations' ctx action
   where
-    contractTypes =
-        --Set.take 2 $
-        Set.fromDistinctAscList . take 2 . Set.toAscList $
-        cfgMissingHoursContracts (view _4 ctx)
+    employeePredicate _ = True
 
     mkSupervisorMap es = Map.fromList $ flip mapMaybe es $ \e -> do
         sid   <- e ^. P.employeeSupervisorId
@@ -118,7 +114,7 @@ fetchValues ctx interval = cachedIO' ctx interval $
 
         -- build
         valsMap <- ifor us $ \login (p, u) -> do
-            let haveBalance = contractTypes ^. contains (PM.uContractType u)
+            let haveBalance = employeePredicate p
 
             (Balance flex mh, e) <- (,)
                   <$> (if haveBalance
