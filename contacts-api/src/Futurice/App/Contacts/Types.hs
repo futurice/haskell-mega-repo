@@ -94,6 +94,7 @@ data Contact avatar = Contact
     , contactOffice     :: !Office
     , contactCompetence :: !Text
     , contactExternal   :: !Bool
+    , contactHrnumber   :: !(Maybe Int)
     }
   deriving stock
     ( Eq, Ord, Show, Generic, Typeable
@@ -126,4 +127,5 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "github"     $ toField contactGithub
         , (,) "team"       $ toField contactTeam
         , (,) "competence" $ toField contactCompetence
+        , (,) "hrnumber"   $ toField contactHrnumber
         ]
