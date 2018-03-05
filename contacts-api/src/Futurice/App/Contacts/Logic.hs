@@ -88,6 +88,7 @@ employeeToContact e = Contact
     , contactOffice     = e ^. Personio.employeeOffice
     , contactCompetence = e ^. Personio.employeeRole
     , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
+    , contactHrnumber   = e ^. Personio.employeeHRNumber
     }
 
 githubDetailedMembers
