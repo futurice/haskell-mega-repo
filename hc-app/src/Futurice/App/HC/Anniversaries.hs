@@ -2,15 +2,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.HC.Anniversaries (anniversaries) where
 
-import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Data.Time (toGregorian, fromGregorian, addDays)
 import Prelude ()
 
 import qualified Personio as P
 
+import Futurice.App.HC.Markup
+
 anniversaries :: [P.Employee] -> Day -> HtmlPage "anniversaries"
-anniversaries es' today = page_ "Anniveraries" $ do
+anniversaries es' today = page_ "Anniveraries" (Just NavAnniversaries) $ do
     -- active internals
     let es = filter (\x -> P.employeeIsActive today x && x ^. P.employeeEmploymentType == Just P.Internal) es'
 
@@ -23,10 +24,8 @@ anniversaries es' today = page_ "Anniveraries" $ do
             (_, m, d) = toGregorian day
             (_, m', d') = toGregorian today
 
-    fullRow_ $ h1_ "Anniversaries"
-
-    fullRow_ $ div_ [ class_ "callout info" ] $ ul_ $ do
-        li_ $ "Anniversaries in next 365 (a year) shown"
+    ul_ $ do
+        li_ $ "Anniversaries in the next 365 days (a year) are shown"
         li_ $ do
             "There are separate lists for "
             a_ [ href_ "#work" ] "Work anniversaries (10 years at futurice)"

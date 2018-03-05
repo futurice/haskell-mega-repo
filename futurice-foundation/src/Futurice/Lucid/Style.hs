@@ -14,6 +14,8 @@ css = do
     b ? do
         fontFamily ["Futurice Bold", "Lucida Grande", "Helvetica Neue", "Helvetica", "Roboto", "Arial"] [sansSerif]
         fontWeight bold
+    for_ [pre, code] $ \el -> el ? do
+        fontFamily ["Futurice Mono"] [monospace]
     star ? fontSize (pt 11)
     h1 ? do
         fontSize (pt 20)

@@ -1,44 +1,59 @@
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("Initialising early caring");
-
+futu.onload(function () {
   // imports
+  var $  = futu.$;
+  var $_ = futu.$_;
   var $$ = futu.$$;
   var assert = futu.assert;
   var buttonOnClick = futu.buttonOnClick;
 
-  var buttons = $$("button[data-futu-early-caring-mail]");
-  buttons.forEach(function (btn) {
-      buttonOnClick(btn, function () {
-          btn.disabled = true;
+  var btnAll = $("button#futu-early-caring-send-all")
+  if (btnAll) {
+    console.log("Initialising early caring");
 
-          var url = "/early-caring-submit";
+    // individual buttons
+    var buttons = $$("button[data-futu-early-caring-mail]");
+    var callbacks = [];
+    buttons.forEach(function (btn) {
+      btn.disabled = false;
+      var callback = function () {
+        if (btn.disabled) return;
 
-          var headers = new Headers();
-          headers.append("Accept", "application/json");
-          headers.append("Content-Type", "application/json");
+        btn.disabled = true;
 
-          var opts = {
-            method: "POST",
-            headers: headers,
-            credentials: "same-origin",
-            body: btn.dataset.futuEarlyCaringMail,
-          };
+        console.info("Sending email to " + btn.dataset.futuEarlyCaringName);
+        futu.fetchJSON("/early-caring-submit", JSON.parse(btn.dataset.futuEarlyCaringMail))
+          .then(function (res) {
+            if (res === true) {
+                btn.className = "button success";
+            } else {
+                throw new Error("Didn't get 'true': " + res);
+            }
+          })
+          .catch(function (exc) {
+            alert("" + exc);
+            console.error(exc);
+            btn.className = "button alert";
+            throw exc;
+          });
+      };
 
-          fetch(url, opts)
-              .then(function (res) {
-                  return res.text();
-              })
-              .then(function (res) {
-                  if (res === "true") {
-                      btn.className = "button success";
-                  } else {
-                      throw new Error("Didn't get 'true': " + res);
-                  }
-              })
-              .catch(function (exc) {
-                    console.error(exc);
-                    btn.className = "button alert";
-              });
-      });
-  });
+      buttonOnClick(btn, callback);
+      callbacks.push(callback);
+    });
+
+    // send all list
+    var allList = $_("ul#futu-early-caring-all-supervisors");
+    buttons.forEach(function (btn) {
+      var li = document.createElement("LI");
+      li.innerText = btn.dataset.futuEarlyCaringName;
+      allList.appendChild(li);
+    });
+    
+    // send all button
+    btnAll.disabled = false;
+    buttonOnClick(btnAll, function () {
+      btnAll.disabled = true;
+      callbacks.forEach(function (cb) { cb (); });
+    });
+  }
 });
