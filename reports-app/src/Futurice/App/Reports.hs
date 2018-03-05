@@ -19,7 +19,7 @@ import Futurice.Prelude
 import Futurice.Servant
 import Generics.SOP               (All, hcmap, hcollapse)
 import GHC.TypeLits               (KnownSymbol, symbolVal)
-import Numeric.Interval.NonEmpty  ((...))
+import Numeric.Interval.NonEmpty  (Interval, (...))
 import Prelude ()
 import Servant
 import Servant.Chart              (Chart (..))
@@ -49,13 +49,12 @@ import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
 import Futurice.App.Reports.UtzChart          (utzChartData, utzChartRender)
 
+import qualified Personio as P
+
 -- /TODO/ Make proper type
 type Ctx = (Cache, Manager, Logger, Config, Server DashdoAPI)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
-
-ctxConfig :: Ctx -> Config
-ctxConfig (_, _, _, cfg, _) = cfg
 
 -------------------------------------------------------------------------------
 -- Integrations
@@ -67,12 +66,29 @@ runIntegrations' (_, mgr, lgr, cfg, _) m = do
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
 
 -------------------------------------------------------------------------------
+-- Missing hours predicates
+-------------------------------------------------------------------------------
+
+-- Basic predicate, include all internal people
+missingHoursEmployeePredicate :: Interval Day -> P.Employee -> Bool
+missingHoursEmployeePredicate interval p = and
+    [ p ^. P.employeeEmploymentType == Just P.Internal
+    , P.employeeIsActiveInterval interval p
+    ]
+
+-- Stricter predicate, TODO: filter out Weekly salary type people.
+missingHoursEmployeePredicate' :: Interval Day -> P.Employee -> Bool
+missingHoursEmployeePredicate' interval p = and
+    [ p ^. P.employeeEmploymentType == Just P.Internal
+    , P.employeeIsActiveInterval interval p
+    ]
+
+-------------------------------------------------------------------------------
 -- Endpoints
 -------------------------------------------------------------------------------
 
 -- Note: we cachedIO with () :: () as a key. It's ok as 'Cache'
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
-
 
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
 serveFumFlowdockReport ctx = cachedIO' ctx () $
@@ -86,11 +102,11 @@ serveMissingHoursReport allContracts ctx = do
         day <- currentDay
         -- TODO: end date to the last friday
         let interval = beginningOfPrev2Month day ... pred day
-        runIntegrations' ctx (missingHoursReport contractTypes interval)
+        runIntegrations' ctx (missingHoursReport predicate interval)
   where
-    contractTypes
-        | allContracts = Nothing
-        | otherwise    = Just (cfgMissingHoursContracts (ctxConfig ctx))
+    predicate
+        | allContracts = missingHoursEmployeePredicate
+        | otherwise    = missingHoursEmployeePredicate'
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
 servePowerUsersReport ctx = do
@@ -143,12 +159,11 @@ serveGraph
     -> IO (Graph a key)
 serveGraph m ctx = cachedIO' ctx () $ runIntegrations' ctx m
 
--- TODO: introduce "HasMissingHoursContracts"?
 missingHoursChartData'
     :: Ctx
     -> Integrations '[I, I, Proxy, I, I, I] MissingHoursChartData
-missingHoursChartData' ctx =
-    missingHoursChartData (cfgMissingHoursContracts (ctxConfig ctx))
+missingHoursChartData' _ctx =
+    missingHoursChartData missingHoursEmployeePredicate'
 
 makeServer
     :: All RClass reports

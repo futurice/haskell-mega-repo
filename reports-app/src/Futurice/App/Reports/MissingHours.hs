@@ -27,22 +27,22 @@ module Futurice.App.Reports.MissingHours (
     mhpToDay,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Control.Lens              (contains)
 import Data.Fixed                (Centi)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
 import Futurice.Report.Columns
 import Futurice.Time
 import Numeric.Interval.NonEmpty (inf, sup)
+import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
 import qualified Data.Tuple.Strict   as S
 import qualified Data.Vector         as V
 import qualified FUM
+import qualified Personio            as P
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -159,25 +159,26 @@ missingHoursForUser interval user = do
     isPositive = (>0)
 
 missingHoursReport
-    :: forall m env title.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m, MonadPersonio m
-        , MonadReader env m, HasFUMEmployeeListName env
-        )
-    => Maybe (Set (PM.EnumValue PM.User "contractType"))
+    :: forall m title. (PM.MonadTime m, MonadPlanMillQuery m, MonadPersonio m)
+    => (PM.Interval Day -> P.Employee -> Bool) -- ^ predicate to include people on the report
     -> PM.Interval Day
     -> m (MissingHoursReport title)
-missingHoursReport mcontractTypes interval = do
-    now <- PM.currentTime
-    fpm0 <- snd <$$> fumPlanmillMap
-    let fpm1 = case mcontractTypes of
-            Just contractTypes ->
-                HM.filter (\e -> contractTypes ^. contains (PM.uContractType e)) fpm0
-            Nothing ->
-                fpm0
-    fpm2 <- traverse perUser fpm1
+missingHoursReport predicate interval = do
+    now <- currentTime
+
+    fpm0 <- personioPlanmillMap
+    let fpm1 = HM.filter (predicate interval . fst) fpm0
+
+    fpm2 <- traverse (uncurry perUser) fpm1
+
     pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm2
   where
-    perUser :: PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
-    perUser pmUser = (S.:!:)
+    perUser :: P.Employee -> PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
+    perUser pEmployee pmUser = (S.:!:)
         <$> planmillEmployee (pmUser ^. PM.identifier)
-        <*> missingHoursForUser interval pmUser
+        <*> missingHoursForUser interval' pmUser
+      where
+        -- shrink interval with end date, if it exists
+        interval' = i PM.... s
+        i = inf interval & mcase (pEmployee ^. P.employeeHireDate) id max
+        s = sup interval & mcase (pEmployee ^. P.employeeEndDate) id min
