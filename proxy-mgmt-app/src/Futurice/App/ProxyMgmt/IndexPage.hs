@@ -27,14 +27,14 @@ indexPageHandler ctx = ReaderT $ \login -> do
 
 fetchToken :: Login -> Ctx f -> IO (Maybe Token)
 fetchToken login Ctx {..} =
-    cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchTokens" ctxLogger $
+    cachedIO ctxLogger ctxCache 600 login $ runLogT "fetchTokens" ctxLogger $
         listToMaybe <$> safePoolQuery ctxPostgresPool
             "SELECT username, passtext is not null, usertype, endpoint FROM proxyapp.credentials WHERE username = ?;"
             (Only login)
 
 fetchAccessEntries :: Login -> Ctx f -> IO [AccessEntry]
 fetchAccessEntries login Ctx {..} =
-    cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchAccessEntries" ctxLogger $ do
+    cachedIO ctxLogger ctxCache 600 login $ runLogT "fetchAccessEntries" ctxLogger $ do
         safePoolQuery ctxPostgresPool
             "SELECT username, updated, endpoint FROM proxyapp.accesslog WHERE username = ? ORDER BY updated DESC LIMIT 100;"
             (Only login)

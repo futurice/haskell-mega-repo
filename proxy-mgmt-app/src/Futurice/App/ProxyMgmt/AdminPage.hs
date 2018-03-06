@@ -49,7 +49,7 @@ fetchTokens :: Ctx f -> IO [Token]
 fetchTokens Ctx {..} =
     cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchTokens" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool
-            "SELECT username, passtext is not null, usertype, endpoint FROM proxyapp.credentials;"
+            "SELECT username, passtext is not null, usertype, endpoint FROM proxyapp.credentials ORDER BY username ASC;"
 
 fetchAccessEntries :: Ctx f -> IO [AccessEntry]
 fetchAccessEntries Ctx {..} =
