@@ -29,11 +29,12 @@ import Futurice.App.ProxyMgmt.Config    (Config (..))
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Dashdo
 import Futurice.App.ProxyMgmt.IndexPage
+import Futurice.App.ProxyMgmt.RegenerateToken
 
 server :: Ctx Identity -> Server ProxyMgmtAPI
 server ctx =
     (\mfu -> nt False ctx mfu $ indexPageHandler ctx)
-    :<|> (\mfu -> liftIO $ return "NotImplementedYetWillBeSoon")
+    :<|> (\mfu -> nt False ctx mfu $ regenerateTokenHandler ctx)
     :<|> (\mfu -> nt True ctx mfu $ adminPageHandler ctx)
 
 -- Access control adding transformation
