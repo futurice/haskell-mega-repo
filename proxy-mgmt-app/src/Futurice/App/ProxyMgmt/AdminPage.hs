@@ -23,7 +23,8 @@ adminPageHandler :: Ctx f -> ReaderT Login IO (HtmlPage "admin")
 adminPageHandler ctx = liftIO $ do
     tokens <- fetchTokens ctx
     accessEntries <- fetchAccessEntries ctx
-    pure $ adminPage tokens accessEntries
+    audit <- fetchAudit ctx
+    pure $ adminPage tokens accessEntries audit
 
 -------------------------------------------------------------------------------
 -- Util: move to futurice-prelude
@@ -56,21 +57,27 @@ fetchAccessEntries Ctx {..} =
         safePoolQuery_ ctxPostgresPool
             "SELECT username, updated, endpoint FROM proxyapp.accesslog WHERE current_timestamp - updated < '6 months' :: interval ORDER BY updated DESC;"
 
+fetchAudit :: Ctx f -> IO [(Login, UTCTime, Text)]
+fetchAudit Ctx {..} = 
+    cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchAudit" ctxLogger $ do
+        safePoolQuery_ ctxPostgresPool
+            "SELECT username, created, message FROM proxyapp.auditlog ORDER BY created DESC;"
+
 -------------------------------------------------------------------------------
 -- Html
 -------------------------------------------------------------------------------
 
-adminPage :: [Token] -> [AccessEntry] -> HtmlPage "admin"
-adminPage tokens aes = page_ "Admin" (Just NavAdmin) $ do
-    fullRow_ $ div_ [ class_ "callout warning" ] $ do
+adminPage :: [Token] -> [AccessEntry] -> [(Login, UTCTime, Text)] -> HtmlPage "admin"
+adminPage tokens aes audit = page_ "Admin" (Just NavAdmin) $ do
+    div_ [ class_ "callout warning" ] $ do
         "TODO"
         ul_ $ do
             li_ "Management in general as: Create token"
             li_ "Disable token"
             li_ "Add / disable endpoint for token"
 
-    fullRow_ $ h2_ "Users + Tokens"
-    fullRow_ $ sortableTable_ $ do
+    h2_ "Users + Tokens"
+    sortableTable_ $ do
         thead_ $ do
             th_ "Username"
             th_ "Active"
@@ -92,6 +99,17 @@ adminPage tokens aes = page_ "Admin" (Just NavAdmin) $ do
                 toHtml e
                 " → "
                 toHtml (formatHumanHelsinkiTime t)
+
+    h2_ "Audit log"
+    sortableTable_ $ do
+        thead_ $ do
+            th_ "Username"
+            th_ "Timestamp"
+            th_ "Message"
+        tbody_ $ for_ audit $ \(login, stamp, msg) -> tr_ $ do
+            td_ $ toHtml login
+            td_ $ toHtml . formatHumanHelsinkiTime $ stamp
+            td_ $ toHtml msg
   where
     -- uses inlined DList
     aes' :: Map Text [AccessEntry]

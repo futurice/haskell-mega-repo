@@ -36,3 +36,9 @@ CREATE TRIGGER pass_crypt BEFORE INSERT OR UPDATE ON proxyapp.credentials
 
 ALTER TABLE proxyapp.credentials
   ADD COLUMN usertype TEXT NOT NULL DEFAULT 'user';
+
+CREATE TABLE proxyapp.auditlog (
+  username TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

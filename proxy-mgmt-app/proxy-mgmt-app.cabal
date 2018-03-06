@@ -29,9 +29,11 @@ library
     , aeson
     , aeson-compat
     , base-compat
+    , base64-bytestring
     , clay
     , containers
     , dashdo
+    , entropy
     , env-config
     , fum-api
     , fum-types
@@ -53,6 +55,7 @@ library
     , servant-dashdo
     , servant-server
     , swagger2
+    , text
     , time
     , vector
   exposed-modules:
@@ -64,6 +67,7 @@ library
       Futurice.App.ProxyMgmt.IndexPage
       Futurice.App.ProxyMgmt.Main
       Futurice.App.ProxyMgmt.Markup
+      Futurice.App.ProxyMgmt.RegenerateToken
       Futurice.App.ProxyMgmt.Types
   default-language: Haskell2010
 
