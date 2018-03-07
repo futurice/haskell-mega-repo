@@ -175,6 +175,7 @@ type StatsPageEndpoint =
     "stats" :>
     QueryParam' '[Required] "sort-criteria" SortCriteria :>
     QueryFlag "sort-desc" :>
+    QueryFlag "show-all" :>
     Get '[HTML] (HtmlPage "stats")
 
 -------------------------------------------------------------------------------

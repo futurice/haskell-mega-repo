@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Stats (statsPage) where
 
+import Control.Lens              (filtered, has)
 import Data.Ord                  (Down (..))
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -22,9 +23,10 @@ statsPage
     -> Day -- ^ today
     -> AuthUser -- ^ logged in userError
     -> SortCriteria
-    -> Bool
+    -> Bool -- ^ sort in desc order
+    -> Bool -- ^ show tasks without checklist
     -> HtmlPage "stats"
-statsPage world today authUser sortCriteria sortDescEmpl = checklistPage_ "Stats" [] authUser (Just NavStats) $ do
+statsPage world today authUser sortCriteria sortDescEmpl showTaskWithoutChecklists = checklistPage_ "Stats" [] authUser (Just NavStats) $ do
     let tasks' = world ^.. worldTasksSortedByName . folded
         archivedEmployees = world ^. worldArchive
         tasksWithArchivedEmployees = swapMapMap $ DM.map (\(ArchivedEmployee _ tm) -> tm) archivedEmployees
@@ -59,27 +61,40 @@ statsPage world today authUser sortCriteria sortDescEmpl = checklistPage_ "Stats
                                         archiveCount
                                         (activeCountFuture <> activeCountPast <> archiveCount)) tasks'
         sortedTask' = sortedTask & (if sortDescEmpl then sortOn $ Down . sortByEmpl sortCriteria else sortOn (sortByEmpl sortCriteria))
+        sortedTask'' =
+            if showTaskWithoutChecklists
+            then sortedTask'
+            else filter (\(SortedTask task _ _ _ _) -> let checklists = (world ^.. worldLists . folded . filtered (has (checklistTasks . ix (task ^. identifier))))
+                                                       in not $ null checklists) sortedTask'
+        statsPageLink = safeLink checklistApi statsPageEndpoint
 
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
-            th_ [title_ "Task"] "Task"
+            th_ [title_ "Task"] $ do
+                "Task"
+                br_ []
+                if showTaskWithoutChecklists
+                    then a_ [href_ $ linkToText $ statsPageLink sortCriteria sortDescEmpl False ] " Hide tasks without checklist"
+                    else a_ [href_ $ linkToText $ statsPageLink sortCriteria sortDescEmpl True ] " Show tasks without checklist"
+            th_ [title_ "Role"] "Role"
             th_ [title_ "Active employees todo/done with due date in future"] $
-                a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActiveFuture (if sortCriteria == SortByActiveFuture then not sortDescEmpl else False)] $ do
+                a_ [href_ $ linkToText $ statsPageLink SortByActiveFuture (if sortCriteria == SortByActiveFuture then not sortDescEmpl else False) showTaskWithoutChecklists] $ do
                 "Active Empl"
                 br_ []
                 "Due date in future"
             th_ [title_ "Active employees todo/done with due date in past"] $
-                a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActivePast (if sortCriteria == SortByActivePast then not sortDescEmpl else False)] $ do
+                a_ [href_ $ linkToText $ statsPageLink SortByActivePast (if sortCriteria == SortByActivePast then not sortDescEmpl else False) showTaskWithoutChecklists] $ do
                 "Active Empl"
                 br_ []
                 "Due date in past"
             th_ [title_ "Archived employees todo/done"] $
-                a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByArchive (if sortCriteria == SortByArchive then not sortDescEmpl else False)] "Archived Empl"
+                a_ [href_ $ linkToText $ statsPageLink SortByArchive (if sortCriteria == SortByArchive then not sortDescEmpl else False) showTaskWithoutChecklists] "Archived Empl"
             th_ [title_ "All employees combined todo/done"] $
-                a_ [href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByBoth (if sortCriteria == SortByBoth then not sortDescEmpl else False)] "All"
+                a_ [href_ $ linkToText $ statsPageLink SortByBoth (if sortCriteria == SortByBoth then not sortDescEmpl else False) showTaskWithoutChecklists] "All"
 
-        tbody_ $ for_ sortedTask' $ \(SortedTask task counterActiveFuture counterActivePast counterArchive counterBoth) -> tr_ $ do
+        tbody_ $ for_ sortedTask'' $ \(SortedTask task counterActiveFuture counterActivePast counterArchive counterBoth) -> tr_ $ do
             td_ $ taskLink task
+            td_ $ toHtml $ task ^. taskRole
             td_ $ do
                 showPercentageHtml counterActiveFuture
             td_ $ do
