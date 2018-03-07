@@ -174,6 +174,7 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
                         case tag of
                           GithubTask -> isInGithubOrganizationText
                           PlanmillTask -> isInPlanmillOrganizationText
+                          FirstContactTask -> showFirstContactInformationText
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
                 td_ $ taskCommentInput_ world employee task
@@ -207,6 +208,9 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
 
     isInGithubOrganizationText :: HtmlT Identity ()
     isInGithubOrganizationText = isInGithubOrganizationHtml personioEmployee gemployees
+
+    showFirstContactInformationText :: HtmlT Identity ()
+    showFirstContactInformationText = showFirstContactInformationHtml personioEmployee
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a
