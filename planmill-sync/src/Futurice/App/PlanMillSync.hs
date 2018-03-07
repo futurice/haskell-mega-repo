@@ -86,7 +86,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp githubSyncApi .~ server
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF5 'AC1))
     & serverEnvPfx            .~ "PLANMILLSYNC"
-    & serverOpts              .~ optionsFlag True [(True, "planmill-direct"), (False, "planmill-proxy")] "Access PlanMill directly"
+    & serverOpts              .~ optionsFlag False [(True, "planmill-direct"), (False, "planmill-proxy")] "Access PlanMill directly"
   where
     makeCtx :: Bool -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
     makeCtx planmillDirect cfg lgr mgr cache = do
