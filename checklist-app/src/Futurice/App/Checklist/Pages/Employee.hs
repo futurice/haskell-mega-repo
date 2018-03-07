@@ -162,21 +162,16 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
             th_ [ title_ "Task" ]  "Task"
             th_ [ title_ "Role" ]  "Role"
             th_ [ title_ "Check" ] "Check"
+            th_ [ title_ "Infot" ] "Info"
             th_ [ title_ "Comment" ] "Comment"
             th_ [ title_ "Who and when have done this task" ] "Audit"
         tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
             let tid = task ^. identifier
             for_ (world ^? worldTaskItems . ix eid . ix tid) $ \taskItem -> tr_ $ do
-                td_ $ do
-                    taskLink task
-                    for_ (task ^. taskTags) $ \tag -> do
-                        br_ []
-                        case tag of
-                          GithubTask -> isInGithubOrganizationText
-                          PlanmillTask -> isInPlanmillOrganizationText
-                          FirstContactTask -> showFirstContactInformationText
+                td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
+                td_ $ taskInfo_ task personioEmployee planmillEmployee gemployees
                 td_ $ taskCommentInput_ world employee task
                 td_ $ forOf_ _AnnTaskItemDone taskItem $ \(_, fumUser, timestamp) -> do
                     toHtml fumUser
@@ -201,16 +196,14 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
     personioEmployee = (employee ^. employeePersonio) >>= (\x -> personios ^.at x)
 
     planmillEmployee :: Maybe PMUser
-    planmillEmployee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planEmployees ^.at x)
-
-    isInPlanmillOrganizationText :: HtmlT Identity ()
-    isInPlanmillOrganizationText = isInPlanmillOrganizationHtml planmillEmployee (employee ^. employeeHRNumber)
-
-    isInGithubOrganizationText :: HtmlT Identity ()
-    isInGithubOrganizationText = isInGithubOrganizationHtml personioEmployee gemployees
-
-    showFirstContactInformationText :: HtmlT Identity ()
-    showFirstContactInformationText = showFirstContactInformationHtml personioEmployee
+    planmillEmployee = do
+        login <- checklistLogin <|> personioLogin
+        snd <$> planEmployees ^. at login
+      where
+        checklistLogin = employee ^. employeeFUMLogin
+        personioLogin = do
+            p <- personioEmployee
+            p ^. P.employeeLogin
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a

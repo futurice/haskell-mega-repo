@@ -15,16 +15,15 @@ import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
 import qualified FUM.Types.Login as FUM
-
-import qualified Personio
+import qualified Personio        as P
 
 indexPage
     :: World       -- ^ the world
     -> Day         -- ^ today
     -> AuthUser    -- ^ logged in user
     -> Vector SimpleUser
-    -> Map Personio.EmployeeId Personio.Employee
-    -> HashMap FUM.Login (Personio.Employee, PMUser)
+    -> Map P.EmployeeId P.Employee
+    -> HashMap FUM.Login (P.Employee, PMUser)
     -> Maybe Office
     -> Maybe Checklist
     -> Maybe Task
@@ -54,11 +53,18 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
 
         cutoffDate = addDays (-60) today
 
-        personioEmployee :: Employee -> Maybe Personio.Employee
+        personioEmployee :: Employee -> Maybe P.Employee
         personioEmployee employee = (employee ^. employeePersonio) >>= (\x -> peremployees ^.at x)
 
         planmillEmployee :: Employee -> Maybe PMUser
-        planmillEmployee employee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planemployees ^.at x)
+        planmillEmployee employee = do
+            login <- checklistLogin <|> personioLogin
+            snd <$> planemployees ^. at login
+          where
+            checklistLogin = employee ^. employeeFUMLogin
+            personioLogin = do
+                p <- personioEmployee employee
+                p ^. P.employeeLogin
 
         titleParts =
             [ (^. re _Office) <$> mloc
@@ -126,6 +132,7 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
                     (th_ [title_ "Checklist"]              "List")
                     $ \task -> do
                         th_ [title_ "Selected task" ] $ task ^. nameHtml
+                        when (has (taskTags . folded) task) $ th_ "Task info"
                         when (task ^. taskComment) $ th_ "Comment"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
                 th_ [title_ "Due date"]                    "Due date"
@@ -149,15 +156,7 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeOffice
-                    td_ $ do
-                        employeeLink employee
-                        mcase mtask "" $ \task -> do
-                            for_ (task ^. taskTags) $ \tag -> do
-                                br_ []
-                                case tag of
-                                  GithubTask -> isInGithubOrganizationHtml (personioEmployee employee) gemployees
-                                  PlanmillTask -> isInPlanmillOrganizationHtml (planmillEmployee employee) (employee ^. employeeHRNumber)
-                                  FirstContactTask -> showFirstContactInformationHtml (personioEmployee employee)
+                    td_ $ employeeLink employee
                     td_ $ case tribeOffices (employee ^. employeeTribe) of
                         [off] | off == employee ^. employeeOffice ->
                             toHtml $ employee ^. employeeTribe
@@ -172,6 +171,7 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
                         (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
                             td_ $ taskCheckbox_ world employee task
+                            unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task (personioEmployee employee) (planmillEmployee employee) gemployees
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed

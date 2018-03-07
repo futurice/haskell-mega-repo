@@ -18,8 +18,7 @@ import Futurice.App.Checklist.Types
 import qualified Data.Map        as Map
 import qualified FUM.Types.Login as FUM
 import qualified Futurice.IdMap  as IdMap
-
-import qualified Personio
+import qualified Personio        as P
 
 -- |
 --
@@ -32,8 +31,8 @@ taskPage
     -> AuthUser    -- ^ logged in user
     -> Task
     -> Vector SimpleUser
-    -> Map Personio.EmployeeId Personio.Employee
-    -> HashMap FUM.Login (Personio.Employee, PMUser)
+    -> Map P.EmployeeId P.Employee
+    -> HashMap FUM.Login (P.Employee, PMUser)
     -> HtmlPage "task"
 taskPage world today authUser task gemployees peremployees planemployees = checklistPage_ (view nameText task <> " - task") [] authUser (Just NavTasks) $ do
     row_ $ large_ 12 $ do
@@ -105,17 +104,11 @@ taskPage world today authUser task gemployees peremployees planemployees = check
             let startingDay = employee ^. employeeStartingDay
             td_ $ contractTypeHtml $ employee ^. employeeContractType
             td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
-            td_ $ do
-                employeeLink employee
-                for_ (task ^. taskTags) $ \tag -> do
-                    br_ []
-                    case tag of
-                      GithubTask -> isInGithubOrganizationHtml (personioEmployee employee) gemployees
-                      PlanmillTask -> isInPlanmillOrganizationHtml (planmillEmployee employee) (employee ^. employeeHRNumber)
-                      FirstContactTask -> showFirstContactInformationHtml (personioEmployee employee)
+            td_ $ employeeLink employee
             -- TODO: checklist link
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
             td_ $ taskCheckbox_ world employee task
+            unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task (personioEmployee employee) (planmillEmployee employee) gemployees
             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
@@ -126,8 +119,15 @@ taskPage world today authUser task gemployees peremployees planemployees = check
         (IdMap.toMap (world ^. worldEmployees))
         (world ^. worldTaskItems' .ix (task ^. identifier))
 
-    personioEmployee :: Employee -> Maybe Personio.Employee
+    personioEmployee :: Employee -> Maybe P.Employee
     personioEmployee employee = (employee ^. employeePersonio) >>= (\x -> peremployees ^.at x)
 
     planmillEmployee :: Employee -> Maybe PMUser
-    planmillEmployee employee = (employee ^. employeeFUMLogin) >>= (\x -> snd <$> planemployees ^.at x)
+    planmillEmployee employee = do
+            login <- checklistLogin <|> personioLogin
+            snd <$> planemployees ^. at login
+          where
+            checklistLogin = employee ^. employeeFUMLogin
+            personioLogin = do
+                p <- personioEmployee employee
+                p ^. P.employeeLogin

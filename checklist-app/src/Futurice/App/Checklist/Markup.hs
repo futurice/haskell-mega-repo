@@ -32,9 +32,6 @@ module Futurice.App.Checklist.Markup (
     contractTypeHtml,
     checklistNameHtml,
     locationHtml,
-    isInPlanmillOrganizationHtml,
-    isInGithubOrganizationHtml,
-    showFirstContactInformationHtml,
     -- * Counter
     TodoCounter (..),
     Counter (..),
@@ -42,6 +39,7 @@ module Futurice.App.Checklist.Markup (
     -- * Tasks
     taskCheckbox_,
     taskCommentInput_,
+    taskInfo_,
     -- * Headers
     viewerItemsHeader,
     -- * Defaults
@@ -65,6 +63,7 @@ import GitHub                       (SimpleUser, simpleUserLogin)
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
 import qualified Personio  as P
+import qualified PlanMill  as PM
 
 -------------------------------------------------------------------------------
 -- Navigation
@@ -301,38 +300,61 @@ checklistNameHtml world mloc i notDone =
     a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
-isInPlanmillOrganizationHtml :: Maybe PMUser -> Maybe Int -> HtmlT Identity ()
+-------------------------------------------------------------------------------
+-- TaskTags extra info
+-------------------------------------------------------------------------------
+
+isInPlanmillOrganizationHtml :: Monad m => Maybe PMUser -> Maybe Int -> [HtmlT m ()]
 isInPlanmillOrganizationHtml planmillEmployee hrnumber =
-    span_ [ class_ "info label" ] $ case planmillEmployee of
-        Nothing                 -> "Person not in Planmill" <> hntext
-        Just (PMUser _ passive) -> "In Planmill, state: " <> toHtml passive <> hntext
-  where
-    hntext = mcase hrnumber "" $ \number ->
-        ", Personio HR number: " <> toHtml (show number)
+    mcase hrnumber [] (\n -> ["HR number: " <> toHtml (show n)]) ++
+    case planmillEmployee of
+        Nothing ->
+            [ b_ "Not " <> " in Planmill"
+            -- TODO: Add more info so person can be added to PM
+            ]
+        Just (PMUser u passive) ->
+            [ "In Planmill: " <> toHtml (u ^. PM.identifier)
+            , "PM state: " <> toHtml passive
+            ]
 
-isInGithubOrganizationHtml :: Maybe P.Employee -> Vector SimpleUser -> HtmlT Identity ()
-isInGithubOrganizationHtml p gs = runExit $ do
+-- TODO: change Vector SimpleUser to Maybe SimpleUser
+isInGithubOrganizationHtml :: Monad m => Maybe P.Employee -> Vector SimpleUser -> [HtmlT m ()]
+isInGithubOrganizationHtml p gs = return $ runExit $ do
     pEmployee  <- exitIfNothing p $
-        span_ [class_ "info label"] "No personio info found"
+        "No Personio info found"
     githubUser <- exitIfNothing (pEmployee ^. P.employeeGithub) $
-        span_ [class_ "info label"] "No GitHub username in personio"
-    _ <- exitIfNothing (listToMaybe $ filter (\g -> simpleUserLogin g == githubUser) (toList gs)) $ do
-        span_ [class_ "info label"] $ b_ "Not" <> " in Futurice GitHub organization"
-        ": "
-        toHtml githubUser
+        "No GitHub username in Personio"
+    _ <- exitIfNothing (listToMaybe $ filter (\g -> simpleUserLogin g == githubUser) (toList gs)) $
+        b_ "Not" <> " in Futurice GitHub organization" <> ": " <> toHtml githubUser
     return $ do
-        span_ [class_ "info label"] $ b_ "In" <> " Futurice GitHub organization"
-        ": "
-        toHtml githubUser
+        span_ [class_ "info label"] $ b_ "In" <> " Futurice GitHub organization" <> ": " <> toHtml githubUser
 
-showFirstContactInformationHtml :: Maybe P.Employee -> HtmlT Identity ()
-showFirstContactInformationHtml = maybe "" (\p -> do
-    span_ [class_ "info label"] $ toHtml $ maybe "No private email" (\e -> if T.null e then "No private email" else "Private email: " <> e) $ p ^. P.employeeHomeEmail
-    br_ []
-    span_ [class_ "info label"] $ case p ^. P.employeeJobOfferAccepted of
-      Nothing -> "Has not accepted job offer"
-      Just _ -> "Accepted job offer" )
+showFirstContactInformationHtml :: Monad m => Maybe P.Employee -> [HtmlT m ()]
+showFirstContactInformationHtml = maybe [ "No Personio info found" ] $ \p ->
+    [ fromMaybe "No private email" $ do
+        e <- p ^. P.employeeHomeEmail
+        guard (not $ T.null e)
+        return $ "Private email: " <> a_ [ href_ $ "mailto:" <> e ] (toHtml e)
+    , case p ^. P.employeeJobOfferAccepted of
+        Nothing -> "Has " <> b_ "not" <> " accepted job offer"
+        Just d -> "Accepted job offer on " <> toHtml (show d)
+    ]
 
+taskInfo_
+    :: Monad m
+    => Task
+    -> Maybe P.Employee   -- ^ personio
+    -> Maybe PMUser       -- ^ planmill
+    -> Vector SimpleUser  -- ^ github users: TODO change to Map (Name User) SimpleUser
+    -> HtmlT m ()
+taskInfo_ task p pm gs
+    | null (task ^. taskTags) = pure ()
+    | otherwise = unless (null infos) $ ul_ $ traverse_ li_ infos
+  where
+    infos = foldMap info (task ^. taskTags)
+    info GithubTask       = isInGithubOrganizationHtml p gs
+    info PlanmillTask     = isInPlanmillOrganizationHtml pm (p >>= view P.employeeHRNumber) -- note uses Personio HR number
+    info FirstContactTask = showFirstContactInformationHtml p
 
 -------------------------------------------------------------------------------
 -- Tasks
