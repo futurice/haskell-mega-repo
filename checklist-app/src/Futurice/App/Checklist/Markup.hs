@@ -34,6 +34,7 @@ module Futurice.App.Checklist.Markup (
     locationHtml,
     isInPlanmillOrganizationHtml,
     isInGithubOrganizationHtml,
+    showFirstContactInformationHtml,
     -- * Counter
     TodoCounter (..),
     Counter (..),
@@ -323,6 +324,15 @@ isInGithubOrganizationHtml p gs = runExit $ do
         span_ [class_ "info label"] $ b_ "In" <> " Futurice GitHub organization"
         ": "
         toHtml githubUser
+
+showFirstContactInformationHtml :: Maybe P.Employee -> HtmlT Identity ()
+showFirstContactInformationHtml = maybe "" (\p -> do
+    span_ [class_ "info label"] $ toHtml $ maybe "No private email" (\e -> if T.null e then "No private email" else "Private email: " <> e) $ p ^. P.employeeHomeEmail
+    br_ []
+    span_ [class_ "info label"] $ case p ^. P.employeeJobOfferAccepted of
+      Nothing -> "Has not accepted job offer"
+      Just _ -> "Accepted job offer" )
+
 
 -------------------------------------------------------------------------------
 -- Tasks
