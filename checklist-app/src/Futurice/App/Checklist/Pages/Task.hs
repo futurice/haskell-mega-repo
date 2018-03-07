@@ -112,6 +112,7 @@ taskPage world today authUser task gemployees peremployees planemployees = check
                     case tag of
                       GithubTask -> isInGithubOrganizationHtml (personioEmployee employee) gemployees
                       PlanmillTask -> isInPlanmillOrganizationHtml (planmillEmployee employee) (employee ^. employeeHRNumber)
+                      FirstContactTask -> showFirstContactInformationHtml (personioEmployee employee)
             -- TODO: checklist link
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
             td_ $ taskCheckbox_ world employee task

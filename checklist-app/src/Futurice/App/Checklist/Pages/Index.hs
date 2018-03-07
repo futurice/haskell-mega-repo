@@ -157,6 +157,7 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
                                 case tag of
                                   GithubTask -> isInGithubOrganizationHtml (personioEmployee employee) gemployees
                                   PlanmillTask -> isInPlanmillOrganizationHtml (planmillEmployee employee) (employee ^. employeeHRNumber)
+                                  FirstContactTask -> showFirstContactInformationHtml (personioEmployee employee)
                     td_ $ case tribeOffices (employee ^. employeeTribe) of
                         [off] | off == employee ^. employeeOffice ->
                             toHtml $ employee ^. employeeTribe

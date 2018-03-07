@@ -23,8 +23,9 @@ import Prelude ()
 import qualified Data.Csv as Csv
 
 data TaskTag
-    = GithubTask    -- ^ This task relates to Github
-    | PlanmillTask  -- ^ This task relates to Planmill
+    = GithubTask       -- ^ This task relates to Github
+    | PlanmillTask     -- ^ This task relates to Planmill
+    | FirstContactTask -- ^ This task relates to accepting job offer
  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic)
 
 makePrisms ''TaskTag
@@ -32,7 +33,7 @@ deriveGeneric ''TaskTag
 deriveLift ''TaskTag
 
 instance TextEnum TaskTag where
-    type TextEnumNames TaskTag = '["GitHub", "PlanMill"]
+    type TextEnumNames TaskTag = '["GitHub", "PlanMill", "FirstContact"]
 
 taskTagToText :: TaskTag -> Text
 taskTagToText = enumToText
