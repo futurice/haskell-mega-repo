@@ -318,12 +318,12 @@ isInPlanmillOrganizationHtml planmillEmployee hrnumber =
             ]
 
 isInGithubOrganizationHtml :: Monad m => Maybe P.Employee -> Maybe GH.SimpleUser -> [HtmlT m ()]
-isInGithubOrganizationHtml p gs = return $ runExit $ do
+isInGithubOrganizationHtml p g = return $ runExit $ do
     pEmployee  <- exitIfNothing p $
         "No Personio info found"
     githubUser <- exitIfNothing (pEmployee ^. P.employeeGithub) $
         "No GitHub username in Personio"
-    _ <- exitIfNothing (listToMaybe $ filter (\g -> GH.simpleUserLogin g == githubUser) (toList gs)) $
+    _ <- exitIfNothing g $
         b_ "Not" <> " in Futurice GitHub organization" <> ": " <> toHtml githubUser
     return $ do
         b_ "In" <> " Futurice GitHub organization" <> ": " <> toHtml githubUser
