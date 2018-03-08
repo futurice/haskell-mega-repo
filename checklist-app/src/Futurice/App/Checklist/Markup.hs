@@ -58,10 +58,10 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Clay  (pageParams)
 import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation
-import GitHub                       (SimpleUser, simpleUserLogin)
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
+import qualified GitHub    as GH
 import qualified Personio  as P
 import qualified PlanMill  as PM
 
@@ -317,17 +317,16 @@ isInPlanmillOrganizationHtml planmillEmployee hrnumber =
             , "PM state: " <> toHtml passive
             ]
 
--- TODO: change Vector SimpleUser to Maybe SimpleUser
-isInGithubOrganizationHtml :: Monad m => Maybe P.Employee -> Vector SimpleUser -> [HtmlT m ()]
+isInGithubOrganizationHtml :: Monad m => Maybe P.Employee -> Maybe GH.SimpleUser -> [HtmlT m ()]
 isInGithubOrganizationHtml p gs = return $ runExit $ do
     pEmployee  <- exitIfNothing p $
         "No Personio info found"
     githubUser <- exitIfNothing (pEmployee ^. P.employeeGithub) $
         "No GitHub username in Personio"
-    _ <- exitIfNothing (listToMaybe $ filter (\g -> simpleUserLogin g == githubUser) (toList gs)) $
+    _ <- exitIfNothing (listToMaybe $ filter (\g -> GH.simpleUserLogin g == githubUser) (toList gs)) $
         b_ "Not" <> " in Futurice GitHub organization" <> ": " <> toHtml githubUser
     return $ do
-        span_ [class_ "info label"] $ b_ "In" <> " Futurice GitHub organization" <> ": " <> toHtml githubUser
+        b_ "In" <> " Futurice GitHub organization" <> ": " <> toHtml githubUser
 
 showFirstContactInformationHtml :: Monad m => Maybe P.Employee -> [HtmlT m ()]
 showFirstContactInformationHtml = maybe [ "No Personio info found" ] $ \p ->
@@ -343,18 +342,35 @@ showFirstContactInformationHtml = maybe [ "No Personio info found" ] $ \p ->
 taskInfo_
     :: Monad m
     => Task
-    -> Maybe P.Employee   -- ^ personio
-    -> Maybe PMUser       -- ^ planmill
-    -> Vector SimpleUser  -- ^ github users: TODO change to Map (Name User) SimpleUser
+    -> Employee
+    -> IntegrationData
     -> HtmlT m ()
-taskInfo_ task p pm gs
+taskInfo_ task employee idata
     | null (task ^. taskTags) = pure ()
     | otherwise = unless (null infos) $ ul_ $ traverse_ li_ infos
   where
+    zeroToNothing (Just 0) = Nothing
+    zeroToNothing x        = x
+    personioEmployee = (employee ^. employeePersonio) >>= (\x -> idata ^. personioData ^. at x)
+    planmillEmployee = do
+        login <- checklistLogin <|> personioLogin
+        snd <$> idata ^. planmillData ^. at login
+      where
+        checklistLogin = employee ^. employeeFUMLogin
+        personioLogin = do
+            p <- personioEmployee
+            p ^. P.employeeLogin
+    githubEmployee = do
+        pe <- personioEmployee
+        g <- pe ^. P.employeeGithub
+        idata ^. githubData ^. at g
+    employeeHRnumber = do
+        p <- personioEmployee
+        employee ^. employeeHRNumber <|> zeroToNothing (p ^. P.employeeHRNumber)
     infos = foldMap info (task ^. taskTags)
-    info GithubTask       = isInGithubOrganizationHtml p gs
-    info PlanmillTask     = isInPlanmillOrganizationHtml pm (p >>= view P.employeeHRNumber) -- note uses Personio HR number
-    info FirstContactTask = showFirstContactInformationHtml p
+    info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee
+    info PlanmillTask     = isInPlanmillOrganizationHtml planmillEmployee employeeHRnumber
+    info FirstContactTask = showFirstContactInformationHtml personioEmployee
 
 -------------------------------------------------------------------------------
 -- Tasks

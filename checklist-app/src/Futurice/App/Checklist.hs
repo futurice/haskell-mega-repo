@@ -18,7 +18,6 @@ import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import Futurice.Stricter
-import GitHub                    (SimpleUser)
 import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
@@ -54,6 +53,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.GroupName        as FUM
 import qualified FUM.Types.Login            as FUM
 import qualified Futurice.FUM.MachineAPI    as FUM
+import qualified GitHub                     as GH
 import qualified PlanMill                   as PM
 import qualified PlanMill.Queries           as PMQ
 
@@ -100,9 +100,8 @@ indexPageImpl ctx fu loc cid tid showDone showOld = withAuthUser ctx fu impl
     impl world userInfo = do
         today <- currentDay
         now <- currentTime
-        (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
-        pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
-        pure $ indexPage world today userInfo gemployees pemployeesmap planEmployees loc checklist task showDone showOld
+        integrationData <- getEmployeeExternalData now ctx
+        pure $ indexPage world today userInfo integrationData loc checklist task showDone showOld
       where
         checklist = do
             cid' <- cid
@@ -183,9 +182,8 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
         Just task -> do
             today <- currentDay
             now <- currentTime
-            (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
-            pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
-            pure $ taskPage world today userInfo task gemployees pemployeesmap planEmployees
+            integrationData <- getEmployeeExternalData now ctx
+            pure $ taskPage world today userInfo task integrationData
 
 checklistPageImpl
     :: Ctx
@@ -211,9 +209,8 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
         Nothing       -> pure notFoundPage
         Just employee -> do
             now <- currentTime
-            (gemployees, pemployees, planEmployees) <- getEmployeeExternalData now ctx
-            pemployeesmap <- pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pemployees
-            pure (employeePage world userInfo employee pemployeesmap gemployees planEmployees)
+            integrationData <- getEmployeeExternalData now ctx
+            pure (employeePage world userInfo employee integrationData)
 
 archivePageImpl
     :: Ctx
@@ -272,14 +269,21 @@ statsPageImpl ctx fu sortCriteria sortDescOrder showTaskWithoutChecklists = with
 -- All integrations helper
 -------------------------------------------------------------------------------
 
-getEmployeeExternalData :: MonadIO m => UTCTime -> Ctx -> m (Vector SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
-getEmployeeExternalData now ctx = liftIO $ cachedIO lgr cache 180 () $
-    runIntegrations mgr lgr now cfg fetchEmployeeExternalData
+getEmployeeExternalData
+    :: MonadIO m
+    => UTCTime
+    -> Ctx
+    -> m IntegrationData
+getEmployeeExternalData now ctx = liftIO $ cachedIO lgr cache 180 () $ do
+    (githubD, personioD, planmillD) <- runIntegrations mgr lgr now cfg fetchEmployeeExternalData
+    return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD
   where
-    lgr = ctxLogger ctx
-    mgr = ctxManager ctx
-    cfg = ctxIntegrationsCfg ctx
-    cache = ctxCache ctx
+      githubDataMap gd = Map.fromList $ map (\g -> (GH.simpleUserLogin g, g)) (toList gd)
+      personioDataMap pd = Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pd
+      lgr = ctxLogger ctx
+      mgr = ctxManager ctx
+      cfg = ctxIntegrationsCfg ctx
+      cache = ctxCache ctx
 
 type M = Integrations '[I, Proxy, I, I, Proxy, I]
 
@@ -290,7 +294,7 @@ personioPlanmillPMuserMap = personioPlanmillMap >>= (\persons -> ifor persons $ 
                         pmPassive = passive
                       }))
 
-fetchEmployeeExternalData :: M (Vector SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+fetchEmployeeExternalData :: M (Vector GH.SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
 fetchEmployeeExternalData = (,,)
     <$> githubOrganisationMembers
     <*> personio Personio.PersonioEmployees

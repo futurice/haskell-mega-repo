@@ -32,6 +32,7 @@ module Futurice.App.Checklist.Types (
     identifierText,
     Name (..),
     HasName (..),
+    IntegrationData (..),
     -- * Functions
     employeeTaskApplies,
     -- * Lenses
@@ -64,6 +65,8 @@ module Futurice.App.Checklist.Types (
     annTaskItemTodo,
     annTaskItemComment,
     _AnnTaskItemDone, _AnnTaskItemTodo,
+    -- ** IntegrationData
+    githubData, personioData, planmillData,
     -- * World
     World,
     emptyWorld,
