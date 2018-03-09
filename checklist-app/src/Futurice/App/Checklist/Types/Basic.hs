@@ -26,6 +26,7 @@ import Futurice.App.Checklist.Types.TaskTag
 
 import qualified Data.Text       as T
 import qualified FUM.Types.Login as FUM
+import qualified GitHub          as GH
 import qualified PlanMill        as PM
 import qualified Test.QuickCheck as QC
 
@@ -114,6 +115,16 @@ data PMUser = PMUser
 
 instance NFData PMUser
 
+-- | Helper structure for carrying data from external sources
+data IntegrationData = IntegrationData
+    { _githubData :: !(Map (GH.Name GH.User) GH.SimpleUser)
+    , _personioData :: !(Map P.EmployeeId P.Employee)
+    , _planmillData :: !(HashMap FUM.Login (P.Employee, PMUser))
+    }
+  deriving (Show, Generic)
+
+instance NFData IntegrationData
+
 -------------------------------------------------------------------------------
 -- Lenses
 -------------------------------------------------------------------------------
@@ -123,6 +134,7 @@ makeLenses ''Employee
 makeLenses ''Task
 makePrisms ''CheckResult
 makeLenses ''Checklist
+makeLenses ''IntegrationData
 
 -------------------------------------------------------------------------------
 -- TaskAppliance helpers

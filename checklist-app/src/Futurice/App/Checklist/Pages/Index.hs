@@ -8,29 +8,23 @@ import Control.Lens
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import GitHub                    (SimpleUser)
 import Prelude ()
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified FUM.Types.Login as FUM
-import qualified Personio        as P
-
 indexPage
     :: World       -- ^ the world
     -> Day         -- ^ today
     -> AuthUser    -- ^ logged in user
-    -> Vector SimpleUser
-    -> Map P.EmployeeId P.Employee
-    -> HashMap FUM.Login (P.Employee, PMUser)
+    -> IntegrationData
     -> Maybe Office
     -> Maybe Checklist
     -> Maybe Task
     -> Bool  -- ^ done
     -> Bool  -- ^ old
     -> HtmlPage "indexpage"
-indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemployees mloc mlist mtask showDone showOld =
+indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtask showDone showOld =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeOffice . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
@@ -52,19 +46,6 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
         taskInChecklist task (Just cl) = has (checklistTasks . ix (task ^. identifier)) cl
 
         cutoffDate = addDays (-60) today
-
-        personioEmployee :: Employee -> Maybe P.Employee
-        personioEmployee employee = (employee ^. employeePersonio) >>= (\x -> peremployees ^.at x)
-
-        planmillEmployee :: Employee -> Maybe PMUser
-        planmillEmployee employee = do
-            login <- checklistLogin <|> personioLogin
-            snd <$> planemployees ^. at login
-          where
-            checklistLogin = employee ^. employeeFUMLogin
-            personioLogin = do
-                p <- personioEmployee employee
-                p ^. P.employeeLogin
 
         titleParts =
             [ (^. re _Office) <$> mloc
@@ -171,7 +152,7 @@ indexPage world today authUser@(_fu, viewerRole) gemployees peremployees planemp
                         (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
                             td_ $ taskCheckbox_ world employee task
-                            unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task (personioEmployee employee) (planmillEmployee employee) gemployees
+                            unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                     td_ $ toHtml $ show startingDay
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
