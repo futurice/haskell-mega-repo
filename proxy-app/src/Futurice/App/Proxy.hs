@@ -330,5 +330,10 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         ]
 
     credentialAndEndpointCheck :: String
-    credentialAndEndpointCheck = init credentialCheck
-        ++ " AND ? LIKE endpoint || '%';"
+    credentialAndEndpointCheck = unwords
+        [ "SELECT 1 from proxyapp.credentials c, proxyapp.policy_endpoint pe"
+        , "WHERE c.policyname = pe.policyname"
+        , "AND c.username = ? AND passtext = crypt(?, passtext)"
+        , "AND ? LIKE pe.endpoint || '%'"
+        , ";"
+        ]
