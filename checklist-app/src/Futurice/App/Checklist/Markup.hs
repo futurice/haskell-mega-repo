@@ -364,9 +364,10 @@ taskInfo_ task employee idata
         pe <- personioEmployee
         g <- pe ^. P.employeeGithub
         idata ^. githubData ^. at g
-    employeeHRnumber = do
-        p <- personioEmployee
-        employee ^. employeeHRNumber <|> zeroToNothing (p ^. P.employeeHRNumber)
+    employeeHRnumber = checklistHRNumber <|> personioHRNumber
+      where
+        checklistHRNumber = employee ^. employeeHRNumber
+        personioHRNumber = personioEmployee >>= (\p -> zeroToNothing (p ^. P.employeeHRNumber))
     infos = foldMap info (task ^. taskTags)
     info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee
     info PlanmillTask     = isInPlanmillOrganizationHtml planmillEmployee employeeHRnumber
