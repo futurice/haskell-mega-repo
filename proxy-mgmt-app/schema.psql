@@ -23,17 +23,6 @@ CREATE TABLE proxyapp.accesslog (
 ALTER TABLE proxyapp.credentials
   ADD COLUMN endpoint TEXT NOT NULL DEFAULT '/';
 
-CREATE FUNCTION proxyapp.pass_crypt() RETURNS trigger AS $pass_crypt$
-  BEGIN
-    NEW.passtext = crypt(NEW.passtext, public.gen_salt('bf'));
-
-    RETURN NEW;
-  END;
- $pass_crypt$ LANGUAGE plpgsql;
-
-CREATE TRIGGER pass_crypt BEFORE INSERT OR UPDATE ON proxyapp.credentials
-  FOR EACH ROW EXECUTE PROCEDURE proxyapp.pass_crypt();
-
 ALTER TABLE proxyapp.credentials
   ADD COLUMN usertype TEXT NOT NULL DEFAULT 'user';
 
@@ -42,3 +31,32 @@ CREATE TABLE proxyapp.auditlog (
   message TEXT NOT NULL,
   created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Policies
+
+CREATE TABLE proxyapp.policy (
+  policyname TEXT NOT NULL PRIMARY KEY,
+  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE proxyapp.policy_endpoint (
+  policyname TEXT NOT NULL REFERENCES proxyapp.policy (policyname),
+  endpoint TEXT NOT NULL
+);
+
+INSERT INTO proxyapp.policy (policyname)
+   VALUES ('all'), ('contacts'), ('missing-hours'), ('contacts-missing-hours');
+
+INSERT INTO proxyapp.policy_endpoint (policyname, endpoint)
+  VALUES
+   ('all', '/'),
+   ('contacts', '/contacts'),
+   ('missing-hours', '/futuhours/reports/missinghours'),
+   ('contacts-missing-hours', '/contacts'),
+   ('contacts-missing-hours', '/futuhours/reports/missinghours');
+
+ALTER TABLE proxyapp.credentials ADD COLUMN policyname TEXT NOT NULL DEFAULT 'contacts';
+ALTER TABLE proxyapp.credentials ADD CONSTRAINT fk_policy_policyname FOREIGN KEY (policyname) REFERENCES proxyapp.policy (policyname);
+
+UPDATE proxyapp.credentials SET policyname = 'all' WHERE endpoint = '/';
+UPDATE proxyapp.credentials SET policyname = 'missing-hours' WHERE endpoint = '/futuhours/reports/missinghours';
