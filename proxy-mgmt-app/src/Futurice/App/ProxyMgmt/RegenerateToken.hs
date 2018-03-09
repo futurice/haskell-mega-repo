@@ -37,7 +37,7 @@ regenerateTokenHandler Ctx {..} = ReaderT $ \login -> do
         -- TODO: check that audit log writing succeed?
 
         void $ safePoolExecute ctxPostgresPool
-            "UPDATE proxyapp.credentials SET passtext = ? WHERE username = ?;"
+            "UPDATE proxyapp.credentials SET passtext = crypt(?, gen_salt('bf')) WHERE username = ?;"
             (base64T, login)
 
     return base64T

@@ -29,7 +29,7 @@ fetchToken :: Login -> Ctx f -> IO (Maybe Token)
 fetchToken login Ctx {..} =
     cachedIO ctxLogger ctxCache 600 login $ runLogT "fetchTokens" ctxLogger $
         listToMaybe <$> safePoolQuery ctxPostgresPool
-            "SELECT username, passtext is not null, usertype, endpoint FROM proxyapp.credentials WHERE username = ?;"
+            "SELECT username, passtext is not null, usertype, policyname FROM proxyapp.credentials WHERE username = ?;"
             (Only login)
 
 fetchAccessEntries :: Login -> Ctx f -> IO [AccessEntry]
@@ -63,8 +63,8 @@ tokenPage :: Login -> [AccessEntry] -> Token -> HtmlPage "index"
 tokenPage login entries Token {..} = page_ ("Prox management - " <> loginToText login) (Just NavIndex) $ do
     h2_ "Token"
     condensedTable_ $ tbody_ $ do
-        vertRow_ "Active"   $ if tActive then "Active" else "Passive"
-        vertRow_ "Endpoint" $ toHtml tEndpoint
+        vertRow_ "Active" $ if tActive then "Active" else "Passive"
+        vertRow_ "Policy" $ toHtml tPolicyName
 
     h2_ "Regenerate token"
     p_ "If you’ve lost or forgotten the token, you can regenerate it, but be aware that any scripts or applications using this token will need to be updated."
