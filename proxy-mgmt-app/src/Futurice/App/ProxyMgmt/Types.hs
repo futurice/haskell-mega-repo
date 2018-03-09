@@ -5,10 +5,10 @@ import Futurice.Prelude
 import Prelude ()
 
 data Token = Token
-    { tUsername :: !Text
-    , tActive   :: !Bool
-    , tUsertype :: !Text
-    , tEndpoint :: !Text
+    { tUsername   :: !Text
+    , tActive     :: !Bool
+    , tUsertype   :: !Text
+    , tPolicyName :: !Text
     }
   deriving (Show, Generic)
 

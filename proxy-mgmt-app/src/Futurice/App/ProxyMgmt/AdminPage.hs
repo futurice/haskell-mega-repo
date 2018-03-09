@@ -18,13 +18,15 @@ import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 
 adminPageHandler :: Ctx f -> ReaderT Login IO (HtmlPage "admin")
 adminPageHandler ctx = liftIO $ do
     tokens <- fetchTokens ctx
     accessEntries <- fetchAccessEntries ctx
     audit <- fetchAudit ctx
-    pure $ adminPage tokens accessEntries audit
+    policies <- fetchPolicies ctx
+    pure $ adminPage tokens accessEntries audit policies
 
 -------------------------------------------------------------------------------
 -- Util: move to futurice-prelude
@@ -49,7 +51,7 @@ fetchTokens :: Ctx f -> IO [Token]
 fetchTokens Ctx {..} =
     cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchTokens" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool
-            "SELECT username, passtext is not null, usertype, endpoint FROM proxyapp.credentials ORDER BY username ASC;"
+            "SELECT username, passtext is not null, usertype, policyname FROM proxyapp.credentials ORDER BY username ASC;"
 
 fetchAccessEntries :: Ctx f -> IO [AccessEntry]
 fetchAccessEntries Ctx {..} =
@@ -58,17 +60,25 @@ fetchAccessEntries Ctx {..} =
             "SELECT username, updated, endpoint FROM proxyapp.accesslog WHERE current_timestamp - updated < '6 months' :: interval ORDER BY updated DESC;"
 
 fetchAudit :: Ctx f -> IO [(Login, UTCTime, Text)]
-fetchAudit Ctx {..} = 
+fetchAudit Ctx {..} =
     cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchAudit" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool
             "SELECT username, created, message FROM proxyapp.auditlog ORDER BY created DESC;"
+
+fetchPolicies :: Ctx f -> IO (Map Text (Set Text))
+fetchPolicies Ctx {..} =
+    cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchPolicies" ctxLogger $ do
+        mk <$> safePoolQuery_ ctxPostgresPool
+            "SELECT policyname, endpoint FROM proxyapp.policy_endpoint;"
+  where
+    mk = Map.fromListWith (<>) . map (second Set.singleton)
 
 -------------------------------------------------------------------------------
 -- Html
 -------------------------------------------------------------------------------
 
-adminPage :: [Token] -> [AccessEntry] -> [(Login, UTCTime, Text)] -> HtmlPage "admin"
-adminPage tokens aes audit = page_ "Admin" (Just NavAdmin) $ do
+adminPage :: [Token] -> [AccessEntry] -> [(Login, UTCTime, Text)] -> Map Text (Set Text) -> HtmlPage "admin"
+adminPage tokens aes audit policies = page_ "Admin" (Just NavAdmin) $ do
     div_ [ class_ "callout warning" ] $ do
         "TODO"
         ul_ $ do
@@ -76,13 +86,23 @@ adminPage tokens aes audit = page_ "Admin" (Just NavAdmin) $ do
             li_ "Disable token"
             li_ "Add / disable endpoint for token"
 
+    h2_ "Policies"
+    sortableTable_ $ do
+        thead_ $ tr_ $ do
+            th_ "Policy"
+            th_ "Endpoints"
+        tbody_ $ ifor_ policies $ \policyName endpoints ->
+            unless (null endpoints) $ tr_ $ do
+                td_ $ toHtml policyName
+                td_ $ ul_ $ traverse_ (li_ . toHtml) endpoints
+
     h2_ "Users + Tokens"
     sortableTable_ $ do
-        thead_ $ do
+        thead_ $ tr_ $ do
             th_ "Username"
             th_ "Active"
             th_ "Last active"
-            th_ "Endpoint"
+            th_ "Policy"
             th_ "Accessed endpoints"
         tbody_ $ for_ tokens $ \t -> tr_ $ do
             let ae = aes' ^. ix (tUsername t)
@@ -93,7 +113,7 @@ adminPage tokens aes audit = page_ "Admin" (Just NavAdmin) $ do
                 pure $ toHtml login
             td_ $ if tActive t then "Active" else "Disabled"
             td_ $ traverse_ (toHtml . formatHumanHelsinkiTime) $ calaf (fmap Max . Option) foldMap (Just . aeStamp) ae
-            td_ $ toHtml $ tEndpoint t
+            td_ $ toHtml $ tPolicyName t
             let xs = calaf (UnionWith' . fmap Max) foldMap (\x -> Map.singleton (aeEndpoint x) (aeStamp x)) ae
             td_ $ ul_ $ ifor_ xs $ \e t -> li_ $ do
                 toHtml e
@@ -102,7 +122,7 @@ adminPage tokens aes audit = page_ "Admin" (Just NavAdmin) $ do
 
     h2_ "Audit log"
     sortableTable_ $ do
-        thead_ $ do
+        thead_ $ tr_ $ do
             th_ "Username"
             th_ "Timestamp"
             th_ "Message"
