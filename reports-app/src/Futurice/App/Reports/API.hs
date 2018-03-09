@@ -18,10 +18,8 @@ import Servant
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
-import Futurice.App.Reports.FumFlowdock       (FumFlowdockReport)
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursTitle, MissingHoursTitleFilt)
-import Futurice.App.Reports.PlanmillEmployees (PlanmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerProjects     (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
@@ -33,11 +31,9 @@ type ReportTypes = '[HTML, CSV, JSON]
 data R (path :: Symbol) (report :: *)
 
 type Reports =
-    '[R "fum-flowdock"        FumFlowdockReport
-    , R "missing-hours"       (MissingHoursReport MissingHoursTitle)
+    '[R "missing-hours"       (MissingHoursReport MissingHoursTitle)
     , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
     , R "hours-by-task"       TimereportsByTaskReport
-    , R "planmill-employees"  PlanmillEmployeesReport
     ]
 
 -- | This, 'RReport' and 'RName', type families are needed to make 'FoldReportsAPI' reduce
