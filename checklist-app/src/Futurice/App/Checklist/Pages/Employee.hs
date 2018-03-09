@@ -18,10 +18,8 @@ import Futurice.App.Checklist.API
        employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
-import GitHub                        (SimpleUser)
 
 import qualified Chat.Flowdock.REST as FD
-import qualified FUM.Types.Login    as FUM
 import qualified Personio           as P
 
 -- |
@@ -33,11 +31,9 @@ employeePage
     :: World
     -> AuthUser
     -> Employee
-    -> Map P.EmployeeId P.Employee
-    -> Vector SimpleUser
-    -> HashMap FUM.Login (P.Employee, PMUser)
+    -> IntegrationData
     -> HtmlPage "employee"
-employeePage world authUser employee personios gemployees planEmployees = checklistPage_ (view nameText employee) [] authUser Nothing $ do
+employeePage world authUser employee integrationData = checklistPage_ (view nameText employee) [] authUser Nothing $ do
     -- Buttons
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
         for_ (employee ^. employeePersonio) $ \pid ->
@@ -75,7 +71,7 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
         vertRow_ "Role"       $ toHtml $ p ^. P.employeeRole
         vertRow_ "Supervisor" $ traverse_ toHtml $ do
             sid <- p ^. P.employeeSupervisorId
-            s   <- personios ^? ix sid
+            s   <- integrationData ^? personioData . ix sid
             return (s ^. P.employeeFullname)
         vertRow_ "Tribe"      $ toHtml $ p ^. P.employeeTribe
         vertRow_ "CC"         $ traverse_ toHtml $ p ^. P.employeeCostCenter
@@ -120,7 +116,7 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
             input_ [ futuId_ "employee-starting-day", type_ "date", value_ $ toQueryParam $ employee ^. employeeStartingDay  ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor "
-            hasDifferentPersonioSupervisor personioEmployee (Just $ toQueryParam $ employee ^. employeeSupervisor) personios
+            hasDifferentPersonioSupervisor personioEmployee (Just $ toQueryParam $ employee ^. employeeSupervisor) (integrationData ^. personioData)
             input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor, data_ "futu-values" $ encodeToText supervisors ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe "
@@ -171,7 +167,7 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
                 td_ $ taskLink task
                 td_ $ roleHtml mlist (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
-                td_ $ taskInfo_ task personioEmployee planmillEmployee gemployees
+                td_ $ taskInfo_ task employee integrationData
                 td_ $ taskCommentInput_ world employee task
                 td_ $ forOf_ _AnnTaskItemDone taskItem $ \(_, fumUser, timestamp) -> do
                     toHtml fumUser
@@ -193,17 +189,7 @@ employeePage world authUser employee personios gemployees planEmployees = checkl
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
     personioEmployee :: Maybe P.Employee
-    personioEmployee = (employee ^. employeePersonio) >>= (\x -> personios ^.at x)
-
-    planmillEmployee :: Maybe PMUser
-    planmillEmployee = do
-        login <- checklistLogin <|> personioLogin
-        snd <$> planEmployees ^. at login
-      where
-        checklistLogin = employee ^. employeeFUMLogin
-        personioLogin = do
-            p <- personioEmployee
-            p ^. P.employeeLogin
+    personioEmployee = (employee ^. employeePersonio) >>= (\x -> (integrationData ^. personioData) ^.at x)
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a
