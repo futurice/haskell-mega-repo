@@ -30,15 +30,11 @@ import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Dashdo            (makeDashdoServer)
-import Futurice.App.Reports.FumFlowdock
-       (FumFlowdockReport, fumFlowdockReport)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
-import Futurice.App.Reports.PlanmillEmployees
-       (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerProjects
@@ -90,10 +86,6 @@ missingHoursEmployeePredicate' interval p = and
 -- Note: we cachedIO with () :: () as a key. It's ok as 'Cache'
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
-serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
-serveFumFlowdockReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx fumFlowdockReport
-
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
@@ -124,10 +116,6 @@ serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
 serveTimereportsByTaskReport ctx = cachedIO' ctx () $
     runIntegrations' ctx timereportsByTaskReport
 
-servePlanmillEmployeesReport :: Ctx -> IO PlanmillEmployeesReport
-servePlanmillEmployeesReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx planmillEmployeesReport
-
 cachedIO' :: (Eq k, Hashable k, Typeable k, NFData v, Typeable v) => Ctx -> k -> IO v -> IO v
 cachedIO' (cache, _, logger, _, _) = cachedIO logger cache 600
 
@@ -135,11 +123,9 @@ cachedIO' (cache, _, logger, _, _) = cachedIO logger cache 600
 -- this is used for api 'server' and pericron
 reports :: NP ReportEndpoint Reports
 reports =
-    ReportEndpoint serveFumFlowdockReport :*
     ReportEndpoint (serveMissingHoursReport True) :*
     ReportEndpoint (serveMissingHoursReport False) :*
     ReportEndpoint serveTimereportsByTaskReport :*
-    ReportEndpoint servePlanmillEmployeesReport :*
     Nil
 
 serveChart

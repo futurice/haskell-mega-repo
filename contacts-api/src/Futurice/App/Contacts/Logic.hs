@@ -67,6 +67,7 @@ contacts' today employees users githubMembers flowdockOrg =
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
+-- TODO: Remove this as soon as there is another possible image source
         res3 = addFUMInfo users res2
     in sortBy (compareUnicodeText `on` contactName) res3
 
