@@ -17,17 +17,17 @@ module Futurice.App.Reports.TimereportsByTask (
     TimereportsByTask (..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Fixed                (Centi)
 import Data.Fold                 (L' (..), filtering, run)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.List
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
 import Futurice.Report.Columns
 import Futurice.Time
 import Numeric.Interval.NonEmpty ((...))
+import Prelude ()
 
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict    as Map
@@ -143,7 +143,7 @@ instance ToHtml TimereportsByTaskParams where
 
 timereportsByTaskReport
     :: forall m env.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
+        ( PM.MonadTime m, MonadPersonio m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => m TimereportsByTaskReport
@@ -157,7 +157,7 @@ timereportsByTaskReport = do
     let endDay   = today
     let interval = startDay ... endDay
     -- Users
-    fpm <- snd <$$> fumPlanmillMap
+    fpm <- snd <$$> personioPlanmillMap
     -- Timereports
     trs <- concatMap toList <$>
         traverse (PMQ.timereports interval . view PM.identifier) (toList fpm)
