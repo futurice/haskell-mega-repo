@@ -71,7 +71,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
         vertRow_ "Role"       $ toHtml $ p ^. P.employeeRole
         vertRow_ "Supervisor" $ traverse_ toHtml $ do
             sid <- p ^. P.employeeSupervisorId
-            s   <- integrationData ^. personioData ^? ix sid
+            s   <- integrationData ^? personioData . ix sid
             return (s ^. P.employeeFullname)
         vertRow_ "Tribe"      $ toHtml $ p ^. P.employeeTribe
         vertRow_ "CC"         $ traverse_ toHtml $ p ^. P.employeeCostCenter
