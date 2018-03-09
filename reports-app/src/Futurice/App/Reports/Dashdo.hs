@@ -8,10 +8,9 @@ import Graphics.Plotly.Lucid (plotlyCDN)
 import Prelude ()
 import Servant               (Server)
 
-import Futurice.App.Reports.BalancesDashdo
 import Futurice.App.Reports.Config
-import Futurice.App.Reports.MissingHoursDashdo
 import Futurice.App.Reports.GithubReposDashdo
+import Futurice.App.Reports.MissingHoursDashdo
 
 type Ctx = (Cache, Manager, Logger, Config)
 
@@ -22,6 +21,5 @@ makeDashdoServer ctx = do
   where
     dashdos =
         [ missingHoursRDashdo ctx
-        , balancesRDashdo ctx
         , githubReposRDashdo ctx
         ]
