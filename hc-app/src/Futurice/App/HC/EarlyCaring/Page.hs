@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, EarlyCaringPlanMill (..)) where
 
 import Data.Fixed                (Deci)
@@ -9,8 +8,10 @@ import FUM.Types.Login           (Login)
 import Futurice.Integrations     (Employee (..))
 import Futurice.Prelude
 import Futurice.Time
-import Numeric.Interval.NonEmpty (Interval, (...))
+import Futurice.Time.Month
+import Numeric.Interval.NonEmpty (Interval, inf, (...))
 import Prelude ()
+import Web.HttpApiData           (toUrlPiece)
 
 import qualified Data.Aeson         as Aeson
 import qualified Data.List.NonEmpty as NE
@@ -24,12 +25,12 @@ import Futurice.App.HC.Markup
 
 -- | PlanMill data needed to make early caring report
 data EarlyCaringPlanMill = EarlyCaringPlanMill
-    { ecpmLogin       :: Login
-    , ecpmPMUid       :: PM.UserId
-    , ecpmEmployee    :: Employee
-    , ecpmCapacities  :: PM.UserCapacities
-    , ecpmTimereports :: PM.Timereports
-    , ecpmBalance     :: PM.TimeBalance
+    { ecpmLogin         :: !Login
+    , ecpmPMUid         :: !PM.UserId
+    , ecpmEmployee      :: !Employee
+    , ecpmCapacities    :: !PM.UserCapacities
+    , ecpmTimereports   :: !PM.Timereports
+    , ecpmBalance       :: !PM.TimeBalance
     }
   deriving Show
 
@@ -51,6 +52,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         li_ "Adjacent absences are counted as one. (Weekends separate)"
         li_ "Absence days are counted in the last 365 days (a year)"
         li_ "TODO: Sick days counts weekends and holidays days too"
+        li_ "Monthly balances are emphasised if they are under -10 or over 20 hours"
 
     fullRow_ $ div_ [ class_ "callout primary" ] $ do
         p_ "Send early caring emails to the supervisors"
@@ -67,13 +69,14 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
 
         fullRow_ $ h2_ $ maybe "No supervisor" supervisorHeader ms
         fullRow_ $ table_ $ do
-            let dashedUnderline = style_ "text-decoration: underline; text-decoration-style: dashed"
             thead_ $ tr_ $ do
                 th_ "Name"
                 th_ "Flex balance"
                 th_ "Missing hours"
-                th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
                 th_ [ dashedUnderline, title_ "Separate sickness absences in last 90 days (about 3 months)" ] "Sick. absences (3m)"
+                th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month1
+                th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month2
+                th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
                 th_ [ dashedUnderline, title_ "Sickness absences days in last 365 days (1 year)" ]            "Sick. days (1y)"
                 th_ [ dashedUnderline, title_ "As marked in PlanMill, adjacent absenced not combined" ] "Sickess absences (1y)"
 
@@ -88,6 +91,8 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
                 td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b
                 td_ [ style_ "text-align: right" ] $ toHtml $ balanceMissingHours b
                 td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b + balanceMissingHours b
+                td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month1
+                td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
                 td_ [ style_ "text-align: right" ] $ showHighlight 4  $ countAbsences today $ balanceAbsences b
                 td_ [ style_ "text-align: right" ] $ showHighlight 20 $ countAbsenceDays today $ balanceAbsences b
                 td_ $ forWith_ (br_ []) (balanceAbsences b) $ toHtml . show
@@ -126,6 +131,11 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
             td_ $ traverse_ toHtml $ e ^. P.employeeLogin
 
   where
+    month1 = dayToMonth $ inf interval
+    month2 = succ month1
+
+    dashedUnderline = style_ "text-decoration: underline; text-decoration-style: dashed"
+
     personioEmployees = filter
         (\e -> P.employeeIsActive today e && e ^. P.employeeEmploymentType == Just P.Internal)
         personioEmployees0
@@ -180,10 +190,41 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         , balanceHours        = ndtConvert' balanceMinutes
         , balanceMissingHours = missingHours (ecpmTimereports pm) (ecpmCapacities pm)
         , balanceAbsences     = ab
+        , balanceMonthFlex    = monthFlex pm
         }
       where
         PM.TimeBalance balanceMinutes = ecpmBalance pm
         ab = absences (ecpmPMUid pm)
+
+    monthFlex :: EarlyCaringPlanMill -> Map Month MonthFlex
+    monthFlex pm = Map.fromListWith (<>) $
+        map fromUC (toList $  ecpmCapacities pm) <> map fromTR (toList $ ecpmTimereports pm)
+      where
+        fromUC :: PM.UserCapacity -> (Month, MonthFlex)
+        fromUC uc =
+            ( dayToMonth $ PM.userCapacityDate uc
+            , MonthFlex 0 (ndtConvert' $ PM.userCapacityAmount uc)
+            )
+
+        fromTR :: PM.Timereport -> (Month, MonthFlex)
+        fromTR tr =
+            ( dayToMonth $ PM.trStart tr
+            , MonthFlex (ndtConvert' $ PM.trAmount tr) 0
+            )
+
+    monthFlexHtml :: Monad m => MonthFlex -> HtmlT m ()
+    monthFlexHtml (MonthFlex marked capa) = do
+        toHtml marked
+        " - "
+        toHtml capa
+        " = "
+        emph_ $ toHtml bal
+      where
+        bal = marked - capa
+        emph_ :: Monad m => HtmlT m () -> HtmlT m ()
+        emph_
+            | bal < -10 || bal > 20 = b_
+            | otherwise             = id
 
 missingHours :: PM.Timereports -> PM.UserCapacities -> NDT 'Hours Deci
 missingHours trs ucs =

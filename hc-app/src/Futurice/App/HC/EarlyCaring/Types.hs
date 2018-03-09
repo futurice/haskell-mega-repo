@@ -85,6 +85,23 @@ instance ToHtml EarlyCaringEmail where
         toHtml b
 
 -------------------------------------------------------------------------------
+-- MonthFlex
+-------------------------------------------------------------------------------
+
+data MonthFlex = MonthFlex
+    { mfMarkedHours :: !(NDT 'Hours Deci)
+    , mfCapacity    :: !(NDT 'Hours Deci)
+    }
+  deriving Show
+
+instance Semigroup MonthFlex where
+    MonthFlex x y <> MonthFlex x' y' = MonthFlex (x + x') (y + y')
+
+instance Monoid MonthFlex where
+    mempty = MonthFlex 0 0
+    mappend = (<>)
+
+-------------------------------------------------------------------------------
 -- Balance
 -------------------------------------------------------------------------------
 
@@ -94,6 +111,7 @@ data Balance = Balance
     , balanceHours        :: !(NDT 'Hours Deci)
     , balanceMissingHours :: !(NDT 'Hours Deci)
     , balanceAbsences     :: [Interval Day]
+    , balanceMonthFlex    :: !(Map Month MonthFlex)
     }
 
 balanceNormal :: Day -> Balance -> Bool
