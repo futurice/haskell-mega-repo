@@ -22,16 +22,16 @@ module Futurice.App.Reports.PowerAbsences (
     powerAbsenceBusinessDays,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Fixed                (Centi)
 import Data.Time                 (diffDays)
 import Data.Tuple                (swap)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Prelude
 import Futurice.Report.Columns
 import Futurice.Time
 import Numeric.Interval.NonEmpty ((...))
+import Prelude ()
 
 import qualified Data.HashMap.Strict       as HM
 import qualified Data.Map.Strict           as Map
@@ -98,7 +98,7 @@ type PowerAbsenceReport = Vector PowerAbsence
 
 powerAbsenceReport
     :: forall m env.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
+        ( PM.MonadTime m, MonadPersonio m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => Maybe Month
@@ -109,7 +109,7 @@ powerAbsenceReport mmonth = do
     let endDay   = lastDayOfMonth month
     let interval = startDay ... endDay
     -- Users
-    fpm <- snd <$$> fumPlanmillMap
+    fpm <- snd <$$> personioPlanmillMap
     -- Fetch all absences, on purpose
     as0 <- PMQ.absences
     -- Take intervals which overlap our interval of the interest
