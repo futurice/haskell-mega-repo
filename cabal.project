@@ -79,6 +79,7 @@ packages:
   optparse-sop/
   periocron/
   personio-client/
+  personio-proxy/
   planmill-client/
   planmill-proxy/
   planmill-sync/
