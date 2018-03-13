@@ -36,7 +36,8 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
 
   where
     today = utctDay now
-    hday = addDays 90 today
+    hiday = addDays 90 today
+    loday = addDays (-30) today
 
     startingEmployees = employees0
         & filter predicate
@@ -44,7 +45,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
       where
         predicate e = case e ^. Personio.employeeHireDate of
             Nothing -> False
-            Just d  -> today <= d && d < hday
+            Just d  -> loday <= d && d < hiday
 
     leavingEmployees = employees0
         & filter predicate
