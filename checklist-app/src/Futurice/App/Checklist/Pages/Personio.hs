@@ -36,7 +36,6 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
 
   where
     today = utctDay now
-    hiday = addDays 90 today
     loday = addDays (-30) today
 
     startingEmployees = employees0
@@ -45,7 +44,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
       where
         predicate e = case e ^. Personio.employeeHireDate of
             Nothing -> False
-            Just d  -> loday <= d && d < hiday
+            Just d  -> loday <= d
 
     leavingEmployees = employees0
         & filter predicate
@@ -72,7 +71,7 @@ employeeTable hire world employees = fullRow_ $ sortableTable_ $ do
     tbody_ $ for_ employees $ \e -> tr_ $ do
         td_ $ toHtml $ e ^. Personio.employeeId
         td_ $ toHtml $ (e ^. Personio.employeeFirst) <> " " <> (e ^. Personio.employeeLast)
-        td_ $ for_ (matchingEmployees e) $ \e' ->
+        td_ $ forWith_ ", " (matchingEmployees e) $ \e' ->
             a_ [ employeePageHref e' ] $ maybe "?" (view nameHtml) $
                 world ^? worldLists . ix (e' ^. employeeChecklist)
         td_ $ traverse_ toHtml $ e ^. Personio.employeeLogin
