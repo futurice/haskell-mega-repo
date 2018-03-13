@@ -23,11 +23,11 @@ import Futurice.Report.Columns
 import Futurice.Tribe          (tribeToText)
 import Prelude ()
 
-import qualified Data.Map.Strict  as Map
-import qualified Data.Vector      as V
+import qualified Data.Map.Strict as Map
+import qualified Data.Vector     as V
 import qualified FUM
-import qualified Personio         as P
-import qualified PlanMill         as PM
+import qualified Personio        as P
+import qualified PlanMill        as PM
 
 -------------------------------------------------------------------------------
 -- Data
@@ -89,7 +89,7 @@ powerUser today es e = do
         , _powerUserStart          = e ^. P.employeeHireDate
         , _powerUserEnd            = e ^. P.employeeEndDate
         , _powerUserActive         =
-            if P.employeeIsActive today e
+            if employeeIsActive today e
             then "Active"
             else "Passive"
         , _powerUserSupervisor     = s >>= view P.employeeLogin
@@ -100,3 +100,14 @@ powerUser today es e = do
     s = do
         sid <- e ^. P.employeeSupervisorId
         es ^? ix sid
+
+-- | Employee is active if
+--
+-- * contacts end date isn't passed
+--
+-- * it's status is not 'Inactive'
+--
+employeeIsActive :: Day -> P.Employee -> Bool
+employeeIsActive today e =
+    maybe True (today <=) (P._employeeEndDate e)
+    && (P._employeeStatus e /= P.Inactive)
