@@ -78,9 +78,11 @@ attrfor_ = L.for_
 
 -- | 'intersperse'd 'for_'.
 forWith_ :: (Foldable t, Applicative f) => f () -> t a ->  (a -> f b) -> f ()
-forWith_ sep xs f = foldr g (pure ()) xs
+forWith_ sep xs f = go (toList xs)
   where
-    g a b = f a *> sep *> b
+    go []       = pure ()
+    go [y]      = void (f y)
+    go (y : ys) = f y *> sep *> go ys
 
 -------------------------------------------------------------------------------
 -- Grid
