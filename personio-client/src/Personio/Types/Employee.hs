@@ -30,6 +30,7 @@ import Prelude ()
 
 import Personio.Internal.Attribute
 import Personio.Types.ContractType
+import Personio.Types.SalaryType
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
 import Personio.Types.Status
@@ -61,6 +62,7 @@ data Employee = Employee
     , _employeeHRNumber         :: !(Maybe Int)
     , _employeeEmploymentType   :: !(Maybe EmploymentType)
     , _employeeContractType     :: !(Maybe ContractType)
+    , _employeeSalaryType       :: !(Maybe SalaryType)
     , _employeeHomePhone        :: !(Maybe Text)
     , _employeeHomeEmail        :: !(Maybe Text)
     , _employeePosition         :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
@@ -141,6 +143,7 @@ parseEmployeeObject obj' = Employee
     <*> parseDynamicAttribute obj "(FI) HR number"
     <*> parseAttribute obj "employment_type"
     <*> optional (parseDynamicAttribute obj "Contract type")
+    <*> optional (parseDynamicAttribute obj "Salary type")
     <*> parseDynamicAttribute obj "Private phone"
     <*> parseDynamicAttribute obj "Private email"
     <*> parseAttribute obj "position"
