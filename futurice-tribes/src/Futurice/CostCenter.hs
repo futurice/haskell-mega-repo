@@ -23,7 +23,6 @@ import qualified Data.Vector     as V
 import qualified Futurice.Aeson  as Aeson
 import qualified Test.QuickCheck as QC
 
-
 -- | CostCenter is not a Tribe.
 newtype CostCenter = CostCenter Int
   deriving (Eq, Ord)
