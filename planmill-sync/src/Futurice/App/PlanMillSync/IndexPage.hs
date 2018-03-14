@@ -11,7 +11,6 @@ module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
 import Control.Lens                (IndexedGetting, ifoldMapOf, iforOf_)
 import Control.Monad.Writer.CPS    (Writer, runWriter)
-import Data.Char                   (isDigit)
 import Data.Fixed                  (Centi)
 import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
@@ -21,16 +20,16 @@ import Data.These                  (_That, _These, _This)
 import Futurice.Constants          (competenceMap)
 import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
+import Futurice.CostCenter
 import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
-import Text.Regex.Applicative.Text (RE', anySym, match, psym)
+import Text.Regex.Applicative.Text (match)
 
 import qualified Data.Text                     as T
 import qualified FUM
 import qualified Personio                      as P
 import qualified PlanMill                      as PM
-import qualified Text.Regex.Applicative.Common as RE
 
 import Futurice.App.PlanMillSync.Types (PMUser (..))
 
@@ -288,8 +287,8 @@ indexPage today planmills fums personios = page_ "PlanMill sync" $ do
 
         -- Cost centers
         cell_ $ do
-            let planmillCC = match prefixNumber =<< (PM.tName <$> pmt)
-            let personioCC = match prefixNumber =<< (p ^. P.employeeCostCenter)
+            let planmillCC = costCenterFromText =<< (PM.tName <$> pmt)
+            let personioCC = p ^. P.employeeCostCenter
             let ccEqual = planmillCC == personioCC
             traverse_ toHtml $  p ^. P.employeeCostCenter
             unless ccEqual $ do
@@ -432,13 +431,6 @@ contractTypeOk _ _      h t
     -- arbitrary bound
     | h >= 37   = "full-time" `T.isInfixOf` t
     | otherwise = "part-time" `T.isInfixOf` t
-
--------------------------------------------------------------------------------
--- Prefix number for cost center comparison
--------------------------------------------------------------------------------
-
-prefixNumber :: RE' Int
-prefixNumber = RE.decimal <* optional (psym (not . isDigit) *> many anySym)
 
 -------------------------------------------------------------------------------
 -- Cells
