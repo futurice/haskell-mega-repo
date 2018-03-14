@@ -40,6 +40,7 @@ data Attributes = Attributes
     { attrCore    :: HashMap Text Value
     , attrDynamic :: HashMap Text Value
     }
+  deriving Show
 
 instance FromJSON Attributes where
     parseJSON j = mkAttributes <$> parseJSON j

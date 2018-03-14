@@ -41,6 +41,7 @@ import Futurice.Office
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Tribe
+import Futurice.CostCenter
 import Numeric.Interval.NonEmpty   (Interval, (...))
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
@@ -79,7 +80,7 @@ data Employee = Employee
     , _employeeLogin            :: !(Maybe Login)
     , _employeeTribe            :: !Tribe  -- ^ defaults to 'defaultTribe'
     , _employeeOffice           :: !Office  -- ^ defaults to 'OffOther'
-    , _employeeCostCenter       :: !(Maybe Text)
+    , _employeeCostCenter       :: !(Maybe CostCenter)
     , _employeeGithub           :: !(Maybe (GH.Name GH.User))
     , _employeeFlowdock         :: !(Maybe FD.UserId)
     , _employeeStatus           :: !Status
@@ -142,8 +143,8 @@ parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
     if type_ == ("Employee" :: Text)
-        then obj .: "attributes" >>= parseEmployeeObject
-        else fail $ "Not Employee: " ++ type_ ^. unpacked
+    then obj .: "attributes" >>= parseEmployeeObject
+    else fail $ "Not Employee: " ++ type_ ^. unpacked
 
 parseEmployeeObject :: HashMap Text Attribute -> Parser Employee
 parseEmployeeObject obj' = Employee
@@ -159,7 +160,7 @@ parseEmployeeObject obj' = Employee
     <*> optional (parseDynamicAttribute obj "Login name")
     <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
     <*> fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
-    <*> fmap getName (parseAttribute obj "cost_centers")
+    <*> fmap (fmap getCostCenter' . listToMaybe) (parseAttribute obj "cost_centers")
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
     <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
     <*> parseAttribute obj "status"
@@ -255,6 +256,22 @@ instance FromJSON WeeklyHours where
     parseJSON (Number n) = pure (WeeklyHours (realToFrac n))
     parseJSON v          = typeMismatch "WeeklyHours" v
 
+data CostCenter' = CostCenter'
+    { getCostCenter'          :: !CostCenter
+    , getCostCenterPercentage :: !Double
+    }
+
+instance FromJSON CostCenter' where
+    parseJSON = withObjectDump "Personio CostCenter" $ \obj -> do
+        type_ <- obj .: "type"
+        if type_ /= ("CostCenter" :: Text)
+        then fail $ "Not cost center: " ++ type_ ^. unpacked
+        else do
+            attrs <- obj .: "attributes"
+            CostCenter'
+                <$> attrs .: "name"
+                <*> attrs .: "percentage"
+
 -------------------------------------------------------------------------------
 -- Validation
 -------------------------------------------------------------------------------
@@ -264,6 +281,7 @@ data ValidationMessage
     | ContractTypeMissing
     | CostCenterMissing
     | CostCenterMultiple [Text]
+    | CostCenterTribeMissMatch !CostCenter
     | DEIDInvalid
     | DESVInvalid
     | EmailInvalid Text
@@ -482,12 +500,15 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         costCenterValidate :: WriterT [ValidationMessage] Parser ()
         costCenterValidate = do
-          (Array cost) <- lift (parseAttribute obj "cost_centers")
-          case toList cost of
-              [] -> tell [CostCenterMissing]
-              xs -> if length xs > 1
-                  then tell [CostCenterMultiple (map textShow xs)] -- TODO: Test this case
-                  else pure ()
+          ccs <- lift (parseAttribute obj "cost_centers")
+          case ccs of
+              []              -> tell [CostCenterMissing]
+              [CostCenter' cc _p]
+                  | cc `notElem` tribeCostCenters (e ^. employeeTribe)
+                              -> tell [CostCenterTribeMissMatch cc]
+                  -- TODO: verify percentage
+                  | otherwise -> pure ()
+              xs              -> tell [CostCenterMultiple (map (textShow . getCostCenter') xs)]
 
         ibanValidate :: WriterT [ValidationMessage] Parser ()
         ibanValidate = when isInternal $ do
