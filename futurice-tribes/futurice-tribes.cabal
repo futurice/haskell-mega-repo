@@ -50,11 +50,14 @@ library
     , swagger2
     , template-haskell
     , text
+    , trifecta
     , vector
   exposed-modules:
       Futurice.Email
       Futurice.Office
       Futurice.Tribe
+      Futurice.CostCenter
   other-modules:
       Futurice.Tribe.Internal
+      Futurice.CostCenter.Internal
   default-language: Haskell2010

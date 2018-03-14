@@ -1,26 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DeriveLift #-}
 module Futurice.Tribe.Internal (module Futurice.Tribe.Internal) where
 
-import Data.Aeson.Compat (FromJSON (..), withObject, (.!=), (.:), (.:?))
-import Futurice.Office   (Office)
+import Data.Aeson.Compat   (FromJSON (..), withObject, (.!=), (.:), (.:?))
+import Futurice.CostCenter (CostCenter)
+import Futurice.Office     (Office)
+import Language.Haskell.TH.Syntax (Lift)
 import Futurice.Prelude
 import Prelude ()
 
 data TribeInfo = TribeInfo
-    { tiName    :: !Text
-    , tiOffices :: [Office]
-    , tiAliases :: [Text]
-    , tiDefault :: !Bool
+    { tiName        :: !Text
+    , tiOffices     :: [Office]
+    , tiAliases     :: [Text]
+    , tiCostCenters :: NonEmpty CostCenter
+    , tiDefault     :: !Bool
     }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Lift)
 
 instance FromJSON TribeInfo where
     parseJSON = withObject "TribeInfo" $ \obj -> TribeInfo
         <$> obj .: "name"
         <*> obj .:? "offices" .!= []
         <*> obj .:? "aliases" .!= []
+        <*> obj .: "costcenters"
         <*> obj .:? "default" .!= False
-
--- TODO: remove when we drop support for GHC-7.10
-deriveLift ''TribeInfo
