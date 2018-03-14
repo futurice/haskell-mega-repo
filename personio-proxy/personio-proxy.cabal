@@ -27,35 +27,14 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.7   && <4.11
-    , constraints
     , env-config
-    , futurice-integrations
-    , futurice-metrics
     , futurice-prelude
-    , http-client
-    , http-client-tls
-    , operational
-    , aeson
-    , binary
-    , binary-tagged
-    , bytestring
-    , containers
-    , exceptions
     , futurice-servant
-    , lens
-    , monad-logger
     , periocron
     , personio-client
-    , resource-pool
-    , servant
-    , servant-binary-tagged
     , servant-server
     , stm
     , swagger2
-    , text
-    , time
-    , unordered-containers
-    , vector
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=30
   else
@@ -76,14 +55,6 @@ executable personio-proxy-server
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
       base >=4.7   && <4.11
-    , constraints
-    , env-config
-    , futurice-integrations
-    , futurice-metrics
-    , futurice-prelude
-    , http-client
-    , http-client-tls
-    , operational
     , personio-proxy
   if impl(ghc >= 8.0)
     ghc-options: -freduction-depth=30
