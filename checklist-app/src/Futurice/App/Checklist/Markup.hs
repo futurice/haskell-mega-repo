@@ -47,7 +47,7 @@ module Futurice.App.Checklist.Markup (
     ) where
 
 import Control.Lens        (has, non, re, _Wrapped)
-import FUM.Types.Login     (loginToText)
+import FUM.Types.Login     (Login, loginToText)
 import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
@@ -339,6 +339,11 @@ showFirstContactInformationHtml = maybe [ "No Personio info found" ] $ \p ->
         Just d -> "Accepted job offer on " <> toHtml (show d)
     ]
 
+hasFUMLoginHtml :: Monad m => Maybe FUM.Types.Login.Login -> [HtmlT m ()]
+hasFUMLoginHtml login = case login of
+    Nothing -> pure $ b_ "No" <> " FUM Login found in Personio or Checklist"
+    Just l -> pure $ toHtml $ "FUM login: " <> loginToText l
+
 taskInfo_
     :: Monad m
     => Task
@@ -352,14 +357,15 @@ taskInfo_ task employee idata
     zeroToNothing (Just 0) = Nothing
     zeroToNothing x        = x
     personioEmployee = (employee ^. employeePersonio) >>= (\x -> idata ^. personioData ^. at x)
-    planmillEmployee = do
-        login <- checklistLogin <|> personioLogin
-        snd <$> idata ^. planmillData ^. at login
+    fumLogin = checklistLogin <|> personioLogin
       where
         checklistLogin = employee ^. employeeFUMLogin
         personioLogin = do
             p <- personioEmployee
             p ^. P.employeeLogin
+    planmillEmployee = do
+        login <- fumLogin
+        snd <$> idata ^. planmillData ^. at login
     githubEmployee = do
         pe <- personioEmployee
         g <- pe ^. P.employeeGithub
@@ -372,6 +378,7 @@ taskInfo_ task employee idata
     info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee
     info PlanmillTask     = isInPlanmillOrganizationHtml planmillEmployee employeeHRnumber
     info FirstContactTask = showFirstContactInformationHtml personioEmployee
+    info FUMTask          = hasFUMLoginHtml fumLogin
 
 -------------------------------------------------------------------------------
 -- Tasks
