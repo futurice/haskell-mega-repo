@@ -34,7 +34,7 @@ module Futurice.App.Checklist.Command (
 
 import Algebra.Lattice         (top)
 import Data.Aeson              (Value (..), withText)
-import Data.Aeson.Lens         (key)
+import Data.Aeson.Lens         (key, _String)
 import Data.Char               (isUpper, toLower)
 import Data.List               (intercalate)
 import Data.List.CommonPrefix  (CommonPrefix (..), getCommonPrefix)
@@ -50,6 +50,7 @@ import Futurice.Generics.SOP
 import Futurice.IsMaybe
 import Futurice.Lucid.Generics
 import Futurice.Prelude
+import Futurice.Tribe          (tribeFromText, tribeToText)
 import Prelude ()
 
 import qualified Control.Lens                         as Lens
@@ -249,10 +250,14 @@ instance
         -- monkey patch values for backwards-compat
         & key "personio" %~ emptyToNull
         & key "fumLogin" %~ emptyToNull
+        & key "tribe" . _String %~ invalidTribeToDef
       where
         emptyToNull x
             | x == ""   = Null
             | otherwise = x
+
+        invalidTribeToDef :: Text -> Text
+        invalidTribeToDef = tribeToText . fromMaybe defaultTribe . tribeFromText
 
 instance SOP.All (SOP.Compose FieldToHtml f) EmployeeEditTypes
     => ToHtml (EmployeeEdit f)
