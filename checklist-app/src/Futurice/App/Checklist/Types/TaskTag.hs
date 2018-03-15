@@ -26,6 +26,7 @@ data TaskTag
     = GithubTask       -- ^ This task relates to Github
     | PlanmillTask     -- ^ This task relates to Planmill
     | FirstContactTask -- ^ This task relates to accepting job offer
+    | FUMTask          -- ^ This task relates to FUM
  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic)
 
 makePrisms ''TaskTag
@@ -33,7 +34,7 @@ deriveGeneric ''TaskTag
 deriveLift ''TaskTag
 
 instance TextEnum TaskTag where
-    type TextEnumNames TaskTag = '["GitHub", "PlanMill", "FirstContact"]
+    type TextEnumNames TaskTag = '["GitHub", "PlanMill", "FirstContact", "FUM"]
 
 taskTagToText :: TaskTag -> Text
 taskTagToText = enumToText
