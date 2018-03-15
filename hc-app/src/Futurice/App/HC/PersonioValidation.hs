@@ -14,19 +14,14 @@ import Futurice.App.HC.Markup
 
 validationReport :: [P.EmployeeValidation] -> Day -> HtmlPage "personio-validation"
 validationReport validations0 today = do
-    let isActive p = P.employeeIsActive today p
-            || (p ^. P.employeeStatus == P.Onboarding && maybe False (>= addDays (-60) today) (p ^. P.employeeHireDate))
-
-    -- employees with some validation warnings
-    let validations1 = filter (not . null . P._evMessages) validations0
-    -- active only
-    let validations2 = filter (isActive . P._evEmployee) validations1
-    -- sort by starting day
-    let validations = sortOn (Down . view P.employeeHireDate . P._evEmployee) validations2
-
     page_ "Personio data validation" (Just NavPersonioValidation) $ do
         ul_ $ do
-            li_ $ toHtml $ show (length validations) ++ " employees with incorrect or missing data:"
+            li_ $ toHtml $ unwords
+                [ show (length intValidations)
+                , "employees and"
+                , show (length extValidations)
+                , "externals with incorrect or missing data:"
+                ]
             li_ "Note: this report only checks data in Personio. For example it doesn't show if FUM login doesn't exist."
             li_ $ "Only " <> em_ "Active" <> " and " <> em_ "Onboarding" <> " (hire date >= today - 60 days) people are shown"
             li_ $ do
@@ -36,14 +31,26 @@ validationReport validations0 today = do
                 a_ [ href_ "#externals" ] "Externals"
 
         fullRow_ $ a_ [ name_ "employees" ] $ h2_ "Employees"
-        fullRow_ $ showValidations $ filter isInternal validations
+        fullRow_ $ showValidations intValidations
 
         fullRow_ $ a_ [ name_ "externals" ] $ h2_ "Externals"
-        fullRow_ $ showValidations $ filter (not . isInternal) validations
+        fullRow_ $ showValidations extValidations
   where
     isInternal :: P.EmployeeValidation -> Bool
     isInternal v = Just P.Internal == v ^. P.evEmployee . P.employeeEmploymentType
 
+    intValidations = filter isInternal validations
+    extValidations = filter (not . isInternal) validations
+
+    isActive p = P.employeeIsActive today p
+        || (p ^. P.employeeStatus == P.Onboarding && maybe False (>= addDays (-60) today) (p ^. P.employeeHireDate))
+
+    -- employees with some validation warnings
+    validations1 = filter (not . null . P._evMessages) validations0
+    -- active only
+    validations2 = filter (isActive . P._evEmployee) validations1
+    -- sort by starting day
+    validations = sortOn (Down . view P.employeeHireDate . P._evEmployee) validations2
 
 showValidations :: (Foldable f, Monad m)  => f P.EmployeeValidation -> HtmlT m ()
 showValidations validations = fullRow_ $ table_ $ do
@@ -52,6 +59,7 @@ showValidations validations = fullRow_ $ table_ $ do
         th_ "name"
         th_ "fum"
         th_ "status"
+        th_ "tribe"
         th_ "hire-date"
         th_ "end-date"
         th_ "internal"
@@ -63,6 +71,7 @@ showValidations validations = fullRow_ $ table_ $ do
         td_ $ toHtml $ e ^. P.employeeFullname
         td_ $ traverse_ toHtml $ e ^. P.employeeLogin
         td_ $ toHtml $ e ^. P.employeeStatus
+        td_ $ toHtml $ e ^. P.employeeTribe
         td_ $ toHtml $ maybe "-" show $ e ^. P.employeeHireDate
         td_ $ toHtml $ maybe "-" show $ e ^. P.employeeEndDate
         td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeEmploymentType

@@ -40,7 +40,7 @@ packages:
   ansi-pretty/
   arcola/
   avatar-app/
-  base64-bytestring-type/
+  -- base64-bytestring-type/
   checklist-app/
   contacts-api/
   dynmap-cache/

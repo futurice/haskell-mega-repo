@@ -59,16 +59,21 @@ library
       Control.Monad.Personio
       Personio
       Personio.Eval
-      Personio.Internal.Attribute
       Personio.Request
       Personio.Types
       Personio.Types.Cfg
       Personio.Types.ContractType
+      Personio.Types.Employee
       Personio.Types.EmployeeId
       Personio.Types.EmploymentType
       Personio.Types.Envelope
       Personio.Types.PersonalIdValidations
+      Personio.Types.SalaryType
       Personio.Types.Status
+      Personio.Types.Validation
+  other-modules:
+      Personio.Types.Internal
+      Personio.Internal.Attribute
   default-language: Haskell2010
 
 test-suite unit-tests
