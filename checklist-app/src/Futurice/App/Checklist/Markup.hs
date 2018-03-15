@@ -342,7 +342,7 @@ showFirstContactInformationHtml = maybe [ "No Personio info found" ] $ \p ->
 hasFUMLoginHtml :: Monad m => Maybe FUM.Types.Login.Login -> [HtmlT m ()]
 hasFUMLoginHtml login = case login of
     Nothing -> pure $ b_ "No" <> " FUM Login found in Personio or Checklist"
-    Just l -> pure $ toHtml $ "FUM login: " <> loginToText l
+    Just l -> pure $ "FUM login: " <> toHtml l
 
 taskInfo_
     :: Monad m
