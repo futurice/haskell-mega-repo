@@ -18,18 +18,18 @@ import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
 import Data.These                  (_That, _These, _This)
 import Futurice.Constants          (competenceMap)
+import Futurice.CostCenter
 import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
-import Futurice.CostCenter
 import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
 import Text.Regex.Applicative.Text (match)
 
-import qualified Data.Text                     as T
+import qualified Data.Text as T
 import qualified FUM
-import qualified Personio                      as P
-import qualified PlanMill                      as PM
+import qualified Personio  as P
+import qualified PlanMill  as PM
 
 import Futurice.App.PlanMillSync.Types (PMUser (..))
 
@@ -39,10 +39,9 @@ itoListWithOf l f s = appEndo (ifoldMapOf l (\i a -> Endo (f i a :)) s) []
 indexPage
     :: Day
     -> [PMUser]
-    -> Map FUM.Login FUM.User
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage today planmills fums personios = page_ "PlanMill sync" $ do
+indexPage today planmills personios = page_ "PlanMill sync" $ do
     div_ [ class_ "top-bar" ] $ do
         div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu" ] $ do
             li_ [ class_ "menu-text"] $ "Personio ⇒ PlanMill sync"
@@ -69,22 +68,10 @@ indexPage today planmills fums personios = page_ "PlanMill sync" $ do
             th_ "Name"
             th_ "PlanMill Team"
             th_ "Contract span"
-            th_ [ title_ "Extracted from FUM and PlanMill" ] "Info"
 
         tbody_ $ iforOf_ (ifolded . _This) employees $ \login pm -> do
             let pmu :: PM.User
                 pmu = pmUser pm
-
-                fuu :: Maybe FUM.User
-                fuu = fums ^? ix login
-
-                -- supervisor's personio profile
-                sup :: Maybe P.Employee
-                sup = do
-                  fu <- fuu
-                  supId <- fu ^. FUM.userSupervisor . lazy
-                  su <- fumIdMap ^? ix supId
-                  personioMap ^? ix (su ^. FUM.userName)
 
             when (pmPassive pm == "Active") $ tr_ $ do
                 td_ $ toHtml login
@@ -95,15 +82,6 @@ indexPage today planmills fums personios = page_ "PlanMill sync" $ do
                     let pmStart = PM.uHireDate pmu
                     let pmEnd = PM.uDepartDate pmu
                     toHtml $ formatDateSpan pmStart pmEnd
-                td_ $ ul_ $ table_ $ do
-                    vertRow_ "Email"         $ traverse_ toHtml $ fuu ^? _Just . FUM.userEmail . lazy . _Just
-                    vertRow_ "Office"        $ traverse_ toHtml (sup ^? _Just . P.employeeOffice) >> " (supervisor)"
-                    vertRow_ "Department"    $ traverse_ toHtml (sup ^? _Just . P.employeeTribe) >> " (supervisor)"
-                    vertRow_ "Hire date"     $ traverse_ (toHtml . show) $ PM.uHireDate pmu
-                    vertRow_ "Contract ends" $ traverse_ (toHtml . show) $ PM.uDepartDate pmu
-                    vertRow_ "Supervisor"    $ for_ sup $ \su ->
-                        toHtml (su ^. P.employeeFullname)
-
     fullRow_ $ do
         a_ [ name_ "personio" ] mempty
         h2_ "People Active in Personio but not in PlanMill"
@@ -351,10 +329,6 @@ indexPage today planmills fums personios = page_ "PlanMill sync" $ do
 
     employees :: Map FUM.Login (These PMUser P.Employee)
     employees = align planmillMap personioMap
-
-    fumIdMap :: Map Int FUM.User
-    fumIdMap = toMapOf (folded . getter f . ifolded) fums where
-        f u = (u ^. FUM.userId, u)
 
 -------------------------------------------------------------------------------
 -- Only in Personio

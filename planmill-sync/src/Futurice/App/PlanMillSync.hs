@@ -3,12 +3,10 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.PlanMillSync (defaultMain) where
 
-import Control.Applicative       (liftA3)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Lucid.Foundation (fullRow_, h1_, page_)
@@ -27,10 +25,9 @@ import Futurice.App.PlanMillSync.IndexPage
 import Futurice.App.PlanMillSync.Monad
 import Futurice.App.PlanMillSync.Types
 
-import qualified Data.Map.Strict as Map
-import qualified Data.Set        as Set
+import qualified Data.Set as Set
 import qualified FUM
-import qualified Personio        as P
+import qualified Personio as P
 
 server :: Ctx -> Server PlanMillSyncAPI
 server ctx = indexPageAction ctx
@@ -51,12 +48,12 @@ indexPageAction ctx mfu = do
     case mfu <|> cfgMockUser cfg of
         Just fu | Set.member fu fus -> do
             -- Data fetch
-            (today, (pm, fum, p)) <- liftIO $ cachedIO lgr cache 300 () $
-                runIntegrations' mgr lgr now ws (cfgIntegrationsConfig cfg) $ 
+            (today, (pm, p)) <- liftIO $ cachedIO lgr cache 300 () $
+                runIntegrations' mgr lgr now ws (cfgIntegrationsConfig cfg) $
                     liftA2 (,) currentDay fetcher
 
             -- Render
-            pure $ indexPage today pm fum p
+            pure $ indexPage today pm p
 
         _ -> pure page404 -- TODO: log unauhtorised access?
   where
@@ -74,10 +71,8 @@ page404 = page_ "PlanMill Sync - Unauthorised" $
 
 type M = Integrations '[I, I, Proxy, Proxy, Proxy, I]
 
-fetcher :: M ([PMUser], Map FUM.Login FUM.User, [P.Employee])
-fetcher = liftA3 (,,) users fum (P.personio P.PersonioEmployees)
-  where
-    fum = Map.fromList . map (\u -> (u ^. FUM.userName, u)) . toList <$> fumEmployeeList
+fetcher :: M ([PMUser], [P.Employee])
+fetcher = liftA2 (,) users (P.personio P.PersonioEmployees)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
