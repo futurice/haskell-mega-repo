@@ -1,6 +1,6 @@
 [
-    { "name": "Waziri", "offices": [] },
-    { "name": "Zulu", "offices": [] },
-    { "name": "Tammerforce", "offices": ["Tampere"], "aliases": ["Tampere"] },
-    { "name": "No tribe", "default": true }
+    { "name": "Waziri", "offices": [], "costcenters": ["100-Waziri"] },
+    { "name": "Zulu", "offices": [], "costcenters": ["200-Zulu"] },
+    { "name": "Tammerforce", "offices": ["Tampere"], "aliases": ["Tampere"], "costcenters": ["300-Tammerforce"] },
+    { "name": "No tribe", "default": true, "costcenters": ["400-Others"] }
 ]

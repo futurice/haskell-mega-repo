@@ -7,10 +7,12 @@ module Futurice.Tribe (
     tribeFromText,
     _Tribe,
     tribeOffices,
+    tribeCostCenters,
     defaultTribe,
     ) where
 
 import Control.Monad           ((>=>))
+import Futurice.CostCenter
 import Futurice.Generics
 import Futurice.Office
 import Futurice.Prelude
@@ -19,13 +21,13 @@ import Language.Haskell.TH     (ExpQ)
 import Lucid                   (ToHtml (..))
 import Prelude ()
 
-import qualified Data.Aeson.Compat as Aeson
-import qualified Data.Csv          as Csv
-import qualified Data.Map          as Map
-import qualified Data.Swagger      as Swagger
-import qualified Data.Text         as T
-import qualified Data.Vector       as V
-import qualified Test.QuickCheck   as QC
+import qualified Data.Csv        as Csv
+import qualified Data.Map        as Map
+import qualified Data.Swagger    as Swagger
+import qualified Data.Text       as T
+import qualified Data.Vector     as V
+import qualified Futurice.Aeson  as Aeson
+import qualified Test.QuickCheck as QC
 
 -- | Tribe.
 newtype Tribe = Tribe Int
@@ -107,6 +109,9 @@ tribeName = tiName . tribeInfo
 tribeOffices :: Tribe -> [Office]
 tribeOffices = tiOffices . tribeInfo
 
+tribeCostCenters :: Tribe -> NonEmpty CostCenter
+tribeCostCenters = tiCostCenters . tribeInfo
+
 -------------------------------------------------------------------------------
 -- Instances
 -------------------------------------------------------------------------------
@@ -151,7 +156,7 @@ instance ToJSON Tribe where
     toJSON = Aeson.String . tribeToText
 
 instance FromJSON Tribe where
-    parseJSON = Aeson.withText "Tribe" $
+    parseJSON = Aeson.withTextDump "Tribe" $
         either (fail . view unpacked) pure . tribeFromTextE
 
 instance Csv.ToField Tribe where
