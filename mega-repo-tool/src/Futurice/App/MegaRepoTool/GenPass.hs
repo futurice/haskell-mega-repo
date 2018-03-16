@@ -11,7 +11,7 @@ import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.Text                  as T
 
 cmdGenPass :: IO ()
-cmdGenPass = generatePassword 24
+cmdGenPass = generatePassword 30
   where
     generatePassword :: Int -> IO ()
     generatePassword l = do
@@ -22,4 +22,4 @@ cmdGenPass = generatePassword 24
 
     generatePassword' :: (Monad m) => Int -> CRandT CryptoGen CryptoGenError m String
     generatePassword' l = do
-        (T.unpack . decodeUtf8Lenient . Base64.encode . pack) <$> replicateM l getCRandom
+        T.unpack . decodeUtf8Lenient . Base64.encode . pack <$> replicateM l getCRandom
