@@ -1,6 +1,5 @@
 resolver: ghc-8.2.2
 packages:
-- ansi-pretty/
 - arcola/
 - avatar-app/
 - checklist-app/
@@ -87,6 +86,7 @@ extra-deps:
 - amazonka-cloudwatch-logs-1.5.0
 - amazonka-core-1.5.0
 - amazonka-ses-1.5.0
+- ansi-pretty-0.1.2.1
 - ansi-terminal-0.8.0.1
 - ansi-wl-pprint-0.6.8.2
 - appar-0.1.4
@@ -190,7 +190,6 @@ extra-deps:
 - folds-0.7.4
 - foundation-0.0.19
 - free-4.12.4
-- friendly-time-0.4.1
 - fsnotify-0.2.1.1
 - generic-deriving-1.12.1
 - generics-sop-0.3.2.0
