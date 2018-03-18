@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           hours-api
 version:        0
 synopsis:       Hours API
@@ -50,7 +46,6 @@ library
     , http-client-tls
     , intervals
     , lens
-    , lifted-async
     , log-base
     , lucid
     , monad-control

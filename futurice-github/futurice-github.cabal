@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           futurice-github
 version:        0
 synopsis:       Additions to the @github@ package
@@ -40,7 +36,6 @@ library
     , futurice-prelude
     , generics-sop
     , github
-    , haxl
     , lens
     , postgresql-simple
     , swagger2
