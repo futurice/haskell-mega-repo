@@ -51,7 +51,6 @@ library
     , lens
     , lucid
     , mtl
-    , planmill-client
     , postgresql-simple
     , resource-pool
     , servant

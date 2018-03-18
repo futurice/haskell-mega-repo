@@ -30,20 +30,16 @@ library
   build-depends:
       base                  >=4.7   && <4.11
     , aeson
-    , amazonka
-    , amazonka-ses
     , base-compat
     , bytestring
     , env-config
     , futurice-prelude
-    , futurice-servant
     , futurice-tribes
     , http-client
     , http-types
     , lens
     , servant-server
     , servant-client
-    , semigroups
     , text
     , time
   exposed-modules:

@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           favicon-app
 version:        0
 synopsis:       Generate Futurice favicons
@@ -39,7 +35,6 @@ executable favicon
     , futurice-servant
     , lens
     , lucid
-    , semigroups
     , servant
     , servant-JuicyPixels
     , servant-server
