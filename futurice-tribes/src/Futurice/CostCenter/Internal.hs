@@ -1,6 +1,9 @@
 {-# LANGUAGE DeriveLift        #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.CostCenter.Internal (module Futurice.CostCenter.Internal) where
+module Futurice.CostCenter.Internal (
+    CostCenterInfo (..),
+    parseCostCenterCode,
+    ) where
 
 import Data.Aeson.Compat          (FromJSON (..), withText)
 import Data.Char                  (isDigit)

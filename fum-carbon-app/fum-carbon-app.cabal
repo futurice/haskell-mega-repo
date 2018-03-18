@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           fum-carbon-app
 version:        6
 synopsis:       An user management system for LDAP
@@ -39,7 +35,6 @@ library
     , async
     , bytestring
     , cassava
-    , Chart
     , clay
     , constraints
     , containers
@@ -49,7 +44,6 @@ library
     , distributive
     , DRBG
     , env-config
-    , fail
     , flowdock-rest
     , fum-api
     , fum-client
@@ -84,7 +78,6 @@ library
     , resource-pool
     , semigroupoids
     , servant
-    , servant-Chart
     , servant-lucid
     , servant-server
     , singleton-bool
@@ -167,75 +160,6 @@ executable fum-carbon-server
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
       base >= 4.7 && <4.11
-    , adjunctions
-    , aeson
-    , aeson-compat
-    , ansi-pretty
-    , ansi-wl-pprint
-    , async
-    , bytestring
-    , cassava
-    , Chart
-    , clay
-    , constraints
-    , containers
-    , crypt-sha512
-    , crypto-api
-    , deepseq
-    , distributive
-    , DRBG
-    , env-config
-    , fail
-    , flowdock-rest
-    , fum-api
-    , fum-client
-    , fum-types
-    , futurice-foundation
-    , futurice-integrations
-    , futurice-postgres
-    , futurice-prelude
-    , futurice-servant
-    , futurice-tribes
-    , generics-sop
-    , generics-sop-lens
-    , http-api-data
-    , kleene
-    , lattices
-    , lens
-    , lifted-base
-    , linear
-    , lucid
-    , mtl
-    , periocron
-    , personio-client
-    , postgresql-simple
-    , pretty-compact
-    , process
-    , QuickCheck
-    , range-set-list
-    , recursion-schemes >= 5.0.1
-    , reflection
-    , regex-applicative
-    , regex-applicative-text
-    , resource-pool
-    , semigroupoids
-    , servant
-    , servant-Chart
-    , servant-lucid
-    , servant-server
-    , singleton-bool
-    , split
-    , stm
-    , swagger2
-    , text
-    , these
-    , time
-    , trifecta
-    , unordered-containers
-    , uuid
-    , uuid-types
-    , vector
-    , writer-cps-mtl
     , fum-carbon-app
   default-language: Haskell2010
 
@@ -247,76 +171,7 @@ test-suite unit-tests
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.11
-    , adjunctions
-    , aeson
-    , aeson-compat
-    , ansi-pretty
-    , ansi-wl-pprint
-    , async
-    , bytestring
-    , cassava
-    , Chart
-    , clay
-    , constraints
-    , containers
-    , crypt-sha512
-    , crypto-api
-    , deepseq
-    , distributive
-    , DRBG
-    , env-config
-    , fail
-    , flowdock-rest
-    , fum-api
-    , fum-client
-    , fum-types
-    , futurice-foundation
-    , futurice-integrations
-    , futurice-postgres
+    -- , fum-carbon-app
     , futurice-prelude
-    , futurice-servant
-    , futurice-tribes
-    , generics-sop
-    , generics-sop-lens
-    , http-api-data
-    , kleene
-    , lattices
-    , lens
-    , lifted-base
-    , linear
-    , lucid
-    , mtl
-    , periocron
-    , personio-client
-    , postgresql-simple
-    , pretty-compact
-    , process
-    , QuickCheck
-    , range-set-list
-    , recursion-schemes >= 5.0.1
-    , reflection
-    , regex-applicative
-    , regex-applicative-text
-    , resource-pool
-    , semigroupoids
-    , servant
-    , servant-Chart
-    , servant-lucid
-    , servant-server
-    , singleton-bool
-    , split
-    , stm
-    , swagger2
-    , text
-    , these
-    , time
-    , trifecta
-    , unordered-containers
-    , uuid
-    , uuid-types
-    , vector
-    , writer-cps-mtl
     , tasty
-    , tasty-quickcheck
-    , fum-carbon-app
   default-language: Haskell2010

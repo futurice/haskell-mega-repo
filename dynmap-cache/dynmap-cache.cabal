@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           dynmap-cache
 version:        0
 synopsis:       Dynamic STM based cache
@@ -36,7 +32,6 @@ library
     , deepseq
     , dependent-map
     , dependent-sum
-    , either
     , exceptions
     , futurice-prelude
     , hashable
@@ -65,29 +60,11 @@ test-suite unit-tests
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
       base            >=4.9      && <4.11
-    , async
-    , base-compat
-    , bytestring
-    , deepseq
-    , dependent-map
-    , dependent-sum
-    , either
-    , exceptions
-    , futurice-prelude
-    , hashable
-    , log-base
-    , monad-control
-    , monad-time
-    , nf
-    , stm
-    , tagged
-    , text
-    , time
-    , transformers
-    , transformers-base
-    , transformers-compat
-    , unordered-containers
     , dynmap-cache
-    , tasty
+    , async
+    , stm
+    , futurice-prelude
+  build-depends:
+      tasty
     , tasty-hunit
   default-language: Haskell2010

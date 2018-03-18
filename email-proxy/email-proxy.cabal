@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           email-proxy
 version:        0
 synopsis:       Email Proxy
@@ -42,7 +38,6 @@ library
     , http-client
     , http-types
     , lens
-    , semigroups
     , servant-server
     , text
     , time

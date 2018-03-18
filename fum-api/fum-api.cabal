@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           fum-api
 version:        0
 synopsis:       FUM API
@@ -36,11 +32,9 @@ library
     , async
     , binary
     , binary-tagged
-    , constraints
     , dependent-sum
     , fum-types
     , futurice-prelude
-    , futurice-tribes
     , generics-sop
     , github
     , haxl
