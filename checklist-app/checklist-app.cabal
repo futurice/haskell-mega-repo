@@ -188,69 +188,6 @@ executable checklist-app-server
     , checklist-app
   default-language: Haskell2010
 
-executable checklist-import
-  main-is: Import.hs
-  hs-source-dirs:
-      import
-  ghc-options: -Wall -Wall -threaded -rtsopts
-  build-depends:
-      base >= 4.7 && <4.11
-    , adjunctions
-    , aeson
-    , aeson-compat
-    , ansi-pretty
-    , ansi-wl-pprint
-    , async
-    , Chart
-    , clay
-    , constraints
-    , containers
-    , crypto-api
-    , DRBG
-    , deepseq
-    , distributive
-    , env-config
-    , fum-api
-    , fum-types
-    , futurice-foundation
-    , futurice-integrations
-    , futurice-prelude
-    , futurice-servant
-    , futurice-tribes
-    , generics-sop
-    , generics-sop-lens
-    , http-api-data
-    , lattices >=1.6
-    , lens
-    , lens-aeson
-    , lucid
-    , mtl
-    , periocron
-    , personio-client
-    , postgresql-simple
-    , QuickCheck
-    , recursion-schemes >= 5.0.1
-    , reflection
-    , regex-applicative
-    , resource-pool
-    , servant
-    , servant-Chart
-    , servant-lucid
-    , servant-server
-    , singleton-bool
-    , split
-    , stm
-    , swagger2
-    , text
-    , time
-    , trifecta
-    , uuid
-    , checklist-app
-    , lifted-base
-    , transformers
-    , yaml
-  default-language: Haskell2010
-
 test-suite unit-tests
   type: exitcode-stdio-1.0
   main-is: Tests.hs
@@ -259,56 +196,8 @@ test-suite unit-tests
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.11
-    , adjunctions
     , aeson
-    , aeson-compat
-    , ansi-pretty
-    , ansi-wl-pprint
-    , async
-    , Chart
-    , clay
-    , constraints
-    , containers
-    , crypto-api
-    , DRBG
-    , deepseq
-    , distributive
-    , env-config
-    , fum-api
-    , fum-types
-    , futurice-foundation
-    , futurice-integrations
     , futurice-prelude
-    , futurice-servant
-    , futurice-tribes
-    , generics-sop
-    , generics-sop-lens
-    , http-api-data
-    , lattices >=1.6
-    , lens
-    , lens-aeson
-    , lucid
-    , mtl
-    , periocron
-    , personio-client
-    , postgresql-simple
-    , QuickCheck
-    , recursion-schemes >= 5.0.1
-    , reflection
-    , regex-applicative
-    , resource-pool
-    , servant
-    , servant-Chart
-    , servant-lucid
-    , servant-server
-    , singleton-bool
-    , split
-    , stm
-    , swagger2
-    , text
-    , time
-    , trifecta
-    , uuid
     , tasty
     , tasty-quickcheck
     , checklist-app

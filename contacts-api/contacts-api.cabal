@@ -61,23 +61,19 @@ library
     , http-client-tls
     , http-types
     , JuicyPixels
-    , JuicyPixels-scale-dct
     , lens
     , lucid
     , mtl
-    , parallel-io
     , periocron
     , personio-client
     , planmill-client
     , rfc5051
-    , semigroups
     , servant
     , servant-cassava
     , servant-lucid
     , servant-server
     , SHA
     , stm
-    , stm-containers
     , strict-base-types >=0.4
     , swagger2
     , tagged

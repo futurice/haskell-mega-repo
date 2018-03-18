@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           planmill-proxy
 version:        0
 synopsis:       Planmill proxy
@@ -34,7 +30,6 @@ library
     , constraints
     , env-config
     , futurice-prelude
-    , haxl
     , http-client
     , http-client-tls
     , intervals
@@ -114,22 +109,8 @@ executable planmill-proxy-server
   main-is: Main.hs
   hs-source-dirs:
       srv
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
       base >=4.7   && <4.11
-    , constraints
-    , env-config
-    , futurice-prelude
-    , haxl
-    , http-client
-    , http-client-tls
-    , intervals
-    , planmill-client
-    , time-parsers >=0.1.1.0
     , planmill-proxy
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=30
-  else
-    ghc-options: -fcontext-stack=30
   default-language: Haskell2010

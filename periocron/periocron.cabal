@@ -1,7 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           periocron
 version:        0
 synopsis:       Periodical cron
@@ -37,9 +33,7 @@ library
     , futurice-metrics
     , futurice-prelude
     , lens
-    , lifted-async
     , lifted-base
-    , monad-logger
     , mtl
     , nf
     , stm

@@ -32,7 +32,6 @@ library
   build-depends:
       aeson
     , aeson-compat
-    , aeson-extra
     , ansi-wl-pprint
     , ansi-pretty
     , array
@@ -47,7 +46,6 @@ library
     , directory
     , entropy
     , exceptions
-    , fail
     , filepath
     , futurice-prelude
     , http-client
@@ -60,8 +58,6 @@ library
     , parsec
     , process
     , process-extras
-    , regex-applicative
-    , regex-applicative-text
     , semigroups
     , tagged
     , tdigest
@@ -82,6 +78,7 @@ library
       Futurice.App.MegaRepoTool.GenPass
       Futurice.App.MegaRepoTool.Keys
       Futurice.App.MegaRepoTool.Scripts
+      Futurice.App.MegaRepoTool.StackYaml
       Futurice.App.MegaRepoTool.Stats
 
   -- from Cabal-2.2

@@ -22,13 +22,11 @@ source-repository head
 library
   build-depends:
     base >= 4.9 && <4.11,
-    base-compat >=0.9.3 && <0.10,
     bytestring,
     containers,
     colour,
     lens,
     parsers,
-    QuickCheck,
     text,
     scientific,
     trifecta

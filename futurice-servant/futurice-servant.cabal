@@ -36,7 +36,6 @@ library
     , amazonka-cloudwatch
     , amazonka-cloudwatch-logs
     , base-compat
-    , constraints
     , containers
     , dynmap-cache
     , env-config
