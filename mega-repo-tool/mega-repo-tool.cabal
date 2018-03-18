@@ -37,6 +37,7 @@ library
     , array
     , base >=4.7   && <4.11
     , base-compat
+    , base64-bytestring
     , bytestring
     , Cabal
     , cabal-plan

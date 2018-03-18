@@ -1,18 +1,18 @@
 module Futurice.App.MegaRepoTool.GenPass where
 
+import Futurice.CryptoRandom
 import Futurice.Prelude
 import Prelude ()
-import Futurice.CryptoRandom
 
-import Control.Monad (replicateM, replicateM_)
+import Control.Monad   (replicateM, replicateM_)
+import Data.ByteString (pack)
+
+import qualified Data.ByteString.Base64.URL as Base64
+import qualified Data.Text                  as T
 
 cmdGenPass :: IO ()
-cmdGenPass = generatePassword 32
+cmdGenPass = generatePassword 30
   where
-    chars :: String
-    chars = -- ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "!@#?-_,."
-        ".-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
     generatePassword :: Int -> IO ()
     generatePassword l = do
         g <- mkCryptoGen
@@ -20,8 +20,6 @@ cmdGenPass = generatePassword 32
             p <- generatePassword' l
             lift $ putStrLn p
 
-    generatePassword' :: Int -> CRandT CryptoGen CryptoGenError IO String
-    generatePassword' l = replicateM l (element chars)
-
-    element :: MonadCRandomR e m => [a] -> m a
-    element list = (list !!) <$> getCRandomR (0, length list - 1)
+    generatePassword' :: (Monad m) => Int -> CRandT CryptoGen CryptoGenError m String
+    generatePassword' l = do
+        T.unpack . decodeUtf8Lenient . Base64.encode . pack <$> replicateM l getCRandom
