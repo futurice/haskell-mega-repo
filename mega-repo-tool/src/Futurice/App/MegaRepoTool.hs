@@ -23,6 +23,7 @@ import Futurice.App.MegaRepoTool.Exec
 import Futurice.App.MegaRepoTool.GenPass
 import Futurice.App.MegaRepoTool.Keys
 import Futurice.App.MegaRepoTool.Scripts
+import Futurice.App.MegaRepoTool.StackYaml
 import Futurice.App.MegaRepoTool.Stats
 
 data Cmd
@@ -30,6 +31,7 @@ data Cmd
     | CmdAction (IO ())
     | CmdViewConfig
     | CmdGenPass
+    | CmdStackYaml
     | CmdListKeys !Bool
     | CmdAddKey !Text !Text
     | CmdAddOwnKey !Text !Text
@@ -68,6 +70,9 @@ viewConfigOptions = pure CmdViewConfig
 
 genPassOptions :: O.Parser Cmd
 genPassOptions = pure CmdGenPass
+
+stackYamlOptions :: O.Parser Cmd
+stackYamlOptions = pure CmdStackYaml
 
 listKeysOptions :: O.Parser Cmd
 listKeysOptions = CmdListKeys
@@ -111,17 +116,25 @@ patternCompleter onlyWithExes = O.mkCompleter $ \pfx -> do
     let tpfx  = T.pack pfx
         components = findComponents plan
 
+    {-
     -- One scenario
+    --
+    -- @
     -- $ cabal-plan list-bin cab<TAB>
     -- $ cabal-plan list-bin cabal-plan<TAB>
     -- $ cabal-plan list-bin cabal-plan:exe:cabal-plan
+    -- @
     --
     -- Note: if this package had `tests` -suite, then we can
+    --
+    -- @
     -- $ cabal-plan list-bin te<TAB>
     -- $ cabal-plan list-bin tests<TAB>
     -- $ cabal-plan list-bin cabal-plan:test:tests
+    -- @
     --
     -- *BUT* at least zsh script have to be changed to complete from non-prefix.
+    -}
     return $ map T.unpack $ firstNonEmpty
         -- 1. if tpfx matches component exacty, return full path
         [ single $ map fst $ filter ((tpfx ==) . snd) components
@@ -196,6 +209,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "estimator"    estimatorOptions   "Calculate estimates"
     , cmdParser "view-config"  viewConfigOptions  "view config"
     , cmdParser "gen-pass"     genPassOptions     "Generate passwords"
+    , cmdParser "stack-yaml"   stackYamlOptions   "Generate stack.yaml from cabal.project"
     , cmdParser "list-keys"    listKeysOptions    "List all keys"
     , cmdParser "add-key"      addKeyOptions      "Add new key"
     , cmdParser "add-own-key"  addOwnKeyOptions   "Add own new key (not shared with others)"
@@ -213,6 +227,7 @@ main' :: Cmd -> IO ()
 main' (CmdBuildDocker imgs) = buildDocker imgs
 main' (CmdAction x)         = x
 main' CmdGenPass            = cmdGenPass
+main' CmdStackYaml          = stackYaml
 main' CmdViewConfig         = do
     cfg <- readConfig
     print $ ansiPretty $ flip M.renderMustache Null <$> cfg

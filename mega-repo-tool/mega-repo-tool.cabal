@@ -82,6 +82,7 @@ library
       Futurice.App.MegaRepoTool.GenPass
       Futurice.App.MegaRepoTool.Keys
       Futurice.App.MegaRepoTool.Scripts
+      Futurice.App.MegaRepoTool.StackYaml
       Futurice.App.MegaRepoTool.Stats
 
   -- from Cabal-2.2
