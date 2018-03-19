@@ -21,6 +21,7 @@ import qualified Data.Binary                          as Binary
 import qualified Data.ByteString.Base16               as Base16
 import qualified Data.ByteString.Base64.URL.Lazy.Type as LBS64
 import qualified Data.ByteString.Base64.URL.Type      as BS64
+import qualified Data.Map.Strict                      as Map
 import qualified Data.RangeSet.List                   as RSet
 import qualified Personio                             as P
 
@@ -115,10 +116,24 @@ data Balance = Balance
     }
 
 balanceNormal :: Day -> Balance -> Bool
-balanceNormal = balanceNormalFlex /\ balanceNormalAbsences /\ balanceNormalAbsenceDays
+balanceNormal = balanceNormalFlex /\ balanceNormalMonthFlex /\ balanceNormalAbsences /\ balanceNormalAbsenceDays
 
 balanceNormalFlex :: Day -> Balance -> Bool
-balanceNormalFlex _ Balance {balanceHours = h } = negate 20 <= h && h <= 40
+balanceNormalFlex _ Balance {balanceHours = h, balanceMissingHours = m }
+    = negate 20 <= t && t <= 40
+  where
+    t = h + m
+
+balanceNormalMonthFlex :: Day -> Balance -> Bool
+balanceNormalMonthFlex _ Balance { balanceMonthFlex = m } =
+    all ok ms
+  where
+    ms = take 2 $ Map.elems m
+
+    ok (MonthFlex marked capa)
+        = negate 10 <= d && d <= 20
+      where
+        d = marked - capa
 
 balanceNormalAbsences :: Day -> Balance -> Bool
 balanceNormalAbsences today Balance {balanceAbsences = a } = n < 4 where
