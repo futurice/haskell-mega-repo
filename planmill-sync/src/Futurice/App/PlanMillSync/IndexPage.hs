@@ -17,6 +17,7 @@ import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
 import Data.These                  (_That, _These, _This)
+import FUM.Types.Login             (Login, loginRegexp, loginToText)
 import Futurice.Constants          (competenceMap)
 import Futurice.CostCenter
 import Futurice.Lucid.Foundation
@@ -27,7 +28,6 @@ import Prelude ()
 import Text.Regex.Applicative.Text (match)
 
 import qualified Data.Text as T
-import qualified FUM
 import qualified Personio  as P
 import qualified PlanMill  as PM
 
@@ -154,7 +154,7 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
 
         tbody_ $ traverse_ id elements2
   where
-    processBoth :: MonadWriter Any m => FUM.Login -> (PMUser, P.Employee) -> HtmlT m ()
+    processBoth :: MonadWriter Any m => Login -> (PMUser, P.Employee) -> HtmlT m ()
     processBoth login (pm, p) = tr_ $ do
         let pmu = pmUser pm
         let pmt = pmTeam pm
@@ -292,7 +292,7 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
         cell_ $ case PM.uEmail pmu of
             Nothing -> markFixableCell "PlanMill employee doesn't have email set"
             Just e  ->
-                if (e == FUM.loginToText login <> "@futurice.com")
+                if (e == loginToText login <> "@futurice.com")
                 then "OK"
                 else do
                     markFixableCell "Email should be `login`@futurice.com"
@@ -311,23 +311,23 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
         -- Actions
         cell_ mempty
 
-    planmillMap :: Map FUM.Login PMUser
+    planmillMap :: Map Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
       where
         f u = do
             login <- match loginRe (PM.uUserName (pmUser u))
             pure (login, u)
 
-        loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
+        loginRe = "https://login.futurice.com/openid/" *> loginRegexp
 
-    personioMap :: Map FUM.Login P.Employee
+    personioMap :: Map Login P.Employee
     personioMap = toMapOf (folded . getter f . _Just . ifolded) personios
       where
         f u = do
             login <- u ^. P.employeeLogin
             pure (login, u)
 
-    employees :: Map FUM.Login (These PMUser P.Employee)
+    employees :: Map Login (These PMUser P.Employee)
     employees = align planmillMap personioMap
 
 -------------------------------------------------------------------------------

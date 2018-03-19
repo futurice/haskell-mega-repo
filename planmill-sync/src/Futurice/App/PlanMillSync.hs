@@ -16,6 +16,7 @@ import PlanMill.Worker           (workers)
 import Prelude ()
 import Servant
 
+import FUM.Types.Login         (Login)
 import Futurice.FUM.MachineAPI (FUM6 (..), fum6)
 
 import Futurice.App.PlanMillSync.API
@@ -26,7 +27,6 @@ import Futurice.App.PlanMillSync.Monad
 import Futurice.App.PlanMillSync.Types
 
 import qualified Data.Set as Set
-import qualified FUM
 import qualified Personio as P
 
 server :: Ctx -> Server PlanMillSyncAPI
@@ -35,7 +35,7 @@ server ctx = indexPageAction ctx
 
 indexPageAction
     :: Ctx
-    -> Maybe FUM.Login
+    -> Maybe Login
     -> Handler (HtmlPage "index")
 indexPageAction ctx mfu = do
     now <- currentTime
