@@ -73,10 +73,10 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
                 th_ "Name"
                 th_ "Flex balance"
                 th_ "Missing hours"
-                th_ [ dashedUnderline, title_ "Separate sickness absences in last 90 days (about 3 months)" ] "Sick. absences (3m)"
+                th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
                 th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month1
                 th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month2
-                th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
+                th_ [ dashedUnderline, title_ "Separate sickness absences in last 90 days (about 3 months)" ] "Sick. absences (3m)"
                 th_ [ dashedUnderline, title_ "Sickness absences days in last 365 days (1 year)" ]            "Sick. days (1y)"
                 th_ [ dashedUnderline, title_ "As marked in PlanMill, adjacent absenced not combined" ] "Sickess absences (1y)"
 
@@ -104,6 +104,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
                 let email = EarlyCaringEmail a "Early caring email" $ renderTemplate
                         (s ^. P.employeeFirst)
                         today
+                        interval
                         (toList bs)
 
                 pre_ $ toHtml email
