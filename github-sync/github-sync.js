@@ -1,0 +1,55 @@
+futu.onload(function () {
+  // imports
+  var $  = futu.$;
+  var $_ = futu.$_;
+  var $$ = futu.$$;
+  var assert = futu.assert;
+  var buttonOnClick = futu.buttonOnClick;
+
+  var btnRemove = $("button#remove-users");
+  if (btnRemove) {
+    console.log("Initialising github-sync");
+
+    // Remove users
+    var removeUsersSrc$ = menrva.source([])
+    var removeUsers$ = removeUsersSrc$.map(function (xs) {
+      return _.sortedUniq(_.sortBy(xs));
+    }, _.isEqual)
+
+    var checkboxes = $$("input[data-futu-remove-user]");
+    checkboxes.forEach(function (chk) {
+      var ghLogin = chk.dataset.futuRemoveUser;
+      chk.addEventListener("change", function () {
+        if (chk.checked) {
+          menrva.transaction([
+            removeUsersSrc$, function (xs) {
+              return xs.concat([ghLogin]);
+            }]).commit();
+        } else {
+          menrva.transaction([
+            removeUsersSrc$, function (xs) {
+              return xs.filter(function (x) {
+                return x !== ghLogin;
+              });
+            }]).commit();
+        }
+      });
+    });
+    //dbtnRemove.disabled = false;
+
+    removeUsers$.onValue(function (xs) {
+      btnRemove.disabled = xs.length === 0;
+    });
+
+    buttonOnClick(btnRemove, function () {
+      if (btnRemove.disabled) return;
+      btnRemove.disabled = true;
+       
+      console.log(removeUsers$.value());
+    });
+
+    // Invite users
+
+    // TODO
+  }
+});

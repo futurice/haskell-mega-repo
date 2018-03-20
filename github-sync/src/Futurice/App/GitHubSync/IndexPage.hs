@@ -23,6 +23,10 @@ indexPage
     -> [P.Employee]
     -> HtmlPage "index"
 indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Personio sync" (Just NavHome) $ do
+
+
+
+
     fullRow_ $ h2_ "Only in GitHub, not in Personio"
     fullRow_ $ i_ "People in GitHub organisation, not mentioned in Personio"
     fullRow_ $ do
@@ -39,7 +43,7 @@ indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Pe
             tbody_ $ for_ githubs $ \u -> do
                 let login = GH.userLogin u
                 unless (personioLogins ^. contains login) $ tr_ $ do
-                    td_ $ checkbox_ False []
+                    td_ $ checkbox_ False [ data_ "futu-remove-user" $ GH.untagName $ GH.userLogin u]
                     td_ $ toHtml $ GH.userLogin u
                     td_ $ maybe "" toHtml $ GH.userName u
 
