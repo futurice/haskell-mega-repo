@@ -4,19 +4,25 @@ module Futurice.App.GitHubSync.Config (
     Pinned (..),
     ) where
 
+import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
-import Text.Regex.Applicative (RE, match, psym, sym)
+import Text.Regex.Applicative     (RE, match, psym, sym)
 
-import qualified GitHub as GH
+import qualified FUM.Types.GroupName as FUM
+import qualified FUM.Types.Login     as FUM
+import qualified GitHub              as GH
 
 data Config = Config
-    { cfgIntegrationsConfig :: !(IntegrationsConfig '[Proxy, Proxy, Proxy, I, Proxy, I]) -- TODO
-    , cfgAuth               :: !GH.Auth
-    , cfgOrganisationName   :: !(GH.Name GH.Organization)
-    , cfgPinnedUsers        :: !Pinned
+    { cfgIntegrationsCfg  :: !(IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I]) -- TODO
+    , cfgAuth             :: !GH.Auth
+    , cfgOrganisationName :: !(GH.Name GH.Organization)
+    , cfgPinnedUsers      :: !Pinned
+    , cfgMockUser         :: !(Maybe FUM.Login)
+    , cfgAccessGroup      :: !FUM.GroupName
+    , cfgPostgresConnInfo :: !ConnectInfo
     }
 
 instance Configure Config where
@@ -25,6 +31,9 @@ instance Configure Config where
         <*> envVar "GH_AUTH_TOKEN"
         <*> envVar "GH_ORG"
         <*> envVar "GITHUBSYNC_PINNEDGHUSERS"
+        <*> optionalAlt (envVar "MOCKUSER")
+        <*> envVar "ACCESS_GROUP"
+        <*> envConnectInfo
 
 newtype Pinned = Pin { unPin :: [GH.Name GH.User] }
 
