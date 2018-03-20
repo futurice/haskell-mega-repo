@@ -348,7 +348,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             noSuperRegexp = string "CEO"
 
         hoursValidate :: WriterT [ValidationMessage] Parser ()
-        hoursValidate = do
+        hoursValidate = when isInternal $ do
             hours <- lift (parseAttribute obj "weekly_working_hours")
             case toNum hours of
                 Just n  -> if n > 0
