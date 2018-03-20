@@ -29,12 +29,14 @@ library
       base                  >=4.7   && <4.11
     , aeson
     , aeson-compat
+    , clay
     , containers
     , env-config
     , fum-api
     , fum-types
     , futurice-foundation
     , futurice-integrations
+    , futurice-logo
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
@@ -58,6 +60,7 @@ library
       Futurice.App.GitHubSync.Ctx
       Futurice.App.GitHubSync.IndexPage
       Futurice.App.GitHubSync.Main
+      Futurice.App.GitHubSync.Markup
   default-language: Haskell2010
 
 executable github-sync-server
