@@ -1,1 +1,1 @@
-# github-sync
+# planmill-sync
