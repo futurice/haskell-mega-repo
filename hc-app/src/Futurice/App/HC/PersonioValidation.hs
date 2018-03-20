@@ -1,16 +1,41 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.HC.PersonioValidation (validationReport) where
 
-import Data.Ord                  (Down (..))
-import Data.Time                 (addDays)
+import Data.Ord         (Down (..))
+import Data.Time        (addDays)
 import Futurice.Prelude
 import Prelude ()
 
 import qualified Personio as P
 
 import Futurice.App.HC.Markup
+
+-- | TODO move this checks to personio-client
+data Consistency = ActiveAfterContractEndDate
+  deriving Show
+
+checkConsistency :: Day -> P.Employee -> [Consistency]
+checkConsistency today e = catMaybes
+    [ check ActiveAfterContractEndDate $
+        e ^. P.employeeStatus == P.Active && maybe False (< today) (e ^. P.employeeEndDate)
+    ]
+  where
+    check x True  = Just x
+    check _ False = Nothing
+
+data V = V
+    { vEmployee    :: P.Employee
+    , _vConsistency :: [Consistency]
+    , _vValidations :: [P.ValidationMessage]
+    }
+
+toV :: Day -> P.EmployeeValidation -> V
+toV today (P.EmployeeValidation e msgs) =
+    V e (checkConsistency today e) msgs
+
+isOkV :: V -> Bool
+isOkV (V _ xs ys) = null xs && null ys
 
 validationReport :: [P.EmployeeValidation] -> Day -> HtmlPage "personio-validation"
 validationReport validations0 today = do
@@ -36,23 +61,25 @@ validationReport validations0 today = do
         fullRow_ $ a_ [ name_ "externals" ] $ h2_ "Externals"
         fullRow_ $ showValidations extValidations
   where
-    isInternal :: P.EmployeeValidation -> Bool
-    isInternal v = Just P.Internal == v ^. P.evEmployee . P.employeeEmploymentType
+    isInternal :: V -> Bool
+    isInternal (V e _ _) = Just P.Internal == e ^. P.employeeEmploymentType
 
     intValidations = filter isInternal validations
     extValidations = filter (not . isInternal) validations
 
-    isActive p = P.employeeIsActive today p
+    -- don't check contract end dates here
+    isActive p = p ^. P.employeeStatus == P.Active
+        || p ^. P.employeeStatus == P.Leave
         || (p ^. P.employeeStatus == P.Onboarding && maybe False (>= addDays (-60) today) (p ^. P.employeeHireDate))
 
     -- employees with some validation warnings
-    validations1 = filter (not . null . P._evMessages) validations0
+    validations1 = filter (not . isOkV) $ map (toV today) validations0
     -- active only
-    validations2 = filter (isActive . P._evEmployee) validations1
+    validations2 = filter (isActive . vEmployee) validations1
     -- sort by starting day
-    validations = sortOn (Down . view P.employeeHireDate . P._evEmployee) validations2
+    validations = sortOn (Down . view P.employeeHireDate . vEmployee) validations2
 
-showValidations :: (Foldable f, Monad m)  => f P.EmployeeValidation -> HtmlT m ()
+showValidations :: (Foldable f, Monad m)  => f V -> HtmlT m ()
 showValidations validations = fullRow_ $ table_ $ do
     thead_ $ tr_ $ do
         th_ "id"
@@ -66,7 +93,7 @@ showValidations validations = fullRow_ $ table_ $ do
         th_ "type"
         th_ "warnings"
 
-    tbody_ $ for_ validations $ \(P.EmployeeValidation e msgs) -> tr_ $ do
+    tbody_ $ for_ validations $ \(V e cs msgs) -> tr_ $ do
         td_ $ toHtml $ e ^. P.employeeId
         td_ $ toHtml $ e ^. P.employeeFullname
         td_ $ traverse_ toHtml $ e ^. P.employeeLogin
@@ -76,10 +103,15 @@ showValidations validations = fullRow_ $ table_ $ do
         td_ $ toHtml $ maybe "-" show $ e ^. P.employeeEndDate
         td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeEmploymentType
         td_ $ toHtml $ maybe "Unknown" show $ e ^. P.employeeContractType
-        td_ $ showMessages msgs
+        td_ $ showMessages cs msgs
 
-showMessages :: Monad m => [P.ValidationMessage] -> HtmlT m ()
-showMessages msgs = ul_ $ traverse_ (li_ . showMessage) msgs where
+showMessages :: Monad m => [Consistency] -> [P.ValidationMessage] -> HtmlT m ()
+showMessages cons msgs = ul_ $ do
+    traverse_ (li_ . showConsistency) cons
+    traverse_ (li_ . showMessage) msgs
+  where
+    showConsistency = toHtml . show
+
     showMessage (P.LoginInvalid _) = b_ "IT: " <> i_ "Invalid FUM Login."
     showMessage P.WorkPhoneMissing = b_ "IT: " <> i_ "Work phone is missing."
     showMessage (P.EmailInvalid e) = do

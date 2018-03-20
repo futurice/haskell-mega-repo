@@ -6,11 +6,11 @@ module Futurice.App.GitHubSync.IndexPage (indexPage) where
 import Control.Lens              (contains, filtered)
 import Data.Set.Lens             (setOf)
 import Data.Map.Lens             (toMapOf)
-import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.GitHubSync.Config (Pinned (..))
+import Futurice.App.GitHubSync.Markup
 
 import qualified GitHub   as GH
 import qualified Personio as P
@@ -22,8 +22,10 @@ indexPage
     -> [GH.Invitation]
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub sync" $ do
-    fullRow_ $ h1_ "Personio ⇒ GitHub sync"
+indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Personio sync" (Just NavHome) $ do
+
+
+
 
     fullRow_ $ h2_ "Only in GitHub, not in Personio"
     fullRow_ $ i_ "People in GitHub organisation, not mentioned in Personio"
@@ -41,7 +43,7 @@ indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub sync" 
             tbody_ $ for_ githubs $ \u -> do
                 let login = GH.userLogin u
                 unless (personioLogins ^. contains login) $ tr_ $ do
-                    td_ $ checkbox_ False []
+                    td_ $ checkbox_ False [ data_ "futu-remove-user" $ GH.untagName $ GH.userLogin u]
                     td_ $ toHtml $ GH.userLogin u
                     td_ $ maybe "" toHtml $ GH.userName u
 
@@ -54,7 +56,7 @@ indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub sync" 
                             td_ $ traverse_ (toHtml . show) $ e ^. P.employeeEndDate
 
         div_ [ class_ "button-group" ] $
-            button_ [ class_ "button alert"] "Remove"
+            button_ [ id_ "remove-users", class_ "button alert", disabled_ "disabled" ] "Remove"
 
     fullRow_ $ h2_ "Pending invitations"
     fullRow_ $
@@ -100,7 +102,7 @@ indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub sync" 
                         td_ $ toHtml glogin
 
         div_ [ class_ "button-group" ] $
-            button_ [ class_ "button warning"] "Add"
+            button_ [ class_ "button warning", disabled_ "disabled" ] "Add"
   where
     githubLogins :: Set (GH.Name GH.User)
     githubLogins = setOf (folded . getter GH.userLogin) githubs
