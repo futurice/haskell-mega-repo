@@ -16,7 +16,7 @@ import qualified FUM.Types.Login     as FUM
 import qualified GitHub              as GH
 
 data Config = Config
-    { cfgIntegrationsCfg  :: !(IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I]) -- TODO
+    { cfgIntegrationsCfg  :: !(IntegrationsConfig '[Proxy, Proxy, I, I, Proxy, I])
     , cfgAuth             :: !GH.Auth
     , cfgOrganisationName :: !(GH.Name GH.Organization)
     , cfgPinnedUsers      :: !Pinned

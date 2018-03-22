@@ -45,7 +45,22 @@ futu.onload(function () {
       if (btnRemove.disabled) return;
       btnRemove.disabled = true;
        
-      console.log(removeUsers$.value());
+      var removeUsers = removeUsers$.value();
+      console.log("Removing users", removeUsers);
+      futu.fetchJSON("/command/remove-users", removeUsers)
+          .then(function (res) {
+            if (res === true) {
+                btnRemove.className = "button success";
+            } else {
+                throw new Error("Didn't get 'true': " + res);
+            }
+          })
+          .catch(function (exc) {
+            alert("" + exc);
+            console.error(exc);
+            btnRemove.className = "button alert";
+            throw exc;
+          });
     });
 
     // Invite users
