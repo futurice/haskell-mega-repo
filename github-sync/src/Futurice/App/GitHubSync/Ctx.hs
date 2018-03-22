@@ -12,3 +12,6 @@ data Ctx = Ctx
     , ctxManager      :: !Manager
     , ctxPostgresPool :: !(Pool Connection)
     }
+
+instance HasPostgresPool Ctx where
+    postgresPool = ctxPostgresPool

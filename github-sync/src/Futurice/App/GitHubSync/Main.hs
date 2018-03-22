@@ -11,7 +11,7 @@ import Control.Applicative       (liftA3)
 import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
-import Futurice.Postgres         (createPostgresPool)
+import Futurice.Postgres         (safePoolQuery_, createPostgresPool)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
@@ -22,6 +22,7 @@ import Futurice.App.GitHubSync.AuditPage
 import Futurice.App.GitHubSync.Config
 import Futurice.App.GitHubSync.Ctx
 import Futurice.App.GitHubSync.IndexPage
+import Futurice.App.GitHubSync.RemoveUsers
 
 import qualified Data.Set        as Set
 import qualified FUM.Types.Login as FUM
@@ -31,7 +32,11 @@ import qualified Personio        as P
 server :: Ctx -> Server GitHubSyncAPI
 server ctx = indexPageAction ctx
     :<|> auditPageAction ctx
-    -- TODO: actions to add & remove
+    :<|> removeUsersAction ctx
+
+-------------------------------------------------------------------------------
+-- Auth
+-------------------------------------------------------------------------------
 
 withAuthUser
     :: (MonadIO m, MonadTime m)
@@ -40,6 +45,12 @@ withAuthUser
     -> Maybe FUM.Login
     -> m (HtmlPage a)
 withAuthUser ctx f = withAuthUser' page404 f ctx
+
+page404 :: HtmlPage a
+page404 = page_ "GitHub Sync - Unauthorised" $
+    fullRow_ $ do
+        h1_ "Unauthorised"
+        "Ask IT Team for access rights"
 
 withAuthUser'
     :: (MonadIO m, MonadTime m)
@@ -60,6 +71,30 @@ withAuthUser' def action ctx mfu = case mfu <|> cfgMockUser cfg of
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
+
+withAuthUserIO
+    :: (MonadIO m, MonadTime m)
+    => a
+    -> (FUM.Login -> IO a)
+    -> Ctx -> Maybe FUM.Login
+    -> m a
+withAuthUserIO def action ctx mfu = case mfu <|> cfgMockUser cfg of
+    Nothing -> return def
+    Just fu -> do
+        now <- currentTime
+        liftIO $ join $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+            fus <-fum6 $ FUMGroupEmployees $ cfgAccessGroup cfg
+            if fu `Set.notMember` fus
+            then return (return def)
+            else return (action fu)
+  where
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+
+-------------------------------------------------------------------------------
+-- Endpoints
+-------------------------------------------------------------------------------
 
 indexPageAction
     :: Ctx
@@ -87,14 +122,25 @@ auditPageAction
     :: Ctx
     -> Maybe FUM.Login
     -> Handler (HtmlPage "audit")
-auditPageAction ctx = withAuthUser ctx $ \_ -> do
-    return $ auditPage []
+auditPageAction ctx mfu = withAuthUserIO page404 impl ctx mfu where
+    impl _ = runLogT "audit-page" lgr $ do
+        es <- safePoolQuery_ ctx "SELECT login, timestamp, action :: text FROM \"github-sync\".auditlog ORDER BY timestamp DESC;"
+        return $ auditPage es
 
-page404 :: HtmlPage a
-page404 = page_ "GitHub Sync - Unauthorised" $
-    fullRow_ $ do
-        h1_ "Unauthorised"
-        "Ask IT Team for access rights"
+    lgr = ctxLogger ctx
+
+removeUsersAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> [GH.Name GH.User]
+    -> Handler Bool
+removeUsersAction ctx mfu us = withAuthUserIO False impl ctx mfu
+  where
+    impl login = liftIO $ removeUsers ctx login us
+
+-------------------------------------------------------------------------------
+-- Main
+-------------------------------------------------------------------------------
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
