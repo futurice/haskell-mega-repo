@@ -120,6 +120,10 @@ type NthSetPE   g fs = NthSet IdxPE   g fs
 newtype Integrations idxs a
     = Integr { unIntegr :: ReaderT (Env (NthFUM idxs) (NthGH idxs) (NthFD idxs)) (H.GenHaxl ()) a }
 
+-- | Lift arbitrary haxl computations into 'Integrations'. This is potentially unsafe.
+liftHaxl :: H.GenHaxl () a -> Integrations idxs a
+liftHaxl = Integr . lift
+
 -------------------------------------------------------------------------------
 -- Config
 -------------------------------------------------------------------------------
@@ -274,7 +278,7 @@ instance NthPM idxs ~ I => MonadPlanMillConstraint (Integrations idxs) where
 
 instance NthPM idxs ~ I => MonadPlanMillQuery (Integrations idxs) where
     planmillQuery q = case (showDict, typeableDict) of
-        (Dict, Dict) -> Integr (lift $ H.dataFetch q)
+        (Dict, Dict) -> liftHaxl (H.dataFetch q)
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
@@ -284,21 +288,21 @@ instance NthPM idxs ~ I => MonadPlanMillQuery (Integrations idxs) where
 -------------------------------------------------------------------------------
 
 instance NthFUM idxs ~ I  => MonadFUM (Integrations idxs) where
-    fumAction = Integr . lift . FUM.Haxl.request
+    fumAction = liftHaxl . FUM.Haxl.request
 
 -------------------------------------------------------------------------------
 -- MonadFlowdock
 -------------------------------------------------------------------------------
 
 instance NthFD idxs ~ I => MonadFlowdock (Integrations idxs) where
-    flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
+    flowdockOrganisationReq = liftHaxl . FD.Haxl.organisation
 
 -------------------------------------------------------------------------------
 -- MonadFUM6
 -------------------------------------------------------------------------------
 
 instance NthFUM6 idxs ~ I => FUM6.MonadFUM6 (Integrations idxs) where
-    fum6 = Integr . lift . FUM6.fumHaxlRequest
+    fum6 = liftHaxl . FUM6.fumHaxlRequest
 
 -------------------------------------------------------------------------------
 -- MonadGitHub
@@ -307,7 +311,7 @@ instance NthFUM6 idxs ~ I => FUM6.MonadFUM6 (Integrations idxs) where
 instance NthGH idxs ~ I => MonadGitHub (Integrations idxs) where
     type MonadGitHubC (Integrations idxs) = FlipIn GH.GHTypes
     githubReq req = case (showDict, typeableDict) of
-        (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
+        (Dict, Dict) -> liftHaxl (H.dataFetch $ GH.GHR tag req)
       where
         tag = GH.mkReqTag
         showDict     = typeTagDict (Proxy :: Proxy Show) tag
@@ -319,7 +323,7 @@ instance NthGH idxs ~ I => MonadGitHub (Integrations idxs) where
 
 instance NthPE idxs ~ I => MonadPersonio (Integrations idxs) where
     personio r = case (showDict, typeableDict) of
-        (Dict, Dict) -> Integr . lift . Personio.Haxl.request $ r
+        (Dict, Dict) -> liftHaxl . Personio.Haxl.request $ r
       where
         showDict     = Personio.requestDict (Proxy :: Proxy Show) r
         typeableDict = Personio.requestDict (Proxy :: Proxy Typeable) r

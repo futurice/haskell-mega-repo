@@ -2,20 +2,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.GitHubSync.AuditPage (auditPage) where
 
-import Control.Lens              (contains, filtered)
-import Data.Map.Lens             (toMapOf)
-import Data.Set.Lens             (setOf)
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.GitHubSync.Config (Pinned (..))
 import Futurice.App.GitHubSync.Markup
 
-import qualified GitHub   as GH
-import qualified Personio as P
+import qualified FUM.Types.Login as FUM
 
 auditPage
-    :: [()]
+    :: [(FUM.Login, UTCTime, Text)]
     -> HtmlPage "audit"
-auditPage _ = page_ "Audit" (Just NavAuditLog) $ do
-    fullRow_ "Nothing to see here yet"
+auditPage xs = page_ "Audit" (Just NavAuditLog) $ do
+    table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Who"
+            th_ "When"
+            th_ "What"
+
+        tbody_ $ for_ xs $ \(login, stamp, command) -> tr_ $ do
+            td_ $ toHtml login
+            td_ $ toHtml $ formatHumanHelsinkiTime stamp
+            td_ $ pre_ $ toHtml command

@@ -51,7 +51,7 @@ test-suite doctests
   main-is:             doctests.hs
   build-depends:
     base,
-    doctest >= 0.13 && <0.14,
+    doctest >= 0.13 && <0.16,
     QuickCheck >=2.10 && <2.12,
     template-haskell
   x-doctest-options:   --fast
