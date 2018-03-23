@@ -1,6 +1,8 @@
-index-state: 2018-02-22T10:47:45Z
+index-state: 2018-03-23T07:18:38Z
 
 constraints:
+  aeson              ^>= 1.3.0.0,
+  cabal-plan         ^>= 0.3.0.0,
   Chart              ^>= 1.8.3,
   github             ^>= 0.19,
   http-types         ^>= 0.12,
@@ -10,31 +12,45 @@ constraints:
   servant-lucid      ^>= 0.8,
   servant-client     ^>= 0.13,
   servant-server     ^>= 0.13,
-  servant-swagger-ui ^>= 0.2.5.3.9.1
+  servant-swagger-ui ^>= 0.2.5.3.9.1,
+  unix-time          ^>= 0.3.8
 
 allow-newer:
   *:Cabal
 
 -- https://github.com/brendanhay/amazonka/pull/448
 constraints:
-  conduit <1.3,
-  xml-conduit <1.8,
-  http-conduit <2.3,
-  conduit-extra <1.3,
-  conduit <1.3,
-  resourcet <1.2
+  conduit           <1.3,
+  conduit-extra     <1.3,
+  http-conduit      <2.3,
+  resourcet         <1.2,
+  streaming-commons <0.2,
+  xml-conduit       <1.8,
 
--- lens-4.16
+  -- do not try transformers-compat-0.6 as it's not supported by resourcet-1.11
+  transformers-compat ==0.5.1.4
+
 allow-newer:
-  -- github-0.19
-  *:github,
+  -- lens-4.16
   Chart:lens,
   Chart-diagrams:lens,
   diagrams-postscript:lens,
   diagrams-core:lens,
   diagrams-lib:lens,
   diagrams-svg:lens,
-  vec:lens
+
+  -- https://github.com/facebook/Haxl/pull/88
+  haxl:aeson,
+  haxl:exceptions,
+
+  -- https://github.com/TomMD/monadcryptorandom/pull/12
+  monadcryptorandom:exceptions,
+
+  -- https://github.com/haskell-hvr/cabal-plan/pull/17
+  cabal-plan:aeson,
+  cabal-plan:lens,
+  cabal-plan:base-orphans,
+  cabal-plan:ansi-terminal
 
 packages:
   -- ansi-pretty/

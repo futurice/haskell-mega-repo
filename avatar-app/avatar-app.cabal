@@ -20,16 +20,13 @@ source-repository head
   type: git
   location: https://github.com/futurice/avatar-app
 
-flag aeson-compat
-  manual: True
-  default: True
-
 library
   hs-source-dirs:
       src
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.11
+    , aeson-compat
     , base-compat
     , blaze-html
     , bytestring
@@ -51,12 +48,6 @@ library
     , transformers-compat
     , unordered-containers
     , vector
-  if flag(aeson-compat)
-    build-depends:
-        aeson-compat >=0.3.0.0 && <0.4
-  if !flag(aeson-compat)
-    build-depends:
-        aeson-extra  >=0.2.2.0 && <0.3
   exposed-modules:
       Futurice.App.Avatar
       Futurice.App.Avatar.API
