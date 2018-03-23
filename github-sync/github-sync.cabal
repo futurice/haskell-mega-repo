@@ -61,6 +61,7 @@ library
       Futurice.App.GitHubSync.IndexPage
       Futurice.App.GitHubSync.Main
       Futurice.App.GitHubSync.Markup
+      Futurice.App.GitHubSync.RemoveUsers
   default-language: Haskell2010
 
 executable github-sync-server

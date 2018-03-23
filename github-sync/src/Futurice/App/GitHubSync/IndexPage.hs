@@ -23,9 +23,9 @@ indexPage
     -> [P.Employee]
     -> HtmlPage "index"
 indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Personio sync" (Just NavHome) $ do
-
-
-
+    ul_ $ do
+        li_ $ "User list is updated only once per day (at night)"
+    hr_ []
 
     fullRow_ $ h2_ "Only in GitHub, not in Personio"
     fullRow_ $ i_ "People in GitHub organisation, not mentioned in Personio"
