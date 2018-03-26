@@ -47,19 +47,12 @@ futu.onload(function () {
        
       var removeUsers = removeUsers$.value();
       console.log("Removing users", removeUsers);
-      futu.fetchJSON("/command/remove-users", removeUsers)
+      futu.commandFetchJSON("/command/remove-users", removeUsers)
           .then(function (res) {
-            if (res === true) {
-                btnRemove.className = "button success";
-            } else {
-                throw new Error("Didn't get 'true': " + res);
-            }
+            btnRemove.className = "button success";
           })
           .catch(function (exc) {
-            alert("" + exc);
-            console.error(exc);
             btnRemove.className = "button alert";
-            throw exc;
           });
     });
 
