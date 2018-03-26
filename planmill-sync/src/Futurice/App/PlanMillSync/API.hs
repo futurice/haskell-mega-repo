@@ -11,8 +11,21 @@ import Futurice.Servant
 import Prelude ()
 import Servant
 
+import qualified FUM.Types.Login as FUM
+
 type PlanMillSyncAPI =
     SSOUser :> Get '[HTML] (HtmlPage "index")
+    -- actions
+    :<|> AddDepartDateEndpoint
 
-githubSyncApi :: Proxy PlanMillSyncAPI
-githubSyncApi = Proxy
+planmillSyncApi :: Proxy PlanMillSyncAPI
+planmillSyncApi = Proxy
+
+-------------------------------------------------------------------------------
+-- Actions
+-------------------------------------------------------------------------------
+
+type AddDepartDateEndpoint = SSOUser :> "add-depart-date" :> Capture "login" FUM.Login :> Post '[JSON] (CommandResponse ())
+
+addDepartDateEndpoint :: Proxy AddDepartDateEndpoint
+addDepartDateEndpoint = Proxy

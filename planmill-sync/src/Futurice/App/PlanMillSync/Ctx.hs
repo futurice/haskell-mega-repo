@@ -8,9 +8,10 @@ import Prelude ()
 import Futurice.App.PlanMillSync.Config
 
 data Ctx = Ctx
-    { ctxConfig  :: !Config
-    , ctxLogger  :: !Logger
-    , ctxManager :: !Manager
-    , ctxCache   :: !Cache
-    , ctxWorkers :: !(Maybe Workers)
+    { ctxConfig       :: !Config
+    , ctxLogger       :: !Logger
+    , ctxManager      :: !Manager
+    , ctxCache        :: !Cache
+    , ctxReadWorkers  :: !(Maybe Workers)
+    , ctxWriteWorkers :: !Workers
     }
