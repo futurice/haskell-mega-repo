@@ -5,6 +5,7 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Control.Lens
        (filtered, has, hasn't, ifoldMapOf, only, re, united)
+import Data.List                 (intercalate)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -12,6 +13,8 @@ import Prelude ()
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+
+import qualified Personio as P
 
 indexPage
     :: World       -- ^ the world
@@ -106,6 +109,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
+                th_ [title_ "Personio"]                    "P"
                 th_ [title_ "Office"]                      "Off"
                 th_ [title_ "Name" ]                       "Name"
                 th_ [title_ "Tribe" ]                      "Tribe"
@@ -136,6 +140,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                            | otherwise                           -> "eta-future"
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
+                    td_ $ traverse_ toHtml $ employee ^. employeePersonio
                     td_ $ locationHtml mlist $ employee ^. employeeOffice
                     td_ $ employeeLink employee
                     td_ $ case tribeOffices (employee ^. employeeTribe) of
@@ -154,7 +159,17 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                             td_ $ taskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
-                    td_ $ toHtml $ show startingDay
+                    td_ $ do
+                        toHtml $ show startingDay
+                        for_ (employee ^. employeePersonio) $ \pid ->
+                            for_ (integrationData ^? personioData . ix pid) $ \p -> do
+                                let days = p ^.. (P.employeeHireDate . _Just <> P.employeeEndDate . _Just)
+                                unless (startingDay `elem` days) $ do
+                                    " "
+                                    span_ [ class_ "label alert" ] $ do
+                                        "∉ {"
+                                        toHtml $ intercalate ", " $ map show days
+                                        "}"
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> " days"
                     case ifoldMapOf
