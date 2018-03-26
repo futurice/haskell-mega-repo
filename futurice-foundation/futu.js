@@ -57,6 +57,56 @@ futu = (function () {
       });
   }
 
+  // command fetch json!
+  function commandFetchJSON(url, postPayload) {
+      var modalElement = document.createElement("DIV");
+      modalElement.className = "reveal";
+      modalElement.dataset.reveal = "";
+      modalElement.innerText = "Thinking...";
+
+      var modal = new Foundation.Reveal(jQuery(modalElement), { closeOnClick: false, closeOnEsc: false });
+      modal.open();
+
+      // Request
+      return fetchJSON(url, postPayload)
+          .then(function (response) {
+              switch (response.tag) {
+                  case "CommandResponseOk":
+                      modal.close();
+                      return response.contents
+                  case "CommandResponseError":
+                      throw new Error(response.contents);
+                      // break;
+                  case "CommandResponseReload":
+                      location.reload();
+                      break;
+                  case "CommandResponseRedirect":
+                      location.href = response.contents;
+                      break;
+                  default:
+                      throw new Error("Unknown CommandResponse " + JSON.stringify(response));
+              }
+          })
+          .catch(function (exc) {
+              console.error(exc);
+
+              modalElement.innerText = "" + exc;
+
+              var btn = document.createElement("BUTTON");
+              btn.className = "button alert";
+              btn.innerText = "Close";
+
+              buttonOnClick(btn, function () {
+                  modal.close();
+              });
+
+              modalElement.appendChild(document.createElement("HR"));
+              modalElement.appendChild(btn);
+
+              throw exc;
+          });
+  }
+
   // if _.isEqual is Eq
   // then compare is Ord
   function compare(a, b) {
@@ -198,5 +248,6 @@ futu = (function () {
     buttonOnClick: buttonOnClick,
     trace: trace,
     fetchJSON: fetchJSON,
+    commandFetchJSON: commandFetchJSON,
   };
 }());

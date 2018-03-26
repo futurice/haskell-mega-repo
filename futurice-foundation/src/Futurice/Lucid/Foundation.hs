@@ -267,5 +267,5 @@ foundationCSS = either (error "foundationCSS") id $ do
     changeColors "eaeaea" = col (FutuAccent AF5 AC1) -- gray
     changeColors "d7ecfa" = col (FutuAccent AF3 AC1) -- light blue
     changeColors c        = c
-  
+
     col c = tail $ sRGB24show (colourToDataColour c :: DataColour Double)

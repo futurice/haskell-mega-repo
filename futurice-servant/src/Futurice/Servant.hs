@@ -57,6 +57,8 @@ module Futurice.Servant (
     cachedIO,
     genCachedIO,
     CachePolicy(..),
+    -- * Command response
+    CommandResponse (..),
     -- * Re-export
     Job,
     ) where
@@ -65,6 +67,7 @@ import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, swapTVar)
 import Control.Lens                         (each)
 import Control.Monad.Catch                  (fromException, handleAll)
+import Data.Aeson                           (FromJSON, ToJSON)
 import Data.Char                            (isAscii, isControl)
 import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
@@ -104,7 +107,7 @@ import qualified GHC.Stats                 as Stats
 import qualified Network.HTTP.Types        as H
 import qualified Network.HTTP.Types.Status as HTTP
 import qualified Network.Wai.Handler.Warp  as Warp
-import qualified Options.Applicative as O
+import qualified Options.Applicative       as O
 
 import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
@@ -571,3 +574,19 @@ makeAscii :: Char -> Char
 makeAscii c
     | isAscii c && not (isControl c) = c
     | otherwise                      = '?'
+
+-------------------------------------------------------------------------------
+-- CommandResponse
+-------------------------------------------------------------------------------
+
+data CommandResponse a
+    = CommandResponseOk a            -- ^ Do nothing
+    | CommandResponseError String    -- ^ an error
+    | CommandResponseReload          -- ^ reload current page
+    | CommandResponseRedirect !Text  -- ^ redirect to the url
+  deriving (Eq, Ord, Show, Typeable, Generic, Functor, Foldable, Traversable)
+
+instance ToJSON a => ToJSON (CommandResponse a)
+instance FromJSON a => FromJSON (CommandResponse a)
+instance ToSchema a => ToSchema (CommandResponse a) where
+    declareNamedSchema = Data.Swagger.genericDeclareNamedSchemaUnrestricted Data.Swagger.defaultSchemaOptions
