@@ -20,18 +20,22 @@ import Data.These                  (_That, _These, _This)
 import FUM.Types.Login             (Login, loginRegexp, loginToText)
 import Futurice.Constants          (competenceMap)
 import Futurice.CostCenter
-import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
 import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
+import Servant                     (toUrlPiece)
+import Servant.Utils.Links         (Link, safeLink)
 import Text.Regex.Applicative.Text (match)
 
 import qualified Data.Text as T
 import qualified Personio  as P
 import qualified PlanMill  as PM
 
-import Futurice.App.PlanMillSync.Types (PMUser (..))
+import Futurice.App.PlanMillSync.Actions
+import Futurice.App.PlanMillSync.API
+import Futurice.App.PlanMillSync.Markup
+import Futurice.App.PlanMillSync.Types   (PMUser (..))
 
 itoListWithOf :: IndexedGetting i (Endo [x]) s a -> (i -> a -> x) ->  s -> [x]
 itoListWithOf l f s = appEndo (ifoldMapOf l (\i a -> Endo (f i a :)) s) []
@@ -41,7 +45,7 @@ indexPage
     -> [PMUser]
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage today planmills personios = page_ "PlanMill sync" $ do
+indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
     div_ [ class_ "top-bar" ] $ do
         div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu" ] $ do
             li_ [ class_ "menu-text"] $ "Personio ⇒ PlanMill sync"
@@ -81,7 +85,7 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
                 td_ $ do
                     let pmStart = PM.uHireDate pmu
                     let pmEnd = PM.uDepartDate pmu
-                    toHtml $ formatDateSpan pmStart pmEnd
+                    span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pmStart pmEnd
     fullRow_ $ do
         a_ [ name_ "personio" ] mempty
         h2_ "People Active in Personio but not in PlanMill"
@@ -150,7 +154,6 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
             th_ "PM Account"
             th_ "PM email"
             th_ "Competence"
-            th_ "Actions"
 
         tbody_ $ traverse_ id elements2
   where
@@ -188,6 +191,7 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
                 " ≠ "
                 toHtml $ pmPassive pm
 
+        -- employment type: int/ext
         cell_ $ case p ^. P.employeeEmploymentType of
             Nothing -> markPersonioCell "Personio employee should have employment type set"
             Just P.Internal -> pure ()
@@ -228,7 +232,7 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
                 -- when (isNothing pEnd) markErrorCell
                 -- when (isNothing pmEnd) markErrorCell
 
-            toHtml $ formatDateSpan pStart pEnd
+            span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pStart pEnd
 
             {-
             let startDifferent = case (pStart, pmStart) of
@@ -244,7 +248,16 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
             when endDifferent $ do
                 markErrorCell "Contract dates differ"
                 " ≠ "
-                toHtml $ formatDateSpan pmStart pmEnd
+                span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pmStart pmEnd
+
+            div_ [ class_ "button-group"] $ do
+                -- action to update the end date
+                for_ (canUpdateDepartDate p pmu) $ \_ -> button_
+                    [ data_ "futu-post-button" $ linkToText $ safeLink planmillSyncApi addDepartDateEndpoint login
+                    , class_ "button"
+                    , disabled_ "disabled"
+                    ]
+                    "Update depart date"
 
         -- hr number
         cell_ $ do
@@ -308,9 +321,6 @@ indexPage today planmills personios = page_ "PlanMill sync" $ do
                 " ≠ "
                 traverse_ toHtml pmCompetence
 
-        -- Actions
-        cell_ mempty
-
     planmillMap :: Map Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
       where
@@ -343,7 +353,7 @@ personioHtml p = fst $ runWriter $ commuteHtmlT $ do
     td_ $ do
         let pStart = p ^. P.employeeHireDate
         let pEnd = p ^. P.employeeEndDate
-        toHtml $ formatDateSpan pStart pEnd
+        span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pStart pEnd
     cell_ $ case p ^. P.employeeHRNumber of
         Just x | x > 0 -> toHtml (show x) -- TODO: remove check, fix personio-client
         _ -> when (p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $
@@ -464,3 +474,6 @@ cell_ html = case runWriter (commuteHtmlT html) of
 
 errorsTitle_ :: NonEmpty Text -> Attribute
 errorsTitle_ xs = title_ $ T.intercalate "; " $ toList xs
+
+linkToText :: Link -> Text
+linkToText l = "/" <> toUrlPiece l
