@@ -2,8 +2,11 @@
 module Futurice.App.GitHubSync.RemoveUsers where
 
 import Data.Aeson        (object, (.=))
+import Data.Either       (partitionEithers)
+import Data.List         (intercalate)
 import Futurice.Postgres
 import Futurice.Prelude
+import Futurice.Servant  (CommandResponse (..))
 import Prelude ()
 
 import qualified FUM.Types.Login as FUM
@@ -12,7 +15,7 @@ import qualified GitHub          as GH
 import Futurice.App.GitHubSync.Config
 import Futurice.App.GitHubSync.Ctx
 
-removeUsers :: Ctx -> FUM.Login -> [GH.Name GH.User] -> IO Bool
+removeUsers :: Ctx -> FUM.Login -> [GH.Name GH.User] -> IO (CommandResponse ())
 removeUsers ctx login us = runLogT "remove-users" lgr $ do
     -- audit log
     n <- safePoolExecute ctx
@@ -20,7 +23,7 @@ removeUsers ctx login us = runLogT "remove-users" lgr $ do
         (login, object [ "command" .= ("remove-users" :: Text), "users" .= us ])
 
     if n == 0
-    then return False
+    then return (CommandResponseError "Writing audit log failed")
     else do
         -- action
         vs <- for us $ \u -> do
@@ -30,14 +33,18 @@ removeUsers ctx login us = runLogT "remove-users" lgr $ do
                     mempty
             logTrace "executing" (show req)
             r <- liftIO $ GH.executeRequestWithMgr mgr auth req
-            case r of
-                Right _ -> return True
-                Left  _ -> return False
+            return $ case r of
+                Right _   -> Right ()
+                Left  err -> Left (show err)
 
-        -- TODO: better "command handling"
-        return (and vs)
+        return (makeResponse vs)
   where
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
     auth = cfgAuth cfg
+
+    makeResponse :: [Either String ()] -> CommandResponse ()
+    makeResponse es = case partitionEithers es of
+        ([], _)  -> CommandResponseOk ()
+        (es', _) -> CommandResponseError $ intercalate "; " es'

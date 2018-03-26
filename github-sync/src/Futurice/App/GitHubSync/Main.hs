@@ -133,10 +133,12 @@ removeUsersAction
     :: Ctx
     -> Maybe FUM.Login
     -> [GH.Name GH.User]
-    -> Handler Bool
-removeUsersAction ctx mfu us = withAuthUserIO False impl ctx mfu
+    -> Handler (CommandResponse ())
+removeUsersAction ctx mfu us = withAuthUserIO err impl ctx mfu
   where
     impl login = liftIO $ removeUsers ctx login us
+    err = CommandResponseError "non authorised"
+
 
 -------------------------------------------------------------------------------
 -- Main
