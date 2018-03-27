@@ -8,8 +8,7 @@
 module Futurice.App.PlanMillSync (defaultMain) where
 
 import Futurice.Integrations
-import Futurice.Lucid.Foundation (HtmlPage)
-import Futurice.Lucid.Foundation (fullRow_, h1_, page_)
+import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
 import Futurice.Prelude
 import Futurice.Servant
 import PlanMill.Worker           (workers)
@@ -34,7 +33,7 @@ server :: Ctx -> Server PlanMillSyncAPI
 server ctx = indexPageAction ctx
     -- actions
     :<|> addDepartDateAction ctx
-    -- TODO: actions to add & remove
+    :<|> updateStatusAction ctx
 
 -------------------------------------------------------------------------------
 -- Indexpage
@@ -71,6 +70,12 @@ page404 = page_ "PlanMill Sync - Unauthorised" $
 addDepartDateAction :: Ctx -> Maybe Login -> Login -> Handler (CommandResponse ())
 addDepartDateAction ctx mfu login = withAuthorisedUser ctx mfu err $
     liftIO $ updateDepartDate ctx login
+  where
+    err = return (CommandResponseError "not authorised")
+
+updateStatusAction :: Ctx -> Maybe Login -> Login -> Handler (CommandResponse ())
+updateStatusAction ctx mfu login = withAuthorisedUser ctx mfu err $
+    liftIO $ updateStatus ctx login
   where
     err = return (CommandResponseError "not authorised")
 

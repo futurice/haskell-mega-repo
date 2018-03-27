@@ -17,6 +17,7 @@ type PlanMillSyncAPI =
     SSOUser :> Get '[HTML] (HtmlPage "index")
     -- actions
     :<|> AddDepartDateEndpoint
+    :<|> UpdateStatusEndpoint
 
 planmillSyncApi :: Proxy PlanMillSyncAPI
 planmillSyncApi = Proxy
@@ -29,3 +30,8 @@ type AddDepartDateEndpoint = SSOUser :> "add-depart-date" :> Capture "login" FUM
 
 addDepartDateEndpoint :: Proxy AddDepartDateEndpoint
 addDepartDateEndpoint = Proxy
+
+type UpdateStatusEndpoint = SSOUser :> "update-status" :> Capture "login" FUM.Login :> Post '[JSON] (CommandResponse ())
+
+updateStatusEndpoint :: Proxy UpdateStatusEndpoint
+updateStatusEndpoint = Proxy

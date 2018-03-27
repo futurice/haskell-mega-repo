@@ -191,6 +191,15 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                 " ≠ "
                 toHtml $ pmPassive pm
 
+            div_ [ class_ "button-group"] $ do
+                -- action to update the end date
+                for_ (canUpdateStatus today p pm) $ \s -> button_
+                    [ data_ "futu-post-button" $ linkToText $ safeLink planmillSyncApi updateStatusEndpoint login
+                    , class_ "button"
+                    , disabled_ "disabled"
+                    ] $
+                    toHtml $ "Update PM status to " <> s
+
         -- employment type: int/ext
         cell_ $ case p ^. P.employeeEmploymentType of
             Nothing -> markPersonioCell "Personio employee should have employment type set"
@@ -252,7 +261,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
 
             div_ [ class_ "button-group"] $ do
                 -- action to update the end date
-                for_ (canUpdateDepartDate p pmu) $ \_ -> button_
+                for_ (canUpdateDepartDate p pm) $ \_ -> button_
                     [ data_ "futu-post-button" $ linkToText $ safeLink planmillSyncApi addDepartDateEndpoint login
                     , class_ "button"
                     , disabled_ "disabled"
