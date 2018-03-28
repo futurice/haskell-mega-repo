@@ -85,7 +85,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                 td_ $ do
                     let pmStart = PM.uHireDate pmu
                     let pmEnd = PM.uDepartDate pmu
-                    span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pmStart pmEnd
+                    noWrapSpan_ $ toHtml $ formatDateSpan pmStart pmEnd
     fullRow_ $ do
         a_ [ name_ "personio" ] mempty
         h2_ "People Active in Personio but not in PlanMill"
@@ -211,17 +211,18 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             Nothing -> markPersonioCell "Personio employee should have contract type set"
             Just pContract -> do
                 let pEmploymentType = p ^. P.employeeEmploymentType
-                toHtml (show pContract)
+                let pContract' = contractType pEmploymentType pContract (p ^. P.employeeSalaryType) (p ^. P.employeeWeeklyHours)
+
+                noWrapSpan_ $ toHtml pContract'
+                toHtml $ " (" <> textShow pContract <> ")"
 
                 when (pEmploymentType == Just P.External && pContract /= P.FixedTerm) $
                     markPersonioCell "Externals should have contract type FixedTerm"
 
-                unless (contractTypeOk pEmploymentType pContract (p ^. P.employeeWeeklyHours) (pmContract pm)) $ do
+                unless (pContract' == pmContract pm) $ do
                     markErrorCell "Contract types don't agree"
-                    " (weekly hours: "
-                    toHtml (p ^. P.employeeWeeklyHours)
-                    ") ≠ "
-                    toHtml (pmContract pm)
+                    " ≠ "
+                    noWrapSpan_ $ toHtml $ pmContract pm
 
         -- Contract span
         cell_ $ do
@@ -241,7 +242,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                 -- when (isNothing pEnd) markErrorCell
                 -- when (isNothing pmEnd) markErrorCell
 
-            span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pStart pEnd
+            noWrapSpan_ $ toHtml $ formatDateSpan pStart pEnd
 
             {-
             let startDifferent = case (pStart, pmStart) of
@@ -257,7 +258,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             when endDifferent $ do
                 markErrorCell "Contract dates differ"
                 " ≠ "
-                span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pmStart pmEnd
+                noWrapSpan_ $ toHtml $ formatDateSpan pmStart pmEnd
 
             div_ [ class_ "button-group"] $ do
                 -- action to update the end date
@@ -362,7 +363,7 @@ personioHtml p = fst $ runWriter $ commuteHtmlT $ do
     td_ $ do
         let pStart = p ^. P.employeeHireDate
         let pEnd = p ^. P.employeeEndDate
-        span_ [ style_ "white-space: nowrap" ] $ toHtml $ formatDateSpan pStart pEnd
+        noWrapSpan_ $ toHtml $ formatDateSpan pStart pEnd
     cell_ $ case p ^. P.employeeHRNumber of
         Just x | x > 0 -> toHtml (show x) -- TODO: remove check, fix personio-client
         _ -> when (p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $
@@ -396,6 +397,9 @@ formatDateSpan s e =
     ndash = "–"
     arrow = " →" -- space is intentional
 
+noWrapSpan_ :: Monad m => HtmlT m () -> HtmlT m ()
+noWrapSpan_ = span_ [ style_ "white-space: nowrap" ]
+
 -------------------------------------------------------------------------------
 -- Account
 -------------------------------------------------------------------------------
@@ -413,17 +417,20 @@ officeToAccount OffOther     = "???"
 -- Contract type
 -------------------------------------------------------------------------------
 
-contractTypeOk :: Maybe P.EmploymentType -> P.ContractType -> NDT 'Hours Centi -> Text -> Bool
-contractTypeOk (Just P.External) ct _ t =
-    ct == P.FixedTerm && t == "Subcontractor"
-contractTypeOk _ P.PermanentAllIn _ t = "no working time" `T.isInfixOf` t
--- Permanent or FixedTerm
-contractTypeOk _ _      h t
-    -- whether montly or hourly is not yet clear
-    | "hourly pay" `T.isInfixOf` t = True
-    -- arbitrary bound
-    | h >= 37   = "full-time" `T.isInfixOf` t
-    | otherwise = "part-time" `T.isInfixOf` t
+contractType :: Maybe P.EmploymentType -> P.ContractType -> Maybe P.SalaryType -> NDT 'Hours Centi -> Text
+contractType et ct st = contractType'
+    (fromMaybe P.Internal et)
+    ct
+    (fromMaybe P.Monthly st)
+
+contractType' :: P.EmploymentType -> P.ContractType -> P.SalaryType -> NDT 'Hours Centi -> Text
+contractType' P.External _                _         _ = "Subcontractor"
+contractType' P.Internal P.PermanentAllIn _         _ = "Permanent - no working time"
+contractType' P.Internal P.FixedTerm      _         _ = "Hired - temporarily"
+contractType' P.Internal P.Permanent      P.Hourly  _ = "Permanent - hourly pay"
+contractType' P.Internal P.Permanent      P.Monthly h
+    | h >= 37                                         = "Permanent - full-time"
+    | otherwise                                       = "Permanent - part-time"
 
 -------------------------------------------------------------------------------
 -- Cells
