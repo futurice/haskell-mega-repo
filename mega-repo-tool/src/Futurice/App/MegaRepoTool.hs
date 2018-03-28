@@ -102,7 +102,7 @@ runOptions = cmdRun
     <$> exe
     <*> many (O.strArgument $ O.metavar ":arg" <> O.help "arguments")
   where
-    cmdRun e args = CmdExec ("cabal" :| "new-run" : e : args)
+    cmdRun e args = CmdExec ("cabal" :| "new-run" : e : "--" : args)
 
     exe = O.strArgument $ mconcat
         [ O.metavar "exe"
