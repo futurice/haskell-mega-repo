@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -16,10 +15,13 @@ import Servant.JuicyPixels (PNG)
 
 type AvatarAPI =
     Get '[PlainText] Text
-    :<|> "avatar" :> QueryParam "url" Text
-                  :> QueryParam "size" Int
-                  :> QueryFlag "grey"
-                  :> Get '[PNG] (Headers '[Header "Cache-Control" Text] DynamicImage)
+    :<|> GenericAvatar
+
+type GenericAvatar = "avatar"
+    :> QueryParam' '[Required] "url" Text
+    :> QueryParam "size" Int
+    :> QueryFlag "grey"
+    :> Get '[PNG] (Headers '[Header "Cache-Control" Text] DynamicImage)
 
 avatarApi :: Proxy AvatarAPI
 avatarApi = Proxy
