@@ -42,6 +42,9 @@ import GHC.TypeLits    (KnownSymbol)
 
 data Cmd
     = CmdMe
+    | CmdHooks
+    | CmdHookDelete PM.HookId
+    | CmdHookAdd PM.HookType Text
     | CmdUsers
     | CmdTeams
     | CmdUser PM.UserId
@@ -129,6 +132,18 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdMe -> do
         x <- PM.planmillAction PM.me
         putPretty x
+    CmdHooks -> do
+        x <- PM.planmillAction PM.hooks
+        putPretty $ "Result size: " <> textShow (length x)
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdHookDelete hid -> do
+        x <- PM.planmillAction $ PM.deleteHook hid
+        pure x
+    CmdHookAdd ht url -> do
+        x <- PM.planmillAction $ PM.addHook $ PM.NewHook ht url
+        putPretty $ x ^.. folded
     CmdUsers -> do
         x <- PM.planmillAction PM.users
         putPretty $ "Result size: " <> textShow (length x)

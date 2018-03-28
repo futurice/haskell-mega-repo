@@ -54,6 +54,10 @@ module PlanMill.Endpoints (
     userVacations,
     -- ** Editing
     editUser,
+    -- * Hooks
+    addHook,
+    deleteHook,
+    hooks,
     ) where
 
 import PlanMill.Internal.Prelude
@@ -297,6 +301,27 @@ enumerations :: KnownSymbol k => Proxy k -> PlanMill (EnumDesc k)
 enumerations p = planMillGetQs qs $ t "enumerations"
   where
     qs = Map.fromList [ ("name", T.pack $ symbolVal p) ]
+
+-- | Get a list of hooks
+--
+-- See <https://developers.planmill.com/api/#hooks_get>
+
+hooks :: PlanMill Hooks
+hooks = planMillGet $ t "hooks"
+
+-- | Add a new hook
+--
+-- See <https://developers.planmill.com/api/#hooks__hook_id__post>
+
+addHook :: NewHook -> PlanMill (HookInserted Hook)
+addHook h = planMillPost h $ t "hooks"
+
+-- | Remove a hook
+--
+-- See <https://developers.planmill.com/api/#hooks__hook_id__delete>
+
+deleteHook :: HookId -> PlanMill ()
+deleteHook hid = planMillDeleteNoResponse $ t "hooks" // hid
 
 -------------------------------------------------------------------------------
 -- Utilities
