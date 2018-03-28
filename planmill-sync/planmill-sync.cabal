@@ -33,6 +33,7 @@ library
       base                  >=4.7   && <4.11
     , aeson
     , aeson-compat
+    , clay
     , containers
     , env-config
     , fum-api
@@ -40,6 +41,7 @@ library
     , futurice-constants
     , futurice-foundation
     , futurice-integrations
+    , futurice-logo
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -59,10 +61,12 @@ library
     , writer-cps-mtl
   exposed-modules:
       Futurice.App.PlanMillSync
+      Futurice.App.PlanMillSync.Actions
       Futurice.App.PlanMillSync.API
       Futurice.App.PlanMillSync.Config
       Futurice.App.PlanMillSync.Ctx
       Futurice.App.PlanMillSync.IndexPage
+      Futurice.App.PlanMillSync.Markup
       Futurice.App.PlanMillSync.Monad
       Futurice.App.PlanMillSync.Types
   default-language: Haskell2010

@@ -8,8 +8,7 @@
 module Futurice.App.PlanMillSync (defaultMain) where
 
 import Futurice.Integrations
-import Futurice.Lucid.Foundation (HtmlPage)
-import Futurice.Lucid.Foundation (fullRow_, h1_, page_)
+import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
 import Futurice.Prelude
 import Futurice.Servant
 import PlanMill.Worker           (workers)
@@ -19,6 +18,7 @@ import Servant
 import FUM.Types.Login         (Login)
 import Futurice.FUM.MachineAPI (FUM6 (..), fum6)
 
+import Futurice.App.PlanMillSync.Actions
 import Futurice.App.PlanMillSync.API
 import Futurice.App.PlanMillSync.Config
 import Futurice.App.PlanMillSync.Ctx
@@ -31,36 +31,30 @@ import qualified Personio as P
 
 server :: Ctx -> Server PlanMillSyncAPI
 server ctx = indexPageAction ctx
-    -- TODO: actions to add & remove
+    -- actions
+    :<|> addDepartDateAction ctx
+    :<|> updateStatusAction ctx
+
+-------------------------------------------------------------------------------
+-- Indexpage
+-------------------------------------------------------------------------------
 
 indexPageAction
     :: Ctx
     -> Maybe Login
     -> Handler (HtmlPage "index")
-indexPageAction ctx mfu = do
-    now <- currentTime
+indexPageAction ctx mfu = withAuthorisedUser ctx mfu err $ do
+    today <- currentDay
 
-    -- Access control
-    fus <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsConfig2 cfg) $
-        fum6 $ FUMGroupEmployees (cfgAccessGroup cfg)
-    liftIO $ print fus
+    -- fetch data
+    (pm, p) <- liftIO $ cachedIO lgr cache 300 () $
+        runIntegrations' ctx fetcher
 
-    case mfu <|> cfgMockUser cfg of
-        Just fu | Set.member fu fus -> do
-            -- Data fetch
-            (today, (pm, p)) <- liftIO $ cachedIO lgr cache 300 () $
-                runIntegrations' mgr lgr now ws (cfgIntegrationsConfig cfg) $
-                    liftA2 (,) currentDay fetcher
-
-            -- Render
-            pure $ indexPage today pm p
-
-        _ -> pure page404 -- TODO: log unauhtorised access?
+    pure $ indexPage today pm p
   where
-    cfg   = ctxConfig ctx
+    err = pure page404
+
     lgr   = ctxLogger ctx
-    mgr   = ctxManager ctx
-    ws    = ctxWorkers ctx
     cache = ctxCache ctx
 
 page404 :: HtmlPage a
@@ -69,25 +63,65 @@ page404 = page_ "PlanMill Sync - Unauthorised" $
         h1_ "Unauthorised"
         "Ask IT Team for access rights"
 
+-------------------------------------------------------------------------------
+-- Actions
+-------------------------------------------------------------------------------
+
+addDepartDateAction :: Ctx -> Maybe Login -> Login -> Handler (CommandResponse ())
+addDepartDateAction ctx mfu login = withAuthorisedUser ctx mfu err $
+    liftIO $ updateDepartDate ctx login
+  where
+    err = return (CommandResponseError "not authorised")
+
+updateStatusAction :: Ctx -> Maybe Login -> Login -> Handler (CommandResponse ())
+updateStatusAction ctx mfu login = withAuthorisedUser ctx mfu err $
+    liftIO $ updateStatus ctx login
+  where
+    err = return (CommandResponseError "not authorised")
+
+-------------------------------------------------------------------------------
+-- Utils
+-------------------------------------------------------------------------------
+
+withAuthorisedUser :: Ctx -> Maybe Login -> Handler a -> Handler a -> Handler a
+withAuthorisedUser ctx mfu err action = do
+    now <- currentTime
+
+    -- Access control: TODO cache?
+    fus <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsConfig2 cfg) $
+        fum6 $ FUMGroupEmployees (cfgAccessGroup cfg)
+
+    case mfu <|> cfgMockUser cfg of
+        Just fu | Set.member fu fus -> action
+
+        -- TODO: log?
+        _ -> err
+  where
+    cfg   = ctxConfig ctx
+    lgr   = ctxLogger ctx
+    mgr   = ctxManager ctx
+
 type M = Integrations '[I, I, Proxy, Proxy, Proxy, I]
 
 fetcher :: M ([PMUser], [P.Employee])
 fetcher = liftA2 (,) users (P.personio P.PersonioEmployees)
 
+-------------------------------------------------------------------------------
+-- Main
+-------------------------------------------------------------------------------
+
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName              .~ "PlanMill Sync"
     & serverDescription       .~ "Sync people from personio to planmill"
-    & serverApp githubSyncApi .~ server
+    & serverApp planmillSyncApi .~ server
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF5 'AC1))
     & serverEnvPfx            .~ "PLANMILLSYNC"
     & serverOpts              .~ optionsFlag False [(True, "planmill-direct"), (False, "planmill-proxy")] "Access PlanMill directly"
   where
     makeCtx :: Bool -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
     makeCtx planmillDirect cfg lgr mgr cache = do
-        ws <-
-            if planmillDirect
-            then Just <$> workers lgr mgr (cfgPlanMillCfg cfg) ["worker1", "worker2", "worker3"]
-            else pure Nothing
-        let ctx = Ctx cfg lgr mgr cache ws
+        ws <- workers lgr mgr (cfgPlanMillCfg cfg) ["worker1", "worker2", "worker3"]
+        let readWorkers = if planmillDirect then Just ws else Nothing
+        let ctx = Ctx cfg lgr mgr cache readWorkers ws
         pure (ctx, [])
