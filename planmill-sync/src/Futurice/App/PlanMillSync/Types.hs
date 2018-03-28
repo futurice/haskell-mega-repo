@@ -24,16 +24,20 @@ users = do
     us <- toList <$> PMQ.users
     for us $ \u -> do
         u' <- PMQ.user (u ^. PM.identifier)
-        t <- traverse PMQ.team (PM.uTeam u')
-        a <- traverse PMQ.account (PM.uAccount u')
-        c <- PMQ.enumerationValue (PM.uContractType u) "Unknown contract"
-        p <- PMQ.enumerationValue (PM.uPassive u) "Unknown active status"
-        pure PMUser
-            { pmUser     = u'
-                { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
-                }
-            , pmTeam     = t
-            , pmContract = c
-            , pmAccount  = a
-            , pmPassive  = p
+        userToPMUser u u'
+
+userToPMUser :: PMQ.MonadPlanMillQuery m => PM.User -> PM.User -> m PMUser
+userToPMUser u u' = do
+    t <- traverse PMQ.team (PM.uTeam u')
+    a <- traverse PMQ.account (PM.uAccount u')
+    c <- PMQ.enumerationValue (PM.uContractType u) "Unknown contract"
+    p <- PMQ.enumerationValue (PM.uPassive u) "Unknown active status"
+    pure PMUser
+        { pmUser     = u'
+            { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
             }
+        , pmTeam     = t
+        , pmContract = c
+        , pmAccount  = a
+        , pmPassive  = p
+        }

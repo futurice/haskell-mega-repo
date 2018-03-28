@@ -36,6 +36,8 @@ import Text.Regex.Applicative.Text     (match)
 
 import qualified FUM.Types.Login as FUM
 
+import PlanMill.Types.UOffset          (UOffset (..))
+
 instance IdentifierToHtml User where
     identifierToHtml (Ident i) = a_ attrs (toHtml t)
       where
@@ -94,6 +96,24 @@ instance AnsiPretty User
 instance Binary User
 instance HasStructuralInfo User where structuralInfo = sopStructuralInfo
 instance HasSemanticVersion User
+
+-- | This instance is very small, serialising only the fields we want ever to update.
+--
+-- /TODO:/ make EditUser type?
+instance ToJSON User where
+    toJSON u = object $
+        [ "id"            .= (u ^. identifier)
+        , "firstName"     .= uFirstName u
+        , "lastName"      .= uLastName u
+        , "passive"       .= uPassive u -- status
+        , "operationalId" .= normalizeOperationalId (uOperationalId u)
+        ]
+        ++ [ "hireDate"   .= UOffset (UTCTime x 0) | Just x <- [uHireDate u] ]
+        ++ [ "departDate" .= UOffset (UTCTime x 0) | Just x <- [uDepartDate u] ]
+      where
+        normalizeOperationalId Nothing  = Null
+        normalizeOperationalId (Just 0) = Null
+        normalizeOperationalId (Just n) = toJSON n
 
 instance FromJSON User where
     parseJSON = withObject "User" $ \obj -> User <$> obj .: "id"
