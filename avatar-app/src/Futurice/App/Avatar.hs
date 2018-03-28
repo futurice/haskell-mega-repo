@@ -7,11 +7,12 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Avatar (defaultMain) where
 
-import Prelude ()
-import Futurice.Prelude
 import Codec.Picture       (DynamicImage)
+import Data.Aeson.Compat   (object, (.=))
+import Futurice.Prelude
 import Futurice.Servant
 import Network.HTTP.Client (httpLbs, parseUrlThrow, responseBody)
+import Prelude ()
 import Servant
 import System.IO           (hPutStrLn, stderr)
 
@@ -29,25 +30,21 @@ type DynamicImage' = Headers '[Header "Cache-Control" Text] DynamicImage
 
 mkAvatar
     :: Ctx
-    -> Maybe Text  -- ^ URL, is mandatory
+    -> Text        -- ^ URL, is mandatory
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkAvatar _ Nothing _ _ =
-    throwError $ ServantErr 400 errMsg (fromString errMsg) []
-  where
-    errMsg = "'url' query parameter is required"
-mkAvatar (logger, cache, mgr) (Just url) msize grey = mk $ do
-    hPutStrLn stderr $ mconcat
-        [ "fetching ", T.unpack url
-        , " size: ", show msize
-        , " grey: ", show grey
+mkAvatar (lgr, cache, mgr) url msize grey = mk $ do
+    logTrace "fetching image" $ object
+        [ "url"    .= T.unpack url
+        , "size: " .= show msize
+        , "grey: " .= show grey
         ]
     req <- parseUrlThrow (T.unpack url)
-    -- XXX: The cache will eventually fill if service is abused
-    res <- cachedIO logger cache 3600 url $ httpLbs req mgr
+    res <- liftIO $ cachedIO lgr cache 3600 url $ httpLbs req mgr
     (fmap . fmap) (addHeader "public, max-age=3600")
-        . cachedIO logger cache 3600 (url, size, grey)
+        . liftIO 
+        . cachedIO lgr cache 3600 (url, size, grey)
         . pure
         . avatar size grey
         . responseBody
@@ -55,8 +52,8 @@ mkAvatar (logger, cache, mgr) (Just url) msize grey = mk $ do
   where
     size  = max 16 $ fromMaybe 32 msize
 
-    mk :: IO (Either String a) -> Handler a
-    mk action = liftIO action >>= either (throwError . f) pure
+    mk :: LogT IO (Either String a) -> Handler a
+    mk action = liftIO (runLogT "avatar" lgr action) >>= either (throwError . f) pure
 
     f err = ServantErr
         500
