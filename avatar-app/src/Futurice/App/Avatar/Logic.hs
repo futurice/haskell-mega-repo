@@ -1,21 +1,19 @@
 module Futurice.App.Avatar.Logic (avatar) where
 
-import Prelude        ()
-import Prelude.Compat
-
-import qualified Data.ByteString.Lazy as LBS
-
-import Codec.Picture          (DynamicImage (..), Image (..), PixelRGBA8,
-                               convertRGBA8, decodeImage)
+import Codec.Picture
+       (DynamicImage (..), Image (..), PixelRGBA8, convertRGBA8, decodeImage)
 import Codec.Picture.ScaleDCT (scale)
 import Codec.Picture.Types    (extractLumaPlane)
+import Control.Monad          (forM_)
+import Foreign.Marshal.Utils  (copyBytes)
+import Foreign.Ptr            (plusPtr)
+import Prelude ()
+import Prelude.Compat
+import System.IO.Unsafe       (unsafePerformIO)
 
-import           Control.Monad                (forM_)
+import qualified Data.ByteString              as BS
 import qualified Data.Vector.Storable         as V
 import qualified Data.Vector.Storable.Mutable as MV
-import           Foreign.Marshal.Utils        (copyBytes)
-import           Foreign.Ptr                  (plusPtr)
-import           System.IO.Unsafe             (unsafePerformIO)
 
 transformImage :: Int -> Image PixelRGBA8 -> Image PixelRGBA8
 transformImage avatarSize = scale (avatarSize, avatarSize) . cropImage
@@ -30,12 +28,12 @@ toSquare (w, h)
     | h > w     = ((w, w), (0              , ((h-w) `div` 5)))
     | otherwise = ((h, h), (((w-h) `div` 2), 0))
 
-avatar :: Int -> Bool -> LBS.ByteString -> Either String DynamicImage
+avatar :: Int -> Bool -> BS.ByteString -> Either String DynamicImage
 avatar avatarSize grey contents
     = constr
     . transformImage avatarSize
     . convertRGBA8
-    <$> decodeImage (LBS.toStrict contents)
+    <$> decodeImage contents
   where
     constr | grey      = ImageY8 . extractLumaPlane
            | otherwise = ImageRGBA8

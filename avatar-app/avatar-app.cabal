@@ -30,7 +30,13 @@ library
     , base-compat
     , blaze-html
     , bytestring
+    , containers
+    , cryptohash-sha512
     , env-config
+    , fum-types
+    , fum-client
+    , file-embed
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , http-client
@@ -52,6 +58,8 @@ library
       Futurice.App.Avatar
       Futurice.App.Avatar.API
       Futurice.App.Avatar.Config
+      Futurice.App.Avatar.Ctx
+      Futurice.App.Avatar.Embedded
       Futurice.App.Avatar.Logic
   default-language: Haskell2010
 
