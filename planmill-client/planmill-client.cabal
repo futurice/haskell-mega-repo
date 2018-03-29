@@ -119,6 +119,7 @@ library
       PlanMill.Types.Enumeration
       PlanMill.Types.Error
       PlanMill.Types.ExitCriteria
+      PlanMill.Types.Hook
       PlanMill.Types.Identifier
       PlanMill.Types.Inserted
       PlanMill.Types.Me

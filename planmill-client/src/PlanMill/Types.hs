@@ -13,6 +13,7 @@ module PlanMill.Types (
     module PlanMill.Types.Contact,
     module PlanMill.Types.Enumeration,
     module PlanMill.Types.ExitCriteria,
+    module PlanMill.Types.Hook,
     module PlanMill.Types.Meta,
     module PlanMill.Types.Project,
     module PlanMill.Types.ReportableAssignment,
@@ -44,6 +45,7 @@ import PlanMill.Types.CapacityCalendar
 import PlanMill.Types.Contact
 import PlanMill.Types.Enumeration
 import PlanMill.Types.ExitCriteria
+import PlanMill.Types.Hook
 import PlanMill.Types.Meta
 import PlanMill.Types.Project
 import PlanMill.Types.ReportableAssignment
