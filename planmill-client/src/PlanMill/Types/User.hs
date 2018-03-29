@@ -106,6 +106,7 @@ instance ToJSON User where
         , "firstName"     .= uFirstName u
         , "lastName"      .= uLastName u
         , "passive"       .= uPassive u -- status
+        , "contractType"  .= uContractType u
         , "operationalId" .= normalizeOperationalId (uOperationalId u)
         ]
         ++ [ "hireDate"   .= UOffset (UTCTime x 0) | Just x <- [uHireDate u] ]

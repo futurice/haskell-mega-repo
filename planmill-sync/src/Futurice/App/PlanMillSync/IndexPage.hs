@@ -11,7 +11,6 @@ module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
 import Control.Lens                (IndexedGetting, ifoldMapOf, iforOf_)
 import Control.Monad.Writer.CPS    (Writer, runWriter)
-import Data.Fixed                  (Centi)
 import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
@@ -22,7 +21,6 @@ import Futurice.Constants          (competenceMap)
 import Futurice.CostCenter
 import Futurice.Office             (Office (..))
 import Futurice.Prelude
-import Futurice.Time
 import Prelude ()
 import Servant                     (toUrlPiece)
 import Servant.Utils.Links         (Link, safeLink)
@@ -224,6 +222,15 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                     " ≠ "
                     noWrapSpan_ $ toHtml $ pmContract pm
 
+                div_ [ class_ "button-group"] $ do
+                    -- action to update the end date
+                    for_ (canUpdateContractType p pm) $ \t -> button_
+                        [ data_ "futu-post-button" $ linkToText $ safeLink planmillSyncApi updateContractTypeEndpoint login
+                        , class_ "button"
+                        , disabled_ "disabled"
+                        ] $
+                        toHtml $ "Update contract type to " <> t
+
         -- Contract span
         cell_ $ do
 
@@ -412,25 +419,6 @@ officeToAccount OffMunich    = "Futurice GmbH"
 officeToAccount OffLondon    = "Futurice Ltd"
 officeToAccount OffStockholm = "Futu Sweden AB"
 officeToAccount OffOther     = "???"
-
--------------------------------------------------------------------------------
--- Contract type
--------------------------------------------------------------------------------
-
-contractType :: Maybe P.EmploymentType -> P.ContractType -> Maybe P.SalaryType -> NDT 'Hours Centi -> Text
-contractType et ct st = contractType'
-    (fromMaybe P.Internal et)
-    ct
-    (fromMaybe P.Monthly st)
-
-contractType' :: P.EmploymentType -> P.ContractType -> P.SalaryType -> NDT 'Hours Centi -> Text
-contractType' P.External _                _         _ = "Subcontractor"
-contractType' P.Internal P.PermanentAllIn _         _ = "Permanent - no working time"
-contractType' P.Internal P.FixedTerm      _         _ = "Hired - temporarily"
-contractType' P.Internal P.Permanent      P.Hourly  _ = "Permanent - hourly pay"
-contractType' P.Internal P.Permanent      P.Monthly h
-    | h >= 37                                         = "Permanent - full-time"
-    | otherwise                                       = "Permanent - part-time"
 
 -------------------------------------------------------------------------------
 -- Cells

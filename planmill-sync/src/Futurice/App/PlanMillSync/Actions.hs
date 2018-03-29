@@ -2,15 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.PlanMillSync.Actions where
 
+import Data.Fixed                  (Centi)
 import Data.List                   (find)
+import Data.Tuple                  (swap)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Prelude
 import Futurice.Servant            (CommandResponse (..))
-import Data.Tuple (swap)
+import Futurice.Time               (NDT, TimeUnit (Hours))
 import Prelude ()
 import Text.Regex.Applicative.Text (match)
 
-import qualified  Data.Map.Strict as Map
+import qualified Data.Map.Strict  as Map
 import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
@@ -35,7 +37,7 @@ canUpdateStatus today p pm
 updateStatus :: Ctx -> Login -> IO (CommandResponse ())
 updateStatus ctx login = runLogT "update-status" lgr $ runExceptT' $ do
     logInfo "Update status" login
-    (today, p, pm, statusMap) <- liftIO (fetchUser ctx login) >>= either throwError pure
+    D today p pm statusMap _ <- liftIO (fetchUser ctx login) >>= either throwError pure
     case canUpdateStatus today p pm of
         Left err -> throwError $ "Non-updatable status: " ++ err
         Right s  -> case invMap statusMap ^? ix s of
@@ -44,6 +46,76 @@ updateStatus ctx login = runLogT "update-status" lgr $ runExceptT' $ do
                 -- update status
                 let pm0 = pmUser pm
                 let pm1 = pm0 { PM.uPassive = enumS }
+
+                let pm' = pm1
+                logInfo "Editing PlanMill user" pm'
+
+                -- Write to PM.
+                let req = PM.editUser pm'
+                res <- liftIO $ PM.submitPlanMillE (ctxWriteWorkers ctx) req
+
+                case res of
+                    Left err -> do
+                        logAttention "Failed PlanMill update" (show err)
+                        throwError $ show err
+                    Right () -> return ()
+  where
+    lgr = ctxLogger ctx
+
+    invMap = Map.fromList . map swap . Map.toList
+
+-------------------------------------------------------------------------------
+-- Contract Type
+-------------------------------------------------------------------------------
+
+canUpdateContractType :: P.Employee -> PMUser -> Either String Text
+canUpdateContractType p pm = do
+    -- this is cascade resembling `contractType'`.
+    et <- maybe (Left "No employment type") Right $ p ^. P.employeeEmploymentType
+    (ct, st) <-
+        if et == P.External
+        then return (P.FixedTerm, P.Hourly)
+        else do
+            ct <- maybe (Left "No contract type")   Right $ p ^. P.employeeContractType
+            st <-
+                if ct == P.PermanentAllIn
+                then return P.Monthly
+                else maybe (Left "No salary type")     Right $ p ^. P.employeeSalaryType
+            return (ct, st)
+
+    let pContractType = contractType' et ct st (p ^. P.employeeWeeklyHours)
+
+    if pContractType == pmContract pm
+    then Left $ "Contract types match: " ++ show pContractType
+    else Right pContractType
+
+contractType :: Maybe P.EmploymentType -> P.ContractType -> Maybe P.SalaryType -> NDT 'Hours Centi -> Text
+contractType et ct st = contractType'
+    (fromMaybe P.Internal et)
+    ct
+    (fromMaybe P.Monthly st)
+
+contractType' :: P.EmploymentType -> P.ContractType -> P.SalaryType -> NDT 'Hours Centi -> Text
+contractType' P.External _                _         _ = "Subcontractor"
+contractType' P.Internal P.PermanentAllIn _         _ = "Permanent - no working time"
+contractType' P.Internal P.FixedTerm      _         _ = "Hired - temporarily"
+contractType' P.Internal P.Permanent      P.Hourly  _ = "Permanent - hourly pay"
+contractType' P.Internal P.Permanent      P.Monthly h
+    | h >= 37                                         = "Permanent - full-time"
+    | otherwise                                       = "Permanent - part-time"
+
+updateContractType :: Ctx -> Login -> IO (CommandResponse ())
+updateContractType ctx login = runLogT "update-contact-type" lgr $ runExceptT' $ do
+    logInfo "Update contract type" login
+    D _ p pm _ contractMap <- liftIO (fetchUser ctx login) >>= either throwError pure
+    case canUpdateContractType p pm of
+        Left err -> throwError $ "Non-updatable status: " ++ err
+        Right s  -> case invMap contractMap ^? ix s of
+            Nothing    -> throwError $ "PlanMill doesn't know contract type " ++ show s
+            Just enumCT -> do
+                -- update status
+                let pm0 = pmUser pm
+                let pm1 = pm0 { PM.uContractType = enumCT }
 
                 let pm' = pm1
                 logInfo "Editing PlanMill user" pm'
@@ -77,7 +149,7 @@ canUpdateDepartDate p pmu = do
 updateDepartDate :: Ctx -> Login -> IO (CommandResponse ())
 updateDepartDate ctx login = runLogT "update-depart-date" lgr $ runExceptT' $ do
     logInfo "Add depart date" login
-    (_, p, pm, _) <- liftIO (fetchUser ctx login) >>= either throwError pure
+    D _ p pm _ _ <- liftIO (fetchUser ctx login) >>= either throwError pure
     case canUpdateDepartDate p pm of
         Left err -> throwError $ "Non-updatable depart date: " ++ err
         Right d  -> do
@@ -112,10 +184,16 @@ runExceptT' m = do
         Left err -> CommandResponseError err
         Right x  -> CommandResponseOk x
 
+data D = D
+    { dDay         :: Day
+    , dPersonio    :: P.Employee
+    , dPlanMill    :: PMUser
+    , dStatusMap   :: Map (PM.EnumValue PM.User "passive") Text
+    , dContractMap :: Map (PM.EnumValue PM.User "contractType") Text
+    }
+
 -- | Note: maybe we want to return PMUser (from .Types)
-fetchUser
-    :: Ctx -> Login
-    -> IO (Either String (Day, P.Employee, PMUser, Map (PM.EnumValue PM.User "passive") Text))
+fetchUser :: Ctx -> Login -> IO (Either String D)
 fetchUser ctx login = runExceptT $ do
     -- we submit to "write" workers, which always exist, though we read here
     -- (we are going to write!)
@@ -139,8 +217,15 @@ fetchUser ctx login = runExceptT $ do
 
         today <- currentDay
         statusMap <- lift $ PMQ.allEnumerationValues (Proxy :: Proxy PM.User) (Proxy :: Proxy "passive")
+        contractMap <- lift $ PMQ.allEnumerationValues (Proxy :: Proxy PM.User) (Proxy :: Proxy "contractType")
 
-        return (today, p, u, statusMap)
+        return D
+            { dDay         = today
+            , dPersonio    = p
+            , dPlanMill    = u
+            , dStatusMap   = statusMap
+            , dContractMap = contractMap
+            }
 
 pmLogin :: PM.User -> Maybe Login
 pmLogin u = match loginRe (PM.uUserName u)
