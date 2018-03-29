@@ -17,6 +17,8 @@ module PlanMill.Types.Hook (
 import qualified Options.SOP               as O
 import           PlanMill.Internal.Prelude
 import           PlanMill.Types.Identifier (Identifier (..))
+import           PlanMill.Types.Project    (ProjectId)
+import           PlanMill.Types.User       (UserId)
 
 -- Non-exhaustive list of possible hooks for testing purposes
 data HookType = RequestAdd | TimeReportInsert
@@ -32,14 +34,14 @@ instance ToJSON HookType where
     toJSON TimeReportInsert = String "timereport.insert"
 
 instance O.FromOptions HookType where
-    optionsParser = O.argument O.auto (O.metavar ":???")
+    optionsParser = O.argument O.auto (O.metavar ":hook-type")
 
 data Hook = Hook
     { _hId :: !HookId
     , _hHook :: !Text
     , _hUrl :: !Text
-    , _hEventUser :: !(Maybe Int)
-    , _hEventProject :: !(Maybe Int)
+    , _hEventUser :: !(Maybe UserId)
+    , _hEventProject :: !(Maybe ProjectId)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
