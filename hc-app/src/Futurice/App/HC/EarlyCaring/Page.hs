@@ -71,6 +71,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         fullRow_ $ table_ $ do
             thead_ $ tr_ $ do
                 th_ "Name"
+                th_ "Contract type"
                 th_ "Flex balance"
                 th_ "Missing hours"
                 th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
@@ -88,6 +89,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
             tbody_ $ for_ bs $ \b-> tr_ $ do
                 let e = balanceEmployee b
                 td_ $ toHtml $ e ^. P.employeeFullname
+                td_ $ traverse_ toHtml $ e ^. P.employeeContractType
                 td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b
                 td_ [ style_ "text-align: right" ] $ toHtml $ balanceMissingHours b
                 td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b + balanceMissingHours b
@@ -179,6 +181,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         = sortOn (fmap (view P.employeeTribe) . balanceSupervisor . NE.head)
         $ NE.groupBy ((==) `on` superId)
         $ sortOn superId
+        $ filter (not . isPermanentAllIn)
         $ filter (not . balanceNormal today)
         $ map (uncurry toBalance) inPlanMill
       where
