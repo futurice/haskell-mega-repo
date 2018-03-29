@@ -115,6 +115,10 @@ data Balance = Balance
     , balanceMonthFlex    :: !(Map Month MonthFlex)
     }
 
+isPermanentAllIn :: Balance -> Bool
+isPermanentAllIn b =
+    Just P.PermanentAllIn == balanceEmployee b ^. P.employeeContractType
+
 balanceNormal :: Day -> Balance -> Bool
 balanceNormal = balanceNormalFlex /\ balanceNormalMonthFlex /\ balanceNormalAbsences /\ balanceNormalAbsenceDays
 
