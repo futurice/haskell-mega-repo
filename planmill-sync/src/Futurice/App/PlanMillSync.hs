@@ -34,6 +34,7 @@ server ctx = indexPageAction ctx
     -- actions
     :<|> addDepartDateAction ctx
     :<|> updateStatusAction ctx
+    :<|> updateContractTypeAction ctx
 
 -------------------------------------------------------------------------------
 -- Indexpage
@@ -76,6 +77,12 @@ addDepartDateAction ctx mfu login = withAuthorisedUser ctx mfu err $
 updateStatusAction :: Ctx -> Maybe Login -> Login -> Handler (CommandResponse ())
 updateStatusAction ctx mfu login = withAuthorisedUser ctx mfu err $
     liftIO $ updateStatus ctx login
+  where
+    err = return (CommandResponseError "not authorised")
+
+updateContractTypeAction :: Ctx -> Maybe Login -> Login -> Handler (CommandResponse ())
+updateContractTypeAction ctx mfu login = withAuthorisedUser ctx mfu err $
+    liftIO $ updateContractType ctx login
   where
     err = return (CommandResponseError "not authorised")
 
