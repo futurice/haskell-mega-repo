@@ -18,6 +18,7 @@ type PlanMillSyncAPI =
     -- actions
     :<|> AddDepartDateEndpoint
     :<|> UpdateStatusEndpoint
+    :<|> UpdateContractTypeEndpoint
 
 planmillSyncApi :: Proxy PlanMillSyncAPI
 planmillSyncApi = Proxy
@@ -35,3 +36,8 @@ type UpdateStatusEndpoint = SSOUser :> "update-status" :> Capture "login" FUM.Lo
 
 updateStatusEndpoint :: Proxy UpdateStatusEndpoint
 updateStatusEndpoint = Proxy
+
+type UpdateContractTypeEndpoint = SSOUser :> "update-contract-type" :> Capture "login" FUM.Login :> Post '[JSON] (CommandResponse ())
+
+updateContractTypeEndpoint :: Proxy UpdateContractTypeEndpoint
+updateContractTypeEndpoint = Proxy
