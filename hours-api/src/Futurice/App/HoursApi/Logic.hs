@@ -16,6 +16,7 @@ module Futurice.App.HoursApi.Logic (
 
 import Control.Lens              (maximumOf, (<&>))
 import Data.Fixed                (Centi)
+import Data.List                 (nubBy)
 import Futurice.Monoid           (Average (..))
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), TimeUnit (..))
@@ -25,6 +26,7 @@ import Prelude ()
 
 import Futurice.App.HoursApi.Types
 
+import qualified Data.List.NonEmpty        as NE
 import qualified Data.Map                  as Map
 import qualified Data.Set                  as Set
 import qualified Numeric.Interval.NonEmpty as Interval
@@ -173,7 +175,7 @@ hoursResponse interval = do
         pure Project
             { _projectId     = pid
             , _projectName   = p ^. H.projectName
-            , _projectTasks  = tasks
+            , _projectTasks  = nubBy ((==) `on` view mtaskId) tasks
             , _projectClosed = p ^. H.projectClosed
             }
       where
@@ -194,8 +196,9 @@ reportableProjects = do
     reportable <- filter (\ra -> now <= ra ^. H.raFinish) <$> H.reportableAssignments
 
     -- Tasks per project
+    -- we nub, because for some reason we might get same tasks multiple times.
     let tasksPerProject :: Map PM.ProjectId (NonEmpty PM.TaskId)
-        tasksPerProject = Map.fromListWith (<>) $
+        tasksPerProject = Map.map NE.nub $ Map.fromListWith (<>) $
             reportable ^.. folded . getter reportableAcc
 
     projects <- for (Map.toList tasksPerProject) $ uncurry $ \pid tids -> do
