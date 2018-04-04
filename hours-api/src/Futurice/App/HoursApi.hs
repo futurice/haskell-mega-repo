@@ -9,6 +9,8 @@
 module Futurice.App.HoursApi (defaultMain) where
 
 import Control.Concurrent.STM     (atomically, newTVarIO, readTVarIO, writeTVar)
+import Futurice.App.Avatar.API
+import Futurice.Constants         (avatarPublicUrl, avatarPublicUrlStr)
 import Futurice.Integrations
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
@@ -27,7 +29,7 @@ import Futurice.App.HoursApi.Logic
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
 
 import qualified Data.HashMap.Strict as HM
-import qualified FUM
+import qualified FUM.Types.Login     as FUM
 import qualified PlanMill.Worker     as PM
 
 server :: Ctx -> Server FutuhoursAPI
@@ -36,7 +38,7 @@ server ctx = pure "This is futuhours api"
     :<|> debugUsers
   where
     debugUsers = liftIO $ do
-        pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
+        pmData <- liftIO $ readTVarIO $ ctxPersonioPlanmillMap ctx
         pure $ sort $ HM.keys pmData
 
 v1Server :: Ctx -> Server FutuhoursV1API
@@ -56,10 +58,12 @@ authorisedUser
     -> Handler a
 authorisedUser ctx mfum meterName action =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-        pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
-        (fumUser, pmUser) <- maybe (unauthorised fumUsername) pure $ pmData ^. at fumUsername
+        let thumbSize = Just 40 -- pixels per side
+        let userThumbUrl = avatarPublicUrl <> linkToText (safeLink avatarApi fumAvatarEndpoint fumUsername thumbSize False)
+        pmData <- liftIO $ readTVarIO $ ctxPersonioPlanmillMap ctx
+        (pemUser, pmUser) <- maybe (unauthorised fumUsername) pure $ pmData ^. at fumUsername
         liftIO $ mark $ "Request " <> meterName
-        runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
+        runHours ctx pmUser userThumbUrl action
   where
     unauthorised :: FUM.Login -> Handler a
     unauthorised login = do
@@ -78,32 +82,35 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
     makeCtx config lgr mgr cache = do
         let integrConfig = cfgIntegrationsCfg config
-        let getFumPlanmillMap = do
+        let getPersonioPlanmillMap = do
                 now <- currentTime
-                runIntegrations mgr lgr now integrConfig fumPlanmillMap
+                runIntegrations mgr lgr now integrConfig personioPlanmillMap
 
-        fpm <- getFumPlanmillMap
-        fpmTVar <- newTVarIO fpm
+        ppm <- getPersonioPlanmillMap
+        ppmTVar <- newTVarIO ppm
 
         let job = mkJob "Update Planmill <- FUM map" action $ every 600
               where
                 action :: IO ()
                 action = do
-                    m <- getFumPlanmillMap
+                    m <- getPersonioPlanmillMap
                     runLogT "update-job" lgr $ logInfo "FUM users" $
                         sort $ HM.keys m
-                    atomically $ writeTVar fpmTVar m
+                    atomically $ writeTVar ppmTVar m
 
         let pmCfg = cfgPlanmillCfg config
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
 
         pure $ flip (,) [job] Ctx
-            { ctxFumPlanmillMap  = fpmTVar
-            , ctxPlanmillCfg     = cfgPlanmillCfg config
-            , ctxMockUser        = cfgMockUser config
-            , ctxManager         = mgr
-            , ctxLogger          = lgr
-            , ctxCache           = cache
-            , ctxIntegrationsCfg = integrConfig
-            , ctxWorkers         = ws
+            { ctxPersonioPlanmillMap  = ppmTVar
+            , ctxPlanmillCfg          = cfgPlanmillCfg config
+            , ctxMockUser             = cfgMockUser config
+            , ctxManager              = mgr
+            , ctxLogger               = lgr
+            , ctxCache                = cache
+            , ctxIntegrationsCfg      = integrConfig
+            , ctxWorkers              = ws
             }
+
+linkToText :: Link -> Text
+linkToText l = "/" <> toUrlPiece l

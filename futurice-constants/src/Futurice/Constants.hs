@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.Constants (
+    avatarPublicUrl,
+    avatarPublicUrlStr,
     fumPublicUrl,
     fumPublicUrlStr,
     personioPublicUrl,
@@ -27,6 +29,12 @@ constants = $(makeRelativeToProject "constants.json" >>= embedFromJSON (Proxy ::
 -------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------
+
+avatarPublicUrl :: Text
+avatarPublicUrl = I.avatarPublicUrl constants
+
+avatarPublicUrlStr :: String
+avatarPublicUrlStr = avatarPublicUrl ^. unpacked
 
 fumPublicUrl :: Text
 fumPublicUrl = I.fumPublicUrl constants
