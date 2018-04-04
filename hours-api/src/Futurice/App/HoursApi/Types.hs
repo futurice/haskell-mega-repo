@@ -21,7 +21,7 @@ import Futurice.Generics
 import Futurice.Monoid           (Average (..))
 import Futurice.Prelude
 import Futurice.Time
-import Futurice.Time.Month       (dayToMonth)
+import Futurice.Time.Month
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 import Test.QuickCheck           (arbitraryBoundedEnum)
@@ -29,15 +29,16 @@ import Test.QuickCheck           (arbitraryBoundedEnum)
 import qualified Data.Map        as Map
 import qualified PlanMill        as PM
 import qualified Test.QuickCheck as QC
+import qualified Numeric.Interval.NonEmpty as Interval
 
 -------------------------------------------------------------------------------
 -- Project
 -------------------------------------------------------------------------------
 
 data Project task = Project
-    { _projectId     :: PM.ProjectId
+    { _projectId     :: !PM.ProjectId
     , _projectName   :: !Text
-    , _projectTasks  :: [task]
+    , _projectTasks  :: ![task]
     , _projectClosed :: !Bool
     }
   deriving (Eq, Show, Typeable, Generic)
@@ -161,6 +162,7 @@ defaultHoursDay = HoursDay
 -- | TODO: add a '_samples' of Utilisation rate weighted average.
 data HoursMonth = HoursMonth
     { _monthHours           :: !(NDT 'Hours Centi)
+    , _monthCapacity        :: !(NDT 'Hours Centi)
     , _monthUtilizationRate :: !Float
     , _monthDays            :: Map Day HoursDay -- ^ invariant days of the same month
     }
@@ -223,18 +225,19 @@ deriveGeneric ''HoursResponse
 
 -- | Smart constructor.
 mkHoursMonth
-    :: Interval Day     -- ^ Interval to include entries from
-    -> Map Day DayType  -- ^ Holiday names
+    :: Map Month (NDT 'Hours Centi) -- ^ Month capacities, also specifies "big interval" of which entries are included.
+    -> Interval Day                 -- ^  post-filter 'HoursMonth', a sub-interval of first argument (not checked).
+    -> Map Day DayType              -- ^ Holiday names
     -> [Entry]
     -> Map Month HoursMonth
-mkHoursMonth interval holidays entries =
+mkHoursMonth capacities interval holidays entries =
     let entriesByDay :: Map Day [Entry]
         entriesByDay = Map.fromListWith (++)
             [ (_entryDay e, [e]) | e <- entries ]
 
         -- a map spawning whole interval
         entriesByDay' :: Map Day [a]
-        entriesByDay' = Map.fromList [ (d, []) | d <- [inf interval .. sup interval] ]
+        entriesByDay' = Map.fromList [ (d, []) | d <- [inf monthInterval .. sup monthInterval] ]
 
         entriesByMonth :: Map Month (Map Day [Entry])
         entriesByMonth = Map.fromListWith (Map.unionWith (++))
@@ -242,18 +245,35 @@ mkHoursMonth interval holidays entries =
             | (d, es) <- Map.toList (entriesByDay <> entriesByDay')
             ]
 
-    in mkHoursMonth' <$> entriesByMonth
+    in imap mkHoursMonth' entriesByMonth
   where
-    mkHoursMonth' :: Map Day [Entry] -> HoursMonth
-    mkHoursMonth' mm = HoursMonth
+    mkHoursMonth' :: Month -> Map Day [Entry] -> HoursMonth
+    mkHoursMonth' m mm = HoursMonth
         { _monthHours           = sumOf (folded . folded . entryHours) mm
+        , _monthCapacity        = fromMaybe 0 $ capacities ^? ix m
         , _monthUtilizationRate = utz
-        , _monthDays            = imap mkHoursDay mm
+        , _monthDays            = Map.filterWithKey inInterval $ imap mkHoursDay mm
         }
       where
         Average _hours utz = foldOf
             (folded . folded . entryUtilizationAvg . folded)
             mm
+
+    monthInterval' :: Interval Month
+    monthInterval' =
+        maybe defMonth fst (Map.lookupMin capacities)
+        ...
+        maybe defMonth fst (Map.lookupMax capacities)
+
+    defMonth = Month 2018 January
+
+    monthInterval =
+        firstDayOfMonth (inf monthInterval')
+        ...
+        lastDayOfMonth (sup monthInterval')
+
+    inInterval :: Day -> a -> Bool
+    inInterval d _ = Interval.member d interval -- smaller interval!
 
     -- Invariant: all entries are on the first day
     mkHoursDay :: Day -> [Entry] -> HoursDay
