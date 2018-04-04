@@ -36,9 +36,9 @@ import qualified Numeric.Interval.NonEmpty as Interval
 -------------------------------------------------------------------------------
 
 data Project task = Project
-    { _projectId     :: PM.ProjectId
+    { _projectId     :: !PM.ProjectId
     , _projectName   :: !Text
-    , _projectTasks  :: [task]
+    , _projectTasks  :: ![task]
     , _projectClosed :: !Bool
     }
   deriving (Eq, Show, Typeable, Generic)
