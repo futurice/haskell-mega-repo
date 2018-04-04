@@ -15,10 +15,12 @@ module Futurice.App.HoursApi.Logic (
     ) where
 
 import Control.Lens              (maximumOf, (<&>))
+import Data.Fixed                (Centi)
 import Futurice.Monoid           (Average (..))
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), TimeUnit (..))
-import Numeric.Interval.NonEmpty (Interval, (...))
+import Futurice.Time.Month
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 
 import Futurice.App.HoursApi.Types
@@ -97,13 +99,16 @@ entryDeleteEndpoint eid = do
 hoursResponse :: forall m. H.MonadHours m => Interval Day -> m HoursResponse
 hoursResponse interval = do
     -- no ApplicativeDo for now yet
-    (reports, reportable, holidayNames, wh) <- (,,,)
-        <$> H.timereports interval
-        <*> reportableProjects                          -- reportable projects; the ones we can report
-        <*> (mkHolidayNames <$> H.capacities interval)  -- holiday names
-        <*> H.workingHours                              -- working hours
+    (reports, reportable, capacities, wh) <- (,,,)
+        <$> H.timereports monthInterval
+        <*> reportableProjects                               -- reportable projects; the ones we can report
+        <*> (H.capacities monthInterval)  -- holiday names
+        <*> H.workingHours                                   -- working hours
 
-    let entries = reportToEntry <$> toList reports
+    let holidayNames    = mkHolidayNames capacities
+    let monthCapacities = mkMonthCapacities capacities
+
+    let entries         = reportToEntry <$> toList reports
 
     let markedTaskIds = Map.fromListWith (<>) $
             entries <&> \e -> (e ^. entryProjectId, Set.singleton (e ^. entryTaskId))
@@ -113,12 +118,18 @@ hoursResponse interval = do
         { _hoursResponseDefaultWorkHours   = wh
         , _hoursResponseReportableProjects = reportable
         , _hoursResponseMarkedProjects     = marked
-        , _hoursResponseMonths             = mkHoursMonth interval holidayNames entries
+        , _hoursResponseMonths             = mkHoursMonth monthCapacities interval holidayNames entries
         }
   where
+    monthInterval' = dayToMonth (inf interval) ...  dayToMonth (sup interval)
+
+    monthInterval =
+        firstDayOfMonth (inf monthInterval')
+        ...
+        lastDayOfMonth (sup monthInterval')
+
     mkHolidayNames :: Foldable f => f H.Capacity -> Map Day DayType
-    mkHolidayNames = toMapOf (folded . getter mk . folded . ifolded)
-      where
+    mkHolidayNames = toMapOf (folded . getter mk . folded . ifolded) where
         mk :: H.Capacity -> Maybe (Day, DayType)
         mk c
             | Just desc <- c ^. H.capacityDescription, desc /= ""
@@ -127,6 +138,11 @@ hoursResponse interval = do
             | otherwise                     = Nothing
           where
             mk' x = Just (c ^. H.capacityDay, x)
+
+    mkMonthCapacities :: Foldable f =>  f H.Capacity -> Map Month (NDT 'Hours Centi)
+    mkMonthCapacities = Map.fromListWith (+) . map mk . toList where
+        mk :: H.Capacity -> (Month, NDT 'Hours Centi)
+        mk c = (dayToMonth $ c ^. H.capacityDay, c ^. H.capacityAmount)
 
     reportToEntry :: H.Timereport -> Entry
     reportToEntry tr = Entry
