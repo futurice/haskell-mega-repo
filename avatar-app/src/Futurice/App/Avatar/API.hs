@@ -32,3 +32,6 @@ type FumAvatar = "fum"
 
 avatarApi :: Proxy AvatarAPI
 avatarApi = Proxy
+
+fumAvatarEndpoint :: Proxy FumAvatar
+fumAvatarEndpoint = Proxy

@@ -9,11 +9,11 @@ import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
-import qualified FUM
-import qualified PlanMill as PM
+import qualified FUM.Types.Login as FUM
+import qualified PlanMill        as PM
 
 data Config = Config
-    { cfgIntegrationsCfg :: !(IntegrationsConfig '[I, I, Proxy, Proxy, Proxy, Proxy])
+    { cfgIntegrationsCfg :: !(IntegrationsConfig '[I, Proxy, Proxy, Proxy, Proxy, I])
     , cfgPlanmillCfg     :: !PM.Cfg
     , cfgMockUser        :: !(Maybe FUM.Login)
     }

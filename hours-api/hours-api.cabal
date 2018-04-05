@@ -28,12 +28,13 @@ library
       base >= 4.8 && <4.11
     , aeson
     , aeson-compat
+    , avatar-app
     , constraints
     , containers
     , dynmap-cache
     , env-config
-    , fum-client
     , fum-types
+    , futurice-constants
     , futurice-foundation
     , futurice-integrations
     , futurice-metrics
@@ -49,9 +50,10 @@ library
     , log-base
     , lucid
     , monad-control
+    , monad-http
     , mtl
     , periocron
-    , monad-http
+    , personio-client
     , planmill-client
     , postgresql-simple
     , QuickCheck
