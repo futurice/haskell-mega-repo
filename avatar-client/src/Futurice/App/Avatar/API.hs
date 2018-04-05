@@ -10,7 +10,7 @@ import Codec.Picture       (DynamicImage)
 import FUM.Types.Login     (Login)
 import Futurice.Prelude
 import Prelude ()
-import Servant
+import Servant.API
 import Servant.JuicyPixels (PNG)
 
 type AvatarAPI =
