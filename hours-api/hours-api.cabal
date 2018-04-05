@@ -28,7 +28,7 @@ library
       base >= 4.8 && <4.11
     , aeson
     , aeson-compat
-    , avatar-app
+    , avatar-client
     , constraints
     , containers
     , dynmap-cache
