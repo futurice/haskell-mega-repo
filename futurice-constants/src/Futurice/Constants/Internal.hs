@@ -7,7 +7,8 @@ import Futurice.Prelude
 import Prelude ()
 
 data Constants = Constants
-    { fumPublicUrl      :: Text
+    { avatarPublicUrl   :: Text
+    , fumPublicUrl      :: Text
     , personioPublicUrl :: Text
     , planmillPublicUrl :: Text
     , supportEmailAddr  :: Text
@@ -17,7 +18,8 @@ data Constants = Constants
 
 instance FromJSON Constants where
     parseJSON = withObject "Constants" $ \obj -> Constants
-        <$> obj .: "fumPublicUrl"
+        <$> obj .: "avatarPublicUrl"
+        <*> obj .: "fumPublicUrl"
         <*> obj .: "personioPublicUrl"
         <*> obj .: "planmillPublicUrl"
         <*> obj .: "supportEmail"
