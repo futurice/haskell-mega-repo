@@ -42,7 +42,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "SMS Proxy"
     & serverDescription     .~ "Send sms"
-    & serverColour          .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
+    & serverColour          .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp smsProxyApi .~ server
     & serverEnvPfx          .~ "SMSPROXY"
   where

@@ -40,6 +40,7 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
     -- Help
     :<|> ApplianceHelpEndpoint
+    :<|> ServicesHelpEndpoint
     -- Command
     :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
     :<|> StatsPageEndpoint
@@ -166,6 +167,12 @@ type ApplianceHelpEndpoint =
     "appliance" :>
     Get '[HTML] (HtmlPage "appliance-help")
 
+type ServicesHelpEndpoint =
+    SSOUser :>
+    "help" :>
+    "services" :>
+    Get '[HTML] (HtmlPage "services-help")
+
 -------------------------------------------------------------------------------
 -- Stats
 -------------------------------------------------------------------------------
@@ -214,6 +221,9 @@ employeeAuditPageEndpoint = Proxy
 
 applianceHelpEndpoint :: Proxy ApplianceHelpEndpoint
 applianceHelpEndpoint = Proxy
+
+servicesHelpEndpoint :: Proxy ServicesHelpEndpoint
+servicesHelpEndpoint = Proxy
 
 archivePageEndpoint :: Proxy ArchivePageEndpoint
 archivePageEndpoint = Proxy

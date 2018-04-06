@@ -41,7 +41,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName          .~ "Planmill Proxy"
     & serverDescription   .~ "Make faster queries to PlanMill"
-    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
+    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp planmillProxyApi .~ server
     & serverEnvPfx        .~ "PLANMILLPROXY"
   where
