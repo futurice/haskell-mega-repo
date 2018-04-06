@@ -76,7 +76,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "Futuhours API"
     & serverDescription     .~ "Here we mark hours"
     & serverApp futuhoursApi .~ server
-    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC1))
+    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])

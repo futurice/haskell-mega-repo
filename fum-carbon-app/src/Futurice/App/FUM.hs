@@ -49,7 +49,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName             .~ "FUM Carbon"
     & serverDescription      .~ "FUM faster than ever"
-    & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC2))
+    & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverApp fumCarbonApi .~ server
     & serverEnvPfx           .~ "FUMAPP"
 

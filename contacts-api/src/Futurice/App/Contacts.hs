@@ -33,7 +33,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "Contacts API"
     & serverDescription     .~ "All employees and externals"
     & serverApp contactsApi .~ server
-    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF6 'AC2))
+    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))
     & serverEnvPfx          .~ "CONTACTSAPI"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])

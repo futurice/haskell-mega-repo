@@ -39,7 +39,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName            .~ "Futuhours MOCK api"
     & serverDescription     .~ "Is it real?"
     & serverApp futuhoursApi .~ server
-    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
+    & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))
     & serverEnvPfx          .~ "FUTUHOURSMOCK"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
