@@ -38,6 +38,7 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , base64-bytestring
     , cassava
     , Chart
     , clay
@@ -51,6 +52,7 @@ library
     , flowdock-rest
     , fum-api
     , fum-types
+    , futurice-constants
     , futurice-foundation
     , futurice-integrations
     , futurice-logo
@@ -108,6 +110,7 @@ library
       Futurice.App.Checklist.Pages.EmployeeAudit
       Futurice.App.Checklist.Pages.Error
       Futurice.App.Checklist.Pages.HelpAppliance
+      Futurice.App.Checklist.Pages.HelpServices
       Futurice.App.Checklist.Pages.Index
       Futurice.App.Checklist.Pages.Personio
       Futurice.App.Checklist.Pages.Report

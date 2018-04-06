@@ -1,9 +1,7 @@
--- This file has been generated from package.yaml by hpack version 0.17.1.
---
--- see: https://github.com/sol/hpack
-
+cabal-version:  >= 1.10
 name:           futurice-constants
 version:        0
+
 synopsis:       Futurice constants
 description:    Futurice constants
 category:       Web
@@ -15,7 +13,6 @@ license:        BSD3
 license-file:   LICENSE
 tested-with:    GHC==7.10.3, GHC==8.0.2
 build-type:     Simple
-cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
@@ -27,12 +24,23 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base            >=4.7      && <4.11
+    , adjunctions
     , aeson-compat
     , containers
+    , distributive
     , futurice-prelude
     , lucid
     , QuickCheck
@@ -42,6 +50,7 @@ library
     , vector
   exposed-modules:
       Futurice.Constants
+      Futurice.Services
   other-modules:
       Futurice.Constants.Internal
   default-language: Haskell2010

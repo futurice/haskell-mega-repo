@@ -122,7 +122,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName              .~ "PlanMill Sync"
     & serverDescription       .~ "Sync people from personio to planmill"
     & serverApp planmillSyncApi .~ server
-    & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF5 'AC1))
+    & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF1 'AC2))
     & serverEnvPfx            .~ "PLANMILLSYNC"
     & serverOpts              .~ optionsFlag False [(True, "planmill-direct"), (False, "planmill-proxy")] "Access PlanMill directly"
   where
