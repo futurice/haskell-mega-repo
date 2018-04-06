@@ -80,7 +80,7 @@ validationReport validations0 today = do
     validations = sortOn (Down . view P.employeeHireDate . vEmployee) validations2
 
 showValidations :: (Foldable f, Monad m)  => f V -> HtmlT m ()
-showValidations validations = fullRow_ $ table_ $ do
+showValidations validations = fullRow_ $ sortableTable_ $ do
     thead_ $ tr_ $ do
         th_ "id"
         th_ "name"
