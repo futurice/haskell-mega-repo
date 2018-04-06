@@ -91,8 +91,6 @@ build)
         ;;
 
     cabal)
-		sha256sum -c data.sha256sums
-
         timed cabal new-build --enable-tests  $CONCURRENCY all
         timed cabal new-test --enable-tests all
 
