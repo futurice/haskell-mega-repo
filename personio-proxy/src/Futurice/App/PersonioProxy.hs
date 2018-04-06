@@ -28,7 +28,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName          .~ "Personio Proxy"
     & serverDescription   .~ "Make faster queries to Personio"
-    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
+    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp personioProxyApi .~ server
     & serverEnvPfx        .~ "PERSONIOPROXY"
 

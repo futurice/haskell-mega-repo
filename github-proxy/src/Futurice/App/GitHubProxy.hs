@@ -30,7 +30,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName          .~ "GitHub Proxy"
     & serverDescription   .~ "Make faster (and cached) queries to GitHub"
-    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
+    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp githubProxyApi .~ server
     & serverEnvPfx        .~ "GITHUBPROXY"
   where

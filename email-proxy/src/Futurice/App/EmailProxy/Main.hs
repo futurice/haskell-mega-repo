@@ -32,7 +32,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName              .~ "Email Proxy"
     & serverDescription       .~ "Send Emails"
-    & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
+    & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp emailProxyApi .~ server
     & serverEnvPfx            .~ "EMAILPROXY"
   where

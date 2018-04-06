@@ -21,6 +21,7 @@ module Futurice.App.Checklist.Markup (
     taskPageHref,
     employeePageHref,
     applianceHelpHref,
+    servicesHelpHref,
     -- * Links
     employeeLink,
     checklistLink,
@@ -75,10 +76,11 @@ data Nav
     | NavTasks
     | NavCreateChecklist
     | NavCreateTask
-    | NavCreateEmployee
     | NavPersonio
     | NavArchive
     | NavStats
+    | NavHelp
+    | NavCreateEmployee
   deriving (Eq, Enum, Bounded)
 
 navLink :: Nav -> (Attribute, Text)
@@ -87,10 +89,11 @@ navLink NavChecklists      = (checklistsPageHref , "Checklists")
 navLink NavTasks           = (tasksPageHref Nothing (Nothing :: Maybe Checklist) , "Tasks")
 navLink NavCreateChecklist = (createChecklistPageHref , "Create List")
 navLink NavCreateTask      = (createTaskPageHref , "Create Task")
-navLink NavCreateEmployee  = (createEmployeePageHref , "Create Employee")
-navLink NavPersonio        = (personioPageHref , "... from Personio")
+navLink NavPersonio        = (personioPageHref , "Create from Personio")
 navLink NavArchive         = (archivePageHref , "Archive")
 navLink NavStats           = (statsPageHref, "Stats")
+navLink NavHelp            = (servicesHelpHref, "Services")
+navLink NavCreateEmployee  = (createEmployeePageHref , "Create raw")
 
 checklistPage_ :: Text -> [Maybe Text] -> AuthUser -> Maybe Nav -> Html () -> HtmlPage sym
 checklistPage_ title titleParts authUser nav body =
@@ -226,6 +229,9 @@ checklistPageHref l =
 
 applianceHelpHref :: Attribute
 applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndpoint
+
+servicesHelpHref :: Attribute
+servicesHelpHref = href_ $ linkToText $ safeLink checklistApi servicesHelpEndpoint
 
 archivePageHref :: Attribute
 archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint

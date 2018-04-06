@@ -174,7 +174,7 @@ type PersonioProxyEndpoint' =
 type PersonioProxyEndpoint = ProxyPair
     ("personio-request" :> PersonioProxyEndpoint')
     PersonioProxyService
-    ("api" :> "personio-request" :> PersonioProxyEndpoint')
+    ("personio-request" :> PersonioProxyEndpoint')
 
 -- contacts
 type ContactsEndpoint = ProxyPair
@@ -245,7 +245,7 @@ defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverName         .~ "Prox"
     & serverDescription  .~ "Proxy from the outer space"
-    & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
+    & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
     & serverApp proxyAPI .~ server
     & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx       .~ "PROX"

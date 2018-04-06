@@ -9,12 +9,15 @@ module Futurice.Constants (
     personioPublicUrlStr,
     planmillPublicUrl,
     planmillPublicUrlStr,
+    servicePublicUrl,
     supportEmailHtml,
     competenceMap,
     ) where
 
+import Data.Functor.Rep  (index)
 import Futurice.Prelude
-import Lucid            (HtmlT, a_, href_, toHtml)
+import Futurice.Services
+import Lucid             (HtmlT, a_, href_, toHtml)
 import Prelude ()
 
 import qualified Futurice.Constants.Internal as I
@@ -27,32 +30,39 @@ constants :: I.Constants
 constants = $(makeRelativeToProject "constants.json" >>= embedFromJSON (Proxy :: Proxy I.Constants))
 
 -------------------------------------------------------------------------------
--- Constants
+-- Services
 -------------------------------------------------------------------------------
 
+servicePublicUrl :: Service -> Text
+servicePublicUrl = index (I.publicUrls constants)
+
 avatarPublicUrl :: Text
-avatarPublicUrl = I.avatarPublicUrl constants
+avatarPublicUrl = servicePublicUrl AvatarService
 
 avatarPublicUrlStr :: String
 avatarPublicUrlStr = avatarPublicUrl ^. unpacked
 
 fumPublicUrl :: Text
-fumPublicUrl = I.fumPublicUrl constants
+fumPublicUrl = servicePublicUrl FumService
 
 fumPublicUrlStr :: String
 fumPublicUrlStr = fumPublicUrl ^. unpacked
 
 personioPublicUrl :: Text
-personioPublicUrl = I.personioPublicUrl constants
+personioPublicUrl = servicePublicUrl PersonioService
 
 personioPublicUrlStr :: String
 personioPublicUrlStr = personioPublicUrl ^. unpacked
 
 planmillPublicUrl :: Text
-planmillPublicUrl = I.planmillPublicUrl constants
+planmillPublicUrl = servicePublicUrl PlanmillService
 
 planmillPublicUrlStr :: String
 planmillPublicUrlStr = planmillPublicUrl ^. unpacked
+
+-------------------------------------------------------------------------------
+-- Other constants
+-------------------------------------------------------------------------------
 
 supportEmailHtml :: Monad m => HtmlT m ()
 supportEmailHtml = a_ [ href_ $ "mailto:" <> addr ] $ toHtml addr where
