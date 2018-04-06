@@ -1,9 +1,28 @@
 {
-  "avatarPublicUrl": "https://avatar.example.com",
-  "fumPublicUrl": "https://fum.example.com",
-  "personioPublicUrl": "https://personio.example.com",
-  "planmillPublicUrl": "https://planmill.example.com",
   "supportEmail": "devnull@example.com",
   "competenceMap": {
+  },
+  "publicUrls": {
+    "avatar": "https://avatar.example.com",
+    "checklist": "https://checklist.example.com",
+    "contacts": "https://contacts.example.com",
+    "contacts-api": "https://contacts-api.example.com",
+    "fum-carbon": "https://fum-carbon.example.com",
+    "fum": "https://fum.example.com",
+    "github-proxy": "https://github-proxy.example.com",
+    "github-sync": "https://github-sync.example.com",
+    "hours": "https://hours.example.com",
+    "hours-api": "https://hours-api.example.com",
+    "hc": "https://hc.example.com",
+    "personio": "https://personio.example.com",
+    "personio-proxy": "https://personio-proxy.example.com",
+    "planmill": "https://planmill.example.com",
+    "planmill-proxy": "https://planmill-proxy.example.com",
+    "planmill-sync": "https://planmill-sync.example.com",
+    "power": "https://power.example.com",
+    "prox-mgmt": "https://prox-mgmt.example.com",
+    "prox": "https://prox.example.com",
+    "reports": "https://reports.example.com",
+    "theme": "https://theme.example.com"
   }
 }

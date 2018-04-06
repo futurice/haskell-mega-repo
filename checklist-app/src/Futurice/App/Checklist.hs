@@ -40,6 +40,7 @@ import Futurice.App.Checklist.Pages.EmployeeAudit
 import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.HelpAppliance
+import Futurice.App.Checklist.Pages.HelpServices
 import Futurice.App.Checklist.Pages.Index
 import Futurice.App.Checklist.Pages.Personio
 import Futurice.App.Checklist.Pages.Report
@@ -79,6 +80,7 @@ server ctx = indexPageImpl ctx
     :<|> reportPageImpl ctx
     :<|> doneChartImpl ctx
     :<|> applianceHelpImpl ctx
+    :<|> servicesHelpImpl ctx
     :<|> commandImpl ctx
     :<|> statsPageImpl ctx
 
@@ -253,6 +255,13 @@ applianceHelpImpl
     -> Handler (HtmlPage "appliance-help")
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
+
+servicesHelpImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "services-help")
+servicesHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
+    pure $ helpServicesPage world userInfo
 
 statsPageImpl
     :: Ctx

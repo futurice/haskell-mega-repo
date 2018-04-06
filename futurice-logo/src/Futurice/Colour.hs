@@ -231,7 +231,7 @@ class SColour (c :: Colour) where
     scolour :: Tagged c Colour
 
 instance SColour 'FutuGreen where scolour       = Tagged FutuGreen
-instance SColour 'FutuBlack where scolour       = Tagged FutuGreen
+instance SColour 'FutuBlack where scolour       = Tagged FutuBlack
 instance SColour 'FutuLightGreen where scolour  = Tagged FutuLightGreen
 instance SColour 'FutuDarkGreen where scolour   = Tagged FutuDarkGreen
 

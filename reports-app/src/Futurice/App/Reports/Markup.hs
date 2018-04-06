@@ -27,10 +27,6 @@ makeLink _ = K $ li_ $ do
     ppath = Proxy :: Proxy (RPath r)
     pname = Proxy :: Proxy (RName r)
 
--- | TODO: Move to @futurice-prelude@
-textVal :: KnownSymbol a => Proxy a -> Text
-textVal p = symbolVal p ^. packed
-
 indexPage :: HtmlPage "index"
 indexPage = page_ "Reports" $ do
     row_ $ large_ 12 $ h1_ "Reports"
