@@ -174,7 +174,7 @@ type PersonioProxyEndpoint' =
 type PersonioProxyEndpoint = ProxyPair
     ("personio-request" :> PersonioProxyEndpoint')
     PersonioProxyService
-    ("api" :> "personio-request" :> PersonioProxyEndpoint')
+    ("personio-request" :> PersonioProxyEndpoint')
 
 -- contacts
 type ContactsEndpoint = ProxyPair
