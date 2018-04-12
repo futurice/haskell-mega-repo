@@ -148,23 +148,24 @@ instance FromJSON UserStatus where
 -------------------------------------------------------------------------------
 
 data User = User
-    { _userName       :: !Login
-    , _userFirst      :: !Text
-    , _userLast       :: !Text
-    , _userTitle      :: !(S.Maybe Text)
-    , _userGithub     :: !(S.Maybe Text)
-    , _userFlowdock   :: !(S.Maybe Int)
-    , _userEmail      :: !(S.Maybe Text) -- can be empty?
-    , _userPhone1     :: !(S.Maybe Text)
-    , _userPhone2     :: !(S.Maybe Text)
-    , _userStatus     :: !UserStatus
-    , _userImageUrl   :: !(S.Maybe Text)
-    , _userThumbUrl   :: !(S.Maybe Text)
-    , _userBadgeUrl   :: !(S.Maybe Text)
-    , _userId         :: !Int
-    , _userSupervisor :: !(S.Maybe Int)
-    , _userActiveInPm :: !Int
-    , _userHrNumber   :: !(S.Maybe Text)
+    { _userName         :: !Login
+    , _userFirst        :: !Text
+    , _userLast         :: !Text
+    , _userTitle        :: !(S.Maybe Text)
+    , _userGithub       :: !(S.Maybe Text)
+    , _userFlowdock     :: !(S.Maybe Int)
+    , _userEmail        :: !(S.Maybe Text) -- can be empty?
+    , _userPhone1       :: !(S.Maybe Text)
+    , _userPhone2       :: !(S.Maybe Text)
+    , _userStatus       :: !UserStatus
+    , _userImageUrl     :: !(S.Maybe Text)
+    , _userThumbUrl     :: !(S.Maybe Text)
+    , _userBadgeUrl     :: !(S.Maybe Text)
+    , _userId           :: !Int
+    , _userSupervisor   :: !(S.Maybe Int)
+    , _userActiveInPm   :: !Int
+    , _userHrNumber     :: !(S.Maybe Text)
+    , _userGoogleStatus :: !(S.Maybe Text)
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -195,6 +196,7 @@ instance FromJSON User where
         <*> v .:?? "supervisor"
         <*> v .: "active_in_planmill"
         <*> v .:?? "hr_number"
+        <*> v .:?? "google_status"
 
 userFullName :: Getter User Text
 userFullName = getter $ \u -> u ^. userFirst <> " " <> u ^. userLast
