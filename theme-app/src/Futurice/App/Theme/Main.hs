@@ -4,12 +4,12 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Theme.Main (defaultMain) where
 
+import FileEmbedLzma                  (embedRecursiveDir)
 import Futurice.Prelude
 import Futurice.Servant
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
 import Servant
-import Servant.Swagger.UI.Internal    (mkRecursiveEmbedded)
 
 import Futurice.App.Theme.API
 import Futurice.App.Theme.Config
@@ -21,7 +21,7 @@ server _ = pure . indexPage
     :<|> public
 
 public :: Server Raw
-public = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "public")
+public = Tagged $ staticApp $ embeddedSettings $(embedRecursiveDir "public")
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ (emptyServerConfig
