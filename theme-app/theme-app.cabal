@@ -25,12 +25,13 @@ library
       base >= 4.7 && <4.11
     , clay >= 0.11
     , env-config
-    , JuicyPixels
+    , file-embed-lzma
     , fum-types
     , futurice-foundation
     , futurice-logo
     , futurice-prelude
     , futurice-servant
+    , JuicyPixels
     , lucid
     , servant
     , servant-server

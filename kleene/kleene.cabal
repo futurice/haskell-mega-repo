@@ -26,7 +26,7 @@ source-repository head
 library
   build-depends:
     base >= 4.9 && <4.11,
-    base-compat >=0.9.3 && <0.10,
+    base-compat >=0.9.3 && <0.11,
     containers,
     lattices >= 1.7 && <1.8,
     range-set-list,
