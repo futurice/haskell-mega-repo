@@ -43,6 +43,11 @@ compareOldFumReport ctx = do
             $ map (\e -> (e ^. FUM.userName, e))
             $ fs
 
+    let loginPs' :: Map Login Personio.Employee
+        loginPs' = Map.fromList
+            $ mapMaybe (\e -> (,e) <$> e ^. Personio.employeeLogin)
+            $ toList ps'
+
     let aligned :: Map Login (These Personio.Employee FUM.User)
         aligned = align loginPs loginFs
 
@@ -65,6 +70,38 @@ compareOldFumReport ctx = do
                     td_ $ toHtml $ f ^. FUM.userFullName
                     td_ $ traverse_ toHtml $ f ^. FUM.userEmail
                     td_ $ traverse_ toHtml $ p ^. Personio.employeeEmail
+
+        fullRow_ $ h2_ "Old FUM status cross-check"
+        fullRow_ $ table_ $ do
+            thead_ $ tr_ $ do
+                th_ "Login"
+                th_ "Name"
+                th_ "(FUM) Status"
+                th_ "Google Status"
+                th_ "Active In PlanMill"
+                th_ "Personio"
+
+            tbody_ $ ifor_ loginFs $ \login u -> do
+                let usToGoogle FUM.StatusActive   = "activeperson"
+                    usToGoogle FUM.StatusDisabled = "suspended"
+                    usToGoogle FUM.StatusDeleted  = "deleted"
+
+                let status  = u ^. FUM.userStatus
+                    gStatus = u ^. FUM.userGoogleStatus
+                    pmStatus =  u ^. FUM.userActiveInPm
+
+                    gStatusOk = gStatus ^. lazy == Just (usToGoogle status)
+
+                unless (gStatusOk && status == FUM.StatusActive) $ tr_ $ do
+                    td_ $ toHtml login
+                    td_ $ toHtml $ u ^. FUM.userFullName
+                    td_ $ toHtml $ show status
+                    td_ $ toHtml $ show gStatus
+                    td_ $ toHtml $ show pmStatus
+                    td_ $ for_ (loginPs' ^? ix login) $ \p -> do
+                        toHtml $ p ^. Personio.employeeId
+                        " "
+                        toHtml $ show $ p ^. Personio.employeeStatus
 
         fullRow_ $ h2_ "People with non-matching phone numbers"
         fullRow_ $ table_ $ do
