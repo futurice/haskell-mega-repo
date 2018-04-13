@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Personio.Types.EmployeeId where
 
-import Data.Aeson.Compat
+import Data.Aeson
 import Futurice.Constants (personioPublicUrl)
 import Futurice.Generics
 import Futurice.Prelude
@@ -17,8 +17,9 @@ import qualified Data.Csv as Csv
 newtype EmployeeId = EmployeeId Word
   deriving stock (Eq, Ord, Show)
   deriving newtype
-    ( Arbitrary, Hashable, FromJSON, ToJSON, NFData
-    , FromHttpApiData, ToHttpApiData, Csv.ToField
+    ( Arbitrary, Hashable, NFData
+    , FromJSON, ToJSON, FromJSONKey, ToJSONKey
+    , FromHttpApiData, ToHttpApiData, Csv.ToField, Csv.FromField
     )
 
 deriveGeneric ''EmployeeId
