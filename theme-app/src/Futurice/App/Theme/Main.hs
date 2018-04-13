@@ -24,12 +24,12 @@ public :: Server Raw
 public = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "public")
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName         .~ "Theme app"
+defaultMain = futuriceServerMain (const makeCtx) $ (emptyServerConfig
+    & serverService      .~ ThemeService
     & serverDescription  .~ "Futurice theme guidelines"
     & serverColour       .~ (Proxy :: Proxy 'FutuGreen)
     & serverApp themeApi .~ server
-    & serverEnvPfx       .~ "THEMEAPP"
+    & serverEnvPfx       .~ "THEMEAPP" :: ServerConfig I I () 'FutuGreen () ThemeAPI)
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO ((), [Job])
     makeCtx _ _ _ _ = pure ((), [])

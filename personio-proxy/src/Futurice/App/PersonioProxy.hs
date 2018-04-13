@@ -26,7 +26,7 @@ server ctx = pure "Try /swagger-ui/"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName          .~ "Personio Proxy"
+    & serverService       .~ PersonioProxyService
     & serverDescription   .~ "Make faster queries to Personio"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp personioProxyApi .~ server

@@ -62,7 +62,7 @@ nt requireAdmin ctx mfu handler = do
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName             .~ "Prox Management"
+    & serverService          .~ ProxMgmtService
     & serverDescription      .~ "Audit log"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC3))
     & serverApp proxyMgmtApi .~ server

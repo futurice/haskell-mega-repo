@@ -146,7 +146,7 @@ removeUsersAction ctx mfu us = withAuthUserIO err impl ctx mfu
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName              .~ "GitHub Sync"
+    & serverService           .~ GithubSyncService
     & serverDescription       .~ "Sync people from personio to github"
     & serverApp githubSyncApi .~ server
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF1 'AC2))
