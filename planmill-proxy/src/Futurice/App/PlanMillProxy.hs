@@ -39,7 +39,7 @@ server ctx = pure "Try /swagger-ui/"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName          .~ "Planmill Proxy"
+    & serverService       .~ PlanmillProxyService
     & serverDescription   .~ "Make faster queries to PlanMill"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp planmillProxyApi .~ server

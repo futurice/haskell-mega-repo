@@ -28,7 +28,7 @@ server ctx = pure "Try /swagger-ui/"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName          .~ "GitHub Proxy"
+    & serverService       .~ GithubProxyService
     & serverDescription   .~ "Make faster (and cached) queries to GitHub"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp githubProxyApi .~ server

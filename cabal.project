@@ -64,7 +64,6 @@ packages:
   email-proxy-client/
   email-proxy/
   env-config/
-  favicon-app/
   flowdock-grep/
   flowdock-rest/
   fum-api/

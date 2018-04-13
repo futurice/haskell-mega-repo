@@ -28,6 +28,7 @@ data Service
     | ChecklistService
     | ContactsService
     | ContactsApiService
+    | EmailProxyService
     | FumCarbonService
     | FumService
     | GithubProxyService
@@ -44,6 +45,8 @@ data Service
     | ProxMgmtService
     | ProxService
     | ReportsService
+    | SmileysApiService
+    | SmsProxyService
     | ThemeService
   deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
   deriving anyclass (NFData, Binary)
@@ -57,6 +60,7 @@ instance TextEnum Service where
         , "checklist"
         , "contacts"
         , "contacts-api"
+        , "email-proxy"
         , "fum-carbon"
         , "fum"
         , "github-proxy"
@@ -73,6 +77,8 @@ instance TextEnum Service where
         , "prox-mgmt"
         , "prox"
         , "reports"
+        , "smileys-api"
+        , "sms-proxy"
         , "theme"
         ]
 
@@ -110,6 +116,7 @@ data PerService a = PerService
     , perChecklist     :: a
     , perContacts      :: a
     , perContactsApi   :: a
+    , perEmailProxy    :: a
     , perFumCarbon     :: a
     , perFum           :: a
     , perGithubProxy   :: a
@@ -126,6 +133,8 @@ data PerService a = PerService
     , perProxMgmt      :: a
     , perProx          :: a
     , perReports       :: a
+    , perSmileysApi       :: a
+    , perSmsProxy      :: a
     , perTheme         :: a
     }
   deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Lift)
@@ -141,6 +150,7 @@ instance Representable PerService where
     index p ChecklistService     = perChecklist p
     index p ContactsService      = perContacts p
     index p ContactsApiService   = perContactsApi p
+    index p EmailProxyService    = perContactsApi p
     index p FumCarbonService     = perFumCarbon p
     index p FumService           = perFum p
     index p GithubProxyService   = perGithubProxy p
@@ -153,11 +163,12 @@ instance Representable PerService where
     index p PlanmillProxyService = perPlanmillProxy p
     index p PlanmillService      = perPlanmill p
     index p PlanmillSyncService  = perPlanmillSync p
-
     index p PowerService         = perPower p
     index p ProxMgmtService      = perProxMgmt p
     index p ProxService          = perProx p
     index p ReportsService       = perReports p
+    index p SmileysApiService       = perSmileysApi p
+    index p SmsProxyService      = perSmsProxy p
     index p ThemeService         = perTheme p
 
     tabulate f = PerService
@@ -165,6 +176,7 @@ instance Representable PerService where
         ,  perChecklist     = f ChecklistService
         ,  perContacts      = f ContactsService
         ,  perContactsApi   = f ContactsApiService
+        ,  perEmailProxy    = f ContactsApiService
         ,  perFumCarbon     = f FumCarbonService
         ,  perFum           = f FumService
         ,  perGithubProxy   = f GithubProxyService
@@ -181,6 +193,8 @@ instance Representable PerService where
         ,  perProxMgmt      = f ProxMgmtService
         ,  perProx          = f ProxService
         ,  perReports       = f ReportsService
+        ,  perSmileysApi       = f SmileysApiService
+        ,  perSmsProxy      = f SmsProxyService
         ,  perTheme         = f ThemeService
         }
 

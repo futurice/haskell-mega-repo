@@ -39,7 +39,7 @@ module Futurice.Servant (
     futuriceServer,
     ServerConfig,
     emptyServerConfig,
-    serverName,
+    serverService,
     serverDescription,
     serverApp,
     serverMiddleware,
@@ -61,6 +61,7 @@ module Futurice.Servant (
     CommandResponse (..),
     -- * Re-export
     Job,
+    Service (..),
     ) where
 
 import Control.Concurrent.STM
@@ -86,6 +87,7 @@ import Futurice.Metrics.RateMeter           (mark, values)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, shifted, spawnPeriocron)
 import Futurice.Prelude
+import Futurice.Services                    (Service (..), serviceToText)
 import Log.Backend.CloudWatchLogs
        (createCloudWatchLogStream, withCloudWatchLogger)
 import Network.Wai
@@ -155,20 +157,20 @@ futuriceServer t d _cache papi server
 -------------------------------------------------------------------------------
 
 -- | Data type containing the server setup
-data ServerConfig f opts (colour :: Colour) ctx api = SC
-    { _serverName        :: !Text
+data ServerConfig f g opts (colour :: Colour) ctx api = SC
+    { _serverService     :: !(f Service)
     , _serverDescription :: !Text
     , _serverApplication :: ctx -> Server api
     , _serverMiddleware  :: ctx -> Middleware
-    , _serverEnvPfx      :: !(f Text)
+    , _serverEnvPfx      :: !(g Text)
     , _serverOpts        :: !(O.Parser opts)
     }
 
 -- | Default server config, through the lenses the type of api will be refined
 --
-emptyServerConfig :: ServerConfig Proxy () 'FutuGreen ctx (Get '[JSON] ())
+emptyServerConfig :: ServerConfig Proxy Proxy () 'FutuGreen ctx (Get '[JSON] ())
 emptyServerConfig = SC
-    { _serverName         = "Futurice Service"
+    { _serverService      = Proxy
     , _serverDescription  = "Some futurice service"
     , _serverApplication  = \_ -> pure ()
     , _serverMiddleware   = futuriceNoMiddleware
@@ -184,36 +186,40 @@ futuriceNoMiddleware = liftFuturiceMiddleware id
 liftFuturiceMiddleware :: Middleware -> ctx -> Middleware
 liftFuturiceMiddleware mw _ = mw
 
-serverName :: Lens' (ServerConfig f opts colour ctx api) Text
-serverName = lens _serverName $ \sc x -> sc { _serverName = x }
+serverService :: Lens
+    (ServerConfig f g opts colour ctx api)
+    (ServerConfig I g opts colour ctx api)
+    (f Service)
+    Service
+serverService = lens _serverService $ \sc x -> sc { _serverService = I x }
 
-serverDescription :: Lens' (ServerConfig f opts colour ctx api) Text
+serverDescription :: Lens' (ServerConfig f g opts colour ctx api) Text
 serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
 
 serverEnvPfx :: Lens
-    (ServerConfig f opts colour ctx api)
-    (ServerConfig I opts colour ctx api)
-    (f Text)
+    (ServerConfig f g opts colour ctx api)
+    (ServerConfig f I opts colour ctx api)
+    (g Text)
     Text
 serverEnvPfx = lens _serverEnvPfx $ \sc x -> sc { _serverEnvPfx = I x }
 
 serverApp
-    :: Functor f
+    :: Functor ff
     => Proxy api'
-    -> LensLike f (ServerConfig g opts colour ctx api) (ServerConfig g opts colour ctx api')
+    -> LensLike ff (ServerConfig f g opts colour ctx api) (ServerConfig f g opts colour ctx api')
        (ctx -> Server api) (ctx -> Server api')
 serverApp _ = lens _serverApplication $ \sc x -> sc { _serverApplication = x }
 
-serverMiddleware :: Lens' (ServerConfig g opts colour ctx api) (ctx -> Middleware)
+serverMiddleware :: Lens' (ServerConfig f g opts colour ctx api) (ctx -> Middleware)
 serverMiddleware = lens _serverMiddleware $ \sc x -> sc { _serverMiddleware = x }
 
 serverColour
-    :: Lens (ServerConfig f opts colour ctx api) (ServerConfig f opts colour' ctx api)
+    :: Lens (ServerConfig f g opts colour ctx api) (ServerConfig f g opts colour' ctx api)
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
 serverOpts
-    :: Lens (ServerConfig f opts colour ctx api) (ServerConfig f opts' colour ctx api)
+    :: Lens (ServerConfig f g opts colour ctx api) (ServerConfig f g opts' colour ctx api)
        (O.Parser opts) (O.Parser opts')
 serverOpts = lens _serverOpts $ \sc x -> sc { _serverOpts = x }
 
@@ -242,10 +248,10 @@ futuriceServerMain
        (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
     => (opts -> cfg -> Logger -> Manager -> Cache -> IO (ctx, [Job]))
        -- ^ Initialise the context for application, add periocron jobs
-    -> ServerConfig I opts colour ctx api
+    -> ServerConfig I I opts colour ctx api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
+futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP) = do
     (_showEnvConvig, middleware2, opts) <- O.execParser $ O.info (O.helper <*> args optsP) $ mconcat
         [ O.fullDesc
         , O.progDesc (d ^. unpacked)
@@ -255,35 +261,36 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
     main1 :: (ctx -> Middleware) -> opts -> IO ()
     main1 middleware opts = withStderrLogger $ \logger ->
         handleAll (handler logger) $ do
+            let t = serviceToText service
+
             cfg <- runLogT "futurice-servant" logger $ do
                 logInfo_ $ "Hello, " <> t <> " is alive"
                 getConfigWithPorts (envpfx ^. from packed)
 
             let awsGroup = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
-            let service  = t
 
             menv <- for (_cfgCloudWatchCreds cfg) $ \awsCreds -> do
                 env' <- AWS.newEnv awsCreds
                 return $ env'
                     & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
 
-            let main' = main2 middleware opts cfg menv service
+            let main' = main2 middleware opts cfg menv
 
             case menv of
                 Nothing -> main' logger
                 Just env -> do
-                    createCloudWatchLogStream env awsGroup service
-                    withCloudWatchLogger env awsGroup service $ \leLogger -> main' $
+                    createCloudWatchLogStream env awsGroup t 
+                    withCloudWatchLogger env awsGroup t $ \leLogger -> main' $
                         if fromMaybe True (_cfgStderrLogger cfg)
                         then (logger <> leLogger)
                         else leLogger
 
-    main2 :: (ctx -> Middleware) -> opts -> Cfg cfg -> Maybe AWS.Env -> Text -> Logger -> IO ()
-    main2 middleware opts (Cfg cfg p _ekgP mgroup _ _) menv service lgr = do
+    main2 :: (ctx -> Middleware) -> opts -> Cfg cfg -> Maybe AWS.Env -> Logger -> IO ()
+    main2 middleware opts (Cfg cfg p _ekgP mgroup _ _) menv lgr = do
         mgr            <- newManager tlsManagerSettings
         cache          <- newCache
         (ctx, jobs)    <- makeCtx opts cfg lgr mgr cache
-        let server'    =  futuriceServer t d cache proxyApi (server ctx)
+        let server'    =  futuriceServer (serviceToText service) d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
         statsEnabled <-
@@ -306,7 +313,7 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
         _ <- spawnPeriocron (defaultOptions lgr) jobs'
 
         runLogT "futurice-servant" lgr $ do
-            logInfo_ $ "Starting " <> t <> " at port " <> textShow p
+            logInfo_ $ "Starting " <> serviceToText service <> " at port " <> textShow p
             logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
             logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
             -- logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
@@ -335,101 +342,7 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
             , "stamp"       Aeson..= stamp
             ]
 
-    cloudwatchJob :: Cache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
-    cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
-        -- averages
-        meters <- liftIO values
-        logInfo "Futurice.Metrics" meters
-        let mkDatum (n, v) = AWS.metricDatum ("Count: " <> n)
-                & AWS.mdValue      ?~ fromIntegral v
-                & AWS.mdUnit       ?~ AWS.Count
-                & AWS.mdDimensions .~ [AWS.dimension "Service" service]
-        let meterDatums = map mkDatum (Map.toList meters)
 
-        -- Cache size
-        cs <- cacheSize cache
-        let cacheDatum = AWS.metricDatum "Gauge: Cache size"
-                & AWS.mdValue      ?~ fromIntegral cs
-                & AWS.mdUnit       ?~ AWS.Count
-                & AWS.mdDimensions .~ [AWS.dimension "Service" service]
-
-        -- gcm
-#if MIN_VERSION_base(4,10,0)
-        stats <- liftIO Stats.getRTSStats
-
-        let liveBytes =  Stats.gcdetails_live_bytes (Stats.gc stats)
-
-        let currMut = Stats.mutator_cpu_ns stats
-        let currTot = Stats.cpu_ns stats
-
-        let currWMut = Stats.mutator_elapsed_ns stats
-        let currWTot = Stats.elapsed_ns stats
-#else
-        stats <- liftIO Stats.getGCStats
-
-        let liveBytes = Stats.currentBytesUsed stats
-
-        let currMut = Stats.mutatorCpuSeconds stats
-        let currTot = Stats.cpuSeconds stats
-
-        let currWMut = Stats.mutatorWallSeconds stats
-        let currWTot = Stats.wallSeconds stats
-#endif
-
-        MutGC prevMut prevTot prevWMut prevWTot <- liftIO $ atomically $
-            swapTVar mutgcTVar (MutGC currMut currTot currWMut currWTot)
-
-        let mutSec  = currMut - prevMut
-        let totSec  = currTot - prevTot
-
-        let mutWSec = currWMut - prevWMut
-        let totWSec = currWTot - prevWTot
-
-        let clampPercentage x
-              | x < 0     = 0
-              | x > 1     = 100
-              | otherwise = 100 * x
-
-        let productivity = clampPercentage (realToFrac mutSec  / realToFrac totSec  :: Double)
-        let prodWall     = clampPercentage (realToFrac mutWSec / realToFrac totWSec :: Double)
-
-        logInfo "RTS stats" $ Aeson.object
-            [ "live bytes"         Aeson..= liveBytes
-            , "productivity cpu"   Aeson..= productivity
-            , "productivity wall"  Aeson..= prodWall
-            , "cache size"         Aeson..= cs
-            ]
-
-        rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
-
-            -- Residency
-            let datum1 = AWS.metricDatum "Live bytes"
-                    & AWS.mdValue      ?~ fromIntegral liveBytes
-                    & AWS.mdUnit       ?~ AWS.Bytes
-                    & AWS.mdDimensions .~ [AWS.dimension "Service" service]
-            -- Productivity
-            let datum2 = AWS.metricDatum "Productivity"
-                    & AWS.mdValue      ?~ productivity
-                    & AWS.mdUnit       ?~ AWS.Percent
-                    & AWS.mdDimensions .~ [AWS.dimension "Service" service]
-            -- Productivity Wall
-            let datum3 = AWS.metricDatum "Productivity Wall"
-                    & AWS.mdValue      ?~ prodWall
-                    & AWS.mdUnit       ?~ AWS.Percent
-                    & AWS.mdDimensions .~ [AWS.dimension "Service" service]
-
-            -- Put.
-            let datums' = datum1 : datum2 : datum3
-                       : cacheDatum : meterDatums
-            -- metric names can be only ASCII
-            let datums = datums'
-                    & traverse . AWS.mdMetricName . each %~ makeAscii
-            let pmd = AWS.putMetricData (awsGroup <> "/RTS")
-                    & AWS.pmdMetricData .~ datums
-
-            AWS.send pmd
-
-        logInfo_ $ "cloudwatch response " <> textShow rs
 
     waiMiddleware :: Middleware
     waiMiddleware app req res = do
@@ -447,7 +360,7 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
         & Warp.setPort p
         & Warp.setOnException (onException logger)
         & Warp.setOnExceptionResponse onExceptionResponse
-        & Warp.setServerName (encodeUtf8 t)
+        & Warp.setServerName (encodeUtf8 (serviceToText service))
 
     onException logger mreq e = do
         print $ typeOf e
@@ -477,6 +390,108 @@ futuriceServerMain makeCtx (SC t d server middleware1 (I envpfx) optsP) = do
 
     proxyApi' :: Proxy (FuturiceAPI api colour)
     proxyApi' = Proxy
+
+-------------------------------------------------------------------------------
+-- Cloudwatch Job
+-------------------------------------------------------------------------------
+
+cloudwatchJob :: Cache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Service -> IO ()
+cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
+    let awsService = serviceToText service
+
+    -- averages
+    meters <- liftIO values
+    logInfo "Futurice.Metrics" meters
+    let mkDatum (n, v) = AWS.metricDatum ("Count: " <> n)
+            & AWS.mdValue      ?~ fromIntegral v
+            & AWS.mdUnit       ?~ AWS.Count
+            & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
+    let meterDatums = map mkDatum (Map.toList meters)
+
+    -- Cache size
+    cs <- cacheSize cache
+    let cacheDatum = AWS.metricDatum "Gauge: Cache size"
+            & AWS.mdValue      ?~ fromIntegral cs
+            & AWS.mdUnit       ?~ AWS.Count
+            & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
+
+    -- gcm
+#if MIN_VERSION_base(4,10,0)
+    stats <- liftIO Stats.getRTSStats
+
+    let liveBytes =  Stats.gcdetails_live_bytes (Stats.gc stats)
+
+    let currMut = Stats.mutator_cpu_ns stats
+    let currTot = Stats.cpu_ns stats
+
+    let currWMut = Stats.mutator_elapsed_ns stats
+    let currWTot = Stats.elapsed_ns stats
+#else
+    stats <- liftIO Stats.getGCStats
+
+    let liveBytes = Stats.currentBytesUsed stats
+
+    let currMut = Stats.mutatorCpuSeconds stats
+    let currTot = Stats.cpuSeconds stats
+
+    let currWMut = Stats.mutatorWallSeconds stats
+    let currWTot = Stats.wallSeconds stats
+#endif
+
+    MutGC prevMut prevTot prevWMut prevWTot <- liftIO $ atomically $
+        swapTVar mutgcTVar (MutGC currMut currTot currWMut currWTot)
+
+    let mutSec  = currMut - prevMut
+    let totSec  = currTot - prevTot
+
+    let mutWSec = currWMut - prevWMut
+    let totWSec = currWTot - prevWTot
+
+    let clampPercentage x
+          | x < 0     = 0
+          | x > 1     = 100
+          | otherwise = 100 * x
+
+    let productivity = clampPercentage (realToFrac mutSec  / realToFrac totSec  :: Double)
+    let prodWall     = clampPercentage (realToFrac mutWSec / realToFrac totWSec :: Double)
+
+    logInfo "RTS stats" $ Aeson.object
+        [ "live bytes"         Aeson..= liveBytes
+        , "productivity cpu"   Aeson..= productivity
+        , "productivity wall"  Aeson..= prodWall
+        , "cache size"         Aeson..= cs
+        ]
+
+    rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
+
+        -- Residency
+        let datum1 = AWS.metricDatum "Live bytes"
+                & AWS.mdValue      ?~ fromIntegral liveBytes
+                & AWS.mdUnit       ?~ AWS.Bytes
+                & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
+        -- Productivity
+        let datum2 = AWS.metricDatum "Productivity"
+                & AWS.mdValue      ?~ productivity
+                & AWS.mdUnit       ?~ AWS.Percent
+                & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
+        -- Productivity Wall
+        let datum3 = AWS.metricDatum "Productivity Wall"
+                & AWS.mdValue      ?~ prodWall
+                & AWS.mdUnit       ?~ AWS.Percent
+                & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
+
+        -- Put.
+        let datums' = datum1 : datum2 : datum3
+                   : cacheDatum : meterDatums
+        -- metric names can be only ASCII
+        let datums = datums'
+                & traverse . AWS.mdMetricName . each %~ makeAscii
+        let pmd = AWS.putMetricData (awsGroup <> "/RTS")
+                & AWS.pmdMetricData .~ datums
+
+        AWS.send pmd
+
+    logInfo_ $ "cloudwatch response " <> textShow rs
 
 -------------------------------------------------------------------------------
 -- MutGC

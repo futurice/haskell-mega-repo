@@ -7,6 +7,7 @@
     "checklist": "https://checklist.example.com",
     "contacts": "https://contacts.example.com",
     "contacts-api": "https://contacts-api.example.com",
+    "email-proxy": "https://contacts-api.example.com",
     "fum-carbon": "https://fum-carbon.example.com",
     "fum": "https://fum.example.com",
     "github-proxy": "https://github-proxy.example.com",
@@ -23,6 +24,8 @@
     "prox-mgmt": "https://prox-mgmt.example.com",
     "prox": "https://prox.example.com",
     "reports": "https://reports.example.com",
+    "smileys-api": "https://smileys-api.example.com",
+    "sms-proxy": "https://sms-proxy.example.com",
     "theme": "https://theme.example.com"
   }
 }

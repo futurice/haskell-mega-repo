@@ -73,7 +73,7 @@ authorisedUser ctx mfum meterName action =
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName            .~ "Futuhours API"
+    & serverService         .~ HoursApiService
     & serverDescription     .~ "Here we mark hours"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))
