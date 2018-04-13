@@ -67,8 +67,8 @@ install)
         ;;
 
     cabal)
-		# Install doctest
-		scripts/cabal-new-install.py doctest doctest ~/.local/bin
+        # Install doctest
+        scripts/cabal-new-install.py doctest doctest ~/.local/bin
         doctest --version
 
         # Install some stuff already in install phase
@@ -93,6 +93,12 @@ build)
     cabal)
         timed cabal new-build --enable-tests  $CONCURRENCY all
         timed cabal new-test --enable-tests all
+
+        # Prepare environment
+        for envfile in .ghc.environment.*; do
+            mv $envfile .ghc.environment.tmp
+            grep -vE 'package-id base-compat-[0-9]' .ghc.environment.tmp > $envfile
+        done
 
         # Run doctest on selected packages
         doctest --fast fum-types/src
