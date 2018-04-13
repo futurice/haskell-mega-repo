@@ -6,7 +6,6 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 import Generics.SOP (hpure, hsequenceK, hcmap)
-import GHC.TypeLits (symbolVal, KnownSymbol)
 
 import Futurice.App.Reports.API
 

@@ -30,7 +30,7 @@ server action = liftIO action
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName            .~ "Contacts API"
+    & serverService         .~ ContactsApiService
     & serverDescription     .~ "All employees and externals"
     & serverApp contactsApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))

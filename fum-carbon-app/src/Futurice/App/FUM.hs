@@ -47,7 +47,7 @@ compareOldFumReportImpl = liftIO . compareOldFumReport
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName             .~ "FUM Carbon"
+    & serverService          .~ FumCarbonService
     & serverDescription      .~ "FUM faster than ever"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverApp fumCarbonApi .~ server

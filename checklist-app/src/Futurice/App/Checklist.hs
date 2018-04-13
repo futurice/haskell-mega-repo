@@ -443,7 +443,7 @@ withAuthUser' def ctx fu f = do
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName             .~ "Checklist"
+    & serverService          .~ ChecklistService
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp checklistApi .~ server

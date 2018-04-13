@@ -40,7 +40,7 @@ sendLegacySms' ctx to msg = do
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName            .~ "SMS Proxy"
+    & serverService         .~ SmsProxyService
     & serverDescription     .~ "Send sms"
     & serverColour          .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp smsProxyApi .~ server

@@ -119,7 +119,7 @@ fetcher = liftA2 (,) users (P.personio P.PersonioEmployees)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName              .~ "PlanMill Sync"
+    & serverService           .~ PlanmillSyncService
     & serverDescription       .~ "Sync people from personio to planmill"
     & serverApp planmillSyncApi .~ server
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF1 'AC2))
