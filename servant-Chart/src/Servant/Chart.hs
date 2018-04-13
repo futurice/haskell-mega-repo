@@ -16,11 +16,13 @@
 -- >>> type ChartGet a = Get '[SVG] a
 module Servant.Chart (SVG, Chart (..)) where
 
-import Data.FileEmbed (embedFile, makeRelativeToProject)
+import Data.FileEmbed (makeRelativeToProject)
+import Data.Maybe     (fromMaybe)
 import Data.Proxy     (Proxy (..))
 import Data.String    (fromString)
 import Data.Swagger   (NamedSchema (..), ToSchema (..))
 import Data.Typeable  (Typeable)
+import FileEmbedLzma  (embedDir)
 import GHC.TypeLits   (KnownSymbol, Symbol, symbolVal)
 import Servant.API    (Accept (..), MimeRender (..))
 
@@ -76,10 +78,17 @@ denv = createEnv B.vectorAlignmentFns 1000 700 loadSansSerifFonts
 loadSansSerifFonts :: FontSelector Double
 loadSansSerifFonts = selectFont
   where
-    sansR = snd $ F.loadFont' "SourceSansPro_R" $(makeRelativeToProject "fonts/SourceSansPro_R.svg" >>= embedFile)
-    sansRB = snd $ F.loadFont' "SourceSansPro_RB" $(makeRelativeToProject "fonts/SourceSansPro_RB.svg" >>= embedFile)
-    sansRBI = snd $ F.loadFont' "SourceSansPro_RBI" $(makeRelativeToProject "fonts/SourceSansPro_RBI.svg" >>= embedFile)
-    sansRI = snd $ F.loadFont' "SourceSansPro_RI" $(makeRelativeToProject "fonts/SourceSansPro_RI.svg" >>= embedFile)
+    fontsDir = $(makeRelativeToProject "fonts" >>= embedDir)
+
+    sansR   = snd $ F.loadFont' "SourceSansPro_R"   $ sureLookup "/SourceSansPro_R.svg"    fontsDir
+    sansRB  = snd $ F.loadFont' "SourceSansPro_RB"  $ sureLookup "/SourceSansPro_RB.svg"   fontsDir
+    sansRBI = snd $ F.loadFont' "SourceSansPro_RBI" $ sureLookup  "/SourceSansPro_RBI.svg" fontsDir
+    sansRI  = snd $ F.loadFont' "SourceSansPro_RI"  $ sureLookup "/SourceSansPro_RI.svg"   fontsDir
+
+    sureLookup :: (Eq a, Show a) => a -> [(a, b)] -> b
+    sureLookup a xs = fromMaybe
+        (error $ "Cannot find " ++ show a ++ " in " ++ show (map fst xs))
+        (lookup a xs)
 
     selectFont :: B.FontStyle -> F.PreparedFont Double
     selectFont fs = case (B._font_name fs, B._font_slant fs, B._font_weight fs) of
