@@ -1,6 +1,5 @@
 module Futurice.App.Avatar.Ctx where
 
-import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
