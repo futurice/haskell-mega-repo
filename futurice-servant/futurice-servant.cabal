@@ -55,12 +55,12 @@ library
     , log-cloudwatch
     , optparse-applicative
     , periocron
-    , servant ==0.13.*
+    , servant
     , servant-cassava
     , servant-lucid
     , servant-server
     , servant-swagger
-    , servant-swagger-ui == 0.2.*
+    , servant-swagger-ui
     , stm
     , swagger2
     , text

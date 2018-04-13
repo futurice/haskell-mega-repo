@@ -29,7 +29,7 @@ library
     , aeson
     , clay
     , colour
-    , file-embed
+    , file-embed-lzma
     , fum-types
     , futurice-logo
     , futurice-prelude
@@ -41,7 +41,6 @@ library
     , lens
     , lucid
     , servant-server
-    , servant-swagger-ui
     , swagger2
     , template-haskell
     , text

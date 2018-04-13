@@ -47,8 +47,8 @@ module Futurice.Lucid.Foundation (
 
 import Clay                           (Css, render)
 import Data.Colour.SRGB               (sRGB24show)
-import Data.FileEmbed                 (embedFile)
 import Data.Swagger                   (NamedSchema (..), ToSchema (..))
+import FileEmbedLzma                  (embedByteString, embedRecursiveDir)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), DataColour,
        colourToDataColour)
@@ -64,7 +64,6 @@ import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
 import Servant
        ((:<|>) (..), (:>), Accept (..), Get, MimeRender (..), Raw, Server)
-import Servant.Swagger.UI.Internal    (mkRecursiveEmbedded)
 
 import qualified Lucid      as L
 import qualified Lucid.Base as L
@@ -221,8 +220,8 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
 
 vendorFiles :: [(FilePath, ByteString)]
 vendorFiles
-    = ("/futu.js", $(embedFile "futu.js"))
-    : $(mkRecursiveEmbedded "vendor")
+    = ("/futu.js", $(embedByteString "futu.js"))
+    : $(embedRecursiveDir "vendor")
 
 type VendorAPI =
     "vendor" :> "futu-foundation.min.css" :> Get '[CSS] Stylesheet

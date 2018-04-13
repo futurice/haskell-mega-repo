@@ -3,11 +3,10 @@ module Futurice.JavaScript.TH (
     embedJS,
     ) where
 
-import Futurice.Prelude
-import Language.Haskell.TH
-       (Exp, Lit (StringL), Q, appE, litE, runIO)
-import Language.Haskell.TH.Syntax           (qAddDependentFile)
+import FileEmbedLzma       (embedText)
 import Futurice.JavaScript
+import Futurice.Prelude
+import Language.Haskell.TH (Exp, Q, runIO)
 import Prelude ()
 
 import qualified Data.Text.IO as T
@@ -17,9 +16,7 @@ import qualified Data.Text.IO as T
 -- > $(embedJS "supersource.js")
 embedJS :: FilePath -> Q Exp
 embedJS fp = do
-    qAddDependentFile fp
     contents <- runIO $ T.readFile fp
-    let literal = StringL $! contents ^. from packed
     case makeJS contents fp of
         Left  err -> fail $ "embedJS " <> fp <> " -- " <> err
-        Right _js -> [| unsafeMakeJS . fromString |] `appE` litE literal
+        Right _js -> [| unsafeMakeJS $(embedText fp) |]
