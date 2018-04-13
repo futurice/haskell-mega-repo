@@ -186,7 +186,7 @@ server ctx = makeServer ctx reports
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName           .~ "Report API"
+    & serverService        .~ ReportsService
     & serverDescription    .~ "Various reports"
     & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverApp reportsApi .~ server

@@ -173,10 +173,10 @@ page404 = page_ "HC - Unauthorised" $
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName        .~ "HC"
+    & serverService     .~ HCService
     & serverDescription .~ "Tools for HC"
     & serverApp hcApi   .~ server
-    & serverColour      .~  (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
+    & serverColour      .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
     & serverEnvPfx      .~ "HCAPP"
   where
     makeCtx :: () -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])

@@ -30,7 +30,7 @@ server ctx = pure "This is email proxy. See /swagger-ui/"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName              .~ "Email Proxy"
+    & serverService           .~ EmailProxyService
     & serverDescription       .~ "Send Emails"
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF6 'AC1))
     & serverApp emailProxyApi .~ server

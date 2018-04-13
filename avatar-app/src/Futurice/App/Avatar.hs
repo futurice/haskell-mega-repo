@@ -102,7 +102,7 @@ server ctx = pure "Hello from avatar app"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName          .~ "Avatar API"
+    & serverService       .~ AvatarService
     & serverDescription   .~ "Serve smaller versions of your favourite images"
     & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp avatarApi .~ server

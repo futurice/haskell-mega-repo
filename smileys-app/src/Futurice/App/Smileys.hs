@@ -32,11 +32,11 @@ server ctx = pure "smileys backend"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName             .~ "Smileys API"
-    & serverDescription      .~ "Hours Smileys"
-    & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
+    & serverService        .~ SmileysApiService
+    & serverDescription    .~ "Hours Smileys"
+    & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp smileysApi .~ server
-    & serverEnvPfx           .~ "SMILEYS"
+    & serverEnvPfx         .~ "SMILEYS"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
     makeCtx Config {..} logger _ cache = do

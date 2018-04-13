@@ -36,7 +36,7 @@ v1Server ctx =
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverName            .~ "Futuhours MOCK api"
+    & serverService         .~ HoursApiService -- same as in real!
     & serverDescription     .~ "Is it real?"
     & serverApp futuhoursApi .~ server
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))
