@@ -43,5 +43,5 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp emailProxyApi .~ server
     & serverEnvPfx            .~ "EMAILPROXY"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx _cfg logger _mgr _cache = return (logger, [])
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx _cfg logger _mgr _cache _mq = return (logger, [])

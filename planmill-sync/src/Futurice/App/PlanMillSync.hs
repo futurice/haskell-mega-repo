@@ -126,8 +126,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx            .~ "PLANMILLSYNC"
     & serverOpts              .~ optionsFlag False [(True, "planmill-direct"), (False, "planmill-proxy")] "Access PlanMill directly"
   where
-    makeCtx :: Bool -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx planmillDirect cfg lgr mgr cache = do
+    makeCtx :: Bool -> Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx planmillDirect cfg lgr mgr cache _mq = do
         ws <- workers lgr mgr (cfgPlanMillCfg cfg) ["worker1", "worker2", "worker3"]
         let readWorkers = if planmillDirect then Just ws else Nothing
         let ctx = Ctx cfg lgr mgr cache readWorkers ws
