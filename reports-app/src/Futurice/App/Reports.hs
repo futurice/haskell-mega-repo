@@ -192,8 +192,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp reportsApi .~ server
     & serverEnvPfx         .~ "REPORTSAPP"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr manager cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx cfg lgr manager cache _mq = do
         let ctx' = (cache, manager, lgr, cfg)
         dashDoApp <- makeDashdoServer ctx'
         let ctx = (cache, manager, lgr, cfg, dashDoApp)

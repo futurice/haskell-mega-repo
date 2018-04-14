@@ -68,8 +68,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp proxyMgmtApi .~ server
     & serverEnvPfx           .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx Identity, [Job])
-    makeCtx cfg@Config {..} lgr mgr cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx Identity, [Job])
+    makeCtx cfg@Config {..} lgr mgr cache _mq = do
         postgresPool <- createPostgresPool cfgPostgresConnInfo
         let ctx = Ctx postgresPool cfg lgr cache mgr Proxy
         dashdoServer <- makeDashdoServer ctx

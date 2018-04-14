@@ -38,8 +38,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp smileysApi .~ server
     & serverEnvPfx         .~ "SMILEYS"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger _ cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx Config {..} logger _ cache _ = do
         pp <- createPostgresPool cfgPostgresConnInfo
         let ctx = Ctx
                   { ctxPostgresPool = pp
