@@ -79,8 +79,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF4 'AC1))
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx config lgr mgr cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx config lgr mgr cache _mq = do
         let integrConfig = cfgIntegrationsCfg config
         let getPersonioPlanmillMap = do
                 now <- currentTime

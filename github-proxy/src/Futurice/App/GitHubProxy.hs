@@ -34,8 +34,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp githubProxyApi .~ server
     & serverEnvPfx        .~ "GITHUBPROXY"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx (Config auth connectionInfo) logger _mgr cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx (Config auth connectionInfo) logger _mgr cache _mq = do
         postgresPool <- createPostgresPool connectionInfo
 
         let ctx = Ctx

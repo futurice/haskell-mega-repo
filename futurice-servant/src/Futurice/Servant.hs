@@ -57,6 +57,10 @@ module Futurice.Servant (
     cachedIO,
     genCachedIO,
     CachePolicy(..),
+    -- ** Message Queue
+    MessageQueue,
+    Message (..),
+    publishMessage,
     -- * Command response
     CommandResponse (..),
     -- * Re-export
@@ -83,6 +87,8 @@ import Futurice.EnvConfig
        (Configure, configure, envAwsCredentials, envVar, envVarWithDefault,
        getConfig', optionalAlt)
 import Futurice.Lucid.Foundation            (VendorAPI, vendorServer)
+import Futurice.MessageQueue
+       (Message (..), MessageQueue, createMessageQueue, publishMessage)
 import Futurice.Metrics.RateMeter           (mark, values)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, shifted, spawnPeriocron)
@@ -246,7 +252,7 @@ args o = (,,)
 futuriceServerMain
     :: forall cfg opts ctx api colour.
        (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
-    => (opts -> cfg -> Logger -> Manager -> Cache -> IO (ctx, [Job]))
+    => (opts -> cfg -> Logger -> Manager -> Cache -> MessageQueue -> IO (ctx, [Job]))
        -- ^ Initialise the context for application, add periocron jobs
     -> ServerConfig I I opts colour ctx api
        -- ^ Server configuration
@@ -279,7 +285,7 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
             case menv of
                 Nothing -> main' logger
                 Just env -> do
-                    createCloudWatchLogStream env awsGroup t 
+                    createCloudWatchLogStream env awsGroup t
                     withCloudWatchLogger env awsGroup t $ \leLogger -> main' $
                         if fromMaybe True (_cfgStderrLogger cfg)
                         then (logger <> leLogger)
@@ -287,9 +293,16 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
 
     main2 :: (ctx -> Middleware) -> opts -> Cfg cfg -> Maybe AWS.Env -> Logger -> IO ()
     main2 middleware opts (Cfg cfg p _ekgP mgroup _ _) menv lgr = do
+        let awsGroup   = fromMaybe "Haskell" mgroup
+
+        -- create message queue and
+        -- immediately send that service is starting
+        mq <- createMessageQueue lgr menv awsGroup service
+        publishMessage mq (ServiceStarting service)
+
         mgr            <- newManager tlsManagerSettings
         cache          <- newCache
-        (ctx, jobs)    <- makeCtx opts cfg lgr mgr cache
+        (ctx, jobs)    <- makeCtx opts cfg lgr mgr cache mq
         let server'    =  futuriceServer (serviceToText service) d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
 
@@ -301,7 +314,6 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
 #endif
         mutgcTVar <- newTVarIO (MutGC 0 0 0 0)
 
-        let awsGroup   = fromMaybe "Haskell" mgroup
         let mcloudwatchJob = do
                 guard statsEnabled
                 env <- menv

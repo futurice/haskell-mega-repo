@@ -46,6 +46,6 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp smsProxyApi .~ server
     & serverEnvPfx          .~ "SMSPROXY"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr mgr _cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx cfg lgr mgr _cache _mq = do
         return (Ctx lgr cfg mgr, [])

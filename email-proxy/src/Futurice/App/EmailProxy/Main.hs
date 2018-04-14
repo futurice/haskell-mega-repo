@@ -36,8 +36,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp emailProxyApi .~ server
     & serverEnvPfx            .~ "EMAILPROXY"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg logger _mgr _cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx cfg logger _mgr _cache _mq = do
         env' <- AWS.newEnv (cfgSesCreds cfg)
         -- SES is only in Ireland in Europe
         let env = env' & AWS.envRegion .~ AWS.Ireland

@@ -45,13 +45,12 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp planmillProxyApi .~ server
     & serverEnvPfx        .~ "PLANMILLPROXY"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx (Config cfg connectionInfo) logger _ cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx (Config cfg connectionInfo) logger mgr cache _mq = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
             2 (10 :: NominalDiffTime) 20 -- stripes, ttl, resources
-        mgr <- newManager tlsManagerSettings
         ws <- workers logger mgr cfg ["worker1", "worker2", "worker3"]
         let ctx = Ctx
                 { ctxCache        = cache

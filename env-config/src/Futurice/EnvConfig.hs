@@ -30,6 +30,7 @@ import Data.Semigroup.Foldable        (asum1)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
 import Futurice.Prelude
+import Futurice.Time                  (NDT (..))
 import Network.HTTP.Client            (Request, parseUrlThrow)
 import Prelude ()
 import Servant.Client                 (BaseUrl, parseBaseUrl)
@@ -229,6 +230,13 @@ instance FromEnvVar Request where
 
 instance FromEnvVar BaseUrl where
     fromEnvVar s = fromEnvVar s >>= parseBaseUrl
+
+-------------------------------------------------------------------------------
+-- Futurice.Time
+-------------------------------------------------------------------------------
+
+instance FromEnvVar a => FromEnvVar (NDT u a) where
+    fromEnvVar = fmap NDT . fromEnvVar
 
 -------------------------------------------------------------------------------
 -- AWS

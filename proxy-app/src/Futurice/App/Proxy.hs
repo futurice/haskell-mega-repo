@@ -250,8 +250,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx       .~ "PROX"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger _mgr _cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx Config {..} logger _mgr _cache _mq = do
         mgr                  <- newManager tlsManagerSettings
         postgresPool         <- createPostgresPool cfgPostgresConnInfo
         pure $ flip (,) [] Ctx
