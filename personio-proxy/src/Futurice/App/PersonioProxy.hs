@@ -41,8 +41,8 @@ newCtx
 newCtx lgr es vs = do
     Ctx lgr <$> newTVarIO es <*> newTVarIO vs
 
-makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-makeCtx (Config cfg intervalMin) lgr mgr _cache = do
+makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
     -- employees
     let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfg Personio.PersonioAll
     (employees, validations) <- fetchEmployees
@@ -69,6 +69,7 @@ makeCtx (Config cfg intervalMin) lgr mgr _cache = do
         unless (null changed) $ do
             runLogT "updated" (ctxLogger ctx) $ do
                 logInfo "Personio updated, data changed" changed
+                liftIO $ publishMessage mq PersonioUpdated
 
 comparePersonio
     :: IdMap Personio.Employee                    -- ^ old

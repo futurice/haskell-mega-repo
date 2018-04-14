@@ -33,12 +33,16 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7 && <5
+    , adjunctions
     , aeson
     , amazonka
     , amazonka-cloudwatch
     , amazonka-cloudwatch-logs
+    , amazonka-sns
     , base-compat
     , containers
+    , distributive
+    , dlist
     , dynmap-cache
     , env-config
     , exceptions
@@ -55,6 +59,7 @@ library
     , log-cloudwatch
     , optparse-applicative
     , periocron
+    , regex-applicative-text
     , servant
     , servant-cassava
     , servant-lucid
@@ -70,6 +75,10 @@ library
     , wai
     , wai-extra
     , warp >= 3.2.11.1
+
+
+    , resourcet
   exposed-modules:
       Futurice.Servant
+      Futurice.MessageQueue
   default-language: Haskell2010

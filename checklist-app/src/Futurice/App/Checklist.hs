@@ -449,8 +449,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
-makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-makeCtx Config {..} lgr mgr cache = do
+makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+makeCtx Config {..} lgr mgr cache _mq = do
     ctx <- newCtx
         lgr
         mgr

@@ -108,6 +108,6 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp avatarApi .~ server
     & serverEnvPfx        .~ "AVATAR"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr mgr cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx cfg lgr mgr cache _mq = do
         return (Ctx cache lgr mgr cfg, [])

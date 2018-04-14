@@ -152,8 +152,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF1 'AC2))
     & serverEnvPfx            .~ "GITHUBSYNC"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx cfg lgr mgr _cache = do
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx cfg lgr mgr _cache _mq = do
         pgPool <- createPostgresPool $ cfgPostgresConnInfo cfg
         let ctx = Ctx cfg lgr mgr pgPool
         pure (ctx, [])

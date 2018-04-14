@@ -179,8 +179,8 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour      .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC2))
     & serverEnvPfx      .~ "HCAPP"
   where
-    makeCtx :: () -> Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-    makeCtx () cfg lgr mgr _cache = do
+    makeCtx :: () -> Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+    makeCtx () cfg lgr mgr _cache _mq = do
         secret <- getEntropy 64
         let ctx = Ctx cfg lgr mgr secret
         pure (ctx, [])

@@ -53,8 +53,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp fumCarbonApi .~ server
     & serverEnvPfx           .~ "FUMAPP"
 
-makeCtx :: Config -> Logger -> Manager -> Cache -> IO (Ctx, [Job])
-makeCtx cfg@Config {..} lgr mgr _cache = do
+makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
+makeCtx cfg@Config {..} lgr mgr _cache _mq = do
     -- employees
     let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
     (employees, validations) <- fetchEmployees
