@@ -105,6 +105,7 @@ employeeFullname :: Getter Employee Text
 employeeFullname = getter $ \e -> _employeeFirst e <> " " <> _employeeLast e
 
 instance NFData Employee
+instance Hashable Employee
 
 instance HasKey Employee where
     type Key Employee = EmployeeId

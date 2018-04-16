@@ -28,7 +28,7 @@ data ContractType
     | Permanent
     | FixedTerm
   deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
-  deriving anyclass (NFData, Binary)
+  deriving anyclass (NFData, Hashable, Binary)
 
 makePrisms ''ContractType
 deriveGeneric ''ContractType
