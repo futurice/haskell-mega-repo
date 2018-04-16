@@ -8,11 +8,12 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
+import Control.Lens              ((??))
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
        (Integrations, IntegrationsConfig, MonadPersonio (..),
-       githubOrganisationMembers, personioPlanmillMap, runIntegrations)
+       githubOrganisationMembers, personioPlanmillMap', runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -155,9 +156,8 @@ createEmployeePageImpl ctx fu meid mpeid leaving = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         let memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
-        now <- currentTime
         pemployees <- do
-            employees <- getPersonioEmployees now ctx
+            employees <- getPersonioEmployees ctx
             pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
 
         pure $ createEmployeePage world userInfo memployee
@@ -227,7 +227,7 @@ personioPageImpl
     -> Handler (HtmlPage "personio")
 personioPageImpl ctx fu = withAuthUser ctx fu $ \world userInfo -> do
     now <- currentTime
-    employees <- getPersonioEmployees now ctx
+    employees <- getPersonioEmployees ctx
     pure (personioPage world userInfo now employees)
 
 
@@ -283,9 +283,11 @@ getEmployeeExternalData
     => UTCTime
     -> Ctx
     -> m IntegrationData
-getEmployeeExternalData now ctx = liftIO $ cachedIO lgr cache 180 () $ do
-    (githubD, personioD, planmillD) <- runIntegrations mgr lgr now cfg fetchEmployeeExternalData
-    return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD
+getEmployeeExternalData now ctx = liftIO $ do
+    ps <- getPersonioEmployees ctx
+    cachedIO lgr cache 180 ps $ do
+        (githubD, personioD, planmillD) <- runIntegrations mgr lgr now cfg $ fetchEmployeeExternalData ps
+        return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD
   where
       githubDataMap gd = Map.fromList $ map (\g -> (GH.simpleUserLogin g, g)) (toList gd)
       personioDataMap pd = Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pd
@@ -296,31 +298,28 @@ getEmployeeExternalData now ctx = liftIO $ cachedIO lgr cache 180 () $ do
 
 type M = Integrations '[I, Proxy, I, I, Proxy, I]
 
-personioPlanmillPMuserMap :: M (HashMap FUM.Login (Personio.Employee, PMUser))
-personioPlanmillPMuserMap = personioPlanmillMap >>= (\persons -> ifor persons $ \ _ (per, plan) -> do
-    passive <- PMQ.enumerationValue (PM.uPassive plan) "-"
-    pure (per, PMUser { pmUser = plan,
-                        pmPassive = passive
-                      }))
+personioPlanmillPMuserMap :: [Personio.Employee] -> M (HashMap FUM.Login (Personio.Employee, PMUser))
+personioPlanmillPMuserMap ps = do
+    persons <- personioPlanmillMap' ?? ps
+    for persons $ \(per, plan) -> do
+        passive <- PMQ.enumerationValue (PM.uPassive plan) "-"
+        pure (per, PMUser
+            { pmUser = plan
+            ,pmPassive = passive
+            })
 
-fetchEmployeeExternalData :: M (Vector GH.SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
-fetchEmployeeExternalData = (,,)
+fetchEmployeeExternalData :: [Personio.Employee] -> M (Vector GH.SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+fetchEmployeeExternalData ps = (,,)
     <$> githubOrganisationMembers
     <*> personio Personio.PersonioEmployees
-    <*> personioPlanmillPMuserMap
+    <*> personioPlanmillPMuserMap ps
 
 -------------------------------------------------------------------------------
 -- Personio helper
 -------------------------------------------------------------------------------
 
-getPersonioEmployees :: MonadIO m => UTCTime -> Ctx -> m [Personio.Employee]
-getPersonioEmployees now ctx = liftIO $ cachedIO lgr cache 180 () $
-    runIntegrations mgr lgr now cfg $ personio Personio.PersonioEmployees
-  where
-    lgr = ctxLogger ctx
-    mgr = ctxManager ctx
-    cfg = ctxIntegrationsCfg ctx
-    cache = ctxCache ctx
+getPersonioEmployees :: MonadIO m => Ctx -> m [Personio.Employee]
+getPersonioEmployees = liftIO . readTVarIO  . ctxPersonio
 
 -------------------------------------------------------------------------------
 -- Audit
@@ -450,7 +449,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx Config {..} lgr mgr cache _mq = do
+makeCtx Config {..} lgr mgr cache mq = do
     ctx <- newCtx
         lgr
         mgr
@@ -464,18 +463,33 @@ makeCtx Config {..} lgr mgr cache _mq = do
     let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
     atomically $ writeTVar (ctxWorld ctx) world0
 
-    -- We don't need manager in ctx for now
-    let action = do
+    -- ACL job
+    let aclAction = do
             acl <- fetchGroups
-                (ctxManager ctx)
+                mgr
                 lgr
                 cfgIntegrationsCfg
                 (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
-            atomically (writeTVar (ctxACL ctx) acl)
+            atomically $ writeTVar (ctxACL ctx) acl
 
-    let job = mkJob "update checklist ACL" action $ every 600
+    let aclJob = mkJob "update checklist ACL" aclAction $ every 600
 
-    pure (ctx, [job])
+    -- personio job
+    let personioAction = do
+          runLogT "update-from-personio" lgr $ logTrace_ "Updating"
+          now <- currentTime
+          ps <- runIntegrations mgr lgr now cfgIntegrationsCfg $
+              personio Personio.PersonioEmployees
+          atomically $ writeTVar (ctxPersonio ctx) ps
+
+    let personioJob = mkJob "update personio data" personioAction $ every 300
+
+    -- listen to MQ, especially updated Personio
+    void $ forEachMessage mq $ \msg -> case msg of
+        PersonioUpdated -> personioAction
+        _               -> pure ()
+
+    pure (ctx, [aclJob, personioJob])
 
 fetchGroups
     :: Manager

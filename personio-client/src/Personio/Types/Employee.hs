@@ -5,7 +5,6 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-{-# OPTIONS_GHC -Werror #-}
 module Personio.Types.Employee where
 
 -- Uncomment to get attribute hashmap
@@ -17,6 +16,7 @@ import Data.Semigroup            (Min (..))
 import Data.Time                 (zonedTimeToLocalTime)
 import FUM.Types.Login           (Login)
 import Futurice.Aeson
+import Futurice.Company
 import Futurice.CostCenter
 import Futurice.Email            (Email)
 import Futurice.Generics
@@ -30,9 +30,9 @@ import Prelude ()
 
 import Personio.Internal.Attribute
 import Personio.Types.ContractType
-import Personio.Types.SalaryType
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
+import Personio.Types.SalaryType
 import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST        as FD
@@ -55,6 +55,7 @@ data Employee = Employee
     , _employeeLogin            :: !(Maybe Login)
     , _employeeTribe            :: !Tribe  -- ^ defaults to 'defaultTribe'
     , _employeeOffice           :: !Office  -- ^ defaults to 'OffOther'
+    , _employeeEmployer         :: !Company -- ^ default so Futurice Oy, 'companyFuturiceOy'
     , _employeeCostCenter       :: !(Maybe CostCenter)
     , _employeeGithub           :: !(Maybe (GH.Name GH.User))
     , _employeeFlowdock         :: !(Maybe FD.UserId)
@@ -104,6 +105,7 @@ employeeFullname :: Getter Employee Text
 employeeFullname = getter $ \e -> _employeeFirst e <> " " <> _employeeLast e
 
 instance NFData Employee
+instance Hashable Employee
 
 instance HasKey Employee where
     type Key Employee = EmployeeId
@@ -135,7 +137,8 @@ parseEmployeeObject obj' = Employee
     <*> fmap getSupervisorId (parseAttribute obj "supervisor")
     <*> optional (parseDynamicAttribute obj "Login name")
     <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
-    <*> fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
+    <*> fmap (fromMaybe offOther . getName) (parseAttribute obj "office")
+    <*> (parseDynamicAttribute obj "Employer" <|> pure companyFuturiceOy)
     <*> fmap (fmap getCostCenter' . listToMaybe) (parseAttribute obj "cost_centers")
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
     <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")

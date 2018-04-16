@@ -5,7 +5,7 @@ import Data.Aeson.Compat
 import Data.Aeson.Lens       (key, _String)
 import Data.Aeson.Types      (parseEither)
 import Futurice.Email        (mkEmail)
-import Futurice.Office       (Office (..))
+import Futurice.Office       (offTampere)
 import Futurice.Prelude
 import Futurice.Tribe        (mkTribe)
 import Prelude ()
@@ -64,7 +64,7 @@ examples = testGroup "HUnit"
         Just "+123 5678910" @=? e ^. employeeWorkPhone
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
         $(mkTribe "Tammerforce") @=? e ^. employeeTribe
-        OffTampere @=? e ^. employeeOffice
+        offTampere @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
         Nothing @=? e ^. employeeFlowdock
         Active @=? e ^. employeeStatus

@@ -61,6 +61,7 @@ module Futurice.Servant (
     MessageQueue,
     Message (..),
     publishMessage,
+    forEachMessage,
     -- * Command response
     CommandResponse (..),
     -- * Re-export
@@ -88,7 +89,8 @@ import Futurice.EnvConfig
        getConfig', optionalAlt)
 import Futurice.Lucid.Foundation            (VendorAPI, vendorServer)
 import Futurice.MessageQueue
-       (Message (..), MessageQueue, createMessageQueue, publishMessage)
+       (Message (..), MessageQueue, createMessageQueue, forEachMessage,
+       publishMessage)
 import Futurice.Metrics.RateMeter           (mark, values)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, shifted, spawnPeriocron)

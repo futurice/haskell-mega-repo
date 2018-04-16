@@ -1,0 +1,9 @@
+[
+  {"name": "Helsinki",  "short": "Hki", "company": "Futurice Oy"},
+  {"name": "Tampere",   "short": "Tre", "company": "Futurice Oy"},
+  {"name": "Berlin",    "short": "Ber", "company": "Futurice GmbH"},
+  {"name": "London" ,   "short": "Lon", "company": "Futurice Ltd"},
+  {"name": "Stockholm", "short": "Sto", "company": "Futu Sweden AB"},
+  {"name": "Munich",    "short": "Mun", "company": "Futurice GmbH"},
+  {"name": "Other",     "short": "Oth", "company": "Futurice Oy", "default": true}
+]
