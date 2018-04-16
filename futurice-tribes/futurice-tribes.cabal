@@ -53,11 +53,14 @@ library
     , trifecta
     , vector
   exposed-modules:
+      Futurice.Company
+      Futurice.CostCenter
       Futurice.Email
       Futurice.Office
       Futurice.Tribe
-      Futurice.CostCenter
   other-modules:
-      Futurice.Tribe.Internal
+      Futurice.Company.Internal
       Futurice.CostCenter.Internal
+      Futurice.Office.Internal
+      Futurice.Tribe.Internal
   default-language: Haskell2010
