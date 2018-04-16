@@ -36,7 +36,7 @@ if sha256sum -c data.sha256sums; then
 else
     echo "Invalid datafiles. To update run: "
 	echo ""
-	echo "sha256sum futurice-constants/constants.json futurice-tribes/tribes.json futurice-tribes/cost-centers.json hc-app/early-caring.template > data.sha256sums"
+	echo "sha256sum futurice-constants/constants.json futurice-tribes/tribes.json futurice-tribes/cost-centers.json futurice-tribes/offices.json futurice-tribes/companies.json hc-app/early-caring.template > data.sha256sums"
     exit 1
 fi
 

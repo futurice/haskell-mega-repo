@@ -15,6 +15,7 @@ import Data.Swagger
        (defaultSchemaOptions, genericDeclareNamedSchemaUnrestricted)
 import FUM.Types.Login             (loginRegexp)
 import Futurice.Aeson
+import Futurice.Company
 import Futurice.CostCenter
 import Futurice.Email              (emailRegexp)
 import Futurice.Generics
@@ -32,8 +33,8 @@ import Personio.Types.EmploymentType
 import Personio.Types.PersonalIdValidations
 import Personio.Types.Status
 
-import qualified Data.Map.Strict               as Map
-import qualified Data.Text                     as T
+import qualified Data.Map.Strict as Map
+import qualified Data.Text       as T
 
 import Personio.Types.Internal
 
@@ -91,6 +92,7 @@ data ValidationMessage
     | WorkPermitMissing
     | WorkPhoneMissing
     | SupervisorNotActive !Text
+    | OfficeCompanyDontMatch Office Company
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToJSON ValidationMessage
@@ -185,6 +187,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , withValidatorValidate "(GB) National Insurance Number" GBNINOInvalid isValidGbNINO
         , withValidatorValidate "(SE) Personal number" SEPersonalIdInvalid isValidSwePIN
         , workPermitEndsMissing
+        , officeCompanyDontMatch
         ]
       where
         isExternal = e ^. employeeEmploymentType == Just External
@@ -497,8 +500,15 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 then pure ()
                 else tell [IdentificationNumberMissing]
 
+        officeCompanyDontMatch :: WriterT [ValidationMessage] Parser ()
+        officeCompanyDontMatch = do
+            let c = e ^. employeeEmployer
+            let o = e ^. employeeOffice
+            when (c /= officeCompany o) $
+                tell [OfficeCompanyDontMatch o c]
+
         finnishOffices :: [Office]
-        finnishOffices = [OffHelsinki, OffTampere]
+        finnishOffices = filter (\o -> officeCompany o == companyFuturiceOy) [minBound .. maxBound]
 
 -- | Validate IBAN.
 --

@@ -1,12 +1,13 @@
+{-# LANGUAGE DeriveLift        #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveLift #-}
 module Futurice.Tribe.Internal (module Futurice.Tribe.Internal) where
 
-import Data.Aeson.Compat   (FromJSON (..), withObject, (.!=), (.:), (.:?))
-import Futurice.CostCenter (CostCenter)
-import Futurice.Office     (Office)
-import Language.Haskell.TH.Syntax (Lift)
+import Data.Aeson.Compat
+       (FromJSON (..), withObject, (.!=), (.:), (.:?))
+import Futurice.CostCenter        (CostCenter)
+import Futurice.Office            (Office)
 import Futurice.Prelude
+import Language.Haskell.TH.Syntax (Lift)
 import Prelude ()
 
 data TribeInfo = TribeInfo
