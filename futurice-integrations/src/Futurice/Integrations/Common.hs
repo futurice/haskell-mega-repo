@@ -15,6 +15,7 @@ module Futurice.Integrations.Common (
     -- * PlanMill
     fumPlanmillMap,
     personioPlanmillMap,
+    personioPlanmillMap',
     planmillEmployee,
     -- * Classy lenses
     HasFUMEmployeeListName(..),
@@ -108,8 +109,12 @@ githubOrganisationMembers = do
 personioPlanmillMap
     :: (MonadPersonio m, MonadPlanMillQuery m)
     => m (HashMap FUM.Login (P.Employee, PM.User))
-personioPlanmillMap = do
-    combine <$> P.personio P.PersonioEmployees <*> users
+personioPlanmillMap = personioPlanmillMap' <*> P.personio P.PersonioEmployees
+
+personioPlanmillMap'
+    :: MonadPlanMillQuery m
+    => m ([P.Employee] -> HashMap FUM.Login (P.Employee, PM.User))
+personioPlanmillMap' = flip combine <$> users
   where
     -- detailed planmill users
     users = do

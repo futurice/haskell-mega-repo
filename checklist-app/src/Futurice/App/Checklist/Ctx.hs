@@ -23,6 +23,7 @@ import Prelude ()
 import qualified Data.Map                   as M
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.Login            as FUM
+import qualified Personio
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Logic
@@ -39,6 +40,7 @@ data Ctx = Ctx
     , ctxPRNGs           :: Pool (TVar CryptoGen)
     , ctxMockUser        :: !(Maybe FUM.Login)
     , ctxACL             :: TVar (Map FUM.Login TaskRole)
+    , ctxPersonio        :: TVar [Personio.Employee]
     }
 
 newCtx
@@ -58,6 +60,7 @@ newCtx lgr mgr cache cfg ci mockUser w = do
         <*> createPool (mkCryptoGen >>= newTVarIO) (\_ -> return()) 1 3600 5
         <*> pure mockUser
         <*> newTVarIO M.empty
+        <*> newTVarIO []
 
 ctxWithCryptoGen
     :: MonadIO m

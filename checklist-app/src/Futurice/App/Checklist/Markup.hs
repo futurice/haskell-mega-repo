@@ -262,26 +262,10 @@ taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
 locationHtml
     :: (Monad m, HasIdentifier c Checklist)
     => Maybe c -> Office -> HtmlT m ()
-locationHtml mlist l = a_ [ href, title_ locName ] $ locSlug
+locationHtml mlist o =
+    a_ [ href, title_ $ officeToText o ] $ toHtml $ officeShortName o
   where
-    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task) False False
-
-    locSlug = case l of
-        OffHelsinki  -> "Hel"
-        OffTampere   -> "Tre"
-        OffBerlin    -> "Ber"
-        OffLondon    -> "Lon"
-        OffStockholm -> "Sto"
-        OffMunich    -> "Mun"
-        OffOther     -> "Oth"
-    locName = case l of
-        OffHelsinki  -> "Helsnki"
-        OffTampere   -> "Tampere"
-        OffBerlin    -> "Berlin"
-        OffLondon    -> "London"
-        OffStockholm -> "Stockholm"
-        OffMunich    -> "Munich"
-        OffOther     -> "Other"
+    href = indexPageHref (Just o) mlist (Nothing :: Maybe Task) False False
 
 roleHtml
     :: (Monad m, HasIdentifier c Checklist)
@@ -304,7 +288,7 @@ contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 checklistNameHtml :: Monad m => World -> Maybe Office -> Identifier Checklist -> Bool -> HtmlT m ()
 checklistNameHtml world mloc i notDone =
     a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
-        world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
+        world ^. worldLists . at i . non (error "Inconsistent world") . nameHtml
 
 -------------------------------------------------------------------------------
 -- TaskTags extra info
