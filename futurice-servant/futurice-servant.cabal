@@ -39,6 +39,7 @@ library
     , amazonka-cloudwatch
     , amazonka-cloudwatch-logs
     , amazonka-sns
+    , amazonka-sqs
     , base-compat
     , containers
     , distributive
