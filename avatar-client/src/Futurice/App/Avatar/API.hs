@@ -11,6 +11,7 @@ import FUM.Types.Login     (Login)
 import Futurice.Prelude
 import Prelude ()
 import Servant.API
+import Servant.Cached
 import Servant.JuicyPixels (PNG)
 
 type AvatarAPI =
@@ -22,13 +23,13 @@ type GenericAvatar = "avatar"
     :> QueryParam' '[Required] "url" Text
     :> QueryParam "size" Int
     :> QueryFlag "grey"
-    :> Get '[PNG] (Headers '[Header "Cache-Control" Text] DynamicImage)
+    :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage))
 
 type FumAvatar = "fum"
     :> Capture "login" Login
     :> QueryParam "size" Int
     :> QueryFlag "grey"
-    :> Get '[PNG] (Headers '[Header "Cache-Control" Text] DynamicImage)
+    :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage))
 
 avatarApi :: Proxy AvatarAPI
 avatarApi = Proxy
