@@ -87,7 +87,7 @@ mkFum ctx@(Ctx cache lgr mgr cfg sem) login msize grey = withSem sem $ do
             case u ^. FUM.userImageUrl . lazy of
                 Nothing -> return futulogoBS
                 Just url -> runLogT "avatar-fum" lgr $ do
-                    logTrace "fetching FUM imag" $ object
+                    logTrace "fetching FUM image" $ object
                         [ "login"  .= login
                         , "url"    .= T.unpack url
                         , "size: " .= show msize
