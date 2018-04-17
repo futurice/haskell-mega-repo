@@ -63,14 +63,14 @@ mkAvatar
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkAvatar ctx@(Ctx cache lgr mgr _ _) url msize grey = runLogT "avatar" lgr $ do
+mkAvatar ctx@(Ctx _cache lgr mgr _ _) url msize grey = runLogT "avatar" lgr $ do
     logTrace "fetching image" $ object
         [ "url"    .= T.unpack url
         , "size: " .= show msize
         , "grey: " .= show grey
         ]
     req <- parseUrlThrow (T.unpack url)
-    res <- liftIO $ cachedIO lgr cache 3600 url $ httpLbs req mgr
+    res <- liftIO $ httpLbs req mgr
     lift $ cachedAvatar ctx msize grey $ LBS.toStrict $ responseBody res
 
 mkFum
@@ -94,7 +94,7 @@ mkFum ctx@(Ctx cache lgr mgr cfg sem) login msize grey = withSem sem $ do
                         , "grey: " .= show grey
                         ]
                     req <- parseUrlThrow (T.unpack url)
-                    res <- liftIO $ cachedIO lgr cache 3600 url $ httpLbs req mgr
+                    res <- liftIO $ httpLbs req mgr
                     return $ LBS.toStrict $ responseBody res
     cachedAvatar ctx msize grey bs
   where
