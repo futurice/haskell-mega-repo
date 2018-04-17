@@ -30,11 +30,14 @@ library
   build-depends:
       base                  >=4.7   && <4.11
     , aeson
+    , bytestring
     , fum-types
     , futurice-prelude
     , JuicyPixels
     , servant
     , servant-JuicyPixels
+    , swagger2
   exposed-modules:
       Futurice.App.Avatar.API
+      Servant.Cached
   default-language: Haskell2010
