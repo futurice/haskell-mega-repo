@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -72,8 +73,9 @@ module Futurice.Servant (
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, swapTVar)
 import Control.Lens                         (each)
-import Control.Monad.Catch                  (fromException, handleAll)
-import Data.Aeson                           (FromJSON, ToJSON)
+import Control.Monad.Catch
+       (displayException, fromException, handleAll)
+import Data.Aeson                           (FromJSON, ToJSON, object, (.=))
 import Data.Char                            (isAscii, isControl)
 import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
@@ -112,6 +114,7 @@ import Servant.Swagger.UI
 
 import qualified Data.Aeson                as Aeson
 import qualified Data.Map.Strict           as Map
+import qualified Data.Typeable             as Typeable
 import qualified FUM.Types.Login           as FUM
 import qualified GHC.Stats                 as Stats
 import qualified Network.HTTP.Types        as H
@@ -376,16 +379,23 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
         & Warp.setOnExceptionResponse onExceptionResponse
         & Warp.setServerName (encodeUtf8 (serviceToText service))
 
-    onException logger mreq e = do
-        print $ typeOf e
+    onException logger mreq e' = unwrapSomeException e' $ \e ->
         runLogT "warp" logger $ do
-            let te = textShow e
+            let te = displayException e ^. packed
             case mreq of
                 -- if there isn't request, only warn.
                 Nothing -> logInfo_ te
                 Just req  -> do
                     liftIO $ mark "Warp caught exception"
-                    logAttention te req
+                    logAttention te $ object
+                        [ "request"       .= req
+                        , "exceptionType" .= show (typeOf e)
+                        ]
+
+    unwrapSomeException :: Exception e => e -> (forall e'. Exception e' => e' -> r) -> r
+    unwrapSomeException e f = case Typeable.cast e of
+        Just (SomeException e') -> unwrapSomeException e' f
+        Nothing                 -> f e
 
     -- On exception return JSON
     -- TODO: we could return some UUID and log exception with it.
