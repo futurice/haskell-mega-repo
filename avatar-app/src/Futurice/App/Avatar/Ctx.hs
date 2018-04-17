@@ -1,5 +1,6 @@
 module Futurice.App.Avatar.Ctx where
 
+import Control.Concurrent.QSem (QSem)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
@@ -11,4 +12,5 @@ data Ctx = Ctx
     , ctxLogger  :: !Logger
     , ctxManager :: !Manager
     , ctxConfig  :: !Config
+    , ctxSem     :: !QSem
     }
