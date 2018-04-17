@@ -9,7 +9,7 @@ module Futurice.App.Avatar (defaultMain) where
 
 import Codec.Picture           (DynamicImage)
 import Control.Concurrent      (getNumCapabilities)
-import Control.Concurrent.QSem (QSem, signalQSem, waitQSem, newQSem)
+import Control.Concurrent.QSem (QSem, newQSem, signalQSem, waitQSem)
 import Control.Exception       (bracket_)
 import Data.Aeson.Compat       (object, (.=))
 import Futurice.Integrations
@@ -18,6 +18,8 @@ import Futurice.Servant
 import Network.HTTP.Client     (httpLbs, parseUrlThrow, responseBody)
 import Prelude ()
 import Servant
+import Servant.Cached
+import Servant.JuicyPixels     (PNG)
 
 import qualified Crypto.Hash.SHA512   as SHA512
 import qualified Data.ByteString      as BS
@@ -33,7 +35,7 @@ import Futurice.App.Avatar.Ctx
 import Futurice.App.Avatar.Embedded
 import Futurice.App.Avatar.Logic    (avatar)
 
-type DynamicImage' = Headers '[Header "Cache-Control" Text] DynamicImage
+type DynamicImage' = Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage)
 
 cachedAvatar :: Ctx -> Maybe Int -> Bool -> BS.ByteString -> Handler DynamicImage'
 cachedAvatar (Ctx cache lgr _ _ sem) msize grey bs = withSem sem $ mk
@@ -41,6 +43,7 @@ cachedAvatar (Ctx cache lgr _ _ sem) msize grey bs = withSem sem $ mk
     . liftIO
     . cachedIO lgr cache 3600 (digest, size, grey)
     . pure
+    . fmap mkCached
     . avatar size grey
     $ bs
   where
