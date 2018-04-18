@@ -72,6 +72,7 @@ module Futurice.Servant (
 
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, swapTVar)
+import Control.Exception                    (IOException)
 import Control.Lens                         (each)
 import Control.Monad.Catch
        (displayException, fromException, handleAll)
@@ -359,8 +360,6 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
             , "stamp"       Aeson..= stamp
             ]
 
-
-
     waiMiddleware :: Middleware
     waiMiddleware app req res = do
         mark "WAI: incoming request"
@@ -387,10 +386,19 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
                 Nothing -> logInfo_ te
                 Just req  -> do
                     liftIO $ mark "Warp caught exception"
-                    logAttention te $ object
+                    logAttention' e te $ object
                         [ "request"       .= req
                         , "exceptionType" .= show (typeOf e)
                         ]
+
+    logAttention' :: Exception e => e -> Text -> Value -> LogT IO ()
+    logAttention' e = case Typeable.cast e of
+        Just e' | isSendBufException e' -> logInfo
+        _                               -> logAttention
+
+    isSendBufException :: IOException -> Bool
+    isSendBufException e = displayException e ==
+        "Network.Socket.sendBuf: resource vanished (Connection reset by peer)"
 
     unwrapSomeException :: Exception e => e -> (forall e'. Exception e' => e' -> r) -> r
     unwrapSomeException e f = case Typeable.cast e of
