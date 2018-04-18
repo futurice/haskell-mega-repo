@@ -289,7 +289,10 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
             let main' = main2 middleware opts cfg menv
 
             case menv of
-                Nothing -> main' logger
+                Nothing -> do
+                    runLogT "futurice-servant" logger $ do
+                        logInfo_ $ "No AWS environment, not logging to CloudWatch"
+                    main' logger
                 Just env -> do
                     createCloudWatchLogStream env awsGroup t
                     withCloudWatchLogger env awsGroup t $ \leLogger -> main' $

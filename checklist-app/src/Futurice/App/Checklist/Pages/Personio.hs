@@ -21,38 +21,56 @@ personioPage
     -> UTCTime     -- ^ now
     -> [Personio.Employee]
     -> HtmlPage "personio"
-personioPage world authUser now employees0 = checklistPage_ "Import from personio" [] authUser (Just NavPersonio) $ do
+personioPage world authUser now employees0 = checklistPage_ "Import from Personio" [] authUser (Just NavPersonio) $ do
+    -- navigation buttons
+    div_ [ class_ "button-group" ] $ for_ combinations $ \(what, when') -> do
+        a_ [ class_ "button", href_ $ "#" <> anchor what when' ] $
+            title what when'
+
+    -- info
     fullRow_ $ div_ [ class_ "callout" ] $ ul_ $ do
-        li_ "Shows people who start in the next 90 days"
-        li_ "Checklist shown when employee personio id or fum login matches"
+        li_ "Checklist is shown when' employee Personio id or FUM login matches"
+        li_ $ em_ "In the past" <> " lists show people left in last 30 days"
 
-    -- Table
-    subheader_ "Starting"
-    employeeTable True world startingEmployees
 
-    -- Table
-    subheader_ "Leaving"
-    employeeTable False world leavingEmployees
+    -- Tables
+    for_ combinations $ \(what, when') -> do
+        a_ [ name_ $ anchor what when', href_ $ "#" <> anchor what when' ] $
+            subheader_ $ title what when'
+        employeeTable True world $ filteredEmployees what when'
 
   where
     today = utctDay now
     loday = addDays (-30) today
 
-    startingEmployees = employees0
-        & filter predicate
-        & sortOn (Down . view Personio.employeeHireDate)
-      where
-        predicate e = case e ^. Personio.employeeHireDate of
-            Nothing -> False
-            Just d  -> loday <= d
+    combinations = [ (what, when') | what <- [ Starting, Leaving], when' <- [ Future, Past] ]
 
-    leavingEmployees = employees0
+    anchor what when' = what' <> "-" <> when'' where
+        what' = case what of
+            Starting -> "starting"
+            Leaving  -> "leaving"
+        when'' = case when' of
+            Future -> "future"
+            Past   -> "past"
+
+    title Starting Future = "Starting in the future"
+    title Starting Past   = "Started in the past"
+    title Leaving  Future = "Leaving in the future"
+    title Leaving  Past   = "Left in the past"
+
+    filteredEmployees what when' = employees0
         & filter predicate
-        & sortOn (Down . view Personio.employeeEndDate)
+        & sortOn (Down . view dateLens)
       where
-        predicate e = case e ^. Personio.employeeEndDate of
+        predicate e = case e ^. dateLens of
             Nothing -> False
-            Just d  -> today <= d
+            Just d  -> case when' of
+                Future -> today <= d
+                Past   -> loday <= d && d < today
+
+        dateLens = case what of
+            Starting -> Personio.employeeHireDate
+            Leaving  -> Personio.employeeEndDate
 
 employeeTable :: Monad m => Bool -> World -> [Personio.Employee] -> HtmlT m ()
 employeeTable hire world employees = fullRow_ $ sortableTable_ $ do
@@ -93,3 +111,6 @@ employeeTable hire world employees = fullRow_ $ sortableTable_ $ do
         | Just x <- e' ^. employeePersonio = x == e ^. Personio.employeeId
         | Just x <- e' ^. employeeFUMLogin = Just x == e ^. Personio.employeeLogin
         | otherwise = False
+
+data What = Starting | Leaving
+data When = Future | Past
