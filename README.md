@@ -11,7 +11,7 @@
 2. Install native dependencies:
     - macOS:
         - `brew install fftw pkg-config python3`
-    - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
+    - Ubuntu: `sudo make install ubuntu-dependencies`
 3. Install cabal and ghc
     - Ubuntu: See https://launchpad.net/~hvr/+archive/ubuntu/ghc
         - `apt-get install ghc-8.2.2 cabal-install-head`
