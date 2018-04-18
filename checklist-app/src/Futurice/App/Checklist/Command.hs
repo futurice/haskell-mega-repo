@@ -180,7 +180,7 @@ deriveGeneric ''EmployeeEdit
 
 fromEmployeeEdit
     :: Identifier Employee
-    -> Identifier Checklist
+    -> ChecklistId
     -> EmployeeEdit Identity
     -> Employee
 fromEmployeeEdit eid cid EmployeeEdit {..} = Employee
@@ -269,7 +269,7 @@ instance SOP.All (SOP.Compose FieldToHtml f) EmployeeEditTypes
 -- TaskAddition
 -------------------------------------------------------------------------------
 
-data TaskAddition = TaskAddition (Identifier Checklist) TaskAppliance
+data TaskAddition = TaskAddition ChecklistId TaskAppliance
   deriving (Eq, Show)
 
 deriveGeneric ''TaskAddition
@@ -293,13 +293,11 @@ instance FromJSON TaskAddition where
 
 -- | Command as in CQRS
 data Command f
-    = CmdCreateChecklist (f :$ Identifier Checklist) (Name Checklist)
-    | CmdRenameChecklist (Identifier Checklist) (Name Checklist)
-    | CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity) [TaskAddition]
+    = CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity) [TaskAddition]
     | CmdEditTask (Identifier Task) (TaskEdit Maybe)
-    | CmdAddTask (Identifier Checklist) (Identifier Task) TaskAppliance
-    | CmdRemoveTask (Identifier Checklist) (Identifier Task)
-    | CmdCreateEmployee (f :$ Identifier Employee) (Identifier Checklist) (EmployeeEdit Identity)
+    | CmdAddTask ChecklistId (Identifier Task) TaskAppliance
+    | CmdRemoveTask ChecklistId (Identifier Task)
+    | CmdCreateEmployee (f :$ Identifier Employee) ChecklistId (EmployeeEdit Identity)
     | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
     | CmdArchiveEmployee (Identifier Employee) ArchiveOrRemove
@@ -319,23 +317,16 @@ instance FromJSON ArchiveOrRemove where
 instance Arbitrary ArchiveOrRemove where
     arbitrary = sopArbitrary
 
-
-
 -- | Command identifier tag.
 data CIT a where
     CITTask      :: CIT Task
     CITEmployee  :: CIT Employee
-    CITChecklist :: CIT Checklist
 
 traverseCommand
     :: Applicative m
     => (forall x. CIT x -> f (Identifier x) -> m (g (Identifier x)))
     -> Command f
     -> m (Command g)
-traverseCommand  f (CmdCreateChecklist i n) =
-    CmdCreateChecklist <$> f CITChecklist i <*> pure n
-traverseCommand _f (CmdRenameChecklist i n) =
-    pure $ CmdRenameChecklist i n
 traverseCommand f (CmdCreateTask i e ls ) =
     CmdCreateTask <$> f CITTask i <*> pure e <*> pure ls
 traverseCommand _f (CmdEditTask i e) =
@@ -360,7 +351,7 @@ traverseCommand _ (CmdTaskEditComment eid tid c) =
 -------------------------------------------------------------------------------
 
 type CommandIdentifiers =
-    '[Identifier Checklist, Identifier Task, Identifier Employee]
+    '[ChecklistId, Identifier Task, Identifier Employee]
 
 deriving instance SOP.All (SOP.Compose Eq f) CommandIdentifiers => Eq (Command f)
 deriving instance SOP.All (SOP.Compose Show f) CommandIdentifiers => Show (Command f)
@@ -395,7 +386,7 @@ instance ToJSON (EmployeeEdit f) => ToJSONField (EmployeeEdit f) where
 
 instance ToJSONField (Identifier Task)      where toJSONField = Just . ("tid" .=)
 instance ToJSONField (Identifier Employee)  where toJSONField = Just . ("eid" .=)
-instance ToJSONField (Identifier Checklist) where toJSONField = Just . ("cid" .=)
+instance ToJSONField ChecklistId            where toJSONField = Just . ("cid" .=)
 instance ToJSONField (Name Checklist)       where toJSONField = Just . ("name" .=)
 instance ToJSONField TaskComment            where toJSONField = Just . ("comment" .=)
 instance ToJSONField ArchiveOrRemove        where toJSONField = Just . ("delete" .=)
@@ -457,12 +448,6 @@ instance (FromJSONField1 f) => FromJSON (Command f)
     parseJSON = withObject "Command" $ \obj -> do
         cmd <- obj .: "cmd" :: Aeson.Parser Text
         case cmd of
-            "create-checklist" -> CmdCreateChecklist
-                <$> fromJSONField1 obj "cid"
-                <*> obj .: "name"
-            "rename-checklist" -> CmdRenameChecklist
-                <$> obj .: "cid"
-                <*> obj .: "name"
             "create-task" -> CmdCreateTask
                 <$> fromJSONField1 obj "tid"
                 <*> obj .: "edit"

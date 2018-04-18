@@ -92,7 +92,7 @@ createTaskPage world authUser = checklistPage_ "Create task" [] authUser (Just N
         option_ [ value_ "" ] $ "-"
         for_ (world ^.. worldLists . folded) $ \cl ->
             optionSelected_ False
-                [ value_ $ cl ^. identifier . getter identifierToText ]
+                [ value_ $ cl ^. checklistId . re _ChecklistId ]
                 $ cl ^. nameHtml
 
     checklistAppliance :: Monad m => Text -> HtmlT m ()

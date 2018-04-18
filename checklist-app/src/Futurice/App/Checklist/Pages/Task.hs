@@ -98,10 +98,10 @@ taskPage world today authUser task integrationData = checklistPage_ (view nameTe
         tbody_ $ for_ employees $ \employee -> tr_ $ do
             let startingDay = employee ^. employeeStartingDay
             td_ $ contractTypeHtml $ employee ^. employeeContractType
-            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
+            td_ $ locationHtml Nothing $ employee ^. employeeOffice
             td_ $ employeeLink employee
             -- TODO: checklist link
-            td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll
+            td_ $ checklistNameHtml Nothing (employee ^. employeeChecklist) defaultShowAll
             td_ $ taskCheckbox_ world employee task
             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task

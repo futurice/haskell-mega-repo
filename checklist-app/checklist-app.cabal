@@ -103,7 +103,6 @@ library
       Futurice.App.Checklist.Pages.Archive
       Futurice.App.Checklist.Pages.Checklist
       Futurice.App.Checklist.Pages.Checklists
-      Futurice.App.Checklist.Pages.CreateChecklist
       Futurice.App.Checklist.Pages.CreateEmployee
       Futurice.App.Checklist.Pages.CreateTask
       Futurice.App.Checklist.Pages.Employee
@@ -119,6 +118,7 @@ library
       Futurice.App.Checklist.Pages.Tasks
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
+      Futurice.App.Checklist.Types.ChecklistId
       Futurice.App.Checklist.Types.ContractType
       Futurice.App.Checklist.Types.Counter
       Futurice.App.Checklist.Types.Identifier

@@ -8,7 +8,7 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
-import Control.Lens              ((??))
+import Control.Lens              (re, (??))
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
@@ -33,13 +33,11 @@ import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Pages.Archive
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Checklists
-import Futurice.App.Checklist.Pages.CreateChecklist
 import Futurice.App.Checklist.Pages.CreateEmployee
 import Futurice.App.Checklist.Pages.CreateTask
 import Futurice.App.Checklist.Pages.Employee
 import Futurice.App.Checklist.Pages.EmployeeAudit
-import Futurice.App.Checklist.Pages.Error
-       (forbiddedPage, notFoundPage)
+import Futurice.App.Checklist.Pages.Error          (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.HelpServices
 import Futurice.App.Checklist.Pages.Index
@@ -56,10 +54,9 @@ import qualified FUM.Types.GroupName        as FUM
 import qualified FUM.Types.Login            as FUM
 import qualified Futurice.FUM.MachineAPI    as FUM
 import qualified GitHub                     as GH
+import qualified Personio
 import qualified PlanMill                   as PM
 import qualified PlanMill.Queries           as PMQ
-
-import qualified Personio
 
 -------------------------------------------------------------------------------
 -- Server
@@ -69,7 +66,6 @@ server :: Ctx -> Server ChecklistAPI
 server ctx = indexPageImpl ctx
     :<|> tasksPageImpl ctx
     :<|> checklistsPageImpl ctx
-    :<|> createChecklistPageImpl ctx
     :<|> createTaskPageImpl ctx
     :<|> createEmployeePageImpl ctx
     :<|> checklistPageImpl ctx
@@ -93,7 +89,7 @@ indexPageImpl
     :: Ctx
     -> Maybe FUM.Login
     -> Maybe Office
-    -> Maybe (Identifier Checklist)
+    -> Maybe ChecklistId
     -> Maybe (Identifier Task)
     -> Bool
     -> Bool
@@ -118,7 +114,7 @@ tasksPageImpl
     :: Ctx
     -> Maybe FUM.Login
     -> Maybe TaskRole
-    -> Maybe (Identifier Checklist)
+    -> Maybe ChecklistId
     -> Handler (HtmlPage "tasks")
 tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
   where
@@ -128,14 +124,6 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
         checklist = do
             cid' <- cid
             world ^? worldLists . ix cid'
-
-createChecklistPageImpl
-    :: Ctx
-    -> Maybe FUM.Login
-    -> Handler (HtmlPage "create-checklist")
-createChecklistPageImpl ctx fu = withAuthUser ctx fu impl
-  where
-    impl world userInfo = pure $ createChecklistPage world userInfo
 
 createTaskPageImpl
     :: Ctx
@@ -190,15 +178,13 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
 checklistPageImpl
     :: Ctx
     -> Maybe FUM.Login
-    -> Identifier Checklist
+    -> ChecklistId
     -> Handler (HtmlPage "checklist")
 checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
   where
-    impl world userInfo = case world ^? worldLists . ix cid of
-        Nothing        -> pure notFoundPage
-        Just checklist -> do
-            today <- currentDay
-            pure $ checklistPage world today userInfo checklist
+    impl world userInfo = do
+        today <- currentDay
+        pure $ checklistPage world today userInfo $ world ^. worldLists . pick cid
 
 employeePageImpl
     :: Ctx
@@ -234,7 +220,7 @@ personioPageImpl ctx fu = withAuthUser ctx fu $ \world userInfo -> do
 reportPageImpl
     :: Ctx
     -> Maybe FUM.Login
-    -> Maybe (Identifier Checklist)
+    -> Maybe ChecklistId
     -> Maybe Day
     -> Maybe Day
     -> Handler (HtmlPage "report")
@@ -371,11 +357,6 @@ commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
         tell $ AckLoad $ toUrlPiece $
             safeLink checklistApi taskPageEndpoint tid
         pure (Identity tid)
-    genIdentifier CITChecklist Proxy = do
-        cid <- Identifier <$> ctxGetCRandom ctx
-        tell $ AckLoad $ toUrlPiece $
-            safeLink checklistApi checklistPageEndpoint cid
-        pure (Identity cid)
 
 -------------------------------------------------------------------------------
 -- Commands fetch
@@ -387,7 +368,7 @@ fetchEmployeeCommands
     -> Employee
     -> m [(Command Identity, FUM.Login, UTCTime)]
 fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
-    liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
+    liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist . re _ChecklistId)
   where
     query = fromString $ unwords
         [ "SELECT cmddata, username, updated FROM checklist2.commands"
