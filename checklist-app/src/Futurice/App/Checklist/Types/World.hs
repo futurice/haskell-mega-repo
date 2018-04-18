@@ -26,7 +26,7 @@ module Futurice.App.Checklist.Types.World (
     ) where
 
 -- import Futurice.Generics
-import Control.Lens     (contains, filtered, ifiltered, (<&>))
+import Control.Lens     (contains, filtered, (<&>))
 import Data.Functor.Rep (Representable (..))
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
@@ -34,6 +34,7 @@ import Futurice.Office
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Data.Set       as Set
 import qualified Data.Set.Lens  as Set
 import qualified Futurice.Graph as Graph
 import qualified Futurice.IdMap as IdMap
@@ -103,7 +104,9 @@ worldTaskItems' = getter _worldTaskItems'
 
 worldTasksSorted :: TaskRole -> Getter World [Task]
 worldTasksSorted tr = getter $ \world ->
-    sortOn ((tr /=) . view taskRole) $ Graph.revTopSort (world ^. worldTasks)
+    sortOn ((tr /=) . view taskRole) $
+    sortOn (view taskOffset) $
+    Graph.revTopSort (world ^. worldTasks)
 
 worldTasksSortedByName :: Getter World [Task]
 worldTasksSortedByName = getter $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
@@ -147,7 +150,7 @@ mkWorld es ts ls is arc =
 
         ls' = ls
             & traverse . checklistTasks
-            %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
+            %~ Set.filter validTid
 
         -- TODO: validate is
 

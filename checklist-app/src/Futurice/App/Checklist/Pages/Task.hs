@@ -13,6 +13,7 @@ import Web.HttpApiData           (toUrlPiece)
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+import Futurice.App.Checklist.Types.TaskAppliance (prettyTaskAppliance)
 
 import qualified Data.Map       as Map
 import qualified Futurice.IdMap as IdMap
@@ -58,6 +59,20 @@ taskPage world today authUser task integrationData = checklistPage_ (view nameTe
                         [ value_ $ role ^. re _TaskRole ]
                         $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
+            "Day offset"
+            input_ [ futuId_ "task-offset", type_ "text", value_ $ textShow $ task ^. taskOffset ]
+        row_ $ large_ 12 $ label_ $ do
+            "Applicability"
+            let v = if task ^. taskApplicability == TAAll
+                    then ""
+                    else prettyTaskAppliance (task ^. taskApplicability)
+            input_
+                 [ futuId_ "task-app"
+                 , type_ "text"
+                 , placeholder_ "e.g. not external, helsinki or tampere"
+                 , value_ v
+                 ]
+        row_ $ large_ 12 $ label_ $ do
             "Comment field"
             br_ []
             checkbox_ (task ^. taskComment) [ futuId_ "task-comment" ]
@@ -84,7 +99,7 @@ taskPage world today authUser task integrationData = checklistPage_ (view nameTe
 
     -- Employees
     subheader_ "Employees"
-    row_ $ large_ 12 $ table_ $ do
+    row_ $ large_ 12 $ sortableTable_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
             th_ [title_ "Office"]                    "Loc"

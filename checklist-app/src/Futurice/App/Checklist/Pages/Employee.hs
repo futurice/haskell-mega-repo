@@ -153,6 +153,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Tasks
+    subheader_ "Tasks"
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [ title_ "Task" ]  "Task"
@@ -174,6 +175,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
                     " "
                     toHtml $ show $ localDay $ utcToHelsinkiTime timestamp
 
+    subheader_ "DANGER"
     when (authUser ^. _2 == TaskRoleIT) $ row_ $ large_ 12 $ do
         hr_ []
         button_

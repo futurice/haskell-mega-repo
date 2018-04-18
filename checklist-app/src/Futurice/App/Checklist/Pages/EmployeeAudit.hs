@@ -105,15 +105,14 @@ processCommands world eid l = concat . flip evalState False . traverse process
                   i_ $ toHtml comment
             pure [ x & l #~ html ]
 
-        CmdAddTask _ tid app -> do
+        CmdAddTask _ tid -> do
             created <- use id
 
             let html = do
                   b_ "Added task"
                   " "
                   taskHtml tid
-                  " with appliance "
-                  toHtml app
+
                   -- TODO: show only if current state of user applies
                   "; "
                   em_ "May not apply to this user"
