@@ -17,28 +17,8 @@ fi
 
 cd $ROOTDIR
 
-# Check that we don't have cabal.project.local
-if [ -f cabal.project.local ]; then
-	echo "Cannot do production build with cabal.project.local"
-	exit 1
-fi
-
-# Check that we have somewhat clean working dir
-if [ ! -z "$(git status --porcelain)" ]; then
-    echo "DIRTY WORKINGDIR"
-    exit 1
-fi
-
-# Check that we have proper data files in place
-#
-if sha256sum -c data.sha256sums; then
-    echo "Data files OK"
-else
-    echo "Invalid datafiles. To update run: "
-	echo ""
-	echo "sha256sum futurice-constants/constants.json futurice-tribes/tribes.json futurice-tribes/cost-centers.json futurice-tribes/offices.json futurice-tribes/companies.json hc-app/early-caring.template > data.sha256sums"
-    exit 1
-fi
+make check-dirty
+make check-checksums
 
 # GHC version
 GHCVER=${GHCVER-8.2.2}
