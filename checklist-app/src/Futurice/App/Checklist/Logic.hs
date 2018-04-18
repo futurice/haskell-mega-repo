@@ -5,8 +5,8 @@ module Futurice.App.Checklist.Logic (
     transactCommand,
     ) where
 
-import Control.Lens               (iforOf_, non, use)
-import Control.Monad.State.Strict (execState)
+import Control.Lens               (forOf_, non, use, contains, preuse)
+import Control.Monad.State.Strict (State, execState)
 import Futurice.Prelude
 import Prelude ()
 
@@ -23,14 +23,14 @@ import Futurice.App.Checklist.Types
 -- todo: in error monad, if e.g. identifier don't exist
 applyCommand :: UTCTime -> FUM.Login -> Command Identity -> World -> World
 applyCommand now ssoUser cmd world = flip execState world $ case cmd of
-    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment) (Identity t)) ls -> do
-        worldTasks . at tid ?= Task tid n i pr role comment t
-        for_ ls $ \(TaskAddition cid app) -> addTask cid tid app
+    CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment) (Identity t) (Identity off) (Identity app)) ls -> do
+        worldTasks . at tid ?= Task tid n i pr role comment t off app
+        for_ ls $ \cid -> addTask cid tid
 
-    CmdAddTask cid tid app -> addTask cid tid app
+    CmdAddTask cid tid -> addTask cid tid
 
     CmdRemoveTask cid tid -> do
-        worldLists . ix cid . checklistTasks . at tid Lens..= Nothing
+        worldLists . ix cid . checklistTasks . contains tid Lens..= False
 
         -- Remove this task from employee, if not already done
         es <- toList <$> use worldEmployees
@@ -39,16 +39,18 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
             when (e ^. employeeChecklist == cid) $
                 worldTaskItems . at eid . non mempty . at tid %= removeTodoTask
 
-    CmdEditTask tid te ->
+    CmdEditTask tid te -> do
         worldTasks . ix tid %= applyTaskEdit te
+        toggleTasks tid
 
     CmdCreateEmployee (Identity eid) cid x -> do
         -- create user
         let e = fromEmployeeEdit eid cid x
         worldEmployees . at eid ?= e
         -- add initial tasks
-        iforOf_ (worldLists . ix cid . checklistTasks . ifolded) world $ \tid app ->
-            when (employeeTaskApplies e app) $
+        forOf_ (worldLists . ix cid . checklistTasks . folded) world $ \tid -> do
+            mtask <- preuse $ worldTasks . ix tid
+            for_ mtask $ \task -> when (employeeTaskApplies e $ task ^. taskApplicability) $
                 worldTaskItems . at eid . non mempty . at tid ?= annTaskItemTodo
 
     CmdEditEmployee eid x -> do
@@ -82,17 +84,35 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
 
   where
     -- tasks are added with both explicit CmdAddTask and during CmdCreateTask
-    addTask cid tid app = do
-        worldLists . ix cid . checklistTasks . at tid ?= app
-        es <- toList <$> use worldEmployees
-        for_ es $ \e -> do
-            let eid = e ^. identifier
-            when (e ^. employeeChecklist == cid) $ do
-                if employeeTaskApplies e app
-                    -- if task applies, add it if not already there
-                    then worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe annTaskItemTodo
-                    -- if task doesn't apply, remove it if not yet done
-                    else worldTaskItems . at eid . non mempty . at tid %= removeTodoTask
+    addTask :: ChecklistId -> TaskId -> State World ()
+    addTask cid tid = do
+        -- check that task exists
+        mtask <- preuse $ worldTasks . ix tid
+        for_ mtask $ \task -> do
+            let app = task ^. taskApplicability
+
+            -- add task to the checklist
+            worldLists . ix cid . checklistTasks . contains tid Lens..= True
+
+            -- for each employee
+            es <- toList <$> use worldEmployees
+            for_ es $ \e -> do
+                let eid = e ^. identifier
+                -- ... in the checklist
+                when (e ^. employeeChecklist == cid) $ do
+                    if employeeTaskApplies e app
+                        -- if task applies, add it if not already there
+                        then worldTaskItems . at eid . non mempty . at tid %= Just . fromMaybe annTaskItemTodo
+                        -- if task doesn't apply, remove it if not yet done
+                        else worldTaskItems . at eid . non mempty . at tid %= removeTodoTask
+
+    -- when task is edited, we "re-add" it to all checklists it is in.
+    -- This will force task to be added/removed when applicability changes.
+    toggleTasks :: TaskId -> State World ()
+    toggleTasks tid = for_ [minBound .. maxBound ] $ \cid -> do
+        checklist <- use $ worldLists . pick cid
+        when (checklist ^. checklistTasks . contains tid) $
+            addTask cid tid
 
     removeTodoTask (Just (AnnTaskItemTodo _)) = Nothing
     removeTodoTask x                          = x

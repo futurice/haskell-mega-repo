@@ -4,11 +4,12 @@
 module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Control.Lens
-       (filtered, has, hasn't, ifoldMapOf, only, re, united)
+       (filtered, has, hasn't, ifoldMapOf, only, re, united, minimumOf)
 import Data.List                 (intercalate)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
+import Data.Semigroup (Arg (..))
 import Prelude ()
 
 import Futurice.App.Checklist.Markup
@@ -115,7 +116,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                 hr_ []
 
         -- The table
-        row_ $ large_ 12 $ table_ $ do
+        row_ $ large_ 12 $ sortableTable_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
                 th_ [title_ "Personio"]                    "P"
@@ -129,6 +130,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                         when (has (taskTags . folded) task) $ th_ "Task info"
                         when (task ^. taskComment) $ th_ "Comment"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
+                th_ [title_ "due date + offset of next undone task" ] "Next task due"
                 th_ [title_ dateName]                      $ toHtml dateName
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
@@ -168,6 +170,12 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                             td_ $ taskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
+                    td_ $ do
+                        let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world 
+                        let arg       t = Arg (t ^. taskOffset) t
+                        case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
+                            Nothing                -> span_ [ title_ "Archive me!" ] "All done"
+                            Just (Arg offset task) -> span_ [ title_ $ task ^. nameText ] $ toHtml $ show (addDays offset startingDay)
                     td_ $ do
                         toHtml $ show startingDay
                         for_ (employee ^. employeePersonio) $ \pid ->

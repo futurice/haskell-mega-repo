@@ -29,7 +29,6 @@ module Futurice.App.Checklist.Command (
     applyEmployeeEdit,
     -- * Other
     ArchiveOrRemove (..),
-    TaskAddition (..),
     ) where
 
 import Algebra.Lattice         (top)
@@ -43,8 +42,8 @@ import Data.Singletons.Bool
 import Data.Swagger            (NamedSchema (..))
 import Data.Type.Equality
 import Futurice.Aeson
-       (FromJSONField1, fromJSONField1, object, withBool, withObject, (.!=),
-       (.:), (.:?), (.=))
+       (FromJSONField1, fromJSONField1, object, withBool, withObjectDump,
+       (.!=), (.:), (.:?), (.=))
 import Futurice.Generics
 import Futurice.Generics.SOP
 import Futurice.IsMaybe
@@ -75,6 +74,8 @@ data TaskEdit f = TaskEdit
     , tePrereqs :: !(f :$ Set :$ Identifier Task)
     , teComment :: !(f :$ Bool)
     , teTags    :: !(f :$ Set TaskTag)
+    , teOffset  :: !(f :$ Integer)
+    , teApp     :: !(f :$ TaskAppliance)
     }
 
 deriveGeneric ''TaskEdit
@@ -87,8 +88,10 @@ applyTaskEdit te
     . maybe id (Lens.set taskPrereqs) (tePrereqs te)
     . maybe id (Lens.set taskComment) (teComment te)
     . maybe id (Lens.set taskTags) (teTags te)
+    . maybe id (Lens.set taskOffset) (teOffset te)
+    . maybe id (Lens.set taskApplicability) (teApp te)
 
-type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool, Set TaskTag]
+type TaskEditTypes = '[Name Task, TaskRole, Set :$ Identifier Task, Text, Bool, Set TaskTag, Integer, TaskAppliance]
 
 deriving instance SOP.All (SOP.Compose Eq f) TaskEditTypes => Eq (TaskEdit f)
 deriving instance SOP.All (SOP.Compose Show f) TaskEditTypes => Show (TaskEdit f)
@@ -116,7 +119,7 @@ instance
   where
     -- We don't use sopParseJSON because of special treatment of prereqs
     -- in not Maybe case (i.e. Identity)
-    parseJSON = withObject "TaskEdit" $ \obj ->
+    parseJSON = withObjectDump "TaskEdit" $ \obj ->
         case sboolEqRefl :: Maybe (f :~: Maybe) of
             Just Refl -> TaskEdit
                 <$> obj .:? "name"
@@ -125,6 +128,8 @@ instance
                 <*> obj .:? "prereqs"
                 <*> obj .:? "comment"
                 <*> obj .:? "tags"
+                <*> obj .:? "offset"
+                <*> obj .:? "app"
             Nothing -> TaskEdit
                 <$> obj .: "name"
                 <*> obj .:? "info" .!= pure mempty
@@ -132,6 +137,8 @@ instance
                 <*> obj .:? "prereqs" .!= pure mempty
                 <*> obj .:? "comment" .!= pure False
                 <*> obj .:? "tags" .!= pure mempty
+                <*> obj .:? "offset" .!= pure 0
+                <*> obj .:? "app" .!= pure top
 
 -------------------------------------------------------------------------------
 -- PersonioID wrapper
@@ -266,36 +273,14 @@ instance SOP.All (SOP.Compose FieldToHtml f) EmployeeEditTypes
     toHtml = sopToHtml
 
 -------------------------------------------------------------------------------
--- TaskAddition
--------------------------------------------------------------------------------
-
-data TaskAddition = TaskAddition ChecklistId TaskAppliance
-  deriving (Eq, Show)
-
-deriveGeneric ''TaskAddition
-
-instance Arbitrary TaskAddition where
-    arbitrary = sopArbitrary
-    shrink = sopShrink
-
-instance ToJSON TaskAddition where
-    toJSON (TaskAddition cid app) = object [ "cid" .= cid, "app" .= app ]
-    toEncoding (TaskAddition cid app) = Aeson.pairs ( "cid" .= cid <> "app" .= app )
-
-instance FromJSON TaskAddition where
-    parseJSON = withObject "TaskAddition" $ \obj -> TaskAddition
-        <$> obj .: "cid"
-        <*> obj .:? "app" .!= top
-
--------------------------------------------------------------------------------
 -- Command
 -------------------------------------------------------------------------------
 
 -- | Command as in CQRS
 data Command f
-    = CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity) [TaskAddition]
+    = CmdCreateTask (f :$ Identifier Task) (TaskEdit Identity) (Set ChecklistId)
     | CmdEditTask (Identifier Task) (TaskEdit Maybe)
-    | CmdAddTask ChecklistId (Identifier Task) TaskAppliance
+    | CmdAddTask ChecklistId (Identifier Task)
     | CmdRemoveTask ChecklistId (Identifier Task)
     | CmdCreateEmployee (f :$ Identifier Employee) ChecklistId (EmployeeEdit Identity)
     | CmdEditEmployee (Identifier Employee) (EmployeeEdit Maybe)
@@ -331,8 +316,8 @@ traverseCommand f (CmdCreateTask i e ls ) =
     CmdCreateTask <$> f CITTask i <*> pure e <*> pure ls
 traverseCommand _f (CmdEditTask i e) =
     pure $ CmdEditTask i e
-traverseCommand _f (CmdAddTask c t a) =
-    pure $ CmdAddTask c t a
+traverseCommand _f (CmdAddTask c t) =
+    pure $ CmdAddTask c t
 traverseCommand _f (CmdRemoveTask c t) =
     pure $ CmdRemoveTask c t
 traverseCommand f (CmdCreateEmployee e c x) =
@@ -375,9 +360,10 @@ class ToJSON a => ToJSONField a where
 instance ToJSONField a => ToJSONField (Identity a) where
     toJSONField = toJSONField . runIdentity
 
-instance ToJSONField [TaskAddition] where
-    toJSONField [] = Nothing
-    toJSONField xs = Just $ "lists" .= xs
+instance ToJSONField (Set ChecklistId) where
+    toJSONField xs
+        | null xs   = Nothing
+        | otherwise = Just $ "lists" .= xs
 
 instance ToJSON (TaskEdit f) => ToJSONField (TaskEdit f) where
     toJSONField = Just . ("edit" .=)
@@ -445,20 +431,19 @@ sumSopToJSON
 -- more lenient, or&and verify that the generic code above works
 instance (FromJSONField1 f) => FromJSON (Command f)
   where
-    parseJSON = withObject "Command" $ \obj -> do
+    parseJSON = withObjectDump "Command" $ \obj -> do
         cmd <- obj .: "cmd" :: Aeson.Parser Text
         case cmd of
             "create-task" -> CmdCreateTask
                 <$> fromJSONField1 obj "tid"
                 <*> obj .: "edit"
-                <*> obj .:? "lists" .!= []
+                <*> obj .:? "lists" .!= mempty
             "edit-task" -> CmdEditTask
                 <$> obj .: "tid"
                 <*> obj .: "edit"
             "add-task" -> CmdAddTask
                 <$> obj .: "cid"
                 <*> obj .: "tid"
-                <*> obj .:? "appliance" .!= top
             "remove-task" -> CmdRemoveTask
                 <$> obj .: "cid"
                 <*> obj .: "tid"

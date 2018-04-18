@@ -165,29 +165,28 @@ futu.onload(function () {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
       info: { sel: "input[data-futu-id=task-info]" },
       role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
+      offset: { sel: "input[data-futu-id=task-offset]", check: numberCheck },
+      app: { sel: "input[data-futu-id=task-app]", check: applianceCheck },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
       tags: { sel: "select[data-futu-id=task-tags", check: isArrayCheck },
       comment: { sel: "input[data-futu-id=task-comment" },
       list1: { sel: "select[data-futu-id=task-checklist-1]" },
-      app1:  { sel: "input[data-futu-id=task-checklist-appliance-1]", check: applianceCheck },
       list2: { sel: "select[data-futu-id=task-checklist-2]" },
-      app2:  { sel: "input[data-futu-id=task-checklist-appliance-2]", check: applianceCheck },
-      list3: { sel: "select[data-futu-id=task-checklist-3]" },
-      app3:  { sel: "input[data-futu-id=task-checklist-appliance-3]", check: applianceCheck },
     }
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
       var lists = [];
-      if (values.list1) { lists.push({ cid: values.list1, app: values.app1 }); }
-      if (values.list2) { lists.push({ cid: values.list2, app: values.app2 }); }
-      if (values.list3) { lists.push({ cid: values.list3, app: values.app3 }); }
+      if (values.list1) { lists.push(values.list1) }
+      if (values.list2) { lists.push(values.list2) }
 
       var edit = {
         name: values.name,
         info: values.info,
         role: values.role,
+        offset: values.offset,
+        app: values.app,
         prereqs: values.prereqs,
         tags: values.tags
       };
@@ -204,7 +203,9 @@ futu.onload(function () {
     var defs = {
       name: { sel: "input[data-futu-id=task-name]", check: nonEmptyCheck },
       info: { sel: "input[data-futu-id=task-info]" },
-      role: { sel: "select[data-futu-id=task-role]" },
+      role: { sel: "select[data-futu-id=task-role]", check: nonEmptyCheck },
+      offset: { sel: "input[data-futu-id=task-offset]", check: numberCheck },
+      app: { sel: "input[data-futu-id=task-app]", check: applianceCheck },
       prereqs: { sel: "select[data-futu-id=task-prereqs", check: isArrayCheck },
       tags: { sel: "select[data-futu-id=task-tags", check: isArrayCheck },
       comment: { sel: "input[data-futu-id=task-comment" },
@@ -224,13 +225,12 @@ futu.onload(function () {
 
     var defs = {
       task: { sel: "select[data-futu-id=task-id]", check: nonEmptyCheck },
-      appl: { sel: "input[data-futu-id=task-appliance]", check: applianceCheck },
     };
 
     var actions = initialiseFormDefs(defs, form);
 
     initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      cmdAddTask(checklistId, values.task, values.appl);
+      cmdAddTask(checklistId, values.task);
     });
   }
 
@@ -375,13 +375,12 @@ futu.onload(function () {
     }, true);
   }
 
-  function cmdAddTask(checklistId, taskId, appliance) {
+  function cmdAddTask(checklistId, taskId) {
     traceCall(cmdAddTask, arguments);
     return command({
       cmd: "add-task",
       cid: checklistId,
       tid: taskId,
-      appliance: appliance,
     }, true);
   }
 
@@ -528,7 +527,7 @@ futu.onload(function () {
   }
 
   function numberCheck(str) {
-    return str.match(/^\d+$/) ? (str | 0) : undefined;
+    return str.match(/^-?\d+$/) ? (str | 0) : undefined;
   }
 
   function dayCheck(str) {

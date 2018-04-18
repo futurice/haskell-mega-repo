@@ -46,6 +46,9 @@ instance  ToHtml (Name a) where
     toHtml (Name a)    = toHtml a
     toHtmlRaw (Name a) = toHtmlRaw a
 
+type TaskId = Identifier Task
+type EmployeeId = Identifier Task
+
 -- | All checklist tasks are tied to the employee
 --
 -- /TODO:/ add more fields? Is 'Employee' better name?
@@ -77,18 +80,23 @@ instance NFData Employee
 
 -- | 'Task' describes a particular task needs to be done. For example /"add to fum"/ or /"order a laptop".
 data Task = Task
-    { _taskId           :: !(Identifier Task)
-    , _taskName         :: !(Name Task)
+    { _taskId            :: !(Identifier Task)
+    , _taskName          :: !(Name Task)
       -- ^ Display name
-    , _taskInfo         :: !Text
+    , _taskInfo          :: !Text
       -- ^ additional info
-    , _taskPrereqs      :: !(Set :$ Identifier Task)
+    , _taskPrereqs       :: !(Set :$ Identifier Task)
       -- ^ Some tasks can be done only after some other tasks are done.
-    , _taskRole         :: !TaskRole
+    , _taskRole          :: !TaskRole
       -- ^ Tasks can be fullfilled by different roles.
-    , _taskComment      :: !Bool
+    , _taskComment       :: !Bool
       -- ^ Whether we render a comment field for this task.
-    , _taskTags         :: !(Set TaskTag)
+    , _taskTags          :: !(Set TaskTag)
+      -- ^ Task tags, "type" of it
+    , _taskOffset        :: !Integer
+      -- ^ Days offset for task: negative in advance, positive in the future
+    , _taskApplicability :: !TaskAppliance
+      -- ^ Who this task is applicable for
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -106,7 +114,7 @@ data CheckResult
 --  Example lists are "new full-time employee in Helsinki"
 data Checklist = Checklist
     { _checklistId    :: !ChecklistId
-    , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
+    , _checklistTasks :: !(Set TaskId)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 -- | Helper structure for carrying Planmill user

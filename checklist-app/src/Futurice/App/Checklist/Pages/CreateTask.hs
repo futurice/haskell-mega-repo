@@ -36,6 +36,12 @@ createTaskPage world authUser = checklistPage_ "Create task" [] authUser (Just N
                             [ value_ $ role ^. re _TaskRole ]
                             $ toHtml $ role ^. re _TaskRole
         row_ $ large_ 12 $ label_ $ do
+            "Day offset"
+            input_ [ futuId_ "task-offset", type_ "text", value_ "0" ]
+        row_ $ large_ 12 $ label_ $ do
+            "Applicability"
+            input_ [ futuId_ "task-app", type_ "text", placeholder_ "e.g. not external, helsinki or tampere" ]
+        row_ $ large_ 12 $ label_ $ do
             "Comment field"
             br_ []
             checkbox_ False [ futuId_ "task-comment" ]
@@ -55,33 +61,12 @@ createTaskPage world authUser = checklistPage_ "Create task" [] authUser (Just N
                     optionSelected_ False
                         [ value_ $ tag ^. re _TaskTag ]
                         $ toHtml tag
-        row_ $ do
-            large_ 6 $ label_ $ do
-                "Checklist 1"
-                checklistSelect "task-checklist-1"
-            large_ 6 $ label_ $ do
-                "Appliance ("
-                a_ [ applianceHelpHref ] "help"
-                ")"
-                checklistAppliance "task-checklist-appliance-1"
-        row_ $ do
-            large_ 6 $ label_ $ do
-                "Checklist 2"
-                checklistSelect "task-checklist-2"
-            large_ 6 $ label_ $ do
-                "Appliance ("
-                a_ [ applianceHelpHref ] "help"
-                ")"
-                checklistAppliance "task-checklist-appliance-2"
-        row_ $ do
-            large_ 6 $ label_ $ do
-                "Checklist 3"
-                checklistSelect "task-checklist-3"
-            large_ 6 $ label_ $ do
-                "Appliance ("
-                a_ [ applianceHelpHref ] "help"
-                ")"
-                checklistAppliance "task-checklist-appliance-3"
+        row_ $ large_ 12 $ label_ $ do
+            "Checklist 1"
+            checklistSelect "task-checklist-1"
+        row_ $ large_ 12 $ label_ $ do
+            "Checklist 2"
+            checklistSelect "task-checklist-2"
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
@@ -94,7 +79,3 @@ createTaskPage world authUser = checklistPage_ "Create task" [] authUser (Just N
             optionSelected_ False
                 [ value_ $ cl ^. checklistId . re _ChecklistId ]
                 $ cl ^. nameHtml
-
-    checklistAppliance :: Monad m => Text -> HtmlT m ()
-    checklistAppliance n = input_
-        [ futuId_ n, type_ "text", placeholder_ "e.g. not external, helsinki or tampere" ]
