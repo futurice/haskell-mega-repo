@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
 
-import Control.Lens              (filtered, foldMapOf, forOf_, has, re)
+import Control.Lens
+       (contains, filtered, foldMapOf, forOf_, has, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -37,60 +38,55 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                         [ value_ $ task ^. identifierText ]
                         $ task ^. nameHtml
 
-        row_ $ large_ 12 $
-            label_ $ do
-                "Appliance ("
-                a_ [ applianceHelpHref ] "help"
-                ")"
-                input_ [ futuId_ "task-appliance", type_ "text", value_ "", placeholder_ "e.g. helsinki or tampere, permanent or fixed-term, external" ]
-
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Add"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Tasks
-    subheader_ "Tasks"
+    subheader_ $ "Tasks (" <> textShow (length tasks) <> ")"
     -- TODO: move to Markup: tasksList
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [ title_ "Task" ]                       "Task"
             th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
             th_ [ title_ "Role" ]                       "Role"
+            th_ [ title_ "Offset" ]                     "Day offset"
+            th_ [ title_ "To whom this task applies" ]  "Applicability"
             th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
             th_ [ title_ "Tags added to task" ]         "Tags"
-            th_ [ title_ "Active employees todo/done" ] "Empl"
-            th_ [ title_ "To whom this task applies" ]  "Appliance"
+            th_ [ title_ "Active employees todo/done" ] "Employees"
             th_ [ title_ "Other checklists with the task" ] "Other checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
 
-        tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
+        tbody_ $ for_ tasks $ \task -> tr_ $ do
             let tid = task ^. identifier
-            for_ (checklist ^? checklistTasks . ix tid) $ \app -> tr_ $ do
-                td_ $ taskLink task
-                td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
-                td_ $ roleHtml mcid (task ^. taskRole)
-                td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
-                    let prereqTid = prereqTask ^. identifier
-                    for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
-                        taskLink prereqTask
-                        br_ []
-                td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
-                    li_ $ toHtml tag
-                td_ $ a_ [ indexPageHref Nothing mcid (Just tid) False False ] $
-                    case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
-                        Counter i j ->
-                            toHtml (show i) *> "/" *> toHtml (show j)
-                td_ $ toHtml app
-                td_ $ forWith_
-                    (br_ [])
-                    (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. checklistId /= checklist ^. checklistId))
-                    checklistLink
-                td_ $ button_
-                    [ class_ "button alert", futuId_ "task-remove"
-                    , data_ "futu-checklist-id" $ checklist ^. checklistId . re _ChecklistId
-                    , data_ "futu-task-id" $ task ^. identifierText
-                    ]
-                    "Remove"
+
+            td_ $ taskLink task
+            td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
+            td_ $ roleHtml mcid (task ^. taskRole)
+            td_ $ toHtml $ show $ task ^. taskOffset
+            td_ $ toHtml $ task ^. taskApplicability
+            td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
+                let prereqTid = prereqTask ^. identifier
+                for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
+                    taskLink prereqTask
+                    br_ []
+            td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
+                li_ $ toHtml tag
+            td_ $ a_ [ indexPageHref Nothing mcid (Just tid) False False ] $
+                case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
+                    Counter i j ->
+                        toHtml (show i) *> "/" *> toHtml (show j)
+            td_ $ forWith_
+                (br_ [])
+                (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. checklistId /= checklist ^. checklistId))
+                checklistLink
+            td_ $ button_
+                [ class_ "button alert", futuId_ "task-remove"
+                , data_ "futu-checklist-id" $ checklist ^. checklistId . re _ChecklistId
+                , data_ "futu-task-id" $ task ^. identifierText
+                ]
+                "Remove"
 
     -- Employees
     subheader_ "Employees"
@@ -114,6 +110,9 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
 
   where
+    tasks0 = world ^.. worldTasksSorted (authUser ^. authUserTaskRole) . folded
+    tasks = filter (\task -> checklist ^. checklistTasks . contains (task ^. identifier)) tasks0
+
     mcid = checklist ^? checklistId
 
     countUsers AnnTaskItemDone {} = Counter 1 1

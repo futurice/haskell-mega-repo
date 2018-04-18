@@ -13,14 +13,16 @@ module Futurice.App.Checklist.Types (
     -- * Core types
     -- ** Employee / employee
     Employee(..),
+    EmployeeId,
     ContractType(..),
     -- ** Tasks
     Task(..),
+    TaskId,
     TaskRole(..),
     CheckResult(..),
+    Checklist(..),
     ChecklistId (..),
     PerChecklist (..),
-    Checklist(..),
     TaskItem (..),
     AnnTaskItem (..),
     TaskAppliance(..),
@@ -47,7 +49,7 @@ module Futurice.App.Checklist.Types (
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
     -- ** Task
-    taskName, taskInfo, taskPrereqs, taskRole, taskComment, taskTags,
+    taskName, taskInfo, taskPrereqs, taskRole, taskComment, taskTags, taskOffset, taskApplicability,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole

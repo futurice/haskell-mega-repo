@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Tasks (tasksPage) where
 
-import Control.Lens              (filtered, foldMapOf, forOf_, has, re)
+import Control.Lens
+       (contains, filtered, foldMapOf, forOf_, has, re)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
@@ -27,10 +28,10 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
         rolePredicate role task = role == task ^. taskRole
 
         checklistPredicate :: Checklist -> Task -> Bool
-        checklistPredicate cl task = flip has world $
-            worldLists . ix (cl ^. checklistId) . checklistTasks . ix (task ^. identifier)
+        checklistPredicate cl task = fromMaybe False $
+            world ^? worldLists . ix (cl ^. checklistId) . checklistTasks . contains (task ^. identifier)
 
-        titleParts = 
+        titleParts =
             [ (^. re _TaskRole) <$> mrole
             , (^. nameText ) <$> mlist
             ]
@@ -59,11 +60,13 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                 button_ [ class_ "button" ] $ "Filter"
 
         -- The table
-        row_ $ large_ 12 $ table_ $ do
+        row_ $ large_ 12 $ sortableTable_ $ do
             thead_ $ tr_ $ do
                 th_ [ title_ "Task" ]                       "Task"
                 th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
                 th_ [ title_ "Role" ]                       "Role"
+                th_ [ title_ "Offset in days" ]             "Day Offset"
+                th_ [ title_ "Applicability" ]              "Applicability"
                 th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
                 th_ [ title_ "Tags added to task" ]         "Tags"
                 th_ [ title_ "Active employees todo/done" ] "Empl"
@@ -72,9 +75,12 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
             tbody_ $ for_ tasks' $ \task -> tr_ $ do
                 let tid = task ^. identifier
 
+
                 td_ $ taskLink task
                 td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
                 td_ $ roleHtml (mlist ^? _Just . checklistId) $ task ^. taskRole
+                td_ $ toHtml $ show $ task ^. taskOffset
+                td_ $ toHtml $ task ^. taskApplicability
                 td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     taskLink prereqTask
                     br_ []
