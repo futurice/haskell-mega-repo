@@ -14,7 +14,6 @@ module Futurice.App.Checklist.Markup (
     indexPageHref,
     tasksPageHref,
     checklistsPageHref,
-    createChecklistPageHref,
     createTaskPageHref,
     createEmployeePageHref,
     checklistPageHref,
@@ -47,7 +46,7 @@ module Futurice.App.Checklist.Markup (
     defaultShowAll,
     ) where
 
-import Control.Lens        (has, non, re, _Wrapped)
+import Control.Lens        (has, re, _Wrapped)
 import FUM.Types.Login     (Login, loginToText)
 import Futurice.Exit
 import Futurice.Prelude
@@ -74,7 +73,6 @@ data Nav
     = NavIndex
     | NavChecklists
     | NavTasks
-    | NavCreateChecklist
     | NavCreateTask
     | NavPersonio
     | NavArchive
@@ -84,16 +82,15 @@ data Nav
   deriving (Eq, Enum, Bounded)
 
 navLink :: Nav -> (Attribute, Text)
-navLink NavIndex           = (indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll False, "Employees")
+navLink NavIndex           = (indexPageHref Nothing Nothing (Nothing :: Maybe Task) defaultShowAll False, "Employees")
 navLink NavChecklists      = (checklistsPageHref , "Checklists")
-navLink NavTasks           = (tasksPageHref Nothing (Nothing :: Maybe Checklist) , "Tasks")
-navLink NavCreateChecklist = (createChecklistPageHref , "Create List")
+navLink NavTasks           = (tasksPageHref Nothing Nothing, "Tasks")
 navLink NavCreateTask      = (createTaskPageHref , "Create Task")
 navLink NavPersonio        = (personioPageHref , "Create from Personio")
 navLink NavArchive         = (archivePageHref , "Archive")
 navLink NavStats           = (statsPageHref, "Stats")
 navLink NavHelp            = (servicesHelpHref, "Services")
-navLink NavCreateEmployee  = (createEmployeePageHref , "Create raw")
+navLink NavCreateEmployee  = (createEmployeePageHref Nothing, "Create raw")
 
 checklistPage_ :: Text -> [Maybe Text] -> AuthUser -> Maybe Nav -> Html () -> HtmlPage sym
 checklistPage_ title titleParts authUser nav body =
@@ -171,37 +168,30 @@ linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l
 
 indexPageHref
-    :: (HasIdentifier c Checklist, HasIdentifier t Task)
-    => Maybe Office -> Maybe c -> Maybe t -> Bool -> Bool -> Attribute
+    :: (HasIdentifier t Task)
+    => Maybe Office -> Maybe ChecklistId -> Maybe t -> Bool -> Bool -> Attribute
 indexPageHref mloc mlist mtask showDone showOld =
     href_ $ linkToText $ safeLink checklistApi indexPageEndpoint mloc
-        (mlist ^? _Just . identifier)
+        mlist
         (mtask ^? _Just . identifier)
         showDone showOld
 
-tasksPageHref
-    :: (HasIdentifier c Checklist)
-    => Maybe TaskRole -> Maybe c -> Attribute
+tasksPageHref :: Maybe TaskRole -> Maybe ChecklistId -> Attribute
 tasksPageHref mrole mlist =
-    href_ $ linkToText $ safeLink checklistApi tasksPageEndpoint mrole
-        (mlist ^? _Just . identifier)
+    href_ $ linkToText $ safeLink checklistApi tasksPageEndpoint mrole mlist
 
 checklistsPageHref
     :: Attribute
 checklistsPageHref =
     href_ $ linkToText $ safeLink checklistApi checklistsPageEndpoint
 
-createChecklistPageHref :: Attribute
-createChecklistPageHref =
-    href_ $ linkToText $ safeLink checklistApi createChecklistPageEndpoint
-
 createTaskPageHref :: Attribute
 createTaskPageHref =
     href_ $ linkToText $ safeLink checklistApi createTaskPageEndpoint
 
-createEmployeePageHref :: Attribute
-createEmployeePageHref =
-    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint Nothing Nothing False
+createEmployeePageHref :: Maybe ChecklistId -> Attribute
+createEmployeePageHref mcid =
+    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint mcid Nothing Nothing
 
 taskPageHref
     :: (HasIdentifier t Task)
@@ -219,13 +209,9 @@ employeePageHref e =
     href_ $ linkToText $ safeLink checklistApi employeePageEndpoint
         (e ^. identifier)
 
-checklistPageHref
-    :: (HasIdentifier c Checklist)
-    => c
-    -> Attribute
-checklistPageHref l =
-    href_ $ linkToText $ safeLink checklistApi checklistPageEndpoint
-        (l ^. identifier)
+checklistPageHref :: ChecklistId -> Attribute
+checklistPageHref cid =
+    href_ $ linkToText $ safeLink checklistApi checklistPageEndpoint cid
 
 applianceHelpHref :: Attribute
 applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndpoint
@@ -250,7 +236,7 @@ employeeLink :: Monad m => Employee -> HtmlT m ()
 employeeLink e = a_ [ employeePageHref e ] $ e ^. nameHtml
 
 checklistLink :: Monad m => Checklist -> HtmlT m ()
-checklistLink cl = a_ [ checklistPageHref cl ] $ cl ^. nameHtml
+checklistLink cl = a_ [ checklistPageHref $ cl ^. checklistId ] $ cl ^. nameHtml
 
 taskLink :: Monad m => Task -> HtmlT m ()
 taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
@@ -259,17 +245,13 @@ taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
 -- Miscs
 -------------------------------------------------------------------------------
 
-locationHtml
-    :: (Monad m, HasIdentifier c Checklist)
-    => Maybe c -> Office -> HtmlT m ()
+locationHtml :: Monad m => Maybe ChecklistId -> Office -> HtmlT m ()
 locationHtml mlist o =
     a_ [ href, title_ $ officeToText o ] $ toHtml $ officeShortName o
   where
     href = indexPageHref (Just o) mlist (Nothing :: Maybe Task) False False
 
-roleHtml
-    :: (Monad m, HasIdentifier c Checklist)
-    => Maybe c -> TaskRole -> HtmlT m ()
+roleHtml :: Monad m => Maybe ChecklistId -> TaskRole -> HtmlT m ()
 roleHtml mlist role = a_ [ href, title_ roleName ] $ toHtml $ roleName
   where
     roleName = role ^. re _TaskRole
@@ -284,11 +266,10 @@ contractTypeHtml ContractTypeFixedTerm    = span_ [title_ "Fixed term"]    "Fix"
 contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part"
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
--- | TODO: better error
-checklistNameHtml :: Monad m => World -> Maybe Office -> Identifier Checklist -> Bool -> HtmlT m ()
-checklistNameHtml world mloc i notDone =
-    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
-        world ^. worldLists . at i . non (error "Inconsistent world") . nameHtml
+checklistNameHtml :: Monad m => Maybe Office -> ChecklistId -> Bool -> HtmlT m ()
+checklistNameHtml mloc cid notDone =
+    a_ [ indexPageHref mloc (Just cid) (Nothing :: Maybe Task) notDone False ] $
+        toHtml $ cid ^. checklistIdName . _Wrapped
 
 -------------------------------------------------------------------------------
 -- TaskTags extra info

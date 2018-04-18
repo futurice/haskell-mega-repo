@@ -30,7 +30,7 @@ indexPage
 indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtask showDone showOld =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeOffice . only l)) mloc $ employees0
-        employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
+        employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. checklistId))) mlist $ employees1
         employees3 = maybe id (filter . taskPredicate) mtask employees2
         employees' = employees3
 
@@ -56,6 +56,14 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
             , (^. nameText) <$> mtask
             ]
 
+        mlistId :: Maybe ChecklistId
+        mlistId = view checklistId <$> mlist
+
+        dateName = case mlistId of
+            Nothing                       -> "Due date"
+            Just NewEmployeeChecklist     -> "Starting date"
+            Just LeavingEmployeeChecklist -> "Leaving date"
+
     in checklistPage_ "Employees" titleParts authUser (Just NavIndex) $ do
         -- List filtering controls
         row_ $ form_ [ futuId_ "selector", action_ "/", method_ "get" ] $ do
@@ -71,10 +79,11 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                 "Checklist"
                 select_ [ name_ "checklist"] $ do
                     option_ [ value_ "" ] $ "Show all"
-                    for_ (world ^.. worldLists . folded) $ \cl ->
-                        optionSelected_ (Just cl == mlist)
-                            [ value_ $ cl ^. identifier . getter identifierToText ]
-                            $ cl ^. nameHtml
+                    for_ (world ^.. worldLists . folded) $ \cl -> do
+                        let cid = cl ^. checklistId
+                        optionSelected_ (Just cid == mlistId)
+                            [ value_ $ cid ^. re _ChecklistId ]
+                            $ toHtml $ cl ^. checklistName
             largemed_ 4 $ label_ $ do
                 "Task"
                 select_ [ name_ "task" ] $ do
@@ -120,7 +129,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                         when (has (taskTags . folded) task) $ th_ "Task info"
                         when (task ^. taskComment) $ th_ "Comment"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
-                th_ [title_ "Due date"]                    "Due date"
+                th_ [title_ dateName]                      $ toHtml dateName
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
                 viewerItemsHeader viewerRole
@@ -141,7 +150,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ traverse_ toHtml $ employee ^. employeePersonio
-                    td_ $ locationHtml mlist $ employee ^. employeeOffice
+                    td_ $ locationHtml mlistId $ employee ^. employeeOffice
                     td_ $ employeeLink employee
                     td_ $ case tribeOffices (employee ^. employeeTribe) of
                         [off] | off == employee ^. employeeOffice ->
@@ -151,10 +160,10 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                         _ -> do
                             toHtml $ employee ^. employeeTribe
                             " ("
-                            locationHtml mlist $ employee ^. employeeOffice
+                            locationHtml mlistId $ employee ^. employeeOffice
                             ")"
                     mcase mtask
-                        (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showDone)
+                        (td_ $ checklistNameHtml mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
                             td_ $ taskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData

@@ -158,55 +158,6 @@ futu.onload(function () {
     });
   }
 
-  function checklistCreateForm(form) {
-    console.info("Initialising checklist creation form");
-
-    var defs = {
-        name: { sel: "input[data-futu-id=checklist-name]", check: nonEmptyCheck },
-    };
-
-    var actions = initialiseFormDefs(defs, form);
-
-    initialiseSubmitButton(actions.submitBtn, defs, actions, function (values) {
-      cmdCreateChecklist(values.name);
-    });
-  }
-
-  function checklistEditForm(form) {
-    var checklistId = form.dataset.futuChecklistId;
-
-    console.info("Initialising checklist editing form: " + checklistId);
-
-    var $nameEl = jQuery($_("input[data-futu-id=checklist-name]", form));
-
-    var nameOrig = inputValue($nameEl);
-
-    var submitBtn = $_("button[data-futu-action=submit]", form);
-    var resetBtn = $_("button[data-futu-action=reset]", form);
-
-    var name$ = menrvaInputValue($nameEl);
-
-    var changed$ = menrva.combine(name$, function (name) {
-      return !_.isEqual(name, nameOrig);
-    });
-
-    changed$.onValue(function (changed) {
-      submitBtn.disabled = !changed;
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      console.info("Checklist edit reset");
-      nameEl.value = nameOrig;
-    });
-
-    buttonOnClick(submitBtn, function () {
-      var name = name$.value();
-
-      cmdEditChecklist(checklistId, name);
-    });
-  }
-
   function taskCreateForm(form) {
     console.info("Initialising task creation form");
 
@@ -404,23 +355,6 @@ futu.onload(function () {
       eid: employeeId,
       edit: edit,
     }, true);
-  }
-
-  function cmdCreateChecklist(name) {
-    traceCall(cmdCreateChecklist, arguments);
-    return command({
-      cmd: "create-checklist",
-      name: name,
-    });
-  }
-
-  function cmdEditChecklist(checklistId, name) {
-    traceCall(cmdEditChecklist, arguments);
-    return command({
-      cmd: "rename-checklist",
-      cid: checklistId,
-      name: name,
-    });
   }
 
   function cmdCreateTask(edit, lists) {

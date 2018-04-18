@@ -35,9 +35,9 @@ archivePage world authUser@(_, viewerRole) = checklistPage_ "Archive" [] authUse
             let (TodoCounter (Counter i j) perRole) = ifoldMap (taskItemtoTodoCounter world) taskMap
 
             td_ $ contractTypeHtml $ employee ^. employeeContractType
-            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
+            td_ $ locationHtml Nothing $ employee ^. employeeOffice
             td_ $ employee ^. nameHtml
-            td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) False
+            td_ $ checklistNameHtml Nothing (employee ^. employeeChecklist) False
             td_ $ toHtml $ show $ employee ^. employeeStartingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
             case perRole ^. ix viewerRole of

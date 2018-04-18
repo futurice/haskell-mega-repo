@@ -14,7 +14,8 @@ import Servant.HTML.Lucid        (HTML)
 import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
-       (Checklist, Employee, Identifier, Office, SortCriteria, Task, TaskRole)
+       (ChecklistId, Employee, Identifier, Office, SortCriteria, Task,
+       TaskRole)
 
 import qualified Personio
 
@@ -23,7 +24,6 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> TasksPageEndpoint
     :<|> ChecklistsPageEndpoint
     -- New
-    :<|> CreateChecklistPageEndpoint
     :<|> CreateTaskPageEndpoint
     :<|> CreateEmployeePageEndpoint
     -- Items
@@ -55,7 +55,7 @@ checklistApi = Proxy
 type IndexPageEndpoint =
     SSOUser :>
     QueryParam "location" Office :>
-    QueryParam "checklist" (Identifier Checklist) :>
+    QueryParam "checklist" ChecklistId :>
     QueryParam "task" (Identifier Task) :>
     QueryFlag "show-done" :>
     QueryFlag "show-old" :>
@@ -65,7 +65,7 @@ type TasksPageEndpoint =
     "tasks" :>
     SSOUser :>
     QueryParam "role" TaskRole :>
-    QueryParam "checklist" (Identifier Checklist) :>
+    QueryParam "checklist" ChecklistId :>
     Get '[HTML] (HtmlPage "tasks")
 
 type ChecklistsPageEndpoint =
@@ -77,12 +77,6 @@ type ChecklistsPageEndpoint =
 -- New
 -------------------------------------------------------------------------------
 
-type CreateChecklistPageEndpoint =
-    SSOUser :>
-    "checklists" :>
-    "create" :>
-    Get '[HTML] (HtmlPage "create-checklist")
-
 type CreateTaskPageEndpoint =
     SSOUser :>
     "tasks" :>
@@ -93,9 +87,9 @@ type CreateEmployeePageEndpoint =
     SSOUser :>
     "employees" :>
     "create" :>
+    QueryParam "checklist" ChecklistId :>
     QueryParam "copy-employee" (Identifier Employee) :>
     QueryParam "personio-id" Personio.EmployeeId :>
-    QueryFlag "leaving-employee" :>
     Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------
@@ -105,7 +99,7 @@ type CreateEmployeePageEndpoint =
 type ChecklistPageEndpoint =
     SSOUser :>
     "checklists" :>
-    Capture "checklist-id" (Identifier Checklist) :>
+    Capture "checklist-id" ChecklistId :>
     Get '[HTML] (HtmlPage "checklist")
 
 type TaskPageEndpoint =
@@ -152,7 +146,7 @@ type ArchivePageEndpoint =
 type ReportPageEndpoint =
     SSOUser :>
     "report" :>
-    QueryParam "checklist" (Identifier Checklist) :>
+    QueryParam "checklist" ChecklistId :>
     QueryParam "day-from" Day :>
     QueryParam "day-to" Day :>
     Get '[HTML] (HtmlPage "report")
@@ -197,9 +191,6 @@ tasksPageEndpoint = Proxy
 
 checklistsPageEndpoint :: Proxy ChecklistsPageEndpoint
 checklistsPageEndpoint = Proxy
-
-createChecklistPageEndpoint :: Proxy CreateChecklistPageEndpoint
-createChecklistPageEndpoint = Proxy
 
 createTaskPageEndpoint :: Proxy CreateTaskPageEndpoint
 createTaskPageEndpoint = Proxy

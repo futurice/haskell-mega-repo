@@ -23,9 +23,6 @@ import Futurice.App.Checklist.Types
 -- todo: in error monad, if e.g. identifier don't exist
 applyCommand :: UTCTime -> FUM.Login -> Command Identity -> World -> World
 applyCommand now ssoUser cmd world = flip execState world $ case cmd of
-    CmdCreateChecklist (Identity cid) n ->
-        worldLists . at cid ?= Checklist cid n mempty
-
     CmdCreateTask (Identity tid) (TaskEdit (Identity n) (Identity i) (Identity role) (Identity pr) (Identity comment) (Identity t)) ls -> do
         worldTasks . at tid ?= Task tid n i pr role comment t
         for_ ls $ \(TaskAddition cid app) -> addTask cid tid app
@@ -41,9 +38,6 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
             let eid = e ^. identifier
             when (e ^. employeeChecklist == cid) $
                 worldTaskItems . at eid . non mempty . at tid %= removeTodoTask
-
-    CmdRenameChecklist cid n ->
-         worldLists . ix cid . checklistName Lens..= n
 
     CmdEditTask tid te ->
         worldTasks . ix tid %= applyTaskEdit te

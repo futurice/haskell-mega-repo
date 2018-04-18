@@ -18,6 +18,7 @@ import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
 
+import Futurice.App.Checklist.Types.ChecklistId
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.TaskAppliance
@@ -41,12 +42,16 @@ instance FromJSON (Name a) where
 instance ToJSON (Name a) where
     toJSON (Name n) = toJSON n
 
+instance  ToHtml (Name a) where
+    toHtml (Name a)    = toHtml a
+    toHtmlRaw (Name a) = toHtmlRaw a
+
 -- | All checklist tasks are tied to the employee
 --
 -- /TODO:/ add more fields? Is 'Employee' better name?
 data Employee = Employee
     { _employeeId           :: !(Identifier Employee)
-    , _employeeChecklist    :: !(Identifier Checklist)
+    , _employeeChecklist    :: !ChecklistId
     , _employeePersonio     :: !(Maybe P.EmployeeId)
     , _employeeFirstName    :: !Text
     , _employeeLastName     :: !Text
@@ -100,12 +105,10 @@ data CheckResult
 -- | Checklist is collection of tasks. Used to group tasks together to create task instances together.
 --  Example lists are "new full-time employee in Helsinki"
 data Checklist = Checklist
-    { _checklistId    :: !(Identifier Checklist)
-    , _checklistName  :: !(Name Checklist)
+    { _checklistId    :: !ChecklistId
     , _checklistTasks :: !(Map (Identifier Task) TaskAppliance)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
-
 -- | Helper structure for carrying Planmill user
 data PMUser = PMUser
     { pmUser     :: !PM.User
@@ -117,7 +120,7 @@ instance NFData PMUser
 
 -- | Helper structure for carrying data from external sources
 data IntegrationData = IntegrationData
-    { _githubData :: !(Map (GH.Name GH.User) GH.SimpleUser)
+    { _githubData   :: !(Map (GH.Name GH.User) GH.SimpleUser)
     , _personioData :: !(Map P.EmployeeId P.Employee)
     , _planmillData :: !(HashMap FUM.Login (P.Employee, PMUser))
     }
@@ -135,6 +138,14 @@ makeLenses ''Task
 makePrisms ''CheckResult
 makeLenses ''Checklist
 makeLenses ''IntegrationData
+
+checklistIdName :: Getter ChecklistId (Name Checklist)
+checklistIdName = getter $ \cid -> case cid of
+    NewEmployeeChecklist     -> Name "New employee"
+    LeavingEmployeeChecklist -> Name "Leaving employee"
+
+checklistName :: Getter Checklist (Name Checklist)
+checklistName = checklistId . checklistIdName
 
 -------------------------------------------------------------------------------
 -- TaskAppliance helpers
@@ -160,13 +171,12 @@ instance IsNode Task where
     nodeNeighbors t = t ^.. taskPrereqs . folded
 
 instance HasKey Checklist where
-    type Key Checklist = Identifier Checklist
+    type Key Checklist = ChecklistId
     key = checklistId
 
 
 instance HasIdentifier Employee  Employee  where identifier = key
 instance HasIdentifier Task      Task      where identifier = key
-instance HasIdentifier Checklist Checklist where identifier = key
 
 instance Entity Employee  where entityName _ = "Employee"
 instance Entity Task      where entityName _ = "Task"

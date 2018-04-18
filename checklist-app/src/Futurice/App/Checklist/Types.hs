@@ -18,6 +18,8 @@ module Futurice.App.Checklist.Types (
     Task(..),
     TaskRole(..),
     CheckResult(..),
+    ChecklistId (..),
+    PerChecklist (..),
     Checklist(..),
     TaskItem (..),
     AnnTaskItem (..),
@@ -57,7 +59,8 @@ module Futurice.App.Checklist.Types (
     _TaskTag,
     taskTagToText, taskTagFromText,
     -- ** Checklist
-    checklistName, checklistTasks,
+    _ChecklistId,
+    checklistId, checklistIdName, checklistName, checklistTasks,
     -- ** TaskItem
     _TaskItem,
     _TaskItemDone, _TaskItemTodo,
@@ -103,6 +106,7 @@ import Futurice.Tribe
 import Prelude ()
 
 import Futurice.App.Checklist.Types.Basic
+import Futurice.App.Checklist.Types.ChecklistId
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
