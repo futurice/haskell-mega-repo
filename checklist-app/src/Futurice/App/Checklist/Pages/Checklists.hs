@@ -22,7 +22,7 @@ checklistsPage world authUser = checklistPage_ "Checklists" [] authUser (Just Na
             th_ [ title_ "Active employees in the list" ] "Employees"
 
         tbody_ $ for_ lists' $ \c -> tr_ $ do
-            let cid = c ^. identifier
+            let cid = c ^. checklistId
             td_ $ checklistLink c
             td_ $ toHtml $ show $ lengthOf
                 (worldEmployees . folded . filtered (\e -> e ^. employeeChecklist == cid))

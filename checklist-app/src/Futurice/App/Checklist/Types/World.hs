@@ -39,6 +39,7 @@ import qualified Futurice.Graph as Graph
 import qualified Futurice.IdMap as IdMap
 
 import Futurice.App.Checklist.Types.Basic
+import Futurice.App.Checklist.Types.ChecklistId
 import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.TaskItem
@@ -68,7 +69,7 @@ type Archive = Map (Identifier Employee) ArchivedEmployee
 data World = World
     { _worldEmployees  :: !(IdMap Employee)
     , _worldTasks      :: !(Graph Task)
-    , _worldLists      :: !(IdMap Checklist)
+    , _worldLists      :: !(PerChecklist Checklist)
     , _worldTaskItems  :: !(Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
     , _worldArchive    :: !Archive
       -- ^ ACL lookup
@@ -85,7 +86,7 @@ worldTasks :: Lens' World (Graph Task)
 worldTasks f (World es ts ls is arc _) = f ts <&>
     \x -> mkWorld es (Graph.toIdMap x) ls is arc
 
-worldLists :: Lens' World (IdMap Checklist)
+worldLists :: Lens' World (PerChecklist Checklist)
 worldLists f (World es ts ls is arc _) = f ls <&>
     \x -> mkWorld es (Graph.toIdMap ts) x is arc
 
@@ -108,7 +109,12 @@ worldTasksSortedByName :: Getter World [Task]
 worldTasksSortedByName = getter $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
 
 emptyWorld :: World
-emptyWorld = mkWorld mempty mempty mempty mempty mempty
+emptyWorld = mkWorld mempty mempty emptyChecklists mempty mempty where
+    emptyChecklists :: PerChecklist Checklist
+    emptyChecklists = tabulate $ \cid -> Checklist
+        { _checklistId    = cid
+        , _checklistTasks = mempty
+        }
 
 -- | Create world from employees, tasks, checklists, and items.
 --
@@ -123,27 +129,24 @@ emptyWorld = mkWorld mempty mempty mempty mempty mempty
 mkWorld
     :: IdMap Employee
     -> IdMap Task
-    -> IdMap Checklist
+    -> PerChecklist Checklist
     -> Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem)
     -> Archive
     -> World
 mkWorld es ts ls is arc =
     let tids            = IdMap.keysSet ts
-        cids            = IdMap.keysSet ls
         -- Validation predicates
         validTid tid     = tids ^. contains tid
-        validCid cid     = cids ^. contains cid
 
         -- Cleaned up inputs
         es' = es
-            & IdMap.toIdMapOf (folded . filtered (\u -> validCid $ u ^. employeeChecklist))
 
         ts' = ts
             & IdMap.unsafeTraversal . taskPrereqs
             %~ Set.setOf (folded . filtered validTid)
 
         ls' = ls
-            & IdMap.unsafeTraversal . checklistTasks
+            & traverse . checklistTasks
             %~ toMapOf (ifolded . ifiltered (\k _v -> validTid k))
 
         -- TODO: validate is

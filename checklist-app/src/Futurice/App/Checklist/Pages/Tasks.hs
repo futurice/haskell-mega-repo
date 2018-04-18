@@ -28,7 +28,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
 
         checklistPredicate :: Checklist -> Task -> Bool
         checklistPredicate cl task = flip has world $
-            worldLists . ix (cl ^. identifier) . checklistTasks . ix (task ^. identifier)
+            worldLists . ix (cl ^. checklistId) . checklistTasks . ix (task ^. identifier)
 
         titleParts = 
             [ (^. re _TaskRole) <$> mrole
@@ -52,7 +52,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldLists . folded) $ \cl ->
                         optionSelected_ (Just cl == mlist)
-                            [ value_ $ cl ^. identifier . getter identifierToText ]
+                            [ value_ $ cl ^. checklistId . re _ChecklistId ]
                             $ cl ^. nameHtml
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
@@ -74,13 +74,13 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
 
                 td_ $ taskLink task
                 td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
-                td_ $ roleHtml mlist $ task ^. taskRole
+                td_ $ roleHtml (mlist ^? _Just . checklistId) $ task ^. taskRole
                 td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     taskLink prereqTask
                     br_ []
                 td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
                     li_ $ toHtml tag
-                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll False ] $
+                td_ $ a_ [ indexPageHref Nothing (mlist ^? _Just . checklistId) (Just tid) defaultShowAll False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j -> do
                             toHtml (show i)

@@ -115,7 +115,7 @@ createEmployeePage world authUser memployee pemployee pes leaving = checklistPag
                 optionSelected_ True [ value_ "" ] "-"
                 forOf_ (worldLists . folded) world $ \l ->
                     optionSelected_ False
-                        [ value_ $ l ^. identifierText ]
+                        [ value_ $ l ^. checklistId . re _ChecklistId ]
                         $ toHtml $ l ^. nameText
         row_ $ large_ 12 $ label_ $ do
             "First name"
