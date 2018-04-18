@@ -12,6 +12,7 @@ import qualified Personio
 type PersonioProxyAPI =
     Get '[JSON] Text
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
+    :<|> "employees" :> Get '[JSON] [Personio.Employee]
 
 personioProxyApi :: Proxy PersonioProxyAPI
 personioProxyApi = Proxy
