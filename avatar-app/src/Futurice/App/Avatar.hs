@@ -130,6 +130,6 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg lgr mgr cache _mq = do
-        n <- getNumCapabilities
-        qsem <- newQSem (max 2 n)
+        _n <- getNumCapabilities
+        qsem <- newQSem 1 -- (max 2 n)
         return (Ctx cache lgr mgr cfg qsem, [])
