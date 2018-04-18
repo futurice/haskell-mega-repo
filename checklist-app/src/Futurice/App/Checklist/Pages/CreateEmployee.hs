@@ -33,10 +33,11 @@ data Tmpl = Tmpl
     , tmplEmail        :: !(Maybe Text)
     , tmplLogin        :: !(Maybe Login)
     , tmplHRNumber     :: !(Maybe Int)
+    , tmplChecklistId  :: !(Maybe ChecklistId)
     }
 
-employeeToTemplate :: Employee -> Tmpl
-employeeToTemplate e = Tmpl
+employeeToTemplate :: Maybe ChecklistId -> Employee -> Tmpl
+employeeToTemplate mcid e = Tmpl
     { tmplPersonioId   = e ^. employeePersonio
     , tmplFirst        = e ^. employeeFirstName
     , tmplLast         = e ^. employeeLastName
@@ -49,17 +50,20 @@ employeeToTemplate e = Tmpl
     , tmplEmail        = e ^. employeeContactEmail
     , tmplLogin        = e ^. employeeFUMLogin
     , tmplHRNumber     = e ^. employeeHRNumber
+    , tmplChecklistId  = mcid
     }
 
-personioToTemplate :: Bool -> Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
-personioToTemplate leaving es e = Tmpl
+personioToTemplate :: Maybe ChecklistId -> Map Personio.EmployeeId Personio.Employee -> Personio.Employee -> Tmpl
+personioToTemplate mcid es e = Tmpl
     { tmplPersonioId   = Just $ e ^. Personio.employeeId
     , tmplFirst        = e ^. Personio.employeeFirst
     , tmplLast         = e ^. Personio.employeeLast
     , tmplContractType = contractType
     , tmplOffice       = e ^. Personio.employeeOffice
     , tmplTribe        = e ^. Personio.employeeTribe
-    , tmplStartingDay  = if leaving then e ^. Personio.employeeEndDate else e ^. Personio.employeeHireDate
+    , tmplStartingDay  = case mcid of
+          Just LeavingEmployeeChecklist -> e ^. Personio.employeeEndDate
+          _                             -> e ^. Personio.employeeHireDate
     , tmplSupervisor   = fromMaybe "" $ do
         suid <- e ^. Personio.employeeSupervisorId
         es ^? ix suid . Personio.employeeFullname
@@ -67,6 +71,7 @@ personioToTemplate leaving es e = Tmpl
     , tmplEmail        = e ^. Personio.employeeHomeEmail
     , tmplLogin        = e ^. Personio.employeeLogin
     , tmplHRNumber     = zeroToNothing $ e ^. Personio.employeeHRNumber
+    , tmplChecklistId  = mcid
     }
   where
     zeroToNothing (Just 0) = Nothing
@@ -88,12 +93,12 @@ personioToTemplate leaving es e = Tmpl
 createEmployeePage
     :: World
     -> AuthUser    -- ^ logged in user
+    -> Maybe ChecklistId
     -> Maybe Employee
     -> Maybe Personio.Employee
     -> Map Personio.EmployeeId Personio.Employee
-    -> Bool
     -> HtmlPage "create-employee"
-createEmployeePage world authUser memployee pemployee pes leaving = checklistPage_ "Create employee" [mname] authUser (Just NavCreateEmployee) $ do
+createEmployeePage world authUser mcid memployee pemployee pes = checklistPage_ "Create employee" [mname] authUser (Just NavCreateEmployee) $ do
     for_ (tmplPersonioId =<< tmpl) $ \eid -> row_ $ large_ 12 $ do
         "Using personio employee #"
         toHtml eid
@@ -110,12 +115,12 @@ createEmployeePage world authUser memployee pemployee pes leaving = checklistPag
 
         row_ $ large_ 12 $ label_ $ do
             "Checklist"
-            -- TODO: sort checklists
             select_ [ futuId_ "employee-checklist" ] $ do
                 optionSelected_ True [ value_ "" ] "-"
-                forOf_ (worldLists . folded) world $ \l ->
-                    optionSelected_ False
-                        [ value_ $ l ^. identifierText ]
+                forOf_ (worldLists . folded) world $ \l -> do
+                    let cid = l ^. checklistId
+                    optionSelected_ (Just cid == (tmpl >>= tmplChecklistId))
+                        [ value_ $ cid ^. re _ChecklistId ]
                         $ toHtml $ l ^. nameText
         row_ $ large_ 12 $ label_ $ do
             "First name"
@@ -209,8 +214,8 @@ createEmployeePage world authUser memployee pemployee pes leaving = checklistPag
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
-    tmpl = employeeToTemplate <$> memployee
-            <|> personioToTemplate leaving pes <$> pemployee
+    tmpl = employeeToTemplate mcid <$> memployee
+            <|> personioToTemplate mcid pes <$> pemployee
 
     mname = do
         tmpl' <- tmpl

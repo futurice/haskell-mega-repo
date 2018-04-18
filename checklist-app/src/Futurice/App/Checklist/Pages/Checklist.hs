@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
 
-import Control.Lens              (filtered, foldMapOf, forOf_, has)
+import Control.Lens              (filtered, foldMapOf, forOf_, has, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -25,21 +25,9 @@ checklistPage
     -> Checklist
     -> HtmlPage "checklist"
 checklistPage world today authUser checklist = checklistPage_ (view nameText checklist <> " - checklist") [] authUser Nothing $ do
-    -- Edit
-    futuForm_"checklist-edit" [ data_ "futu-checklist-id" $ checklist ^. identifierText ] $ do
-        row_ $ large_ 12 $
-            label_ $ do
-                "Name"
-                let v = checklist ^. nameText
-                input_ [ futuId_ "checklist-name", type_ "text", value_ v ]
-
-        row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
-            button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
-
     -- Add Task
     subheader_ "Add task"
-    futuForm_ "task-add" [ data_ "futu-checklist-id" $ checklist ^. identifierText  ] $ do
+    futuForm_ "task-add" [ data_ "futu-checklist-id" $ checklist ^. checklistId . re _ChecklistId  ] $ do
         row_ $ large_ 12 $
             label_ $ do
                 "Task"
@@ -80,7 +68,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             for_ (checklist ^? checklistTasks . ix tid) $ \app -> tr_ $ do
                 td_ $ taskLink task
                 td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
-                td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ roleHtml mcid (task ^. taskRole)
                 td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     let prereqTid = prereqTask ^. identifier
                     for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
@@ -88,18 +76,18 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                         br_ []
                 td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
                     li_ $ toHtml tag
-                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False False ] $
+                td_ $ a_ [ indexPageHref Nothing mcid (Just tid) False False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j ->
                             toHtml (show i) *> "/" *> toHtml (show j)
                 td_ $ toHtml app
                 td_ $ forWith_
                     (br_ [])
-                    (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. identifier /= checklist ^. identifier))
+                    (world ^.. worldLists . folded .  filtered (\l -> has (checklistTasks . ix tid) l && l ^. checklistId /= checklist ^. checklistId))
                     checklistLink
                 td_ $ button_
                     [ class_ "button alert", futuId_ "task-remove"
-                    , data_ "futu-checklist-id" $ checklist ^. identifierText
+                    , data_ "futu-checklist-id" $ checklist ^. checklistId . re _ChecklistId
                     , data_ "futu-task-id" $ task ^. identifierText
                     ]
                     "Remove"
@@ -118,7 +106,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         tbody_ $ for_ employees $ \employee -> tr_ $ do
             let startingDay = employee ^. employeeStartingDay
             td_ $ contractTypeHtml $ employee ^. employeeContractType
-            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
+            td_ $ locationHtml Nothing $ employee ^. employeeOffice
             td_ $ employeeLink employee
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
@@ -126,11 +114,11 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
 
   where
-    mlist = Just checklist
+    mcid = checklist ^? checklistId
 
     countUsers AnnTaskItemDone {} = Counter 1 1
     countUsers AnnTaskItemTodo {} = Counter 0 1
 
     employees =  sortOn (view employeeStartingDay)
-        $ filter (\e -> e ^. employeeChecklist == checklist ^. identifier)
+        $ filter (\e -> e ^. employeeChecklist == checklist ^. checklistId)
         $ toList (IdMap.toMap (world ^. worldEmployees))

@@ -38,10 +38,10 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
     row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
         for_ (employee ^. employeePersonio) $ \pid ->
             toHtml pid `with` [ class_ " button hollow" ]
-        for_ mlist $ \cl -> button_
+        button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText
-            $ safeLink checklistApi checklistPageEndpoint (cl ^. identifier)
+            $ safeLink checklistApi checklistPageEndpoint (cl ^. checklistId)
             ]
             $ toHtml $ "Checklist: " <> cl ^. nameText
         button_
@@ -53,7 +53,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
         button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText
-            $ safeLink checklistApi createEmployeePageEndpoint (employee ^? identifier) Nothing False
+            $ safeLink checklistApi createEmployeePageEndpoint (Just LeavingEmployeeChecklist) (employee ^? identifier) Nothing
             ]
             "Create employee using this employee as a template"
         button_
@@ -165,7 +165,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             let tid = task ^. identifier
             for_ (world ^? worldTaskItems . ix eid . ix tid) $ \taskItem -> tr_ $ do
                 td_ $ taskLink task
-                td_ $ roleHtml mlist (task ^. taskRole)
+                td_ $ roleHtml (employee ^? employeeChecklist) (task ^. taskRole)
                 td_ $ taskCheckbox_ world employee task
                 td_ $ taskInfo_ task employee integrationData
                 td_ $ taskCommentInput_ world employee task
@@ -183,7 +183,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             ] "DELETE EMPLOYEE"
   where
     eid = employee ^. identifier
-    mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
+    cl = world ^. worldLists . pick (employee ^. employeeChecklist)
 
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
