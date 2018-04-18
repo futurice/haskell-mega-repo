@@ -59,6 +59,11 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
         mlistId :: Maybe ChecklistId
         mlistId = view checklistId <$> mlist
 
+        dateName = case mlistId of
+            Nothing                       -> "Due date"
+            Just NewEmployeeChecklist     -> "Starting date"
+            Just LeavingEmployeeChecklist -> "Leaving date"
+
     in checklistPage_ "Employees" titleParts authUser (Just NavIndex) $ do
         -- List filtering controls
         row_ $ form_ [ futuId_ "selector", action_ "/", method_ "get" ] $ do
@@ -124,7 +129,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                         when (has (taskTags . folded) task) $ th_ "Task info"
                         when (task ^. taskComment) $ th_ "Comment"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
-                th_ [title_ "Due date"]                    "Due date"
+                th_ [title_ dateName]                      $ toHtml dateName
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till start"]             "ETA"
                 viewerItemsHeader viewerRole
