@@ -78,7 +78,6 @@ library
       Futurice.App.MegaRepoTool.Exec
       Futurice.App.MegaRepoTool.GenPass
       Futurice.App.MegaRepoTool.Keys
-      Futurice.App.MegaRepoTool.Scripts
       Futurice.App.MegaRepoTool.StackYaml
       Futurice.App.MegaRepoTool.Stats
 

@@ -22,7 +22,6 @@ import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Exec
 import Futurice.App.MegaRepoTool.GenPass
 import Futurice.App.MegaRepoTool.Keys
-import Futurice.App.MegaRepoTool.Scripts
 import Futurice.App.MegaRepoTool.StackYaml
 import Futurice.App.MegaRepoTool.Stats
 
@@ -51,12 +50,6 @@ buildDockerOptions = CmdBuildDocker
     comp = mk <$> readConfig
 
     mk = map (view unpacked) . Map.keys . _mrtApps
-
-packdepsOptions :: O.Parser Cmd
-packdepsOptions = pure $ CmdAction packdepsScript
-
-dotOptions :: O.Parser Cmd
-dotOptions = pure $ CmdAction dotScript
 
 statsOptions :: O.Parser Cmd
 statsOptions =  pure $ CmdAction stats
@@ -203,8 +196,6 @@ strArgument = O.strArgument . mconcat
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "build-docker" buildDockerOptions "Build docker images"
-    , cmdParser "packdeps"     packdepsOptions    "Run packdeps, i.e. check that dependency bounds allow newest versions"
-    , cmdParser "dot"          dotOptions         "Update dependency graph image"
     , cmdParser "stats"        statsOptions       "Display some rough stats"
     , cmdParser "estimator"    estimatorOptions   "Calculate estimates"
     , cmdParser "view-config"  viewConfigOptions  "view config"
