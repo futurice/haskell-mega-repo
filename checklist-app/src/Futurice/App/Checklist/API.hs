@@ -87,9 +87,9 @@ type CreateEmployeePageEndpoint =
     SSOUser :>
     "employees" :>
     "create" :>
+    QueryParam "checklist" ChecklistId :>
     QueryParam "copy-employee" (Identifier Employee) :>
     QueryParam "personio-id" Personio.EmployeeId :>
-    QueryFlag "leaving-employee" :>
     Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------

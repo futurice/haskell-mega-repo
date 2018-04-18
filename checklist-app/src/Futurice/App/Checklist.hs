@@ -136,11 +136,11 @@ createTaskPageImpl ctx fu = withAuthUser ctx fu impl
 createEmployeePageImpl
     :: Ctx
     -> Maybe FUM.Login
+    -> Maybe ChecklistId
     -> Maybe (Identifier Employee)
     -> Maybe Personio.EmployeeId
-    -> Bool
     -> Handler (HtmlPage "create-employee")
-createEmployeePageImpl ctx fu meid mpeid leaving = withAuthUser ctx fu impl
+createEmployeePageImpl ctx fu mcid meid mpeid = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         let memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
@@ -148,9 +148,9 @@ createEmployeePageImpl ctx fu meid mpeid leaving = withAuthUser ctx fu impl
             employees <- getPersonioEmployees ctx
             pure $ Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) $ employees
 
-        pure $ createEmployeePage world userInfo memployee
+        pure $ createEmployeePage world userInfo mcid memployee
             (mpeid >>= \eid -> pemployees ^? ix eid)
-            pemployees leaving
+            pemployees
 
 checklistsPageImpl
     :: Ctx

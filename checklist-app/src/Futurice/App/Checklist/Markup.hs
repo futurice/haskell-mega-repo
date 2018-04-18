@@ -90,7 +90,7 @@ navLink NavPersonio        = (personioPageHref , "Create from Personio")
 navLink NavArchive         = (archivePageHref , "Archive")
 navLink NavStats           = (statsPageHref, "Stats")
 navLink NavHelp            = (servicesHelpHref, "Services")
-navLink NavCreateEmployee  = (createEmployeePageHref , "Create raw")
+navLink NavCreateEmployee  = (createEmployeePageHref Nothing, "Create raw")
 
 checklistPage_ :: Text -> [Maybe Text] -> AuthUser -> Maybe Nav -> Html () -> HtmlPage sym
 checklistPage_ title titleParts authUser nav body =
@@ -189,9 +189,9 @@ createTaskPageHref :: Attribute
 createTaskPageHref =
     href_ $ linkToText $ safeLink checklistApi createTaskPageEndpoint
 
-createEmployeePageHref :: Attribute
-createEmployeePageHref =
-    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint Nothing Nothing False
+createEmployeePageHref :: Maybe ChecklistId -> Attribute
+createEmployeePageHref mcid =
+    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint mcid Nothing Nothing
 
 taskPageHref
     :: (HasIdentifier t Task)
