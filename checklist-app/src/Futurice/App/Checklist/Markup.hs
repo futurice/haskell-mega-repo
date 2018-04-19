@@ -233,10 +233,10 @@ statsPageHref = href_ $ linkToText $ safeLink checklistApi statsPageEndpoint Sor
 -------------------------------------------------------------------------------
 
 employeeLink :: Monad m => Employee -> HtmlT m ()
-employeeLink e = a_ [ employeePageHref e ] $ e ^. nameHtml
+employeeLink e = a_ [ employeePageHref e, class_ "nowrap" ] $ e ^. nameHtml
 
 checklistLink :: Monad m => Checklist -> HtmlT m ()
-checklistLink cl = a_ [ checklistPageHref $ cl ^. checklistId ] $ cl ^. nameHtml
+checklistLink cl = a_ [ checklistPageHref $ cl ^. checklistId, class_ "nowrap" ] $ cl ^. nameHtml
 
 taskLink :: Monad m => Task -> HtmlT m ()
 taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
@@ -268,7 +268,7 @@ contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
 checklistNameHtml :: Monad m => Maybe Office -> ChecklistId -> Bool -> HtmlT m ()
 checklistNameHtml mloc cid notDone =
-    a_ [ indexPageHref mloc (Just cid) (Nothing :: Maybe Task) notDone False ] $
+    a_ [ indexPageHref mloc (Just cid) (Nothing :: Maybe Task) notDone False, class_ "nowrap" ] $
         toHtml $ cid ^. checklistIdName . _Wrapped
 
 -------------------------------------------------------------------------------

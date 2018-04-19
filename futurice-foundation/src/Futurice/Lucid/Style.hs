@@ -58,3 +58,7 @@ css = do
 
     "table.hover:not(.unstriped)" ? "tr:nth-of-type(even):hover" ? do
         backgroundColor $ colourClay $ FutuAccent AF6 AC1
+
+    --
+    ".nowrap" ? do
+        whiteSpace nowrap

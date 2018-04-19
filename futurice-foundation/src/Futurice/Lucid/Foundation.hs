@@ -26,6 +26,9 @@ module Futurice.Lucid.Foundation (
     -- * Form
     optionSelected_,
     checkbox_,
+    -- * Special types
+    day_,
+    day'_,
     -- * Page
     HtmlPage (..),
     page_,
@@ -48,6 +51,7 @@ module Futurice.Lucid.Foundation (
 import Clay                           (Css, render)
 import Data.Colour.SRGB               (sRGB24show)
 import Data.Swagger                   (NamedSchema (..), ToSchema (..))
+import Data.Time                      (defaultTimeLocale, formatTime)
 import FileEmbedLzma                  (embedByteString, embedRecursiveDir)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), DataColour,
@@ -140,6 +144,19 @@ optionSelected_ False = term "option"
 checkbox_ :: Monad m => Bool -> [Attribute] -> HtmlT m ()
 checkbox_ True  attrs = input_ $ [ type_ "checkbox", checked_ ] <> attrs
 checkbox_ False attrs = input_ $ [ type_ "checkbox" ] <> attrs
+
+-------------------------------------------------------------------------------
+-- Special types
+-------------------------------------------------------------------------------
+
+day_ :: Monad m => Day -> HtmlT m ()
+day_ d = span_
+    [ class_ "nowrap", title_ $ view packed $ formatTime defaultTimeLocale "%d %B %Y " d ]
+    $ toHtml $ show d
+
+-- | Like 'day_' but without @title@
+day'_ :: Monad m => Day -> HtmlT m ()
+day'_ d = span_ [ class_ "nowrap" ] $ toHtml $ show d
 
 -------------------------------------------------------------------------------
 -- Page
