@@ -33,6 +33,8 @@ import Futurice.App.Reports.Dashdo            (makeDashdoServer)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
+import Futurice.App.Reports.MissingHoursWeekly
+       (MissingHoursWeeklyReport, missingHoursWeeklyReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
 import Futurice.App.Reports.PowerAbsences
@@ -100,6 +102,18 @@ serveMissingHoursReport allContracts ctx = do
         | allContracts = missingHoursEmployeePredicate
         | otherwise    = missingHoursEmployeePredicate'
 
+-- temporary (2018-04-19)
+serveMissingHoursWeeklyReport
+    :: (KnownSymbol title, Typeable title)
+    => Ctx -> IO (MissingHoursWeeklyReport title)
+serveMissingHoursWeeklyReport ctx = do
+    cachedIO' ctx () $ do
+        day <- currentDay
+        let interval = beginningOfPrev2Month day ... pred day
+        runIntegrations' ctx (missingHoursWeeklyReport predicate interval)
+  where
+    predicate =missingHoursEmployeePredicate -- add prime'
+
 servePowerUsersReport :: Ctx -> IO PowerUserReport
 servePowerUsersReport ctx = do
     cachedIO' ctx () $ runIntegrations' ctx powerUserReport
@@ -125,6 +139,7 @@ reports :: NP ReportEndpoint Reports
 reports =
     ReportEndpoint (serveMissingHoursReport True) :*
     ReportEndpoint (serveMissingHoursReport False) :*
+    ReportEndpoint serveMissingHoursWeeklyReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 

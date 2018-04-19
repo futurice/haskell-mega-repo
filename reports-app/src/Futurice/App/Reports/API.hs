@@ -20,6 +20,8 @@ import Servant.Graph             (ALGA, Graph)
 
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursTitle, MissingHoursTitleFilt)
+import Futurice.App.Reports.MissingHoursWeekly
+       (MissingHoursWeeklyReport, MissingHoursWeeklyTitle)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerProjects     (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
@@ -33,6 +35,7 @@ data R (path :: Symbol) (report :: *)
 type Reports =
     '[R "missing-hours"       (MissingHoursReport MissingHoursTitle)
     , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
+    , R "missing-hours-weekly" (MissingHoursWeeklyReport MissingHoursWeeklyTitle)
     , R "hours-by-task"       TimereportsByTaskReport
     ]
 
