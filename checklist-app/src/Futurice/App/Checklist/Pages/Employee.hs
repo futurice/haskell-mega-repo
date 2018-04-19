@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
-import Control.Lens              (forOf_, re)
+import Control.Lens              (Getting, forOf_, re)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
@@ -17,6 +17,7 @@ import Futurice.App.Checklist.API
        (checklistApi, checklistPageEndpoint, createEmployeePageEndpoint,
        employeeAuditPageEndpoint)
 import Futurice.App.Checklist.Markup
+import Futurice.App.Checklist.Personio
 import Futurice.App.Checklist.Types
 
 import qualified Chat.Flowdock.REST as FD
@@ -95,14 +96,14 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             input_ [ futuId_ "employee-lastname", type_ "text", value_ $ employee ^. employeeLastName ]
         row_ $ large_ 12 $ label_ $ do
             "Contract "
-            hasDifferentPersonioContractType personioEmployee (Just ((employee ^. employeeContractType) ^. re _ContractType))
+            personioCheck' employeeContractType contractType (toHtml . contractTypeToText)
             select_ [ futuId_ "employee-contract-type" ] $ for_ [ minBound .. maxBound ] $ \x ->
                 optionSelected_ (x == employee ^. employeeContractType)
                     [ value_ $ x ^. re _ContractType ]
                     $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
             "Office "
-            hasDifferentPersonioOffice personioEmployee (Just ((employee ^. employeeOffice) ^. re _Office))
+            personioCheck' employeeOffice (Just . view P.employeeOffice) toHtml
             select_ [ futuId_ "employee-location" ] $ for_ [ minBound .. maxBound ] $ \x ->
                 optionSelected_ (x == employee ^. employeeOffice)
                     [ value_ $ x ^. re _Office ]
@@ -120,7 +121,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             input_ [ futuId_ "employee-supervisor", type_ "text", value_ $ toQueryParam $ employee ^. employeeSupervisor, data_ "futu-values" $ encodeToText supervisors ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe "
-            hasDifferentPersonioTribe personioEmployee (Just $ toQueryParam $ employee ^. employeeTribe)
+            personioCheck' employeeTribe (Just . view P.employeeTribe) toHtml
             select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
                 for_ [ minBound .. maxBound ] $ \tribe ->
                     optionSelected_ (tribe == employee ^. employeeTribe)
@@ -187,27 +188,27 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
     eid = employee ^. identifier
     cl = world ^. worldLists . pick (employee ^. employeeChecklist)
 
+    personioCheck'
+        :: (Monad m, Eq a)
+        => Getting a Employee a
+        -> (P.Employee -> Maybe a)
+        -> (a -> HtmlT m ())
+        -> HtmlT m ()
+    personioCheck' = personioCheck integrationData employee
+
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
     personioEmployee :: Maybe P.Employee
-    personioEmployee = (employee ^. employeePersonio) >>= (\x -> (integrationData ^. personioData) ^.at x)
+    personioEmployee = do
+        pid <- employee ^. employeePersonio
+        integrationData ^. personioData . at pid
 
     personioText :: Maybe Text -> Text -> Text
     personioText a attr = maybe "" (\x -> " Personio " <> attr <> " " <> x) a
 
     wrapToWarningLabel :: Text -> HtmlT Identity ()
     wrapToWarningLabel x = label_ [ class_ "label warning" ] (toHtml x)
-
-    contractType :: P.Employee -> Maybe ContractType
-    contractType e = case e ^. P.employeeEmploymentType of
-        Nothing -> Nothing
-        Just P.External -> Just ContractTypeExternal
-        Just P.Internal -> case e ^. P.employeeContractType of
-            Nothing                      -> Nothing
-            Just P.PermanentAllIn -> Just ContractTypePermanent
-            Just P.FixedTerm      -> Just ContractTypeFixedTerm
-            Just P.Permanent      -> Nothing -- TODO! ambigious choice, cann't pick one.
 
     hasDifferentPersonioInfo :: Maybe Text -> Maybe Text -> Text -> HtmlT Identity ()
     hasDifferentPersonioInfo info Nothing t = wrapToWarningLabel $ personioText info t
@@ -218,15 +219,6 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
 
     hasDifferentPersonioEmail :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
     hasDifferentPersonioEmail info locali = for_ info $ \x -> hasDifferentPersonioInfo (x ^. P.employeeHomeEmail) locali "email"
-
-    hasDifferentPersonioTribe :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioTribe info locali = for_ info $ \x -> hasDifferentPersonioInfo (Just $ toQueryParam $ x ^. P.employeeTribe) locali "tribe"
-
-    hasDifferentPersonioContractType :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioContractType info locali = for_ info $ \x -> hasDifferentPersonioInfo (toQueryParam <$> contractType x) locali "contract"
-
-    hasDifferentPersonioOffice :: Maybe P.Employee -> Maybe Text -> HtmlT Identity ()
-    hasDifferentPersonioOffice info locali = for_ info $ \x -> hasDifferentPersonioInfo (Just $ toQueryParam $ x ^. P.employeeOffice) locali "office"
 
     hasDifferentPersonioSupervisor :: Maybe P.Employee -> Maybe Text -> Map P.EmployeeId P.Employee -> HtmlT Identity ()
     hasDifferentPersonioSupervisor info locali es = let toName :: P.Employee -> Maybe Text
