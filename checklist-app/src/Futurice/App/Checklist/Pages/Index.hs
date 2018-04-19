@@ -4,14 +4,16 @@
 module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Control.Lens
-       (filtered, has, hasn't, ifoldMapOf, only, re, united, minimumOf)
+       (Getting, filtered, has, hasn't, ifoldMapOf, minimumOf, only, re,
+       united)
+import Data.Semigroup            (Arg (..))
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Data.Semigroup (Arg (..))
 import Prelude ()
 
 import Futurice.App.Checklist.Markup
+import Futurice.App.Checklist.Personio
 import Futurice.App.Checklist.Types
 
 import qualified Personio as P
@@ -136,7 +138,6 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                 -- viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Tasks"
             tbody_ $ for_ employees' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
-
                 let eid = employee ^. identifier
                 let firstFutureDay = employees' ^? folded . employeeStartingDay . filtered (> today)
                 let startingDay = employee ^. employeeStartingDay
@@ -148,29 +149,43 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                         GT | maybe False (day <=) firstFutureDay -> "eta-near-future"
                            | day > addDays 30 today              -> "eta-far-future"
                            | otherwise                           -> "eta-future"
+                let personioCheck'
+                        :: (Monad m, Eq a)
+                        => Getting a Employee a
+                        -> (P.Employee -> Maybe a)
+                        -> (a -> HtmlT m ())
+                        -> HtmlT m ()
+                    personioCheck' = personioCheck integrationData employee
+
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
-                    td_ $ contractTypeHtml $ employee ^. employeeContractType
+                    td_ $ do
+                        contractTypeHtml $ employee ^. employeeContractType
+                        personioCheck' employeeContractType contractType contractTypeHtml'
                     td_ $ traverse_ toHtml $ employee ^. employeePersonio
-                    td_ $ locationHtml mlistId $ employee ^. employeeOffice
+                    td_ $ do
+                        locationHtml mlistId $ employee ^. employeeOffice
+                        personioCheck' employeeOffice (Just . view P.employeeOffice) toHtml
                     td_ $ employeeLink employee
-                    td_ $ case tribeOffices (employee ^. employeeTribe) of
-                        [off] | off == employee ^. employeeOffice ->
-                            toHtml $ employee ^. employeeTribe
-                        -- none, multiple offices,
-                        -- or employee and tribe's (single) office are different
-                        _ -> do
-                            toHtml $ employee ^. employeeTribe
-                            " ("
-                            locationHtml mlistId $ employee ^. employeeOffice
-                            ")"
+                    td_ $ do
+                        case tribeOffices (employee ^. employeeTribe) of
+                            [off] | off == employee ^. employeeOffice ->
+                                toHtml $ employee ^. employeeTribe
+                            -- none, multiple offices,
+                            -- or employee and tribe's (single) office are different
+                            _ -> do
+                                toHtml $ employee ^. employeeTribe
+                                " ("
+                                locationHtml mlistId $ employee ^. employeeOffice
+                                ")"
+                        personioCheck' employeeTribe (Just . view P.employeeTribe) toHtml
                     mcase mtask
                         (td_ $ checklistNameHtml mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
-                            td_ $ taskCheckbox_ world employee task
+                            td_ $ shortTaskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                     td_ $ do
-                        let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world 
+                        let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
                         let arg       t = Arg (t ^. taskOffset) t
                         case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
                             Nothing                -> span_ [ title_ "Archive me!" ] "All done"
@@ -181,16 +196,10 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                                 day'_ (addDays offset startingDay)
                     td_ $ do
                         day_ startingDay
-                        for_ (employee ^. employeePersonio) $ \pid ->
-                            for_ (integrationData ^? personioData . ix pid) $ \p -> do
-                                let mday = case employee ^. employeeChecklist of
-                                        NewEmployeeChecklist -> p ^? P.employeeHireDate . _Just
-                                        LeavingEmployeeChecklist -> p ^? P.employeeEndDate . _Just
-                                unless (Just startingDay == mday) $ do
-                                    " "
-                                    span_ [ class_ "label alert" ] $ do
-                                        "≠ "
-                                        maybe "?" day_  mday
+                        let f = case employee ^. employeeChecklist  of
+                                    NewEmployeeChecklist     -> view P.employeeHireDate
+                                    LeavingEmployeeChecklist -> view P.employeeEndDate
+                        personioCheck' employeeStartingDay f day_
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
                     td_ $ toHtml $ show (diffDays startingDay today) <> "d"
                     case ifoldMapOf

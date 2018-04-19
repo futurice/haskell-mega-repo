@@ -30,6 +30,7 @@ module Futurice.App.Checklist.Markup (
     nameText,
     roleHtml,
     contractTypeHtml,
+    contractTypeHtml',
     checklistNameHtml,
     locationHtml,
     -- * Counter
@@ -38,6 +39,7 @@ module Futurice.App.Checklist.Markup (
     toTodoCounter,
     -- * Tasks
     taskCheckbox_,
+    shortTaskCheckbox_,
     taskCommentInput_,
     taskInfo_,
     -- * Headers
@@ -266,6 +268,11 @@ contractTypeHtml ContractTypeFixedTerm    = span_ [title_ "Fixed term"]    "Fix"
 contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part"
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
+-- | Like 'contractTypeHtml'' but also prints Permmanent
+contractTypeHtml' :: Monad m => ContractType -> HtmlT m ()
+contractTypeHtml' ContractTypePermanent = span_ [title_ "Permanent"] "Per"
+contractTypeHtml' ct = contractTypeHtml ct
+
 checklistNameHtml :: Monad m => Maybe Office -> ChecklistId -> Bool -> HtmlT m ()
 checklistNameHtml mloc cid notDone =
     a_ [ indexPageHref mloc (Just cid) (Nothing :: Maybe Task) notDone False, class_ "nowrap" ] $
@@ -356,14 +363,27 @@ taskInfo_ task employee idata
 -------------------------------------------------------------------------------
 
 taskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
-taskCheckbox_ world employee task = do
+taskCheckbox_ = makeTaskCheckbox_ id []
+
+shortTaskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
+shortTaskCheckbox_ = makeTaskCheckbox_ f [ class_ "nowrap" ] where
+    f t = case T.words t of
+        []    -> ""
+        [w]   -> w
+        (w:_) -> w <> "..."
+
+makeTaskCheckbox_
+    :: Monad m
+    => (Text -> Text) -> [Attribute]
+    -> World -> Employee -> Task -> HtmlT m ()
+makeTaskCheckbox_ f attrs world employee task = label_ attrs $ do
     checkbox_ checked
         [ id_ megaid
         , futuId_ "task-done-checkbox"
         , data_ "futu-employee" $ employee ^. identifierText
         , data_ "futu-task" $ task ^. identifierText
         ]
-    label_ [ attrfor_ megaid ] $ task ^. nameHtml
+    toHtml $ f $ task ^. nameText
   where
     checked = flip has world
         $ worldTaskItems
