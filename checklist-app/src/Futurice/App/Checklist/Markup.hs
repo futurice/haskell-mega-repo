@@ -30,6 +30,7 @@ module Futurice.App.Checklist.Markup (
     nameText,
     roleHtml,
     contractTypeHtml,
+    contractTypeHtml',
     checklistNameHtml,
     locationHtml,
     -- * Counter
@@ -265,6 +266,11 @@ contractTypeHtml ContractTypeExternal     = span_ [title_ "External"]      "Ext"
 contractTypeHtml ContractTypeFixedTerm    = span_ [title_ "Fixed term"]    "Fix"
 contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part"
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
+
+-- | Like 'contractTypeHtml'' but also prints Permmanent
+contractTypeHtml' :: Monad m => ContractType -> HtmlT m ()
+contractTypeHtml' ContractTypePermanent = span_ [title_ "Permanent"] "Per"
+contractTypeHtml' ct = contractTypeHtml ct
 
 checklistNameHtml :: Monad m => Maybe Office -> ChecklistId -> Bool -> HtmlT m ()
 checklistNameHtml mloc cid notDone =
