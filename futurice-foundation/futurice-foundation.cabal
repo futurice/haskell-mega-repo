@@ -44,6 +44,7 @@ library
     , swagger2
     , template-haskell
     , text
+    , time
     , wai-app-static
   exposed-modules:
       Futurice.JavaScript

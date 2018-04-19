@@ -5,7 +5,6 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Control.Lens
        (filtered, has, hasn't, ifoldMapOf, only, re, united, minimumOf)
-import Data.List                 (intercalate)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -133,7 +132,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                 th_ [title_ "due date + offset of next undone task" ] "Next task due"
                 th_ [title_ dateName]                      $ toHtml dateName
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
-                th_ [title_ "Days till start"]             "ETA"
+                th_ [title_ "Days till due date"]          "ETA"
                 viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Tasks"
             tbody_ $ for_ employees' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
@@ -175,20 +174,25 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                         let arg       t = Arg (t ^. taskOffset) t
                         case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
                             Nothing                -> span_ [ title_ "Archive me!" ] "All done"
-                            Just (Arg offset task) -> span_ [ title_ $ task ^. nameText ] $ toHtml $ show (addDays offset startingDay)
+                            Just (Arg offset task) -> a_
+                                [ indexPageHref mloc mlistId (Just task) showDone showOld
+                                , title_ $ "Filter to: " <> task ^. nameText
+                                ] $
+                                day'_ (addDays offset startingDay)
                     td_ $ do
-                        toHtml $ show startingDay
+                        day_ startingDay
                         for_ (employee ^. employeePersonio) $ \pid ->
                             for_ (integrationData ^? personioData . ix pid) $ \p -> do
-                                let days = p ^.. (P.employeeHireDate . _Just <> P.employeeEndDate . _Just)
-                                unless (startingDay `elem` days) $ do
+                                let mday = case employee ^. employeeChecklist of
+                                        NewEmployeeChecklist -> p ^? P.employeeHireDate . _Just
+                                        LeavingEmployeeChecklist -> p ^? P.employeeEndDate . _Just
+                                unless (Just startingDay == mday) $ do
                                     " "
                                     span_ [ class_ "label alert" ] $ do
-                                        "∉ {"
-                                        toHtml $ intercalate ", " $ map show days
-                                        "}"
+                                        "≠ "
+                                        maybe "?" day_  mday
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
-                    td_ $ toHtml $ show (diffDays startingDay today) <> " days"
+                    td_ $ toHtml $ show (diffDays startingDay today) <> "d"
                     case ifoldMapOf
                         (worldTaskItems . ix eid . ifolded)
                         (toTodoCounter world)
