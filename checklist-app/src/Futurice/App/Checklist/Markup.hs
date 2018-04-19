@@ -39,6 +39,7 @@ module Futurice.App.Checklist.Markup (
     toTodoCounter,
     -- * Tasks
     taskCheckbox_,
+    shortTaskCheckbox_,
     taskCommentInput_,
     taskInfo_,
     -- * Headers
@@ -362,14 +363,27 @@ taskInfo_ task employee idata
 -------------------------------------------------------------------------------
 
 taskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
-taskCheckbox_ world employee task = do
+taskCheckbox_ = makeTaskCheckbox_ id []
+
+shortTaskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
+shortTaskCheckbox_ = makeTaskCheckbox_ f [ class_ "nowrap" ] where
+    f t = case T.words t of
+        []    -> ""
+        [w]   -> w
+        (w:_) -> w <> "..."
+
+makeTaskCheckbox_
+    :: Monad m
+    => (Text -> Text) -> [Attribute]
+    -> World -> Employee -> Task -> HtmlT m ()
+makeTaskCheckbox_ f attrs world employee task = label_ attrs $ do
     checkbox_ checked
         [ id_ megaid
         , futuId_ "task-done-checkbox"
         , data_ "futu-employee" $ employee ^. identifierText
         , data_ "futu-task" $ task ^. identifierText
         ]
-    label_ [ attrfor_ megaid ] $ task ^. nameHtml
+    toHtml $ f $ task ^. nameText
   where
     checked = flip has world
         $ worldTaskItems

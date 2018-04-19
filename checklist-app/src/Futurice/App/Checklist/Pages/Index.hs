@@ -181,7 +181,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                     mcase mtask
                         (td_ $ checklistNameHtml mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
-                            td_ $ taskCheckbox_ world employee task
+                            td_ $ shortTaskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                     td_ $ do
