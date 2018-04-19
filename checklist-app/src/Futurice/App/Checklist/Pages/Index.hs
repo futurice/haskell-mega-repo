@@ -27,7 +27,7 @@ indexPage
     -> Bool  -- ^ done
     -> Bool  -- ^ old
     -> HtmlPage "indexpage"
-indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtask showDone showOld =
+indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mtask showDone showOld =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeOffice . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. checklistId))) mlist $ employees1
@@ -133,7 +133,7 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                 th_ [title_ dateName]                      $ toHtml dateName
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
                 th_ [title_ "Days till due date"]          "ETA"
-                viewerItemsHeader viewerRole
+                -- viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Tasks"
             tbody_ $ for_ employees' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
 
@@ -198,10 +198,11 @@ indexPage world today authUser@(_fu, viewerRole) integrationData mloc mlist mtas
                         (toTodoCounter world)
                         world
                       of
-                        TodoCounter (Counter i j) perRole -> case perRole ^. ix viewerRole of
-                            Counter a b -> do
-                                td_ $ toHtml (show a) *> "/" *> toHtml (show b)
-                                td_ $ toHtml (show i) *> "/" *> toHtml (show j)
+                        TodoCounter (Counter i j) _perRole -> do
+                            -- Per role tasks are hidden, as there are only IT tasks ATM. (2018-04-19)
+                            -- case perRole ^. ix viewerRole of
+                            --     Counter a b -> td_ $ toHtml (show a) *> "/" *> toHtml (show b)
+                            td_ $ toHtml (show i) *> "/" *> toHtml (show j)
 
 -------------------------------------------------------------------------------
 -- Utilities
