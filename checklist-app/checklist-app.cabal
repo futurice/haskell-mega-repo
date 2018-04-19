@@ -116,6 +116,7 @@ library
       Futurice.App.Checklist.Pages.Stats
       Futurice.App.Checklist.Pages.Task
       Futurice.App.Checklist.Pages.Tasks
+      Futurice.App.Checklist.Personio
       Futurice.App.Checklist.Types
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.ChecklistId

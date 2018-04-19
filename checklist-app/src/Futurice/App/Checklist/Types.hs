@@ -48,6 +48,7 @@ module Futurice.App.Checklist.Types (
     _ContractType,
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
+    contractTypeToText,
     -- ** Task
     taskName, taskInfo, taskPrereqs, taskRole, taskComment, taskTags, taskOffset, taskApplicability,
     -- ** CheckResult
