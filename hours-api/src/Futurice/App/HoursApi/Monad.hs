@@ -379,7 +379,7 @@ makeTimereport pid tr = Timereport
 -- seems that Nothing projectId is the thing there.
 --
 billableStatus :: Maybe PM.ProjectId -> Int -> T.EntryType
-billableStatus Nothing 3 = T.EntryTypeAbsence
+billableStatus Nothing _ = T.EntryTypeAbsence
 billableStatus _ 3       = T.EntryTypeNotBillable
 billableStatus _ _       = T.EntryTypeBillable
 
