@@ -74,7 +74,7 @@ timereportUtzPerWeek = fmap getAverage . Map.fromListWith (<>) . fmap mk
 -------------------------------------------------------------------------------
 
 billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
-billableStatus Nothing 3 = EntryTypeOther
+billableStatus Nothing _ = EntryTypeOther
 billableStatus _ 3       = EntryTypeNotBillable
 billableStatus _ _       = EntryTypeBillable
 
