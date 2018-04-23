@@ -15,6 +15,7 @@ import Web.HttpApiData           (toQueryParam)
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
+import Futurice.App.Checklist.Personio
 
 import qualified Data.Text as T
 import qualified Personio
@@ -58,7 +59,7 @@ personioToTemplate mcid es e = Tmpl
     { tmplPersonioId   = Just $ e ^. Personio.employeeId
     , tmplFirst        = e ^. Personio.employeeFirst
     , tmplLast         = e ^. Personio.employeeLast
-    , tmplContractType = contractType
+    , tmplContractType = contractType e
     , tmplOffice       = e ^. Personio.employeeOffice
     , tmplTribe        = e ^. Personio.employeeTribe
     , tmplStartingDay  = case mcid of
@@ -76,15 +77,6 @@ personioToTemplate mcid es e = Tmpl
   where
     zeroToNothing (Just 0) = Nothing
     zeroToNothing x        = x
-
-    contractType = case e ^. Personio.employeeEmploymentType of
-        Nothing -> Nothing
-        Just Personio.External -> Just ContractTypeExternal
-        Just Personio.Internal -> case e ^. Personio.employeeContractType of
-            Nothing                      -> Nothing
-            Just Personio.PermanentAllIn -> Just ContractTypePermanent
-            Just Personio.FixedTerm      -> Just ContractTypeFixedTerm
-            Just Personio.Permanent      -> Nothing -- TODO!
 
 -------------------------------------------------------------------------------
 -- Page
