@@ -57,7 +57,7 @@ import qualified Network.AWS.SQS.Types          as AWS
 
 data MessageQueue = MQ
     { mqPublishMessage :: !(Message -> IO ())
-    , mqSubscribe      :: !(STM.STM Subscription)
+    , mqSubscribe      :: !(Maybe (STM.STM Subscription))
     }
 
 newtype Subscription = Sub (STM.STM Message)
@@ -133,13 +133,12 @@ createMessageQueue
     -> Maybe AWS.Env  -- ^ if 'Nothing', message queue will be no-op: publish won't do anything, subscribe will 'STM.retry'.
     -> Text           -- ^ AWS "Group"
     -> Service        -- ^ Service, so we know which queue to read
-    -- TODO: callback!
     -> IO MessageQueue
 createMessageQueue _ Nothing _ _ = do
 
     return MQ
         { mqPublishMessage = \_ -> return () -- no-op
-        , mqSubscribe      = STM.retry
+        , mqSubscribe      = Nothing
         }
 createMessageQueue lgr (Just env) awsGroup service =
     AWS.runResourceT $ AWS.runAWST env $ runLogT "create-message-queue" lgr $ do
@@ -152,7 +151,7 @@ createMessageQueue lgr (Just env) awsGroup service =
 
         return MQ
             { mqPublishMessage = makePublishMessage topics
-            , mqSubscribe      = subscribe
+            , mqSubscribe      = Just subscribe
             }
   where
     makePublishMessage :: PerTopic AWS.Topic -> Message -> IO ()
@@ -265,7 +264,7 @@ instance FromJSON Env where
 publishMessage :: MessageQueue -> Message -> IO ()
 publishMessage (MQ pub _) = pub
 
-subscribeToQueue :: MessageQueue -> STM.STM Subscription
+subscribeToQueue :: MessageQueue -> Maybe (STM.STM Subscription)
 subscribeToQueue (MQ _ subscribe) = subscribe
 
 readSubscription :: Subscription -> STM.STM Message
@@ -275,9 +274,12 @@ readSubscription (Sub s) = s
 --
 -- 'forEachMessage' forks a forever running thread which tries to read
 -- from a message queue.
-forEachMessage :: MessageQueue -> (Message -> IO ()) -> IO ThreadId
-forEachMessage mq action = do
-    s <- STM.atomically $ subscribeToQueue mq
+--
+-- Returns nothing if there are no MessageQueue.
+--
+forEachMessage :: MessageQueue -> (Message -> IO ()) -> IO (Maybe ThreadId)
+forEachMessage mq action = for (subscribeToQueue mq) $ \s' -> do
+    s <- STM.atomically s'
  -- TODO: log exceptions? change futuriceServerMain to take LogT IO
     forkIO $ forever $ tryDeep $ do
         msg <- STM.atomically $ readSubscription s
