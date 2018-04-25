@@ -8,6 +8,7 @@ import Control.Lens
        united)
 import Data.Semigroup            (Arg (..))
 import Data.Time                 (addDays, diffDays)
+import Futurice.Graph            (closure)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
@@ -130,6 +131,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                         th_ [title_ "Selected task" ] $ task ^. nameHtml
                         when (has (taskTags . folded) task) $ th_ "Task info"
                         when (task ^. taskComment) $ th_ "Comment"
+                        mcase (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) mempty $ \_ -> th_ "Prerequisites"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
                 th_ [title_ "due date + offset of next undone task" ] "Next task due"
                 th_ [title_ dateName]                      $ toHtml dateName
@@ -184,6 +186,13 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                             td_ $ shortTaskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
+                            mcase (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) mempty $ \prereqTasks -> do
+                                td_ $ for_ prereqTasks $ \prereqTask -> do
+                                    case listToMaybe $ world ^.. worldTaskItems . ix eid . ix (prereqTask ^. identifier) of
+                                      Just _ -> taskCheckbox_ world employee prereqTask
+                                      Nothing -> taskLink prereqTask
+                                    br_ []
+
                     td_ $ do
                         let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
                         let arg       t = Arg (t ^. taskOffset) t
