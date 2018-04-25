@@ -50,6 +50,7 @@ data Cmd
     | CmdUser PM.UserId
     | CmdUserMany PM.UserId Int
     | CmdTimereports PM.UserId (PM.Interval Day)
+    | CmdCapacity PM.UserId (PM.Interval Day)
     | CmdTimereport PM.TimereportId
     | CmdReportableAssignments PM.UserId
     | CmdBalance PM.UserId
@@ -183,6 +184,11 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         x <- PM.planmillAction $ PM.timereportsFromIntervalFor
             (PM.ResultInterval PM.IntervalStart interval)
             uid
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdCapacity uid interval -> do
+        x <- PM.planmillAction $ PM.userCapacity interval uid
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse
