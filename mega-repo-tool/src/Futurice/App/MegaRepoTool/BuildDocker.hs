@@ -31,12 +31,12 @@ buildCmd buildImage = T.unwords
     [ "docker run"
     , "--rm"
     , "-ti"
-    , "--entrypoint /app/src/build-in-linux-cabal.sh"
     , "-e DOCKER=YES" -- tell script we are in docker
     , "-v $(pwd):/app/src"
-    , "-v haskell-mega-repo-cabal:/home/root/.cabal"
+    , "-v haskell-mega-repo-cabal:/root/.cabal"
     , "-v haskell-mega-repo-dist:/app/src/dist-newstyle-prod"
     , buildImage
+    , "/app/src/build-in-linux-cabal.sh"
     ]
 
 -------------------------------------------------------------------------------

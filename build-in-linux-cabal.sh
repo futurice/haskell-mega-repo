@@ -10,6 +10,8 @@ unset POSIXLY_CORRECT
 
 # Root directory. In docker it's /app/src
 if [ "x$DOCKER" = "xYES" ]; then
+    echo "Building in Docker"
+
     ROOTDIR=/app/src
 else
     ROOTDIR=$(pwd)
@@ -25,11 +27,21 @@ GHCVER=${GHCVER-8.2.2}
 export PATH=/opt/ghc/$GHCVER/bin:$PATH
 HC=ghc-$GHCVER
 
+# Print versions
+lsb_release -a
+${HC} --version
+cabal --version
+
+# Update things
+if [ "x$DOCKER" = "xYES" ]; then
+    apt-get update && apt-get upgrade -y
+fi
+
 # Use different BUILDDIR
 BUILDDIR=dist-newstyle-prod
 
 # Concurrency
-CONCURRENCY=${CONCURRENCY-1}
+CONCURRENCY=${CONCURRENCY-2}
 
 # Update cabal
 cabal update
