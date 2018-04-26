@@ -74,10 +74,12 @@ library
       Futurice.App.MegaRepoTool
       Futurice.App.MegaRepoTool.BuildDocker
       Futurice.App.MegaRepoTool.Config
+      Futurice.App.MegaRepoTool.CopyArtifacts
       Futurice.App.MegaRepoTool.Estimator
       Futurice.App.MegaRepoTool.Exec
       Futurice.App.MegaRepoTool.GenPass
       Futurice.App.MegaRepoTool.Keys
+      Futurice.App.MegaRepoTool.PatternCompleter
       Futurice.App.MegaRepoTool.StackYaml
       Futurice.App.MegaRepoTool.Stats
 
