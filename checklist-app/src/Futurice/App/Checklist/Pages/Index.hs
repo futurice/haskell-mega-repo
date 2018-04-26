@@ -6,6 +6,7 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 import Control.Lens
        (Getting, filtered, has, hasn't, ifoldMapOf, minimumOf, only, re,
        united)
+import Data.Maybe                (isJust)
 import Data.Semigroup            (Arg (..))
 import Data.Time                 (addDays, diffDays)
 import Futurice.Graph            (closure)
@@ -131,7 +132,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                         th_ [title_ "Selected task" ] $ task ^. nameHtml
                         when (has (taskTags . folded) task) $ th_ "Task info"
                         when (task ^. taskComment) $ th_ "Comment"
-                        mcase (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) mempty $ \_ -> th_ "Prerequisites"
+                        unless (null $ fold $ closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) $ th_ "Prerequisites"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
                 th_ [title_ "due date + offset of next undone task" ] "Next task due"
                 th_ [title_ dateName]                      $ toHtml dateName
@@ -186,11 +187,11 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                             td_ $ shortTaskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
-                            mcase (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) mempty $ \prereqTasks -> do
+                            for_ (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) $ \prereqTasks -> do
                                 td_ $ for_ prereqTasks $ \prereqTask -> do
-                                    case listToMaybe $ world ^.. worldTaskItems . ix eid . ix (prereqTask ^. identifier) of
+                                    case world ^? worldTaskItems . ix eid . ix (prereqTask ^. identifier) of
                                       Just _ -> taskCheckbox_ world employee prereqTask
-                                      Nothing -> taskLink prereqTask
+                                      Nothing -> mempty
                                     br_ []
 
                     td_ $ do
