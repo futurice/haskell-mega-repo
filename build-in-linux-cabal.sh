@@ -54,17 +54,6 @@ GITHASH=$(git log --pretty=format:'%h' -n 1 --abbrev=8)
 
 # Copy binaries to ./build/exe/exe
 # We put binaries in separate directories to speed-up docker image creation
-mkdir -p $ROOTDIR/build
-for fullexe in $(cabal-plan --builddir=$BUILDDIR list-bins|grep ':exe:'|awk '{print $2}'); do
-    if [ $(echo $fullexe | sed "s:^$ROOTDIR/.*$:matches:") = "matches" ]; then
-        exe=$(basename $fullexe)
-        mkdir -p  $ROOTDIR/build/$exe
-        cp $fullexe $ROOTDIR/build/$exe/$exe
-        strip $ROOTDIR/build/$exe/$exe
-        echo $GITHASH > $ROOTDIR/build/$exe/git-hash.txt
-    else
-        echo "Skipping $fullexe"
-    fi
-done
+cabal new-run mega-repo-tool -- copy-artifacts --rootdir "$ROOTDIR" --builddir "$BUILDDIR"
 
-echo $GITHASH > $ROOTDIR/build/git-hash.txt
+echo "$GITHASH" > "$ROOTDIR/build/git-hash.txt"

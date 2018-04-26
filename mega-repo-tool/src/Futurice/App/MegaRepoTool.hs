@@ -1,27 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.MegaRepoTool (defaultMain) where
 
-import Cabal.Plan
-       (CompInfo (..), CompName (..), PkgId (..), PkgName (..), PlanJson (..),
-       Unit (..), dispCompName, findAndDecodePlanJson)
 import Data.Aeson                              (Value (Null))
-import Data.Maybe                              (isJust)
 import Futurice.Prelude
 import Prelude ()
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (ansiPretty)
 
 import qualified Data.Map            as Map
-import qualified Data.Text           as T
 import qualified Options.Applicative as O
 import qualified Text.Microstache    as M
 
+import Futurice.App.MegaRepoTool.CopyArtifacts
 import Futurice.App.MegaRepoTool.BuildDocker
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Exec
 import Futurice.App.MegaRepoTool.GenPass
 import Futurice.App.MegaRepoTool.Keys
+import Futurice.App.MegaRepoTool.PatternCompleter
 import Futurice.App.MegaRepoTool.StackYaml
 import Futurice.App.MegaRepoTool.Stats
 
@@ -37,6 +33,7 @@ data Cmd
     | CmdUpdateKey !Text !Text
     | CmdDeleteKey !Text
     | CmdExec !(NonEmpty String)
+    | CmdCopyArtifacts FilePath FilePath
 
 buildDockerOptions ::O.Parser Cmd
 buildDockerOptions = CmdBuildDocker
@@ -103,92 +100,17 @@ runOptions = cmdRun
         , O.completer $ patternCompleter True
         ]
 
-patternCompleter :: Bool -> O.Completer
-patternCompleter onlyWithExes = O.mkCompleter $ \pfx -> do
-    (plan, _) <- findAndDecodePlanJson Nothing
-    let tpfx  = T.pack pfx
-        components = findComponents plan
-
-    {-
-    -- One scenario
-    --
-    -- @
-    -- $ cabal-plan list-bin cab<TAB>
-    -- $ cabal-plan list-bin cabal-plan<TAB>
-    -- $ cabal-plan list-bin cabal-plan:exe:cabal-plan
-    -- @
-    --
-    -- Note: if this package had `tests` -suite, then we can
-    --
-    -- @
-    -- $ cabal-plan list-bin te<TAB>
-    -- $ cabal-plan list-bin tests<TAB>
-    -- $ cabal-plan list-bin cabal-plan:test:tests
-    -- @
-    --
-    -- *BUT* at least zsh script have to be changed to complete from non-prefix.
-    -}
-    return $ map T.unpack $ firstNonEmpty
-        -- 1. if tpfx matches component exacty, return full path
-        [ single $ map fst $ filter ((tpfx ==) . snd) components
-
-        -- 2. match component parts
-        , uniques $ filter (T.isPrefixOf tpfx) $ map snd components
-
-        -- otherwise match full paths
-        , filter (T.isPrefixOf tpfx) $ map fst components
-        ]
-  where
-    firstNonEmpty :: [[a]] -> [a]
-    firstNonEmpty []         = []
-    firstNonEmpty ([] : xss) = firstNonEmpty xss
-    firstNonEmpty (xs : _)   = xs
-
-    -- single
-    single :: [a] -> [a]
-    single xs@[_] = xs
-    single _      = []
-
-    -- somewhat like 'nub' but drop duplicate names. Doesn't preserve order
-    uniques :: Ord a => [a] -> [a]
-    uniques = Map.keys . Map.filter (== 1) . Map.fromListWith (+) . map (\x -> (x, 1 :: Int))
-
-    impl :: Bool -> Bool -> Bool
-    impl False _ = True
-    impl True  x = x
-
-    -- returns (full, cname) pair
-    findComponents :: PlanJson -> [(T.Text, T.Text)]
-    findComponents plan = do
-        (_, Unit{..}) <- Map.toList $ pjUnits plan
-        (cn, ci) <- Map.toList $ uComps
-
-        -- if onlyWithExes, component should have binFile
-        guard (onlyWithExes `impl` isJust (ciBinFile ci))
-
-        let PkgId pn@(PkgName pnT) _ = uPId
-            g = case cn of
-                CompNameLib -> pnT <> T.pack":lib:" <> pnT
-                _           -> pnT <> T.pack":" <> dispCompName cn
-
-        let cnT = extractCompName pn cn
-        [ (g, cnT) ]
-
-extractCompName :: PkgName -> CompName -> T.Text
-extractCompName (PkgName pn) CompNameLib         = pn
-extractCompName (PkgName pn) CompNameSetup       = pn
-extractCompName _            (CompNameSubLib cn) = cn
-extractCompName _            (CompNameFLib cn)   = cn
-extractCompName _            (CompNameExe cn)    = cn
-extractCompName _            (CompNameTest cn)   = cn
-extractCompName _            (CompNameBench cn)  = cn
-
 execOptions :: O.Parser Cmd
 execOptions = mk
     <$> O.strArgument (O.metavar ":cmd" <> O.help "command")
     <*> many (O.strArgument $ O.metavar ":arg" <> O.help "arguments")
   where
     mk cmd args = CmdExec (cmd :| args)
+
+copyArtifactsOptions :: O.Parser Cmd
+copyArtifactsOptions = CmdCopyArtifacts
+    <$> O.strOption (O.long "rootdir"  <> O.metavar ":dir" <> O.help "The root directory")
+    <*> O.strOption (O.long "builddir" <> O.metavar ":dir" <> O.help "The directory where Cabal put build files")
 
 strArgument :: IsString a => [O.Mod O.ArgumentFields a] -> O.Parser a
 strArgument = O.strArgument . mconcat
@@ -208,6 +130,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "delete-key"   deleteKeyOptions   "Delete key"
     , cmdParser "run"          runOptions         "Run command through cabal new-run"
     , cmdParser "exec"         execOptions        "Execute command in environment"
+    , cmdParser "copy-artifacts" copyArtifactsOptions "(Internal) copy-artifacts during build"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -215,19 +138,20 @@ optsParser = O.subparser $ mconcat
          O.command cmd $ O.info (O.helper <*> parser) $ O.progDesc desc
 
 main' :: Cmd -> IO ()
-main' (CmdBuildDocker imgs) = buildDocker imgs
-main' (CmdAction x)         = x
-main' CmdGenPass            = cmdGenPass
-main' CmdStackYaml          = stackYaml
-main' CmdViewConfig         = do
+main' (CmdBuildDocker imgs)    = buildDocker imgs
+main' (CmdAction x)            = x
+main' CmdGenPass               = cmdGenPass
+main' CmdStackYaml             = stackYaml
+main' CmdViewConfig            = do
     cfg <- readConfig
     print $ ansiPretty $ flip M.renderMustache Null <$> cfg
-main' (CmdListKeys b)    = listKeys b
-main' (CmdAddKey k v)    = addKey True k v
-main' (CmdAddOwnKey k v) = addKey False k v
-main' (CmdUpdateKey k v) = updateKey k v
-main' (CmdDeleteKey k)   = deleteKey k
-main' (CmdExec args)     = cmdExec args
+main' (CmdListKeys b)          = listKeys b
+main' (CmdAddKey k v)          = addKey True k v
+main' (CmdAddOwnKey k v)       = addKey False k v
+main' (CmdUpdateKey k v)       = updateKey k v
+main' (CmdDeleteKey k)         = deleteKey k
+main' (CmdExec args)           = cmdExec args
+main' (CmdCopyArtifacts rd bd) = cmdCopyArtifacts rd bd
 
 defaultMain :: IO ()
 defaultMain = O.execParser opts >>= main'
