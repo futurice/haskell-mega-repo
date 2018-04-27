@@ -88,7 +88,6 @@ module Futurice.App.Checklist.Types (
     worldTaskItems',
     worldTasksSorted,
     worldTasksSortedByName,
-    worldTasksSortedByOffset,
     -- * Access
     AuthUser,
     authUserTaskRole,

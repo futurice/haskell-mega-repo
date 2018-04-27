@@ -15,7 +15,6 @@ module Futurice.App.Checklist.Types.World (
     worldTaskItems',
     worldTasksSorted,
     worldTasksSortedByName,
-    worldTasksSortedByOffset,
     -- * Counters
     toTodoCounter,
     taskItemtoTodoCounter,
@@ -35,12 +34,10 @@ import Futurice.Office
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Control.Monad.State.Strict as State
-import qualified Data.Map                   as Map
-import qualified Data.Set                   as Set
-import qualified Data.Set.Lens              as Set
-import qualified Futurice.Graph             as Graph
-import qualified Futurice.IdMap             as IdMap
+import qualified Data.Set       as Set
+import qualified Data.Set.Lens  as Set
+import qualified Futurice.Graph as Graph
+import qualified Futurice.IdMap as IdMap
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ChecklistId
@@ -108,44 +105,18 @@ worldTaskItems' = getter _worldTaskItems'
 worldTasksSorted :: TaskRole -> Getter World [Task]
 worldTasksSorted tr = getter $ \world ->
     sortOn ((tr /=) . view taskRole) $
-    sortOn (view taskOffset) $
-    Graph.revTopSort (world ^. worldTasks)
-
-type WeightState = State.State (Map (Identifier Task) Integer)
-
-fetchWeight :: Task -> WeightState Integer
-fetchWeight task = do
-    weightMap <- State.get
-    let weight = fromMaybe (task ^. taskOffset) (weightMap ^.at (task ^. identifier))
-    pure weight
-
-updateWeight :: Task -> Integer -> WeightState ()
-updateWeight task weight = State.modify (Map.insert (task ^. identifier) weight)
-
-neighbourWeights :: Graph Task -> Task -> Maybe (WeightState [Integer])
-neighbourWeights g t = traverse fetchWeight <$> Graph.revNeighbors g (t ^. identifier)
-
-neighbourMinWeight :: Graph Task -> Task -> WeightState Integer
-neighbourMinWeight g t = fromMaybe (pure (t ^. taskOffset)) $
-    (fmap . fmap) (foldr min (t ^. taskOffset)) $ neighbourWeights g t
-
-fetchAndUpdateMinWeight :: Graph Task -> Task -> WeightState (Integer, Task)
-fetchAndUpdateMinWeight g t = do
-    minWeight <- neighbourMinWeight g t
-    updateWeight t minWeight
-    return (minWeight, t)
-
-worldTasksSortedByOffset :: TaskRole -> Getter World [Task]
-worldTasksSortedByOffset tr = getter $ \world ->
-    sortOn ((tr /=) . view taskRole) $
     map snd $
     sortOn fst $
-    reverse $
-    flip State.evalState mempty $
-    sortedTasksWithWeight world $
-    Graph.topSort (world ^. worldTasks)
+    addWeightToTasks world $
+    Graph.revTopSort (world ^. worldTasks)
   where
-    sortedTasksWithWeight world = mapM (fetchAndUpdateMinWeight (world ^. worldTasks))
+    neighbourMinWeight :: World -> Task -> Integer
+    neighbourMinWeight w t = fromMaybe (t ^. taskOffset) $
+        foldr min (t ^. taskOffset) <$>
+        map (\x -> x ^. taskOffset) <$>
+        Graph.revClosure (w ^. worldTasks) [(t ^. identifier)]
+    addWeightToTasks :: World -> [Task] -> [(Integer,Task)]
+    addWeightToTasks w = map (\t -> (neighbourMinWeight w t,t))
 
 worldTasksSortedByName :: Getter World [Task]
 worldTasksSortedByName = getter $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
