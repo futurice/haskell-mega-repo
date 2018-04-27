@@ -10,13 +10,14 @@ import qualified Data.Map            as Map
 import qualified Options.Applicative as O
 import qualified Text.Microstache    as M
 
-import Futurice.App.MegaRepoTool.CopyArtifacts
 import Futurice.App.MegaRepoTool.BuildDocker
 import Futurice.App.MegaRepoTool.Config
+import Futurice.App.MegaRepoTool.CopyArtifacts
 import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Exec
 import Futurice.App.MegaRepoTool.GenPass
 import Futurice.App.MegaRepoTool.Keys
+import Futurice.App.MegaRepoTool.Lambda
 import Futurice.App.MegaRepoTool.PatternCompleter
 import Futurice.App.MegaRepoTool.StackYaml
 import Futurice.App.MegaRepoTool.Stats
@@ -33,6 +34,7 @@ data Cmd
     | CmdUpdateKey !Text !Text
     | CmdDeleteKey !Text
     | CmdExec !(NonEmpty String)
+    | CmdLambda !Text
     | CmdCopyArtifacts FilePath FilePath
 
 buildDockerOptions ::O.Parser Cmd
@@ -89,16 +91,14 @@ deleteKeyOptions = CmdDeleteKey
 
 runOptions :: O.Parser Cmd
 runOptions = cmdRun
-    <$> exe
-    <*> many (O.strArgument $ O.metavar ":arg" <> O.help "arguments")
-  where
-    cmdRun e args = CmdExec ("cabal" :| "new-run" : e : "--" : args)
-
-    exe = O.strArgument $ mconcat
+    <$> strArgument
         [ O.metavar "exe"
         , O.help "Patterns to match."
         , O.completer $ patternCompleter True
         ]
+    <*> many (O.strArgument $ O.metavar ":arg" <> O.help "arguments")
+  where
+    cmdRun e args = CmdExec ("cabal" :| "new-run" : e : "--" : args)
 
 execOptions :: O.Parser Cmd
 execOptions = mk
@@ -106,6 +106,13 @@ execOptions = mk
     <*> many (O.strArgument $ O.metavar ":arg" <> O.help "arguments")
   where
     mk cmd args = CmdExec (cmd :| args)
+
+lambdaOptions :: O.Parser Cmd
+lambdaOptions = CmdLambda
+    <$> strArgument
+        [ O.metavar ":lambda"
+        , O.help "Lambda component name"
+        ]
 
 copyArtifactsOptions :: O.Parser Cmd
 copyArtifactsOptions = CmdCopyArtifacts
@@ -129,6 +136,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "update-key"   updateKeyOptions   "Update existing key"
     , cmdParser "delete-key"   deleteKeyOptions   "Delete key"
     , cmdParser "run"          runOptions         "Run command through cabal new-run"
+    , cmdParser "lambda"       lambdaOptions      "Run lambda locally"
     , cmdParser "exec"         execOptions        "Execute command in environment"
     , cmdParser "copy-artifacts" copyArtifactsOptions "(Internal) copy-artifacts during build"
     ]
@@ -151,6 +159,7 @@ main' (CmdAddOwnKey k v)       = addKey False k v
 main' (CmdUpdateKey k v)       = updateKey k v
 main' (CmdDeleteKey k)         = deleteKey k
 main' (CmdExec args)           = cmdExec args
+main' (CmdLambda flib)         = cmdLambda flib
 main' (CmdCopyArtifacts rd bd) = cmdCopyArtifacts rd bd
 
 defaultMain :: IO ()

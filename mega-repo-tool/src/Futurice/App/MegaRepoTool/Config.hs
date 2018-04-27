@@ -32,9 +32,22 @@ data ImageDefinition = ImageDefinition
 instance AnsiPretty ImageDefinition
 makeLenses ''ImageDefinition
 
+data LambdaDefinition = LambdaDefinition
+    { _ldHandler :: !Text
+    , _ldFlib    :: !Text
+    }
+  deriving (Show, Generic)
+
+instance AnsiPretty LambdaDefinition
+makeLenses ''LambdaDefinition
+
+emptyLambdaDefinition :: LambdaDefinition
+emptyLambdaDefinition = LambdaDefinition "" ""
+
 data MRTConfig' a = MRTConfig
     { _mrtDockerBaseImage :: !Text
     , _mrtApps            :: !(Map AppName ImageDefinition)
+    , _mrtLambdas         :: !(Map AppName LambdaDefinition)
     , _mrtDebs            :: [DebName]
     , _mrtDockerfileTmpl  :: a
     , _mrtEnvVars         :: !(Map Text (Either Text Text))
@@ -44,7 +57,7 @@ data MRTConfig' a = MRTConfig
 type MRTConfig = MRTConfig' M.Template
 
 emptyMRTConfig :: MRTConfig
-emptyMRTConfig = MRTConfig "" mempty mempty emptyTemplate mempty
+emptyMRTConfig = MRTConfig "" mempty mempty mempty emptyTemplate mempty
 
 emptyTemplate :: M.Template
 emptyTemplate = M.Template "empty" $ Map.singleton "empty" []
@@ -93,6 +106,11 @@ parseConfig contents config = do
             imageDefinition <- execStateT (traverse application fs) (ImageDefinition "" "")
             mrtApps . at appName ?= imageDefinition
 
+        | name == "aws-lambda" = do
+            lambdaName <- parseAppName args
+            lambdaDefinition <- execStateT (traverse lambda fs) emptyLambdaDefinition
+            mrtLambdas . at lambdaName ?= lambdaDefinition
+
         | name == "environment-variables" = do
             envVars <- Map.fromList <$>  traverse parseEnvVar fs
             mrtEnvVars %= (envVars <>)
@@ -112,6 +130,16 @@ parseConfig contents config = do
 
     parseAppName [P.SecArgName _ name] = pure $ decodeUtf8Lenient name
     parseAppName _                     = throwError "Invalid or omitten application name"
+
+    lambda (P.Section (P.Name pos name) _ _) =
+        throwError $ "unexpected sub-section in lambda section " ++ show name ++ " at " ++ P.showPos pos
+    lambda (P.Field (P.Name pos name) fls)
+        | name == "handler"     = ldHandler .= fls'
+        | name == "foreign-lib" = ldFlib .= fls'
+        | otherwise =
+            throwError $ "unknown lambda field " ++ show name ++ " at " ++ P.showPos pos
+      where
+        fls' = T.strip $ decodeUtf8Lenient $ foldMap fieldLineContents fls
 
     parseEnvVar (P.Section (P.Name pos name) _ _) =
         throwError $ "unexpected subsection in environment-variables section " ++ show name ++ " at " ++ P.showPos pos
