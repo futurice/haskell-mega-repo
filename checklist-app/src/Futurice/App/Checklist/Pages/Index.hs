@@ -6,7 +6,6 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 import Control.Lens
        (Getting, filtered, has, hasn't, ifoldMapOf, minimumOf, only, re,
        united)
-import Data.Maybe                (isJust)
 import Data.Semigroup            (Arg (..))
 import Data.Time                 (addDays, diffDays)
 import Futurice.Graph            (closure)
@@ -187,12 +186,11 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                             td_ $ shortTaskCheckbox_ world employee task
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
-                            for_ (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) $ \prereqTasks -> do
-                                td_ $ for_ prereqTasks $ \prereqTask -> do
-                                    case world ^? worldTaskItems . ix eid . ix (prereqTask ^. identifier) of
-                                      Just _ -> taskCheckbox_ world employee prereqTask
-                                      Nothing -> mempty
-                                    br_ []
+                            for_ (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) $ \prereqTasks ->
+                                td_ $ unless (null prereqTasks) $
+                                    ul_ [ class_ "no-bullet" ] $ for_ prereqTasks $ \prereqTask ->
+                                        for_ (world ^? worldTaskItems . ix eid . ix (prereqTask ^. identifier)) $ \_ ->
+                                            li_ $ shortTaskCheckbox_ world employee prereqTask
 
                     td_ $ do
                         let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
