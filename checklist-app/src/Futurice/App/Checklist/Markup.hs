@@ -363,18 +363,21 @@ taskInfo_ task employee idata
 -------------------------------------------------------------------------------
 
 taskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
-taskCheckbox_ = makeTaskCheckbox_ id []
+taskCheckbox_ = makeTaskCheckbox_ toHtml []
 
 shortTaskCheckbox_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
 shortTaskCheckbox_ = makeTaskCheckbox_ f [ class_ "nowrap" ] where
-    f t = case T.words t of
-        []    -> ""
-        [w]   -> w
-        (w:_) -> w <> "..."
+    f :: Monad m => Text -> HtmlT m ()
+    f t = span_ [ title_ t ] $ toHtml $ case T.words t of
+        []       -> ""
+        [w]      -> w
+        [w,w']   -> w <> " " <> w'
+        (w:w':_) -> w <> " " <> w' <> "..."
 
 makeTaskCheckbox_
     :: Monad m
-    => (Text -> Text) -> [Attribute]
+    => (Text -> HtmlT m ())
+    -> [Attribute]
     -> World -> Employee -> Task -> HtmlT m ()
 makeTaskCheckbox_ f attrs world employee task = label_ attrs $ do
     checkbox_ checked
@@ -383,7 +386,7 @@ makeTaskCheckbox_ f attrs world employee task = label_ attrs $ do
         , data_ "futu-employee" $ employee ^. identifierText
         , data_ "futu-task" $ task ^. identifierText
         ]
-    toHtml $ f $ task ^. nameText
+    f $ task ^. nameText
   where
     checked = flip has world
         $ worldTaskItems
