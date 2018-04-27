@@ -56,6 +56,7 @@ library
     , machines-directory >= 0.2.1.0
     , microstache
     , optparse-applicative
+    , package-aws-lambda
     , parsec
     , process
     , process-extras
@@ -79,6 +80,7 @@ library
       Futurice.App.MegaRepoTool.Exec
       Futurice.App.MegaRepoTool.GenPass
       Futurice.App.MegaRepoTool.Keys
+      Futurice.App.MegaRepoTool.Lambda
       Futurice.App.MegaRepoTool.PatternCompleter
       Futurice.App.MegaRepoTool.StackYaml
       Futurice.App.MegaRepoTool.Stats

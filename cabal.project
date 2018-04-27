@@ -57,6 +57,7 @@ packages:
   arcola/
   avatar-app/
   avatar-client/
+  aws-lambda-kleisli/package-aws-lambda/
   -- base64-bytestring-type/
   checklist-app/
   contacts-api/
