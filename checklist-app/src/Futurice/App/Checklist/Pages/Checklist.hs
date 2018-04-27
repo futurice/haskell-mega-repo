@@ -110,7 +110,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
 
   where
-    tasks0 = world ^.. worldTasksSorted (authUser ^. authUserTaskRole) . folded
+    tasks0 = world ^.. worldTasksSortedByOffset (authUser ^. authUserTaskRole) . folded
     tasks = filter (\task -> checklist ^. checklistTasks . contains (task ^. identifier)) tasks0
 
     mcid = checklist ^? checklistId
