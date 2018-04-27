@@ -9,16 +9,16 @@ module Futurice.App.PlanMillProxy.Logic.Common (
     module Futurice.App.PlanMillProxy.Logic.Common,
     ) where
 
-import Data.Aeson.Compat          (FromJSON)
-import Data.Binary.Get            (Get, runGetOrFail)
+import Data.Aeson.Compat  (FromJSON)
+import Data.Binary.Get    (Get, runGetOrFail)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
        structuralInfo, structuralInfoSha1ByteStringDigest)
 import Data.Constraint
-import Futurice.Postgres
+import Futurice.Postgres  hiding (Query)
 import Futurice.Prelude
-import Futurice.Servant           (CachePolicy (..), genCachedIO)
-import GHC.TypeLits               (natVal)
+import Futurice.Servant   (CachePolicy (..), genCachedIO)
+import GHC.TypeLits       (natVal)
 import Prelude ()
 
 import PlanMill.Types.Query (Query (..), queryDict, queryToRequest)
