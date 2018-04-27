@@ -27,6 +27,10 @@ module Futurice.Postgres (
     safePoolExecute,
     safePoolExecute_,
     safePoolExecuteMany,
+    -- * Re-export types
+    Postgres.ConnectInfo,
+    Postgres.Query,
+    Postgres.Only (..),
     ) where
 
 import Control.Monad.Catch        (Handler (..), catches)
@@ -53,8 +57,8 @@ instance conn ~ Postgres.Connection => HasPostgresPool (Pool conn) where
 -- Creation
 -------------------------------------------------------------------------------
 
-createPostgresPool :: Postgres.ConnectInfo -> IO (Pool Postgres.Connection)
-createPostgresPool ci = createPool
+createPostgresPool :: MonadIO m => Postgres.ConnectInfo -> m (Pool Postgres.Connection)
+createPostgresPool ci = liftIO $ createPool
     (Postgres.connect ci)
     Postgres.close
     2 60 5
