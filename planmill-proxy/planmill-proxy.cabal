@@ -1,5 +1,7 @@
+cabal-version:  2.2
 name:           planmill-proxy
 version:        0
+
 synopsis:       Planmill proxy
 description:    New and fancy
 category:       Web
@@ -7,11 +9,9 @@ homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
 author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
-tested-with:    GHC==7.10.3, GHC==8.0.1
 build-type:     Simple
-cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
@@ -64,22 +64,58 @@ library
     , unordered-containers
     , vector
     , lens
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=30
-  else
-    ghc-options: -fcontext-stack=30
+  ghc-options: -freduction-depth=30
+
   exposed-modules:
-      Futurice.App.PlanMillProxy
-      Futurice.App.PlanMillProxy.API
-      Futurice.App.PlanMillProxy.Charts
-      Futurice.App.PlanMillProxy.Config
-      Futurice.App.PlanMillProxy.Logic
-      Futurice.App.PlanMillProxy.Logic.Capacities
-      Futurice.App.PlanMillProxy.Logic.Common
-      Futurice.App.PlanMillProxy.Logic.Timereports
-      Futurice.App.PlanMillProxy.Types
-      Futurice.Chart.Histogram
+    Futurice.App.PlanMillProxy
+    Futurice.App.PlanMillProxy.API
+    Futurice.App.PlanMillProxy.Charts
+    Futurice.App.PlanMillProxy.Config
+    Futurice.App.PlanMillProxy.Logic
+    Futurice.App.PlanMillProxy.Logic.Capacities
+    Futurice.App.PlanMillProxy.Logic.Common
+    Futurice.App.PlanMillProxy.Logic.Timereports
+    Futurice.App.PlanMillProxy.Types
+    Futurice.Chart.Histogram
   default-language: Haskell2010
+
+-- Temporarily internal library
+library futurice-lambda
+  hs-source-dirs:   src-lambda
+  default-language: Haskell2010
+  exposed-modules:
+    Futurice.Lambda
+
+  build-depends:
+    , base ^>=4.10
+    , aeson
+    , bytestring
+    , env-config
+    , futurice-prelude
+    , log-base
+    , text
+
+foreign-library planmill-proxy-capacity-lambda
+  type:             native-shared
+  ghc-options:      -Wall
+  hs-source-dirs:   src-capacity
+  default-language: Haskell2010
+  other-modules:
+    Futurice.Lambda.PlanMillProxy.Capacity
+
+  build-depends:
+    , base ^>=4.10
+    , aeson
+    , binary-tagged
+    , bytestring
+    , directory
+    , env-config
+    , futurice-lambda
+    , futurice-postgres
+    , futurice-prelude
+    , planmill-client
+    , postgresql-simple
+    , time
 
 executable planmill-proxy-client
   main-is: Main.hs
