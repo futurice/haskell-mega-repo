@@ -77,7 +77,6 @@ library
     , wai-extra
     , warp >= 3.2.11.1
 
-
     , resourcet
   exposed-modules:
       Futurice.Servant

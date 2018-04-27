@@ -39,7 +39,7 @@ packdeps :
 # Checks
 check-dirty :
 	@if [ -f cabal.project.local ]; then echo "Cannot do production build with cabal.project.local"; false; fi
-	@if [ ! -z "$$(git status --porcelain)" ]; then echo "Dirty WORKINGDIR (git status)"; false; fi
+	@if [ ! -z "$$(git status --porcelain)" ]; then echo "Dirty WORKINGDIR (git status)"; git status; false; fi
 
 # Data files
 check-checksums : data.sha256sums

@@ -31,3 +31,6 @@
 [submodule "vendor/diffusionkinetics-open"]
 	path = vendor/diffusionkinetics-open
 	url = https://github.com/futurice/diffusionkinetics-open.git
+[submodule "aws-lambda-kleisli"]
+	path = aws-lambda-kleisli
+	url = https://github.com/futurice/haskell-aws-lambda-kleisli.git
