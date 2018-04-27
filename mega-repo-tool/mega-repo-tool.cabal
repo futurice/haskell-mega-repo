@@ -27,13 +27,23 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       aeson
     , aeson-compat
-    , ansi-wl-pprint
     , ansi-pretty
+    , ansi-terminal
+    , ansi-wl-pprint
     , array
     , base >=4.7   && <4.11
     , base-compat
@@ -71,6 +81,10 @@ library
     , unordered-containers
     , vector
     , yaml
+
+  if !os(windows)
+    build-depends: unix
+
   exposed-modules:
       Futurice.App.MegaRepoTool
       Futurice.App.MegaRepoTool.BuildDocker

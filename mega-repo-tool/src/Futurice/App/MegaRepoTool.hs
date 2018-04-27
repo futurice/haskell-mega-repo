@@ -24,6 +24,7 @@ import Futurice.App.MegaRepoTool.Stats
 
 data Cmd
     = CmdBuildDocker [AppName]
+    | CmdBuildCommand
     | CmdAction (IO ())
     | CmdViewConfig
     | CmdGenPass
@@ -37,7 +38,7 @@ data Cmd
     | CmdLambda !Text
     | CmdCopyArtifacts FilePath FilePath
 
-buildDockerOptions ::O.Parser Cmd
+buildDockerOptions :: O.Parser Cmd
 buildDockerOptions = CmdBuildDocker
     <$> some (O.strArgument $ mconcat
         [ O.metavar ":component"
@@ -50,8 +51,11 @@ buildDockerOptions = CmdBuildDocker
 
     mk = map (view unpacked) . Map.keys . _mrtApps
 
+buildCommandOptions :: O.Parser Cmd
+buildCommandOptions = pure CmdBuildCommand
+
 statsOptions :: O.Parser Cmd
-statsOptions =  pure $ CmdAction stats
+statsOptions = pure $ CmdAction stats
 
 estimatorOptions :: O.Parser Cmd
 estimatorOptions = fmap CmdAction $ estimator
@@ -125,6 +129,7 @@ strArgument = O.strArgument . mconcat
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "build-docker" buildDockerOptions "Build docker images"
+    , cmdParser "build-cmd"    buildCommandOptions "Build command, useful with $(...)"
     , cmdParser "stats"        statsOptions       "Display some rough stats"
     , cmdParser "estimator"    estimatorOptions   "Calculate estimates"
     , cmdParser "view-config"  viewConfigOptions  "view config"
@@ -146,7 +151,8 @@ optsParser = O.subparser $ mconcat
          O.command cmd $ O.info (O.helper <*> parser) $ O.progDesc desc
 
 main' :: Cmd -> IO ()
-main' (CmdBuildDocker imgs)    = buildDocker imgs
+main' (CmdBuildDocker imgs)    = cmdBuildDocker imgs
+main' CmdBuildCommand          = cmdBuildCommand
 main' (CmdAction x)            = x
 main' CmdGenPass               = cmdGenPass
 main' CmdStackYaml             = stackYaml
