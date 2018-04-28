@@ -60,7 +60,6 @@ echo_green "Current git hash: $GITHASH"
 # Build
 #############################################################################
 
-
 echo_cyan "Checking workdir is clean, and production data is in place"
 run make check-dirty
 run make check-checksums
@@ -89,4 +88,7 @@ echo_cyan "Writing git-hash.txt"
 echo "$GITHASH" > "$ROOTDIR/build/git-hash.txt"
 
 echo_cyan "Final cleanup"
+if [ ! -z "$ORIGINAL_UID" ]; then
+	run chown -R "$ORIGINAL_UID" "$ROOTDIR/build"
+fi
 run rm -f .ghc.environment.*

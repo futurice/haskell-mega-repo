@@ -1,24 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.MegaRepoTool.BuildDocker (
-    buildDocker,
+    cmdBuildDocker,
+    cmdBuildCommand,
     AppName,
     ) where
 
-import Data.Aeson       (object, (.=))
+import Data.Aeson         (object, (.=))
 import Futurice.Prelude
 import Prelude ()
-import System.Directory (copyFile)
-import System.Exit      (exitFailure)
-import System.FilePath  ((</>))
-import System.IO        (hClose, hFlush)
-import System.IO.Temp   (withTempFile)
-import System.Process   (callProcess, readProcess)
+import System.Directory   (copyFile, getCurrentDirectory)
+import System.Environment (getEnvironment)
+import System.Exit        (exitFailure)
+import System.FilePath    ((</>))
+import System.IO          (hClose, hFlush)
+import System.IO.Temp     (withTempFile)
+import System.Posix.Types (UserID)
+import System.Posix.User  (getRealUserID)
+import System.Process     (callProcess, readProcess)
 
-import qualified Data.Map         as Map
-import qualified Data.Text        as T
-import qualified Data.Text.IO     as T
-import qualified Text.Microstache as M
+import qualified Data.Map            as Map
+import qualified Data.Text           as T
+import qualified Data.Text.IO        as T
+import qualified System.Console.ANSI as ANSI
+import qualified Text.Microstache    as M
 
 import Futurice.App.MegaRepoTool.Config
 
@@ -26,24 +30,93 @@ import Futurice.App.MegaRepoTool.Config
 -- Constants
 -------------------------------------------------------------------------------
 
-buildCmd :: Text -> Text
-buildCmd buildImage = T.unwords
+buildCmd :: Text -> Cmd
+buildCmd buildImage = cmdUnwords
     [ "docker run"
     , "--rm"
     , "-ti"
     , "-e DOCKER=YES" -- tell script we are in docker
-    , "-v $(pwd):/app/src"
+    , "-e ORIGINAL_UID=" <> cmdUid
+    , "-v " <> cmdPwd <> ":/app/src" -- cannot _yet- have ":ro".
     , "-v haskell-mega-repo-cabal:/root/.cabal"
     , "-v haskell-mega-repo-dist:/app/src/dist-newstyle-prod"
-    , buildImage
+    , cmdText buildImage
     , "/app/src/scripts/build-in-linux-cabal.sh"
     ]
 
 -------------------------------------------------------------------------------
--- Command
+-- Expansion
+-------------------------------------------------------------------------------
 
-buildDocker :: [AppName] -> IO ()
-buildDocker appnames = do
+data Frag
+    = Frag Text
+    | FragEnv String
+    | FragPwd
+    | FragUid
+  deriving Show
+
+cmdText :: Text -> Cmd
+cmdText t = Cmd [Frag t]
+
+-- | currently unused
+-- cmdEnv :: String -> Cmd
+-- cmdEnv e = Cmd [FragEnv e]
+
+cmdPwd :: Cmd
+cmdPwd = Cmd [FragPwd]
+
+cmdUid :: Cmd
+cmdUid = Cmd [FragUid]
+
+newtype Cmd = Cmd [Frag]
+  deriving stock (Show)
+  deriving newtype (Semigroup, Monoid)
+
+cmdUnwords :: [Cmd] -> Cmd
+cmdUnwords []     = mempty
+cmdUnwords [c]    = c
+cmdUnwords (c:cs) = c <> " " <> cmdUnwords cs
+
+instance IsString Cmd where
+    fromString s = Cmd [Frag (fromString s)]
+
+cmdToText :: Cmd -> Text
+cmdToText (Cmd frags) = foldMap toText frags
+  where
+    toText (Frag t)    = t
+    toText (FragEnv s) = "$" <> fromString s
+    toText FragPwd     = "$(pwd)"
+    toText FragUid     = "$UID"
+
+cmdExpand :: Cmd -> IO Text
+cmdExpand (Cmd frags) = do
+    pwd  <- getCurrentDirectory
+    envs <- Map.fromList <$> getEnvironment
+    uid  <- getRealUserID
+    return $ foldMap (f pwd envs uid) frags
+  where
+    f :: String -> Map String String -> UserID -> Frag -> Text
+    f _pwd _envs _uid (Frag t)    = t
+    f _pwd  envs _uid (FragEnv s) = maybe "" (view packed) $ envs ^? ix s
+    f  pwd _envs _uid FragPwd     = pwd ^. packed
+    f _pwd _envs  uid FragUid     = textShow uid
+
+-------------------------------------------------------------------------------
+-- Build command
+-------------------------------------------------------------------------------
+
+cmdBuildCommand :: IO ()
+cmdBuildCommand = do
+    cfg <- readConfig
+    cmd <- cmdExpand $ buildCmd $ _mrtDockerBaseImage cfg
+    T.putStrLn cmd
+
+-------------------------------------------------------------------------------
+-- Build image
+-------------------------------------------------------------------------------
+
+cmdBuildDocker :: [AppName] -> IO ()
+cmdBuildDocker appnames = do
     -- Read config
     cfg <- readConfig
 
@@ -72,10 +145,18 @@ buildDocker appnames = do
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
         T.putStrLn $ "Make sure you have data volumes:"
-        T.putStrLn $ "  docker volume create --name haskell-mega-repo-cabal"
-        T.putStrLn $ "  docker volume create --name haskell-mega-repo-dist"
+        ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
+        T.putStrLn $ "    docker volume create --name haskell-mega-repo-cabal"
+        T.putStrLn $ "    docker volume create --name haskell-mega-repo-dist"
+        ANSI.setSGR []
         T.putStrLn $ "Run following command to build image:"
-        T.putStrLn $ "  " <> (buildCmd $ _mrtDockerBaseImage cfg)
+        ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
+        T.putStrLn "    $(mega-repo-tool build-cmd)"
+        ANSI.setSGR []
+        T.putStrLn "  or"
+        ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Blue]
+        T.putStrLn $ "    " <> cmdToText (buildCmd $ _mrtDockerBaseImage cfg)
+        ANSI.setSGR []
         exitFailure
 
     -- Build docker images
@@ -106,15 +187,19 @@ buildDocker appnames = do
             pure (appname, fullimage, "futurice/" <> image)
 
     T.putStrLn "Upload images by:"
+    ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
     for_ images $ \(_, image, _) ->
         T.putStrLn $ "  docker push " <> image
+    ANSI.setSGR []
 
     T.putStrLn "Deploy images by:"
+    ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
     for_ images $ \(appname, _, image) ->
         T.putStrLn $ "  appswarm app:deploy"
             <> " --name " <> appname
             <> " --image " <> image
             <> " --tag " <> githash
+    ANSI.setSGR []
 
 makeDockerfile :: Text -> MRTConfig -> IO Text
 makeDockerfile exe cfg = do

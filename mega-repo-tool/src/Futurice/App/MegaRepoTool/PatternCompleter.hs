@@ -1,19 +1,30 @@
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecordWildCards #-}
 module Futurice.App.MegaRepoTool.PatternCompleter (
+    lambdaCompleter,
     patternCompleter,
     ) where
 
-import Data.Maybe                              (isJust)
 import Cabal.Plan
        (CompInfo (..), CompName (..), PkgId (..), PkgName (..), PlanJson (..),
        Unit (..), dispCompName, findAndDecodePlanJson)
+import Control.Lens     (asIndex)
+import Data.Maybe       (isJust)
 import Futurice.Prelude
 import Prelude ()
 
 import qualified Data.Map            as Map
-import qualified Options.Applicative as O
 import qualified Data.Text           as T
+import qualified Options.Applicative as O
 
+import Futurice.App.MegaRepoTool.Config
+
+-- | Lambda name completer
+lambdaCompleter :: O.Completer
+lambdaCompleter = O.listIOCompleter $ do
+    cfg <- readConfig
+    return $ cfg ^.. mrtLambdas . ifolded . asIndex . unpacked
+
+-- | Exe completer from cabal plan
 patternCompleter :: Bool -> O.Completer
 patternCompleter onlyWithExes = O.mkCompleter $ \pfx -> do
     (plan, _) <- findAndDecodePlanJson Nothing
