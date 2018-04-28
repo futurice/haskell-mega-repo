@@ -65,7 +65,7 @@ install)
 
     cabal)
         # Install doctest
-        scripts/cabal-new-install.py doctest doctest ~/.local/bin
+        cabal new-install doctest --symlink-bindir="$HOME/.local/bin"
         doctest --version
 
         # Install some stuff already in install phase
