@@ -75,6 +75,7 @@ packages:
   futurice-foundation/
   futurice-github/
   futurice-integrations/
+  futurice-lambda/
   futurice-logo/
   futurice-metrics/
   futurice-postgres/
