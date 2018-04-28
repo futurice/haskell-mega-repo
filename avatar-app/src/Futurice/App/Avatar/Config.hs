@@ -1,10 +1,21 @@
 {-# LANGUAGE DataKinds #-}
 module Futurice.App.Avatar.Config where
 
-import Prelude ()
-import Futurice.Prelude
+import Futurice.EnvConfig
 import Futurice.Integrations
+import Futurice.Prelude
+import Prelude ()
 
--- import Futurice.EnvConfig
+import qualified Network.AWS as AWS
 
-type Config = IntegrationsConfig '[Proxy, I, Proxy, Proxy, Proxy, Proxy]
+data Config = Config
+    { cfgIntegrationCfg :: !(IntegrationsConfig '[Proxy, I, Proxy, Proxy, Proxy, Proxy])
+    , cfgS3Bucket       :: !Text
+    , cfgAwsCredentials :: !AWS.Credentials
+    }
+
+instance Configure Config where
+    configure = Config
+        <$> configure
+        <*> envVar "S3_BUCKET"
+        <*> envAwsCredentials "AWS_"
