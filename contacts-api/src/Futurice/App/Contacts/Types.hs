@@ -14,6 +14,7 @@ module Futurice.App.Contacts.Types (
     ) where
 
 import Data.Csv          (ToField (..))
+import Futurice.Company
 import Futurice.Generics
 import Futurice.IsMaybe
 import Futurice.Office
@@ -92,6 +93,7 @@ data Contact avatar = Contact
     , contactGithub     :: !(Maybe (ContactGH avatar))
     , contactTeam       :: !Tribe
     , contactOffice     :: !Office
+    , contactEmployer   :: !Company
     , contactCompetence :: !Text
     , contactExternal   :: !Bool
     , contactHrnumber   :: !(Maybe Int)

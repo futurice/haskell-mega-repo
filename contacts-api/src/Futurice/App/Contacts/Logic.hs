@@ -87,6 +87,7 @@ employeeToContact e = Contact
         Just . flip (ContactGH . GH.untagName) noImage
     , contactTeam       = e ^. Personio.employeeTribe
     , contactOffice     = e ^. Personio.employeeOffice
+    , contactEmployer   = e ^. Personio.employeeEmployer
     , contactCompetence = e ^. Personio.employeeRole
     , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
     , contactHrnumber   = e ^. Personio.employeeHRNumber
