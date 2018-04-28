@@ -1,5 +1,7 @@
+cabal-version:  2.2
 name:           avatar-app
 version:        0
+
 synopsis:       Avatar app
 description:    Make an avatar of everything
 category:       Web
@@ -7,11 +9,9 @@ homepage:       https://github.com/futurice/avatar-app#readme
 bug-reports:    https://github.com/futurice/avatar-app/issues
 author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.2
 build-type:     Simple
-cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
@@ -27,26 +27,29 @@ library
   build-depends:
       base                  >=4.7   && <4.11
     , aeson-compat
+    , amazonka
+    , amazonka-lambda
+    , amazonka-s3
     , avatar-client
+    , avatar-internal
     , base-compat
     , blaze-html
     , bytestring
+    , conduit-extra
     , containers
-    , cryptohash-sha512
     , env-config
-    , fum-types
-    , fum-client
     , file-embed
+    , fum-client
+    , fum-types
     , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , http-client
     , http-client-tls
-    , JuicyPixels >=3.2.7
-    , JuicyPixels-scale-dct >=0.1.0.0
+    , JuicyPixels
     , lens
     , servant
-    , servant-JuicyPixels >=0.3.0.0
+    , servant-JuicyPixels
     , servant-server
     , stm
     , text
@@ -60,7 +63,6 @@ library
       Futurice.App.Avatar.Config
       Futurice.App.Avatar.Ctx
       Futurice.App.Avatar.Embedded
-      Futurice.App.Avatar.Logic
   default-language: Haskell2010
 
 executable avatar-server
@@ -72,3 +74,41 @@ executable avatar-server
       base
     , avatar-app
   default-language: Haskell2010
+
+library avatar-internal
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   src-internal
+  exposed-modules:
+      Futurice.App.Avatar.Types
+  build-depends:
+    , base ^>=4.10
+    , base64-bytestring
+    , binary
+    , cryptohash-sha256
+    , futurice-prelude
+
+foreign-library avatar-process-lambda
+  type:             native-shared
+  ghc-options:      -Wall
+  hs-source-dirs:   src-process
+  default-language: Haskell2010
+  other-modules:
+    Futurice.Lambda.Avatar.Process
+
+  build-depends:
+    , base ^>=4.10
+    , amazonka
+    , amazonka-s3
+    , avatar-internal
+    , bytestring
+    , env-config
+    , futurice-lambda
+    , futurice-prelude
+    , http-client
+    , JuicyPixels >=3.2.7
+    , JuicyPixels-scale-dct >=0.1.0.0
+    , vector
+
+  build-depends:
+    , aeson

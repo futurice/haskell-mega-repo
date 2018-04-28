@@ -74,6 +74,9 @@ cmdCopyArtifacts rootDir buildDir = withTempDirectory "/tmp" "copy-artifacts" $ 
                     , "libstdc++"
                     -- GCC runtime
                     , "liblzma"
+                    -- FFTW
+                    , "libfftw3"
+                    , "libfftw3f"
                     ]
 
         let lambdaName' = lambdaName ^. unpacked

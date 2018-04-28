@@ -8,57 +8,65 @@
 module Futurice.App.Avatar (defaultMain) where
 
 import Codec.Picture           (DynamicImage)
-import Control.Concurrent      (getNumCapabilities)
-import Control.Concurrent.QSem (QSem, newQSem, signalQSem, waitQSem)
-import Control.Exception       (bracket_)
-import Data.Aeson.Compat       (object, (.=))
+import Data.Aeson.Compat       (Value (..), toJSON)
+import Data.Conduit.Binary     (sinkLbs)
 import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Servant
-import Network.HTTP.Client     (httpLbs, parseUrlThrow, responseBody)
 import Prelude ()
 import Servant
 import Servant.Cached
 import Servant.JuicyPixels     (PNG)
 
-import qualified Crypto.Hash.SHA512   as SHA512
-import qualified Data.ByteString      as BS
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Map.Strict      as Map
-import qualified Data.Text            as T
+import qualified Control.Monad.Trans.AWS     as AWS
+import qualified Data.ByteString.Lazy        as LBS
+import qualified Data.Map.Strict             as Map
 import qualified FUM
+import qualified Network.AWS.Env             as AWS
+import qualified Network.AWS.Lambda.Invoke   as AWS
+import qualified Network.AWS.S3.GetObject    as AWS
+import qualified Network.AWS.S3.ListObjectsV as AWS
+import qualified Network.AWS.S3.Types        as AWS
 
 -- Avatar modules
 import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config
 import Futurice.App.Avatar.Ctx
 import Futurice.App.Avatar.Embedded
-import Futurice.App.Avatar.Logic    (avatar)
+import Futurice.App.Avatar.Types
 
 type DynamicImage' = Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage)
 
-cachedAvatar :: Ctx -> Maybe Int -> Bool -> BS.ByteString -> Handler DynamicImage'
-cachedAvatar (Ctx cache lgr _ _ sem) msize grey bs = withSem sem $ mk
-    . (fmap . fmap) (addHeader "public, max-age=3600")
-    . liftIO
-    . cachedIO lgr cache 3600 (digest, size, grey)
-    . pure
-    . fmap mkCached
-    . avatar size grey
-    $ bs
+cachedAvatar :: Ctx -> AvatarProcess -> LogT Handler DynamicImage'
+cachedAvatar (Ctx _ _ _ cfg env) ap =
+    AWS.runResourceT $ AWS.runAWST env $ do
+        -- logTrace "listObjectsV" digest
+        r <- AWS.send $ AWS.listObjectsV bucketName
+            & AWS.lPrefix ?~ digest
+        -- logTrace "listObjectV Response" (show r)
+        case r ^? AWS.lrsContents . folded of
+            -- TODO: check time
+            Just obj -> fetchAvatar (obj ^. AWS.oKey)
+            _        -> do
+                let Object hm = toJSON ap
+                _r2 <- AWS.send $ AWS.invoke "AvatarCacheProcess" hm
+                -- logTrace "invoke Response" (show r2)
+                fetchAvatar (AWS.ObjectKey digest)
   where
-    digest = SHA512.hash bs
+    digest     = avatarProcessDigest ap
+    bucketName = AWS.BucketName $ cfgS3Bucket cfg
 
-    size  = max 16 $ fromMaybe 32 msize
+    fetchAvatar objKey = do
+        r <- AWS.send $ AWS.getObject bucketName objKey
+        logTrace "Response" (show r)
+        lbs <- AWS.sinkBody (r ^. AWS.gorsBody) sinkLbs
+        return $ addHeader "pubic, max-age=3600" $ unsafeMkCached lbs
 
-    mk :: LogT IO (Either String a) -> Handler a
-    mk action = liftIO (runLogT "avatar" lgr action) >>= either (throwError . f) pure
-
-    f err = ServantErr
-        500
-        "Avatar conversion error"
-        (LBS.fromStrict . encodeUtf8 . T.pack $ err)
-        []
+clamp :: Ord a => a -> a -> a -> a
+clamp mi ma x
+    | x < mi    = mi
+    | x > ma    = ma
+    | otherwise = x
 
 mkAvatar
     :: Ctx
@@ -66,15 +74,10 @@ mkAvatar
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkAvatar ctx@(Ctx _cache lgr mgr _ _) url msize grey = runLogT "avatar" lgr $ do
-    logTrace "fetching image" $ object
-        [ "url"    .= T.unpack url
-        , "size: " .= show msize
-        , "grey: " .= show grey
-        ]
-    req <- parseUrlThrow (T.unpack url)
-    res <- liftIO $ httpLbs req mgr
-    lift $ cachedAvatar ctx msize grey $ LBS.toStrict $ responseBody res
+mkAvatar ctx url msize grey = runLogT "avatar" (ctxLogger ctx) $ do
+    let ap = AvatarProcess url (maybe 64 (clamp 16 256) msize) grey
+    logTrace "fetching image" ap
+    cachedAvatar ctx ap
 
 mkFum
     :: Ctx
@@ -82,38 +85,23 @@ mkFum
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkFum ctx@(Ctx cache lgr mgr cfg sem) login msize grey = withSem sem $ do
+mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = runLogT "avatar-fum" lgr $ do
     fumMap <- liftIO $ cachedIO lgr cache 3600 () getFumMap
-    bs <- case fumMap ^? ix login of
-        Nothing -> return futulogoBS
+    case fumMap ^? ix login of
+        Nothing -> return fallback
         Just u  -> do
             case u ^. FUM.userImageUrl . lazy of
-                Nothing -> return futulogoBS
-                Just url -> runLogT "avatar-fum" lgr $ do
-                    logTrace "fetching FUM image" $ object
-                        [ "login"  .= login
-                        , "url"    .= T.unpack url
-                        , "size: " .= show msize
-                        , "grey: " .= show grey
-                        ]
-                    req <- parseUrlThrow (T.unpack url)
-                    res <- liftIO $ httpLbs req mgr
-                    return $ LBS.toStrict $ responseBody res
-    cachedAvatar ctx msize grey bs
+                Nothing -> return fallback
+                Just url -> cachedAvatar ctx $
+                    AvatarProcess url (maybe 64 (clamp 16 256) msize) grey
   where
+    fallback = addHeader "pubic, max-age=3600" $ unsafeMkCached $ LBS.fromStrict futulogoBS
+
     getFumMap :: IO (Map FUM.Login FUM.User)
     getFumMap = do
         now <- currentTime
-        xs <- runIntegrations mgr lgr now cfg fumEmployeeList
+        xs <- runIntegrations mgr lgr now (cfgIntegrationCfg cfg) fumEmployeeList
         return $ Map.fromList $ map (\x -> (x ^. FUM.userName, x)) $ toList xs
-
-withSem :: QSem -> Handler a -> Handler a
-withSem qsem action
-    = mkHandler
-    $ bracket_ (waitQSem qsem) (signalQSem qsem)
-    $ runHandler action
-  where
-    mkHandler = Handler . ExceptT
 
 server :: Ctx -> Server AvatarAPI
 server ctx = pure "Hello from avatar app"
@@ -130,6 +118,6 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg lgr mgr cache _mq = do
-        _n <- getNumCapabilities
-        qsem <- newQSem 3 -- (max 2 n)
-        return (Ctx cache lgr mgr cfg qsem, [])
+        env' <- AWS.newEnvWith (cfgAwsCredentials cfg) Nothing mgr
+        let env = env' & AWS.envRegion .~ AWS.Frankfurt
+        return (Ctx cache lgr mgr cfg env, [])

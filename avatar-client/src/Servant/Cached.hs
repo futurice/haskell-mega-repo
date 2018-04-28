@@ -5,6 +5,8 @@
 module Servant.Cached (
     Cached,
     mkCached,
+    -- * Unsafe
+    unsafeMkCached,
     ) where
 
 import Futurice.Prelude
@@ -13,7 +15,6 @@ import Servant.API
 import Data.Swagger
 
 import qualified Data.ByteString.Lazy as LBS
-
 
 newtype Cached ct a = Cached LBS.ByteString
   deriving (Typeable)
@@ -26,6 +27,10 @@ instance ToSchema a => ToSchema (Cached ct a) where
 
 mkCached :: forall ct a. MimeRender ct a => a -> Cached ct a
 mkCached = Cached . mimeRender (Proxy :: Proxy ct)
+
+-- | Creatae from "I know it's correct" data.
+unsafeMkCached :: LBS.ByteString -> Cached ct a
+unsafeMkCached = Cached
 
 instance MimeRender ct a => MimeRender ct (Cached ct a) where
     mimeRender _ (Cached lbs) = lbs
