@@ -116,6 +116,7 @@ lambdaOptions = CmdLambda
     <$> strArgument
         [ O.metavar ":lambda"
         , O.help "Lambda component name"
+        , O.completer lambdaCompleter
         ]
 
 copyArtifactsOptions :: O.Parser Cmd
