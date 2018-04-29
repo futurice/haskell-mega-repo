@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool (defaultMain) where
 
-import Data.Aeson                              (Value (Null))
+import Data.Aeson       (Value (Null), eitherDecodeStrict)
 import Futurice.Prelude
 import Prelude ()
+
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (ansiPretty)
 
 import qualified Data.Map            as Map
+import qualified Data.Text           as T
+import qualified Data.Text.Encoding  as TE
 import qualified Options.Applicative as O
 import qualified Text.Microstache    as M
 
@@ -35,7 +38,7 @@ data Cmd
     | CmdUpdateKey !Text !Text
     | CmdDeleteKey !Text
     | CmdExec !(NonEmpty String)
-    | CmdLambda !Text
+    | CmdLambda !Text !(Maybe Value)
     | CmdCopyArtifacts FilePath FilePath
 
 buildDockerOptions :: O.Parser Cmd
@@ -118,6 +121,14 @@ lambdaOptions = CmdLambda
         , O.help "Lambda component name"
         , O.completer lambdaCompleter
         ]
+    <*> optional payload
+  where
+    payload = O.argument (O.eitherReader readValue) $ mconcat
+        [ O.metavar ":json"
+        , O.help "Lambda input"
+        ]
+
+    readValue s = eitherDecodeStrict $ TE.encodeUtf8 $ T.pack s
 
 copyArtifactsOptions :: O.Parser Cmd
 copyArtifactsOptions = CmdCopyArtifacts
@@ -166,7 +177,7 @@ main' (CmdAddOwnKey k v)       = addKey False k v
 main' (CmdUpdateKey k v)       = updateKey k v
 main' (CmdDeleteKey k)         = deleteKey k
 main' (CmdExec args)           = cmdExec args
-main' (CmdLambda flib)         = cmdLambda flib
+main' (CmdLambda flib payload) = cmdLambda flib payload
 main' (CmdCopyArtifacts rd bd) = cmdCopyArtifacts rd bd
 
 defaultMain :: IO ()

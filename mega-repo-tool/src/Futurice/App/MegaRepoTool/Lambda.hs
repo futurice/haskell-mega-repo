@@ -1,26 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.Lambda (cmdLambda) where
 
+import Data.Aeson                (encode)
 import Futurice.Prelude
-import PackageAwsLambda   (compilePython, findForeignLib, mkConf')
+import PackageAwsLambda          (compilePython, findForeignLib, mkConf')
 import Prelude ()
-import System.Directory   (doesFileExist)
-import System.Environment (getEnvironment)
-import System.Exit        (exitFailure, exitWith)
-import System.FilePath    (takeDirectory, (</>))
-import System.IO.Temp     (withTempDirectory)
+import System.Directory          (doesFileExist)
+import System.Environment        (getEnvironment)
+import System.Exit               (exitFailure, exitWith)
+import System.FilePath           (takeDirectory, (</>))
+import System.IO.Temp            (withTempDirectory)
 import System.Process.ByteString (readCreateProcessWithExitCode)
 
-import qualified Data.Map       as Map
-import qualified System.Process as Process
-import qualified Data.ByteString as BS
+import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString.Lazy  as BSL
+import qualified Data.Map              as Map
+import qualified System.Process        as Process
 
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
 
-cmdLambda :: Text -> IO ()
-cmdLambda lambdaName = do
+cmdLambda :: Text -> Maybe Value -> IO ()
+cmdLambda lambdaName mpayload = do
     cfg <- readConfig
 
     lambdaDef <- maybe
@@ -55,7 +57,7 @@ cmdLambda lambdaName = do
     withTempDirectory "/tmp" "aws-lambda-py" $ \tmpDir -> do
         pySo <- compilePython tmpDir conf
         let pyPath = tmpDir </> "Lambda.py"
-        BS.writeFile pyPath pyModule
+        BS.writeFile pyPath $ pyModule mpayload
         let env = Map.toList $ env' <> procEnv
                 <> Map.singleton "PYTHONPATH" (takeDirectory pySo)
                 <> Map.singleton "LD_LIBRARY_PATH" tmpDir
@@ -68,11 +70,14 @@ cmdLambda lambdaName = do
         BS.putStr err
         exitWith ec
 
-pyModule :: ByteString
-pyModule = BS8.unlines
+pyModule :: Maybe Value -> ByteString
+pyModule v = BS8.unlines
     [ "from __future__ import print_function"
     , "import json"
+    , "import pprint"
     , "import Lambda_native"
     , "Lambda_native.hs_init(['tmpLambda', '+RTS', '-T'])"
-    , "print(json.dumps(Lambda_native.handler('[]', None, print)))"
+    , "pprint.pprint(json.loads(Lambda_native.handler('''" <> e <> "''', None, print)), indent=2)"
     ]
+  where
+    e = maybe "null" (BSL.toStrict . encode) v

@@ -79,22 +79,6 @@ library
     Futurice.Chart.Histogram
   default-language: Haskell2010
 
--- Temporarily internal library
-library futurice-lambda
-  hs-source-dirs:   src-lambda
-  default-language: Haskell2010
-  exposed-modules:
-    Futurice.Lambda
-
-  build-depends:
-    , base ^>=4.10
-    , aeson
-    , bytestring
-    , env-config
-    , futurice-prelude
-    , log-base
-    , text
-
 foreign-library planmill-proxy-capacity-lambda
   type:             native-shared
   ghc-options:      -Wall
