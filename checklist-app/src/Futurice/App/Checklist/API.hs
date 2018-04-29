@@ -10,7 +10,7 @@ import Futurice.Servant          (SSOUser)
 import Servant.API
 import Servant.Chart             (Chart, SVG)
 import Servant.HTML.Lucid        (HTML)
-
+import Servant.Graph             (ALGAPNG, Graph)
 import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
@@ -28,6 +28,7 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> CreateEmployeePageEndpoint
     -- Items
     :<|> ChecklistPageEndpoint
+    :<|> ChecklistGraphEndpoint
     :<|> TaskPageEndpoint
     :<|> EmployeePageEndpoint
     :<|> EmployeeAuditPageEndpoint
@@ -101,6 +102,13 @@ type ChecklistPageEndpoint =
     "checklists" :>
     Capture "checklist-id" ChecklistId :>
     Get '[HTML] (HtmlPage "checklist")
+
+type ChecklistGraphEndpoint =
+    SSOUser :>
+    "checklists" :>
+    Capture "checklist-id" ChecklistId :>
+    "task-graph.png" :>
+    Get '[ALGAPNG] (Graph Text "checklist")
 
 type TaskPageEndpoint =
     SSOUser :>
@@ -200,6 +208,9 @@ createEmployeePageEndpoint = Proxy
 
 checklistPageEndpoint :: Proxy ChecklistPageEndpoint
 checklistPageEndpoint = Proxy
+
+checklistGraphEndpoint :: Proxy ChecklistGraphEndpoint
+checklistGraphEndpoint = Proxy
 
 taskPageEndpoint :: Proxy TaskPageEndpoint
 taskPageEndpoint = Proxy
