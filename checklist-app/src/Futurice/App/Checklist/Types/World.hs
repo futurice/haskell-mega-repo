@@ -15,6 +15,7 @@ module Futurice.App.Checklist.Types.World (
     worldTaskItems',
     worldTasksSorted,
     worldTasksSortedByName,
+    tasksSorted,
     -- * Counters
     toTodoCounter,
     taskItemtoTodoCounter,
@@ -26,7 +27,7 @@ module Futurice.App.Checklist.Types.World (
     ) where
 
 -- import Futurice.Generics
-import Control.Lens     (contains, filtered, (<&>))
+import Control.Lens     (contains, filtered, minimumOf)
 import Data.Functor.Rep (Representable (..))
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
@@ -34,10 +35,11 @@ import Futurice.Office
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Set       as Set
-import qualified Data.Set.Lens  as Set
-import qualified Futurice.Graph as Graph
-import qualified Futurice.IdMap as IdMap
+import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
+import qualified Data.Set.Lens   as Set
+import qualified Futurice.Graph  as Graph
+import qualified Futurice.IdMap  as IdMap
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ChecklistId
@@ -77,26 +79,28 @@ data World = World
     -- lazy fields, updated on need when accessed
     , _worldTaskItems' :: Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem)
       -- ^ isomorphic with 'worldTaskItems'
+    , _worldTasksOrder  :: Map (Identifier Task) Int
+      -- ^ task order changes rarely, so let's cache it.
     }
 
 worldEmployees :: Lens' World (IdMap Employee)
-worldEmployees f (World es ts ls is arc _) = f es <&>
+worldEmployees f (World es ts ls is arc _ _) = f es <&>
     \x -> mkWorld x (Graph.toIdMap ts) ls is arc
 
 worldTasks :: Lens' World (Graph Task)
-worldTasks f (World es ts ls is arc _) = f ts <&>
+worldTasks f (World es ts ls is arc _ _) = f ts <&>
     \x -> mkWorld es (Graph.toIdMap x) ls is arc
 
 worldLists :: Lens' World (PerChecklist Checklist)
-worldLists f (World es ts ls is arc _) = f ls <&>
+worldLists f (World es ts ls is arc _ _) = f ls <&>
     \x -> mkWorld es (Graph.toIdMap ts) x is arc
 
 worldTaskItems :: Lens' World (Map (Identifier Employee) (Map (Identifier Task) AnnTaskItem))
-worldTaskItems f (World es ts ls is arc _) = f is <&>
+worldTaskItems f (World es ts ls is arc _ _) = f is <&>
     \x -> mkWorld es (Graph.toIdMap ts) ls x arc
 
 worldArchive :: Lens' World Archive
-worldArchive f (World es ts ls is arc _) = f arc <&>
+worldArchive f (World es ts ls is arc _ _) = f arc <&>
     \x -> mkWorld es (Graph.toIdMap ts) ls is x
 
 worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem))
@@ -105,11 +109,30 @@ worldTaskItems' = getter _worldTaskItems'
 worldTasksSorted :: TaskRole -> Getter World [Task]
 worldTasksSorted tr = getter $ \world ->
     sortOn ((tr /=) . view taskRole) $
-    sortOn (view taskOffset) $
-    Graph.revTopSort (world ^. worldTasks)
+    view (tasksSorted world) $
+    world ^.. worldTasks . folded
 
 worldTasksSortedByName :: Getter World [Task]
 worldTasksSortedByName = getter $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
+
+tasksSorted :: World -> Getter [Task] [Task]
+tasksSorted world = getter $ sortOn metric where
+    metric :: Task -> Maybe Int
+    metric t = _worldTasksOrder world ^? ix (t ^. identifier)
+
+orderLookup :: Graph Task -> Map (Identifier Task) Int
+orderLookup tasks
+    = Map.fromList
+    $ flip zip [0 ..]
+    $ map fst
+    $ sortOn snd
+    $ map (\t -> (t ^. identifier, closureMinWeight t))
+    $ Graph.revTopSort tasks
+  where
+    closureMinWeight :: Task -> Integer
+    closureMinWeight t = fromMaybe (t ^. taskOffset) $ minimumOf
+        (_Just . folded . taskOffset)
+        (Graph.revClosure tasks [t ^. identifier])
 
 emptyWorld :: World
 emptyWorld = mkWorld mempty mempty emptyChecklists mempty mempty where
@@ -148,6 +171,8 @@ mkWorld es ts ls is arc =
             & IdMap.unsafeTraversal . taskPrereqs
             %~ Set.setOf (folded . filtered validTid)
 
+        tsG = Graph.fromIdMap ts'
+
         ls' = ls
             & traverse . checklistTasks
             %~ Set.filter validTid
@@ -155,7 +180,7 @@ mkWorld es ts ls is arc =
         -- TODO: validate is
 
         swappedIs = swapMapMap is
-    in World es' (Graph.fromIdMap ts') ls' is arc swappedIs
+    in World es' tsG ls' is arc swappedIs (orderLookup tsG)
 
 {-
 

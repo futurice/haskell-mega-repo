@@ -6,6 +6,7 @@
 {-# LANGUAGE TupleSections     #-}
 module Futurice.App.Checklist (defaultMain) where
 
+import Algebra.Graph.Class       (edges)
 import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Control.Lens              (re, (??))
@@ -22,6 +23,7 @@ import Futurice.Stricter
 import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
+import Servant.Graph             (Graph (..))
 
 import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
@@ -69,6 +71,7 @@ server ctx = indexPageImpl ctx
     :<|> createTaskPageImpl ctx
     :<|> createEmployeePageImpl ctx
     :<|> checklistPageImpl ctx
+    :<|> checklistGraphImpl ctx
     :<|> taskPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
@@ -185,6 +188,19 @@ checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
     impl world userInfo = do
         today <- currentDay
         pure $ checklistPage world today userInfo $ world ^. worldLists . pick cid
+
+checklistGraphImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> ChecklistId
+    -> Handler (Graph Text "checklist")
+checklistGraphImpl ctx fu cid = runLogT "withAuthUser" (ctxLogger ctx) $
+    withAuthUser' forbiddenGraph ctx fu impl
+  where
+    impl world _userInfo = pure $
+        checklistGraph world $ world ^. worldLists . pick cid
+
+    forbiddenGraph = Graph $ edges [("forbidden", "graph")]
 
 employeePageImpl
     :: Ctx

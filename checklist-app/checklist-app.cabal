@@ -35,6 +35,7 @@ library
     , adjunctions
     , aeson
     , aeson-compat
+    , algebraic-graphs
     , ansi-pretty
     , ansi-wl-pprint
     , async
@@ -78,6 +79,7 @@ library
     , regex-applicative
     , resource-pool
     , servant
+    , servant-algebraic-graphs
     , servant-Chart
     , servant-lucid
     , servant-server

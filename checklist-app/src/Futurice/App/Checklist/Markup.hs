@@ -17,6 +17,7 @@ module Futurice.App.Checklist.Markup (
     createTaskPageHref,
     createEmployeePageHref,
     checklistPageHref,
+    checklistGraphSrc,
     taskPageHref,
     employeePageHref,
     applianceHelpHref,
@@ -214,6 +215,10 @@ employeePageHref e =
 checklistPageHref :: ChecklistId -> Attribute
 checklistPageHref cid =
     href_ $ linkToText $ safeLink checklistApi checklistPageEndpoint cid
+
+checklistGraphSrc :: ChecklistId -> Attribute
+checklistGraphSrc cid =
+    src_ $ linkToText $ safeLink checklistApi checklistGraphEndpoint cid
 
 applianceHelpHref :: Attribute
 applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndpoint
