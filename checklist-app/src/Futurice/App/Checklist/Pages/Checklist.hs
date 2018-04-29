@@ -145,7 +145,7 @@ checklistGraph :: World -> Checklist -> Graph Text "checklist"
 checklistGraph world checklist = Graph $ overlay vs es
   where
     es = edges
-        [ (task ^. nameText, prereqTask ^. nameText)
+        [ (prereqTask ^. nameText, task ^. nameText)
         | task <- tasks
         , prereqTid <- task ^.. taskPrereqs . folded
         , checklist ^. checklistTasks . contains prereqTid
