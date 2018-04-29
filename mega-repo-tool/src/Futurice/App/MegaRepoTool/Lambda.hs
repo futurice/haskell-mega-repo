@@ -74,9 +74,10 @@ pyModule :: Maybe Value -> ByteString
 pyModule v = BS8.unlines
     [ "from __future__ import print_function"
     , "import json"
+    , "import pprint"
     , "import Lambda_native"
     , "Lambda_native.hs_init(['tmpLambda', '+RTS', '-T'])"
-    , "print(json.dumps(Lambda_native.handler('''" <> e <> "''', None, print)))"
+    , "pprint.pprint(json.loads(Lambda_native.handler('''" <> e <> "''', None, print)), indent=2)"
     ]
   where
     e = maybe "null" (BSL.toStrict . encode) v
