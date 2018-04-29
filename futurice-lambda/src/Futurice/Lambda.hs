@@ -5,7 +5,8 @@ module Futurice.Lambda (
     AwsLambdaHandler,
     ) where
 
-import Data.Aeson          (FromJSON, ToJSON, Value, eitherDecodeStrict, encode)
+import Data.Aeson
+       (FromJSON, ToJSON, Value, eitherDecodeStrict, encode, object, (.=))
 import Data.Aeson.Types    (emptyObject)
 import Foreign.C           (CString, withCString)
 import Foreign.Ptr         (Ptr)
@@ -14,6 +15,7 @@ import Futurice.Prelude
 import GHC.Stats           (getRTSStats)
 import Log                 (LogMessage (..), LogT, runLogT, showLogLevel)
 import Log.Internal.Logger (Logger (..))
+import Log.Monad           (LogT (..))
 import Prelude ()
 import System.Environment  (getArgs)
 
@@ -43,7 +45,7 @@ data PyObject
 
 -- | Make an AWS Lambda handler.
 makeAwsLambda
-    :: (FromJSON a, ToJSON b, Configure cfg)
+    :: (FromJSON a, ToJSON b, NFData b, Configure cfg)
     => (cfg -> Logger -> Manager -> a -> LogT IO b)
     -> AwsLambdaHandler
 makeAwsLambda handler input _ lf = do
@@ -52,10 +54,22 @@ makeAwsLambda handler input _ lf = do
     output <- runLogT "lambda" lgr $ do
         cfg <- getConfig "LAMBDA"
         case eitherDecodeStrict inputBS of
-            Left err -> return $ TE.encodeUtf8 $ T.pack err
-            Right x  -> LBS.toStrict . encode <$> handler cfg lgr mgr x
+            Left err -> do
+                logAttention "Invalid JSON" err
+                encodeErr err
+            Right x  -> do
+                res <- tryDeep' $ handler cfg lgr mgr x
+                case res of
+                    Left exc -> do
+                        logAttention "Exception" $ show exc
+                        encodeErr $ show exc
+                    Right x  -> return $ LBS.toStrict $ encode x
     BS.useAsCString output return
   where
+    encodeErr err = return $ LBS.toStrict $ encode $ object
+        [ "error" .= err
+        ]
+
     logString :: String -> IO ()
     logString s =
         withCString "s" $ \fmt ->
@@ -71,6 +85,9 @@ makeAwsLambda handler input _ lf = do
         , loggerWaitForWrite = return ()
         , loggerShutdown     = return ()
         }
+
+tryDeep' :: NFData a => LogT IO a -> LogT IO (Either SomeException a)
+tryDeep' (LogT (ReaderT f)) = LogT $ ReaderT $ \r -> tryDeep (f r)
 
 -- | Render a 'LogMessage' to 'Text'.
 showLogMessage :: LogMessage -> T.Text
