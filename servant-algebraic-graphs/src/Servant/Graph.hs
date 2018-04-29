@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Servant.Graph (
     ALGA,
+    ALGAPNG,
     Graph (..),
     ToDot (..),
     ToDotVertex (..)
@@ -26,10 +27,10 @@ import System.Process.ByteString.Lazy (readProcessWithExitCode)
 import qualified Algebra.Graph           as G
 import qualified Algebra.Graph.Class     as ALGA
 import qualified Data.ByteString.Lazy    as LBS
+import qualified Data.Text          as T
 import qualified Data.Text.Lazy          as LT
 import qualified Data.Text.Lazy.Encoding as LTE
 import qualified Network.HTTP.Media      as M
-
 import qualified Algebra.Graph.Export.Dot as Dot
 
 import System.IO.Unsafe (unsafePerformIO)
@@ -39,16 +40,25 @@ import System.IO.Unsafe (unsafePerformIO)
 -------------------------------------------------------------------------------
 
 data ALGA deriving Typeable
+data ALGAPNG deriving Typeable
 
 -- | @image/svg+xml@
 instance Accept ALGA where
     contentType _ = "application" M.// "pdf"
 
+instance ToDot g => MimeRender ALGA g where
+    mimeRender _ = renderDot "pdf"
+
+-- | @image/svg+xml@
+instance Accept ALGAPNG where
+    contentType _ = "image" M.// "png"
+
+instance ToDot g => MimeRender ALGAPNG g where
+    mimeRender _ = renderDot "png"
+
+-- | Dot style
 class (ALGA.ToGraph g, Ord (ALGA.ToVertex g)) => ToDot g where
     exportStyle :: proxy g -> Dot.Style (ALGA.ToVertex g) LT.Text
-
-instance ToDot g => MimeRender ALGA g where
-    mimeRender _ = renderDot
 
 class Ord a => ToDotVertex a where
     exportVertexStyle :: Dot.Style a LT.Text
@@ -56,15 +66,32 @@ class Ord a => ToDotVertex a where
 instance ToDotVertex a => ToDot (G.Graph a) where
     exportStyle _ = exportVertexStyle
 
+
+instance ToDotVertex T.Text where
+    exportVertexStyle = (Dot.defaultStyle $ LT.fromStrict . T.concatMap escape)
+        { Dot.vertexAttributes = va
+        , Dot.graphAttributes =
+            [ "rankdir" Dot.:= "LR"
+            ]
+        }
+      where
+        va _ =
+            [  "shape" Dot.:= "box"
+            ]
+
+        escape '"'  = "\\\""
+        escape '\\' = "\\\\"
+        escape c    = T.singleton c
+
 -------------------------------------------------------------------------------
 -- Internals
 -------------------------------------------------------------------------------
 
-renderDot :: forall g. ToDot g => g -> LBS.ByteString
-renderDot g
+renderDot :: forall g. ToDot g => String -> g -> LBS.ByteString
+renderDot typ g
     = (\(_, x, _) -> x)
     $ unsafePerformIO
-    $ readProcessWithExitCode "dot" ["-Tpdf"] -- make configurable!
+    $ readProcessWithExitCode "dot" ["-T" ++ typ] -- make configurable!
     $ LTE.encodeUtf8
     $ Dot.export style g
   where
