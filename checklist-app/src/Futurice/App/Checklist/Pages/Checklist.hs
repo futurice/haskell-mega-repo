@@ -1,13 +1,18 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
+module Futurice.App.Checklist.Pages.Checklist (
+    checklistPage,
+    checklistGraph,
+    ) where
 
+import Algebra.Graph.Class       (edges, overlay, vertices)
 import Control.Lens
        (contains, filtered, foldMapOf, forOf_, has, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
+import Servant.Graph             (Graph (..))
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
@@ -60,17 +65,25 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
         tbody_ $ for_ tasks $ \task -> tr_ $ do
             let tid = task ^. identifier
+            let prereqTasks = task ^.. taskPrereqs . folded
+                    -- tasks in this checklist
+                    . filtered (\prereqTid -> has (checklistTasks . ix prereqTid) checklist)
+                    -- tid -> tasks
+                    . getter (\prereqTid -> world ^? worldTasks . ix prereqTid)
+                    . _Just
 
             td_ $ taskLink task
             td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
             td_ $ roleHtml mcid (task ^. taskRole)
             td_ $ toHtml $ show $ task ^. taskOffset
             td_ $ toHtml $ task ^. taskApplicability
-            td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
-                let prereqTid = prereqTask ^. identifier
-                for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
+            td_ $ unless (null prereqTasks) $ ul_ $
+                for_ (prereqTasks ^. tasksSorted world) $ \prereqTask -> li_ $ do
                     taskLink prereqTask
-                    br_ []
+                    when (prereqTask ^. taskOffset > task ^. taskOffset) $ do
+                        span_ [class_ "label alert"] $ do
+                            "Later offset "
+                            toHtml $ show $ prereqTask ^. taskOffset
             td_ $ ul_ $ for_ (task ^. taskTags) $ \tag -> do
                 li_ $ toHtml tag
             td_ $ a_ [ indexPageHref Nothing mcid (Just tid) False False ] $
@@ -88,13 +101,17 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                 ]
                 "Remove"
 
+    -- Tasks graph
+    subheader_ $ "Tasks graph"
+    fullRow_ $ img_ [ checklistGraphSrc $ checklist ^. checklistId ]
+
     -- Employees
     subheader_ "Employees"
     -- TODO: mvoe to Markup: employeeList
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
-            th_ [title_ "Office"]                    "Loc"
+            th_ [title_ "Office"]                      "Loc"
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
@@ -107,8 +124,6 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
             td_ $ toHtml $ show (diffDays startingDay today) <> " days"
-
-
   where
     tasks0 = world ^.. worldTasksSorted (authUser ^. authUserTaskRole) . folded
     tasks = filter (\task -> checklist ^. checklistTasks . contains (task ^. identifier)) tasks0
@@ -121,3 +136,22 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
     employees =  sortOn (view employeeStartingDay)
         $ filter (\e -> e ^. employeeChecklist == checklist ^. checklistId)
         $ toList (IdMap.toMap (world ^. worldEmployees))
+
+-------------------------------------------------------------------------------
+-- Graph
+-------------------------------------------------------------------------------
+
+checklistGraph :: World -> Checklist -> Graph Text "checklist"
+checklistGraph world checklist = Graph $ overlay vs es
+  where
+    es = edges
+        [ (task ^. nameText, prereqTask ^. nameText)
+        | task <- tasks
+        , prereqTid <- task ^.. taskPrereqs . folded
+        , checklist ^. checklistTasks . contains prereqTid
+        , prereqTask <- world ^.. worldTasks . ix prereqTid
+        ]
+    vs = vertices $ tasks ^.. folded . nameText
+
+    tasks = checklist ^..  checklistTasks . folded .
+        getter (\tid -> world ^? worldTasks . ix tid) . _Just
