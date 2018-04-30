@@ -145,13 +145,15 @@ checklistGraph :: World -> Checklist -> Graph Text "checklist"
 checklistGraph world checklist = Graph $ overlay vs es
   where
     es = edges
-        [ (prereqTask ^. nameText, task ^. nameText)
+        [ (taskV prereqTask, taskV task)
         | task <- tasks
         , prereqTid <- task ^.. taskPrereqs . folded
         , checklist ^. checklistTasks . contains prereqTid
         , prereqTask <- world ^.. worldTasks . ix prereqTid
         ]
-    vs = vertices $ tasks ^.. folded . nameText
+    vs = vertices $ tasks ^.. folded . getter taskV
 
     tasks = checklist ^..  checklistTasks . folded .
         getter (\tid -> world ^? worldTasks . ix tid) . _Just
+
+    taskV task = task ^. nameText <> " (" <> textShow (task ^. taskOffset) <> ")"
