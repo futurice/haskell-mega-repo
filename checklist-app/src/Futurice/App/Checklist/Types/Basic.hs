@@ -17,6 +17,7 @@ import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
+import Servant.Graph      (ToDotVertex (..))
 
 import Futurice.App.Checklist.Types.ChecklistId
 import Futurice.App.Checklist.Types.ContractType
@@ -25,13 +26,14 @@ import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
 import Futurice.App.Checklist.Types.TaskTag
 
-import qualified Data.Text       as T
-import qualified FUM.Types.Login as FUM
-import qualified GitHub          as GH
-import qualified PlanMill        as PM
-import qualified Test.QuickCheck as QC
-
-import qualified Personio as P
+import qualified Algebra.Graph.Export.Dot as Dot
+import qualified Data.Text                as T
+import qualified Data.Text.Lazy           as LT
+import qualified FUM.Types.Login          as FUM
+import qualified GitHub                   as GH
+import qualified Personio                 as P
+import qualified PlanMill                 as PM
+import qualified Test.QuickCheck          as QC
 
 newtype Name a = Name Text
   deriving (Eq, Ord, Show, Typeable, Generic)
@@ -99,6 +101,51 @@ data Task = Task
       -- ^ Who this task is applicable for
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
+
+data TaskNode = TaskNode
+    { _taskNodeId     :: !(Identifier Task)
+    , _taskNodeName   :: !(Name Task)
+    , _taskNodeOffset :: !Integer
+    }
+  deriving (Show, Typeable, Generic)
+
+instance Eq TaskNode where
+    (==) = (==) `on` _taskNodeId
+
+instance Ord TaskNode where
+    compare = compare `on` _taskNodeId
+
+instance ToDotVertex TaskNode where
+    exportVertexStyle = (Dot.defaultStyle render')
+        { Dot.defaultVertexAttributes =
+            [  "shape" Dot.:= "box"
+            ]
+        , Dot.graphAttributes =
+            [ "rankdir" Dot.:= "LR"
+            ]
+        , Dot.edgeAttributes = ea
+        }
+      where
+        render t = coerce (_taskNodeName t) <> " (" <> textShow (_taskNodeOffset t) <> ")"
+        render' = LT.fromStrict . T.concatMap escape . render
+
+        ea x y
+            | _taskNodeOffset x > _taskNodeOffset y =
+                [ "color" Dot.:= "red"
+                ]
+            | otherwise = []
+
+        escape '"'  = "\\\""
+        escape '\\' = "\\\\"
+        escape c    = T.singleton c
+
+-- Convert full 'Task' into 'TaskNode' (for graphs)
+taskNode :: Task -> TaskNode
+taskNode t = TaskNode
+    { _taskNodeId     = _taskId t
+    , _taskNodeName   = _taskName t
+    , _taskNodeOffset = _taskOffset t
+    }
 
 -- |
 data CheckResult
