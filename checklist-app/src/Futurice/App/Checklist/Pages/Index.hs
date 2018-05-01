@@ -187,7 +187,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                             unless (null $ task ^. taskTags) $ td_ $ taskInfo_ task employee integrationData
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task
                             for_ (closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) $ \prereqTasks ->
-                                td_ $ unless (null prereqTasks) $
+                                unless (null prereqTasks) $ td_ $
                                     ul_ [ class_ "no-bullet" ] $ for_ (prereqTasks ^. tasksSorted world) $ \prereqTask ->
                                         for_ (world ^? worldTaskItems . ix eid . ix (prereqTask ^. identifier)) $ \_ ->
                                             li_ $ shortTaskCheckbox_ world employee prereqTask

@@ -193,14 +193,14 @@ checklistGraphImpl
     :: Ctx
     -> Maybe FUM.Login
     -> ChecklistId
-    -> Handler (Graph Text "checklist")
+    -> Handler (Graph TaskNode "checklist")
 checklistGraphImpl ctx fu cid = runLogT "withAuthUser" (ctxLogger ctx) $
     withAuthUser' forbiddenGraph ctx fu impl
   where
     impl world _userInfo = pure $
         checklistGraph world $ world ^. worldLists . pick cid
 
-    forbiddenGraph = Graph $ edges [("forbidden", "graph")]
+    forbiddenGraph = Graph $ edges [] -- TODO
 
 employeePageImpl
     :: Ctx

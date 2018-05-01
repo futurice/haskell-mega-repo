@@ -5,17 +5,17 @@ module Futurice.App.Checklist.API where
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.Lucid.Foundation (HtmlPage)
-import Futurice.Servant          (SSOUser)
-import Servant.API
-import Servant.Chart             (Chart, SVG)
-import Servant.HTML.Lucid        (HTML)
-import Servant.Graph             (ALGAPNG, Graph)
 import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
        (ChecklistId, Employee, Identifier, Office, SortCriteria, Task,
-       TaskRole)
+       TaskNode, TaskRole)
+import Futurice.Lucid.Foundation      (HtmlPage)
+import Futurice.Servant               (SSOUser)
+import Servant.API
+import Servant.Chart                  (Chart, SVG)
+import Servant.Graph                  (ALGAPNG, Graph)
+import Servant.HTML.Lucid             (HTML)
 
 import qualified Personio
 
@@ -108,7 +108,7 @@ type ChecklistGraphEndpoint =
     "checklists" :>
     Capture "checklist-id" ChecklistId :>
     "task-graph.png" :>
-    Get '[ALGAPNG] (Graph Text "checklist")
+    Get '[ALGAPNG] (Graph TaskNode "checklist")
 
 type TaskPageEndpoint =
     SSOUser :>

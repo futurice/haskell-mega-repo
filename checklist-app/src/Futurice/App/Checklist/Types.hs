@@ -51,6 +51,8 @@ module Futurice.App.Checklist.Types (
     contractTypeToText,
     -- ** Task
     taskName, taskInfo, taskPrereqs, taskRole, taskComment, taskTags, taskOffset, taskApplicability,
+    -- ** TaskNode
+    TaskNode (..), taskNode,
     -- ** CheckResult
     _CheckResultSuccess, _CheckResultMaybe, _CheckResultFailure,
     -- ** TaskRole
