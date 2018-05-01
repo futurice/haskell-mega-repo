@@ -141,19 +141,17 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 -- Graph
 -------------------------------------------------------------------------------
 
-checklistGraph :: World -> Checklist -> Graph Text "checklist"
+checklistGraph :: World -> Checklist -> Graph TaskNode "checklist"
 checklistGraph world checklist = Graph $ overlay vs es
   where
     es = edges
-        [ (taskV prereqTask, taskV task)
+        [ (taskNode prereqTask, taskNode task)
         | task <- tasks
         , prereqTid <- task ^.. taskPrereqs . folded
         , checklist ^. checklistTasks . contains prereqTid
         , prereqTask <- world ^.. worldTasks . ix prereqTid
         ]
-    vs = vertices $ tasks ^.. folded . getter taskV
+    vs = vertices $ tasks ^.. folded . getter taskNode
 
     tasks = checklist ^..  checklistTasks . folded .
         getter (\tid -> world ^? worldTasks . ix tid) . _Just
-
-    taskV task = task ^. nameText <> " (" <> textShow (task ^. taskOffset) <> ")"
