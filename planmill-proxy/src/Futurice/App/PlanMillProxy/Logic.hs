@@ -2,18 +2,10 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=0 #-}
-#endif
 module Futurice.App.PlanMillProxy.Logic (
     -- * Endpoint
     haxlEndpoint,
-    -- * Generic cache
-    updateCache,
-    cleanupCache,
-    -- * Capacities
-    updateCapacities,
     -- * Timereports
     updateAllTimereports,
     updateWithoutTimereports,
