@@ -24,7 +24,6 @@ import qualified Data.ByteString              as BS
 import qualified Data.ByteString.Lazy         as BSL
 import qualified Data.Vector.Storable         as V
 import qualified Data.Vector.Storable.Mutable as MV
-import qualified Network.AWS.Env              as AWS
 import qualified Network.AWS.S3.PutObject     as AWS
 import qualified Network.AWS.S3.Types         as AWS
 import qualified Network.HTTP.Client          as HTTP
@@ -45,8 +44,8 @@ instance Configure Config where
 
 avatarProcessLambda :: AwsLambdaHandler
 avatarProcessLambda = makeAwsLambda impl where
-    impl :: Config -> Logger -> Manager -> AvatarProcess -> LogT IO (Either String Text)
-    impl Config {..} _lgr mgr ap = do
+    impl :: LambdaContext -> AWS.Env -> Config -> Logger -> Manager -> AvatarProcess -> LogT IO (Either String Text)
+    impl _ env Config {..} _lgr mgr ap = do
         let digest = avatarProcessDigest ap
         logInfo "Processing" $ object
             [ "config" .= ap
@@ -64,8 +63,6 @@ avatarProcessLambda = makeAwsLambda impl where
                 return $ Left err
             Right img -> do
                 logTrace "Avatar image size" $ BSL.length img
-                env' <- AWS.newEnvWith AWS.Discover Nothing mgr
-                let env = env' & AWS.envRegion .~ AWS.Frankfurt
                 AWS.runResourceT $ AWS.runAWST env $ do
                     r <- AWS.send $ AWS.putObject
                         (AWS.BucketName cfgS3Bucket)

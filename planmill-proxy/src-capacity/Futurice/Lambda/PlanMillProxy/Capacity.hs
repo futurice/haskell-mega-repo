@@ -37,8 +37,8 @@ instance Configure Config where
 
 planMillProxyCapacityLambda :: AwsLambdaHandler
 planMillProxyCapacityLambda = makeAwsLambda impl where
-    impl :: Config -> Logger -> Manager -> Value -> LogT IO ()
-    impl Config {..} lgr mgr _ = do
+    impl :: LambdaContext -> AWSEnv -> Config -> Logger -> Manager -> Value -> LogT IO ()
+    impl _ _ Config {..} lgr mgr _ = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
         ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
