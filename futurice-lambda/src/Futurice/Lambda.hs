@@ -10,25 +10,28 @@ module Futurice.Lambda (
 
 import Data.Aeson
        (FromJSON, ToJSON, Value, eitherDecodeStrict, encode, object, (.=))
-import Data.Aeson.Types      (emptyObject)
-import Foreign.C             (CString, peekCString, withCString)
-import Foreign.Marshal.Alloc (alloca)
-import Foreign.Ptr           (Ptr)
-import Futurice.EnvConfig    (Configure, getConfig)
+import Data.Aeson.Types           (emptyObject)
+import Foreign.C                  (CString, peekCString, withCString)
+import Foreign.Ptr                (Ptr)
+import Futurice.EnvConfig         (Configure, getConfig)
+import Futurice.Metrics.RateMeter (values)
 import Futurice.Prelude
-import GHC.Stats             (getRTSStats)
-import Log                   (LogMessage (..), LogT, runLogT, showLogLevel)
-import Log.Internal.Logger   (Logger (..))
-import Log.Monad             (LogT (..))
+import GHC.Stats                  (getRTSStats)
+import Log                        (LogMessage (..), LogT, runLogT, showLogLevel)
+import Log.Internal.Logger        (Logger (..))
+import Log.Monad                  (LogT (..))
 import Prelude ()
-import System.Environment    (getArgs)
+import System.Environment         (getArgs)
 
-import qualified Data.ByteString      as BS
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text            as T
-import qualified Data.Text.Encoding   as TE
-import qualified Network.AWS.Env              as AWS
-import qualified Control.Monad.Trans.AWS      as AWS
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Lazy                 as LBS
+import qualified Data.Map                             as Map
+import qualified Data.Text                            as T
+import qualified Data.Text.Encoding                   as TE
+import qualified Network.AWS                          as AWS
+import qualified Network.AWS.CloudWatch.PutMetricData as AWS
+import qualified Network.AWS.CloudWatch.Types         as AWS
+import qualified Network.AWS.Env                      as AWS
 
 -- | A type for AWS Lambda Handler.
 type AwsLambdaHandler = CString -> Ptr LambdaContextC -> Ptr LoggingFunc -> IO CString
@@ -90,6 +93,20 @@ makeAwsLambda handler input lc lf = do
                         logAttention "Exception" $ show exc
                         encodeErr $ show exc
                     Right x  -> return $ LBS.toStrict $ encode x
+
+    -- Write aws env
+    meters <- liftIO values
+    unless (null meters) $ do
+        let mkDatum (n, v) = AWS.metricDatum ("Count: " <> n)
+                & AWS.mdValue      ?~ fromIntegral v
+                & AWS.mdUnit       ?~ AWS.Count
+                & AWS.mdDimensions .~ [AWS.dimension "FunctionName" fnNameT]
+        let meterDatums = map mkDatum (Map.toList meters)
+
+        AWS.runResourceT $ AWS.runAWS env $
+            void $ AWS.send $ AWS.putMetricData "Lambda"
+                    & AWS.pmdMetricData .~ meterDatums
+
     BS.useAsCString output return
   where
     encodeErr err = return $ LBS.toStrict $ encode $ object
