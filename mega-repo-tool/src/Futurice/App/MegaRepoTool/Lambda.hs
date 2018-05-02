@@ -57,7 +57,7 @@ cmdLambda lambdaName mpayload = do
     withTempDirectory "/tmp" "aws-lambda-py" $ \tmpDir -> do
         pySo <- compilePython tmpDir conf
         let pyPath = tmpDir </> "Lambda.py"
-        BS.writeFile pyPath $ pyModule mpayload
+        BS.writeFile pyPath $ pyModule lambdaName mpayload
         let env = Map.toList $ env' <> procEnv
                 <> Map.singleton "PYTHONPATH" (takeDirectory pySo)
                 <> Map.singleton "LD_LIBRARY_PATH" tmpDir
@@ -70,14 +70,17 @@ cmdLambda lambdaName mpayload = do
         BS.putStr err
         exitWith ec
 
-pyModule :: Maybe Value -> ByteString
-pyModule v = BS8.unlines
+pyModule :: Text -> Maybe Value -> ByteString
+pyModule n v = BS8.unlines
     [ "from __future__ import print_function"
     , "import json"
     , "import pprint"
     , "import Lambda_native"
+    , "class LambdaContext:"
+    , "    function_name = '''" <> n' <> "'''"
     , "Lambda_native.hs_init(['tmpLambda', '+RTS', '-T'])"
-    , "pprint.pprint(json.loads(Lambda_native.handler('''" <> e <> "''', None, print)), indent=2)"
+    , "pprint.pprint(json.loads(Lambda_native.handler('''" <> v' <> "''', LambdaContext(), print)), indent=2)"
     ]
   where
-    e = maybe "null" (BSL.toStrict . encode) v
+    v' = maybe "null" (BSL.toStrict . encode) v
+    n' = encodeUtf8 n

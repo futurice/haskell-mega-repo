@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.PlanMillProxy.Logic.Capacities (
     selectCapacities,
-    updateCapacities,
     ) where
 
 import Prelude ()
@@ -85,21 +84,5 @@ selectCapacities ctx uid interval = do
     selectQuery = fromString $ unwords $
         [ "SELECT (data) FROM planmillproxy.capacity"
         , "WHERE uid = ? AND day >= ? AND day <= ?"
-        , ";"
-        ]
-
-updateCapacities :: Ctx -> IO ()
-updateCapacities ctx = runLIO ctx $ do
-    now <- currentTime
-    old <- liftIO $ poolQuery ctx selectQuery (Postgres.Only $ previousThreeThirty now)
-    for_ old $ \(uid, mi, ma) ->
-        void $ selectCapacities ctx uid (mi ... ma)
-  where
-    selectQuery :: Postgres.Query
-    selectQuery = fromString $ unwords $
-        [ "SELECT uid, MIN(day) as min, LEAST(GREATEST(current_date + '1 month' :: interval, MAX(day)), current_date + '6 months' :: interval) :: date as max"
-        , "FROM planmillproxy.capacity"
-        , "WHERE updated < ?"
-        , "GROUP BY uid"
         , ";"
         ]

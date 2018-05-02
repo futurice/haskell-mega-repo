@@ -2,18 +2,10 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=0 #-}
-#endif
 module Futurice.App.PlanMillProxy.Logic (
     -- * Endpoint
     haxlEndpoint,
-    -- * Generic cache
-    updateCache,
-    cleanupCache,
-    -- * Capacities
-    updateCapacities,
     -- * Timereports
     updateAllTimereports,
     updateWithoutTimereports,
@@ -174,69 +166,6 @@ haxlEndpoint ctx qs = runLIO ctx $ do
     selectQuery = fromString $ unwords
         [ "SELECT query, data FROM planmillproxy.cache"
         , "WHERE query in ?"
-        , ";"
-        ]
-
--- | Update cache, we look what's viewed the most and update these entries.
--- This means that we never delete items from cache
-updateCache :: Ctx -> IO ()
-updateCache ctx = runLIO ctx $ do
-    now <- currentTime
-    qs <- safePoolQuery ctx selectQuery (Postgres.Only $ previousThreeThirty now)
-    logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
-    for_ qs $ \(Postgres.Only (SomeQuery q)) -> do
-        res <- fetch q
-        case res of
-            Right () -> pure ()
-            Left exc -> do
-                logAttention "Update failed" $ object [ "query" .= q, "exc" .= show exc ]
-                void $ safePoolExecute ctx deleteQuery (Postgres.Only q)
-  where
-    fetch :: Query a -> LIO (Either SomeException ())
-    fetch q =
-        case (binaryDict, semVerDict, structDict, nfdataDict) of
-            (Dict, Dict, Dict, Dict) -> fetch' q
-      where
-        binaryDict = queryDict (Proxy :: Proxy Binary) q
-        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) q
-        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) q
-        nfdataDict = queryDict (Proxy :: Proxy NFData) q
-
-    fetch'
-        :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
-        => Query a -> LIO (Either SomeException ())
-    fetch' q = liftIO $ tryDeep $ runLogT' ctx $ do
-        x <- fetchFromPlanMill ctx q
-        storeInPostgres ctx q x
-
-    -- Fetch queries which are old enough, and viewed at least once
-    selectQuery :: Postgres.Query
-    selectQuery = fromString $ unwords
-        [ "SELECT (query) FROM planmillproxy.cache"
-        -- , "WHERE current_timestamp - updated > (" ++ genericAge ++ " :: interval) * (1 + variance) AND viewed > 0"
-        , "WHERE updated < ?"
-        , "ORDER BY updated"
-        , "LIMIT 1000"
-        , ";"
-        ]
-
-    deleteQuery :: Postgres.Query
-    deleteQuery = fromString $ unwords
-        [ "DELETE FROM planmillproxy.cache"
-        , "WHERE query = ?"
-        , ";"
-        ]
-
--- | Cleanup cache
-cleanupCache :: Ctx -> IO ()
-cleanupCache ctx = runLIO ctx $ do
-    i <- safePoolExecute_ ctx cleanupQuery
-    logInfo_ $  "cleaned up " <> textShow i <> " cache items"
-  where
-    cleanupQuery :: Postgres.Query
-    cleanupQuery = fromString $ unwords
-        [ "DELETE FROM planmillproxy.cache"
-        , "WHERE viewed < -4" -- -4 makes data survive over the weekends
         , ";"
         ]
 
