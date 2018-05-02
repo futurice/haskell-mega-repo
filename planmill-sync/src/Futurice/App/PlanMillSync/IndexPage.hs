@@ -9,7 +9,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
-import Control.Lens                (IndexedGetting, ifoldMapOf, iforOf_)
+import Control.Lens
+       (IndexedGetting, filtered, ifoldMapOf, iforOf_)
 import Control.Monad.Writer.CPS    (Writer, runWriter)
 import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
@@ -45,26 +46,17 @@ indexPage
     -> [P.Employee]
     -> HtmlPage "index"
 indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
-    div_ [ class_ "top-bar" ] $ do
-        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu" ] $ do
-            li_ [ class_ "menu-text"] $ "Personio ⇒ PlanMill sync"
-            li_ $ a_ [ href_ "#planmill" ] "Only in PlanMill"
-            li_ $ a_ [ href_ "#personio" ] "Only in Personio"
-            li_ $ a_ [ href_ "#crosscheck" ] "Crosscheck + sync"
-
-    fullRow_ $ div_ [ class_ "callout alert "] $ ul_ $ do
+    div_ [ class_ "callout alert "] $ ul_ $ do
         li_ $ "PlanMill data is fetched directly from PlanMIll."
-        li_ $ "Personio and PlanMill data updates every ~5 minutes."
+        li_ $ "Personio data updates every ~5min"
+        li_ $ "PlanMill data updates every night"
         li_ $ do
             "When values are different, both are shown: "
             b_ "Personio ≠ PlanMill"
             "."
 
-    fullRow_ $ do
-        a_ [ name_ "planmill" ] mempty
-        h2_ "People Active in PlanMIll but not in Personio"
-
-    fullRow_ $ table_ $ do
+    anchor_ "planmill" $ h2_ "People Active in PlanMIll but not in Personio"
+    table_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
             th_ "Planmill"
@@ -85,11 +77,9 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                     let pmStart = PM.uHireDate pmu
                     let pmEnd = PM.uDepartDate pmu
                     noWrapSpan_ $ toHtml $ formatDateSpan pmStart pmEnd
-    fullRow_ $ do
-        a_ [ name_ "personio" ] mempty
-        h2_ "People Active in Personio but not in PlanMill"
 
-    fullRow_ $ table_ $ do
+    anchor_ "personio" $ h2_ "People Active in Personio but not in PlanMill"
+    table_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
             th_ "Personio"
@@ -104,36 +94,45 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                 td_ $ toHtml login
                 personioHtml p
 
-    fullRow_ $ do
-        i_ "People Active in Personio, but without login"
-        table_ $ do
-            thead_ $ tr_ $ do
-                th_ "Personio"
-                th_ "Name"
-                th_ "Tribe"
-                th_ "Office"
-                th_ "Contract span"
-                th_ "HR Number"
-            tbody_ $ for_ personios $ \p ->
-                when (P.employeeIsActive today p && isNothing (p ^. P.employeeLogin)) $
-                    tr_ $ personioHtml p
+    h2_ $ "People Active in Personio, but without login"
+    table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Personio"
+            th_ "Name"
+            th_ "Tribe"
+            th_ "Office"
+            th_ "Contract span"
+            th_ "HR Number"
+        tbody_ $ for_ personios $ \p ->
+            when (P.employeeIsActive today p && isNothing (p ^. P.employeeLogin)) $
+                tr_ $ personioHtml p
 
-    fullRow_ $ do
-        a_ [ name_ "crosscheck" ] mempty
-        h2_ "Cross-check of people in PlanMill and Personio"
+    h2_ "Cross-check of people in PlanMill and Personio"
 
-    let elements0 = itoListWithOf (ifolded . _These) processBoth employees
-    let elements1 = map (runWriter . commuteHtmlT) elements0
-    let elements2 = map fst $ sortOn (Down . snd) elements1
+    anchor_ "cross-employees" $ h3_ "Employees"
+    summaryTable employees $ \pm p ->
+        p ^. P.employeeEmploymentType /= Just P.External &&
+        (pmPassive pm == "Active" || P.employeeIsActive today p)
 
-    fullRow_ $ ul_ $ do
-        let tot = length elements1
-        let err = length $ filter (getAny . snd) elements1
-        li_ $ toHtml $ "Total employees in both Personio and PlanMill: " <> textShow (length elements1)
-        li_ $ toHtml $ "Employees with non-matching data: " <> textShow err
-        li_ $ toHtml $ "Employees with matching data: " <> textShow (tot - err)
+    anchor_ "cross-subcontractors" $ h3_ "Subcontractors"
+    summaryTable employees $ \pm p ->
+        p ^. P.employeeEmploymentType == Just P.External &&
+        (pmPassive pm == "Active" || P.employeeIsActive today p)
 
-    fullRow_ $ table_ $ do
+    anchor_ "cross-inactive" $ h3_ "Inactive"
+    summaryTable employees $ \pm p ->
+        not (pmPassive pm == "Active" || P.employeeIsActive today p)
+
+  where
+    anchor_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
+    anchor_ n = a_ [ name_ n, href_ $ "/#" <> n ]
+
+    summaryTable
+        :: Monad m
+        => Map Login (These PMUser P.Employee)
+        -> (PMUser -> P.Employee -> Bool)
+        -> HtmlT m ()
+    summaryTable es predicate = sortableTable_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
             th_ "Personio"
@@ -155,7 +154,13 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             th_ "Competence"
 
         tbody_ $ traverse_ id elements2
-  where
+      where
+        elements0 = itoListWithOf
+            (ifolded . _These . filtered (uncurry predicate))
+            processBoth es
+        elements1 = map (runWriter . commuteHtmlT) elements0
+        elements2 = map fst $ sortOn (Down . snd) elements1
+
     processBoth :: MonadWriter Any m => Login -> (PMUser, P.Employee) -> HtmlT m ()
     processBoth login (pm, p) = tr_ $ do
         let pmu = pmUser pm
@@ -386,14 +391,14 @@ finnishOffices = filter (\o -> officeCompany o == companyFuturiceOy) [minBound .
 -------------------------------------------------------------------------------
 
 eqCompareCompetence :: Text -> Maybe Text -> Bool
-eqCompareCompetence _ Nothing = False
+-- TODO: empty competence should be an error too
+eqCompareCompetence "" Nothing  = True
+eqCompareCompetence _ Nothing   = False
 eqCompareCompetence p (Just pm) = eq (T.toLower p) (T.toLower pm')
   where
     pm' = T.strip $ T.takeWhile (/= '(') pm
 
     eq x y | competenceMap ^. at x == Just y = True
-    -- Temporary
-    eq _ "sub contractors" = True
     eq x y = x == y
 
 -------------------------------------------------------------------------------

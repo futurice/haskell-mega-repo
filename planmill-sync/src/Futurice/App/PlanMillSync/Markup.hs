@@ -17,12 +17,20 @@ import qualified Futurice.Lucid.Foundation as Lucid
 
 data Nav
     = NavHome
-    -- | NavAuditLog
+    | NavOnlyInPlanmill
+    | NavOnlyInPersonio
+    | NavCrossEmployees
+    | NavCrossSubcontractors
+    | NavCrossInactive
   deriving (Eq, Enum, Bounded)
 
 navLink :: Nav -> (Attribute, Text)
-navLink NavHome     = (href_ "/", "PlanMill Sync")
--- navLink NavAuditLog = (href_ "/audit", "Audit log")
+navLink NavHome                = (href_ "/", "PlanMill Sync")
+navLink NavOnlyInPlanmill      = (href_ "/#planmill", "Only in PlanMill")
+navLink NavOnlyInPersonio      = (href_ "/#personio", "Only in Personio")
+navLink NavCrossEmployees      = (href_ "/#cross-employees", "Crosscheck: Employees")
+navLink NavCrossSubcontractors = (href_ "/#cross-subcontractors", "Crosscheck: Subcontractors")
+navLink NavCrossInactive       = (href_ "/#cross-inactive", "Crosscheck: Inactive")
 
 navigation_ :: Monad m => Maybe Nav -> HtmlT m ()
 navigation_ nav' = div_ [ class_ "top-bar" ] $ fullRow_ $
