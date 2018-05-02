@@ -13,8 +13,11 @@ library
     , base ^>=4.10
     , aeson
     , amazonka
+    , amazonka-cloudwatch
     , bytestring
+    , containers
     , env-config
     , futurice-prelude
+    , futurice-metrics
     , log-base
     , text
