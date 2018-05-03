@@ -14,6 +14,7 @@ module Futurice.App.Contacts.Types (
     ) where
 
 import Data.Csv          (ToField (..))
+import FUM.Types.Login   (Login)
 import Futurice.Company
 import Futurice.Generics
 import Futurice.IsMaybe
@@ -21,8 +22,6 @@ import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
-
-import qualified FUM
 
 import qualified Data.HashMap.Strict as HM
 
@@ -81,7 +80,7 @@ instance ToField (ContactGH a) where
 -------------------------------------------------------------------------------
 
 data Contact avatar = Contact
-    { contactLogin      :: !FUM.Login
+    { contactLogin      :: !Login
     , contactFirst      :: !Text
     , contactName       :: !Text
     , contactEmail      :: !Text
