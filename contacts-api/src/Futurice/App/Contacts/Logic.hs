@@ -14,19 +14,21 @@ module Futurice.App.Contacts.Logic (
     contacts,
     ) where
 
-import Data.RFC5051          (compareUnicode)
-import Futurice.Email        (emailToText)
+import Data.RFC5051            (compareUnicode)
+import Futurice.App.Avatar.API
+import Futurice.Constants      (avatarPublicUrl)
+import Futurice.Email          (emailToText)
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
+import Servant
 
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Maybe.Strict   as S
 import qualified Data.Text           as T
 
 -- Data definition
 import qualified Chat.Flowdock.REST as FD
-import qualified FUM
+import qualified FUM.Types.Login    as FUM
 import qualified GitHub             as GH
 import qualified Personio
 
@@ -42,7 +44,7 @@ noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 -- | Get contacts data
 contacts
-    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, Personio.MonadPersonio m
+    :: ( MonadFlowdock m, MonadGitHub m, Personio.MonadPersonio m
        , MonadTime m, MonadReader env m
        , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
        )
@@ -50,7 +52,6 @@ contacts
 contacts = contacts'
     <$> currentDay
     <*> Personio.personio Personio.PersonioEmployees
-    <*> fumEmployeeList
     <*> githubDetailedMembers
     <*> flowdockOrganisation
 
@@ -58,29 +59,26 @@ contacts = contacts'
 contacts'
     :: Day
     -> [Personio.Employee]
-    -> Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
     -> [Contact Text]
-contacts' today employees users githubMembers flowdockOrg =
+contacts' today employees githubMembers flowdockOrg =
     let employees' = filter (Personio.employeeIsActive today) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
--- TODO: Remove this as soon as there is another possible image source
-        res3 = addFUMInfo users res2
-    in sortBy (compareUnicodeText `on` contactName) res3
+    in sortBy (compareUnicodeText `on` contactName) res2
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
-    { contactLogin      = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
+    { contactLogin      = fumLogin
     , contactFirst      = e ^. Personio.employeeFirst
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
     , contactEmail      = maybe "" emailToText $ e ^. Personio.employeeEmail
     , contactPhones     = catMaybes [e ^. Personio.employeeWorkPhone, e ^. Personio.employeeHomePhone]
     , contactTitle      = e ^. Personio.employeePosition
-    , contactThumb      = noImage -- from FUM
-    , contactImage      = noImage -- from FUM
+    , contactThumb      = avatarPublicUrl <> linkToText (safeLink avatarApi fumAvatarEndpoint fumLogin thumbSize False)
+    , contactImage      = avatarPublicUrl <> linkToText (safeLink avatarApi fumAvatarEndpoint fumLogin imageSize False)
     , contactFlowdock   = mcase (e ^. Personio.employeeFlowdock) Nothing $
         Just . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage)
     , contactGithub     = mcase (e ^. Personio.employeeGithub) Nothing $
@@ -92,6 +90,10 @@ employeeToContact e = Contact
     , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
     , contactHrnumber   = e ^. Personio.employeeHRNumber
     }
+  where
+    thumbSize = Nothing
+    imageSize = Nothing
+    fumLogin = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
 
 githubDetailedMembers
     :: ( MonadGitHub m
@@ -101,26 +103,6 @@ githubDetailedMembers
 githubDetailedMembers = do
     githubMembers <- githubOrganisationMembers
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
-
-addFUMInfo
-    :: (Functor f, Foldable g)
-    => g FUM.User -> f (Contact Text) -> f (Contact Text)
-addFUMInfo fum = fmap add
-  where
-    fum' = toList fum
-
-    loginMap :: HM.HashMap FUM.Login FUM.User
-    loginMap = HM.fromList (map pair fum')
-      where
-        pair x = (FUM._userName x, x)
-
-    add :: Contact Text -> Contact Text
-    add c = case HM.lookup (contactLogin c) loginMap of
-        Nothing -> c
-        Just u  -> c
-            { contactThumb = S.fromMaybe noImage $ FUM._userThumbUrl u
-            , contactImage = S.fromMaybe noImage $ FUM._userImageUrl u
-            }
 
 addGithubInfo
     :: (Functor f, Foldable g)
@@ -196,3 +178,6 @@ addFlowdockInfo us = fmap add
         truncateNick t
             | T.length t >= 20 = T.take 17 t <> "..."
             | otherwise        = t
+
+linkToText :: Link -> Text
+linkToText l = "/" <> toUrlPiece l

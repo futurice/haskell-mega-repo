@@ -32,6 +32,7 @@ library
       base                  >=4.7   && <4.11
     , aeson
     , aeson-compat
+    , avatar-client
     , base-compat
     , bifunctors
     , binary-orphans
@@ -47,12 +48,12 @@ library
     , file-embed
     , filepath
     , flowdock-rest
-    , fum-client
+    , fum-types
+    , futurice-constants
     , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
-    , github
     , github
     , hashable
     , haxl
