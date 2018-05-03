@@ -22,6 +22,7 @@ data Nav
     | NavCrossEmployees
     | NavCrossSubcontractors
     | NavCrossInactive
+    | NavTeamMembers
   deriving (Eq, Enum, Bounded)
 
 navLink :: Nav -> (Attribute, Text)
@@ -31,6 +32,7 @@ navLink NavOnlyInPersonio      = (href_ "/#personio", "Only in Personio")
 navLink NavCrossEmployees      = (href_ "/#cross-employees", "Crosscheck: Employees")
 navLink NavCrossSubcontractors = (href_ "/#cross-subcontractors", "Crosscheck: Subcontractors")
 navLink NavCrossInactive       = (href_ "/#cross-inactive", "Crosscheck: Inactive")
+navLink NavTeamMembers         = (href_ "/#team-members", "Team members")
 
 navigation_ :: Monad m => Maybe Nav -> HtmlT m ()
 navigation_ nav' = div_ [ class_ "top-bar" ] $ fullRow_ $

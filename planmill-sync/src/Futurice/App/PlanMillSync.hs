@@ -28,6 +28,8 @@ import Futurice.App.PlanMillSync.Types
 
 import qualified Data.Set as Set
 import qualified Personio as P
+import qualified PlanMill as PM
+import qualified PlanMill.Queries as PMQ
 
 server :: Ctx -> Server PlanMillSyncAPI
 server ctx = indexPageAction ctx
@@ -48,15 +50,26 @@ indexPageAction ctx mfu = withAuthorisedUser ctx mfu err $ do
     today <- currentDay
 
     -- fetch data
-    (pm, p) <- liftIO $ cachedIO lgr cache 300 () $
-        runIntegrations' ctx fetcher
+    (pm, p, ts) <- liftIO $ cachedIO lgr cache 300 () $
+        runIntegrations' ctx $ (,,)
+            <$> users
+            <*> P.personio P.PersonioEmployees
+            <*> teams
 
-    pure $ indexPage today pm p
+    pure $ indexPage today pm p ts
   where
     err = pure page404
 
     lgr   = ctxLogger ctx
     cache = ctxCache ctx
+
+    teams = do
+        ts <- PMQ.teams
+        for (toList ts) $ \t -> do
+            ms <- PMQ.teamMembers (t ^. PM.identifier)
+            return (t, toList ms)
+
+-- type M = Integrations '[I, I, Proxy, Proxy, Proxy, I]
 
 page404 :: HtmlPage a
 page404 = page_ "PlanMill Sync - Unauthorised" $
@@ -107,11 +120,6 @@ withAuthorisedUser ctx mfu err action = do
     cfg   = ctxConfig ctx
     lgr   = ctxLogger ctx
     mgr   = ctxManager ctx
-
-type M = Integrations '[I, I, Proxy, Proxy, Proxy, I]
-
-fetcher :: M ([PMUser], [P.Employee])
-fetcher = liftA2 (,) users (P.personio P.PersonioEmployees)
 
 -------------------------------------------------------------------------------
 -- Main

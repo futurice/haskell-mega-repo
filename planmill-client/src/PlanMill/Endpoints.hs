@@ -37,6 +37,7 @@ module PlanMill.Endpoints (
     -- * Teams
     team,
     teams,
+    teamMembers,
     -- * Timereports
     timereport,
     timereports,
@@ -141,6 +142,12 @@ teams = planMillPagedGet $ t "teams"
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#teams__id__get>
 team :: TeamId -> PlanMill Team
 team i = planMillGet $ t "teams" // i
+
+-- | Get a list of members.
+--
+-- See <https://developers.planmill.com/api/#teams__team_id__members_get>
+teamMembers :: TeamId -> PlanMill TeamMembers
+teamMembers i = planMillPagedGet $ t "teams" // i // t "members"
 
 -- | Get a list of users
 --

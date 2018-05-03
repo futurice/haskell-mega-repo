@@ -46,6 +46,7 @@ data Cmd
     | CmdHookDelete PM.HookId
     | CmdHookAdd PM.HookType Text
     | CmdUsers
+    | CmdTeam PM.TeamId
     | CmdTeams
     | CmdUser PM.UserId
     | CmdUserMany PM.UserId Int
@@ -61,6 +62,7 @@ data Cmd
     | CmdAccounts
     | CmdAccount PM.AccountId
     | CmdAbsencesInterval (PM.Interval Day)
+    | CmdTeamMembers PM.TeamId
 
 deriveGeneric ''Cmd
 
@@ -151,6 +153,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse
+    CmdTeam tid -> do
+        x <- PM.planmillAction $ PM.team tid
+        putPretty x
     CmdTeams -> do
         x <- PM.planmillAction PM.teams
         putPretty $ if optsShowAll opts
@@ -215,6 +220,11 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdAbsencesInterval interval -> do
         x <- PM.planmillAction $ PM.absencesFromInterval
             (PM.ResultInterval PM.IntervalStart interval)
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdTeamMembers tid -> do
+        x <- PM.planmillAction $ PM.teamMembers tid
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse

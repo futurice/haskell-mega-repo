@@ -17,6 +17,8 @@ module PlanMill.Queries (
     user,
     users,
     team,
+    teams,
+    teamMembers,
     userTimebalance,
     absences,
     account,
@@ -41,8 +43,8 @@ import GHC.TypeLits    (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, CapacityCalendars, Me, Project,
-       ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
-       Timereports, User, UserCapacities, UserId, Users)
+       ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TeamMembers,
+       Teams, TimeBalance, Timereports, User, UserCapacities, UserId, Users)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -174,13 +176,29 @@ user uid = planmillQuery
     $ QueryGet QueryTagUser mempty
     $ toUrlParts $ ("users" :: Text) // uid
 
--- | A single team in PlanMill
+-- | Get a list of teams.
+--
+-- See <https://developers.planmill.com/api/#teams_get>
+teams :: MonadPlanMillQuery m => m Teams
+teams = planmillVectorQuery
+    $ QueryPagedGet QueryTagTeam mempty
+    $ toUrlParts $ ("teams" :: Text)
+
+-- | A single team in PlanMill.
 --
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#teams__id__get>
 team :: MonadPlanMillQuery m => TeamId -> m Team
 team tid = planmillQuery
     $ QueryGet QueryTagTeam mempty
     $ toUrlParts $ ("teams" :: Text) // tid
+
+-- | Get a list of members.
+--
+-- See <https://developers.planmill.com/api/#teams__team_id__members_get>
+teamMembers :: MonadPlanMillQuery m => TeamId -> m TeamMembers
+teamMembers tid = planmillVectorQuery
+    $ QueryPagedGet QueryTagTeamMember mempty
+    $ toUrlParts $ ("teams" :: Text) // tid // ("members" :: Text)
 
 -- | A single timebalance in PlanMill. This is a read-only item
 --

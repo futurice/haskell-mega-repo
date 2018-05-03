@@ -9,28 +9,27 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
-import Control.Lens
-       (IndexedGetting, filtered, ifoldMapOf, iforOf_)
-import Control.Monad.Writer.CPS    (Writer, runWriter)
-import Data.Map.Lens               (toMapOf)
-import Data.Maybe                  (isNothing)
-import Data.Monoid                 (Any (..))
-import Data.Ord                    (Down (..))
-import Data.These                  (_That, _These, _This)
-import FUM.Types.Login             (Login, loginRegexp, loginToText)
-import Futurice.Company            (companyFuturiceOy, companyToText)
-import Futurice.Constants          (competenceMap)
+import Control.Lens             (IndexedGetting, filtered, ifoldMapOf, iforOf_)
+import Control.Monad.Writer.CPS (Writer, runWriter)
+import Data.Map.Lens            (toMapOf)
+import Data.Maybe               (isNothing)
+import Data.Monoid              (Any (..))
+import Data.Ord                 (Down (..))
+import Data.These               (_That, _These, _This)
+import FUM.Types.Login          (Login, loginToText)
+import Futurice.Company         (companyFuturiceOy, companyToText)
+import Futurice.Constants       (competenceMap)
 import Futurice.CostCenter
-import Futurice.Office             (Office, officeCompany)
+import Futurice.Office          (Office, officeCompany)
 import Futurice.Prelude
 import Prelude ()
-import Servant                     (toUrlPiece)
-import Servant.Utils.Links         (Link, safeLink)
-import Text.Regex.Applicative.Text (match)
+import Servant                  (toUrlPiece)
+import Servant.Utils.Links      (Link, safeLink)
 
-import qualified Data.Text as T
-import qualified Personio  as P
-import qualified PlanMill  as PM
+import qualified Data.Map.Strict as Map
+import qualified Data.Text       as T
+import qualified Personio        as P
+import qualified PlanMill        as PM
 
 import Futurice.App.PlanMillSync.Actions
 import Futurice.App.PlanMillSync.API
@@ -44,8 +43,9 @@ indexPage
     :: Day
     -> [PMUser]
     -> [P.Employee]
+    -> [(PM.Team, [PM.TeamMember])]
     -> HtmlPage "index"
-indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
+indexPage today planmills personios ts = page_ "PlanMill sync" (Just NavHome) $ do
     div_ [ class_ "callout alert "] $ ul_ $ do
         li_ $ "PlanMill data is fetched directly from PlanMIll."
         li_ $ "Personio data updates every ~5min"
@@ -122,6 +122,35 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
     anchor_ "cross-inactive" $ h3_ "Inactive"
     summaryTable employees $ \pm p ->
         not (pmPassive pm == "Active" || P.employeeIsActive today p)
+
+    anchor_ "team-members" $ h2_ "Team members"
+    div_ [ class_ "callout alert "] $ ul_ $ do
+        li_ $ "There should " <> b_ "not" <> " be secondary members in CC teams"
+    table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Name"
+            th_ "Primary Members"
+            th_ "Non primary Members"
+
+        tbody_ $ for_ ts $ \(t, ms) -> tr_ $ do
+            td_ $ toHtml $ PM.tName t
+            td_ [ width_ "40%" ] $ for_ ms $ \m -> do
+                let pmUid = PM.tmId m
+                when (PM.tmPrimaryTeam m) $ for_ (planmillIdMap ^? ix pmUid) $ \pm -> do
+                    when (pmPassive pm == "Active") $ do
+                        let pmu = pmUser pm
+                        a_ [ PM.userHref_ pmUid] $ toHtml $
+                            PM.uFirstName pmu <> " " <> PM.uLastName pmu
+                        "; "
+            td_ [ width_ "40%" ] $ for_ ms $ \m -> do
+                let pmUid = PM.tmId m
+                unless (PM.tmPrimaryTeam m) $ for_ (planmillIdMap ^? ix pmUid) $ \pm -> do
+                    when (pmPassive pm == "Active") $ do
+                        let pmu = pmUser pm
+                        a_ [ PM.userHref_ pmUid] $ toHtml $
+                            PM.uFirstName pmu <> " " <> PM.uLastName pmu
+                        "; "
+
 
   where
     anchor_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
@@ -349,10 +378,8 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
       where
         f u = do
-            login <- match loginRe (PM.uUserName (pmUser u))
+            login <- PM.userLogin (pmUser u)
             pure (login, u)
-
-        loginRe = "https://login.futurice.com/openid/" *> loginRegexp
 
     personioMap :: Map Login P.Employee
     personioMap = toMapOf (folded . getter f . _Just . ifolded) personios
@@ -360,6 +387,12 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
         f u = do
             login <- u ^. P.employeeLogin
             pure (login, u)
+
+    planmillIdMap :: Map PM.UserId PMUser
+    planmillIdMap = Map.fromList
+        [ (pmUser pm ^. PM.identifier, pm)
+        | pm <- planmills
+        ]
 
     employees :: Map Login (These PMUser P.Employee)
     employees = align planmillMap personioMap

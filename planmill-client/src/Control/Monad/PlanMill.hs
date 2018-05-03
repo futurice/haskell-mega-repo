@@ -43,7 +43,7 @@ import PlanMill.Types.Query (Query, queryToRequest)
 -- Requiring these reduces boilerplate greatly!
 type MonadPlanMillTypes =
     '[ Absence, Assignment, Me, Meta, Project, ReportableAssignment
-     , Task, TimeBalance, Timereport, Team, User, UserCapacity
+     , Task, TimeBalance, Timereport, Team, User, UserCapacity, TeamMember
      ]
 -- Note: to update do:
 -- intercalate ", " $ sort $ splitOn ", " "User, Team"
@@ -65,6 +65,7 @@ class
     , MonadPlanMillC m TimeBalance
     , MonadPlanMillC m Timereport
     , MonadPlanMillC m Team
+    , MonadPlanMillC m TeamMember
     , MonadPlanMillC m User
     , MonadPlanMillC m UserCapacity
     , ForallFSymbol (MonadPlanMillC m) EnumDesc

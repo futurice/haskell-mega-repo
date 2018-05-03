@@ -47,7 +47,7 @@ data Task = Task
     , taskUnitPrice       :: !(Maybe Double) -- e.g. 104.4
     , taskWbs             :: !(Maybe String)
     }
-    deriving (Eq, Ord, Show, Read, Generic, Typeable)
+  deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
 makeLenses ''Task
 deriveGeneric ''Task

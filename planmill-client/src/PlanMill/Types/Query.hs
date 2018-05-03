@@ -28,8 +28,6 @@ module PlanMill.Types.Query (
     queryDict,
     ) where
 
-import Prelude ()
-import PlanMill.Internal.Prelude
 import Data.Binary                      (Put)
 import Data.Binary.Tagged               (StructuralInfo (..))
 import Data.Constraint
@@ -42,6 +40,8 @@ import Futurice.Aeson                   (withObjectDump)
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Generics.SOP                     (All, hcmap, hcollapse, hcpure)
 import GHC.TypeLits                     (KnownSymbol, sameSymbol, symbolVal)
+import PlanMill.Internal.Prelude
+import Prelude ()
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Map                             as Map
@@ -62,6 +62,7 @@ import PlanMill.Types.Request
 import PlanMill.Types.ResultInterval
        (IntervalType (..), ResultInterval (..), intervalToQueryString)
 import PlanMill.Types.Task             (Task, Tasks)
+import PlanMill.Types.TeamMember       (TeamMember, TeamMembers)
 import PlanMill.Types.TimeBalance      (TimeBalance)
 import PlanMill.Types.Timereport       (Timereport, Timereports)
 import PlanMill.Types.UOffset          (showPlanmillUTCTime)
@@ -86,6 +87,7 @@ data QueryTag f a where
     QueryTagAbsence     :: QueryTag f Absence -- can be I or Vector
     QueryTagAccount     :: QueryTag f Account -- can be I or Vector
     QueryTagCalendar    :: QueryTag f CapacityCalendar -- can be I or Vector
+    QueryTagTeamMember  :: QueryTag Vector TeamMember
     QueryTagEnumDesc    :: KnownSymbol enum => !(Proxy enum) -> QueryTag I (EnumDesc enum)
 
 -- | Planmill query (i.e. read-only operation).
@@ -161,6 +163,7 @@ instance GEq (QueryTag f) where
     geq QueryTagAbsence QueryTagAbsence            = Just Refl
     geq QueryTagAccount QueryTagAccount            = Just Refl
     geq QueryTagCalendar QueryTagCalendar          = Just Refl
+    geq QueryTagTeamMember QueryTagTeamMember      = Just Refl
     geq (QueryTagEnumDesc p) (QueryTagEnumDesc p') = do
         Refl <- sameSymbol p p'
         pure Refl
@@ -181,7 +184,8 @@ instance Show (QueryTag f a) where
         QueryTagProject     -> showString "QueryTagProject"
         QueryTagAbsence     -> showString "QueryTagAbsence"
         QueryTagAccount     -> showString "QueryTagAccount"
-        QueryTagCalendar    -> showString "QueryTagCalendar" 
+        QueryTagCalendar    -> showString "QueryTagCalendar"
+        QueryTagTeamMember  -> showString "QueryTagTeamMember"
         QueryTagEnumDesc p  -> showParen (d > 10)
             $ showString "QueryTagEnumDesc "
             . showsPrec 11 (symbolVal p)
@@ -198,6 +202,7 @@ instance Hashable (QueryTag f a) where
     hashWithSalt salt QueryTagAbsence      = salt `hashWithSalt` (8 :: Int)
     hashWithSalt salt QueryTagAccount      = salt `hashWithSalt` (9 :: Int)
     hashWithSalt salt QueryTagCalendar     = salt `hashWithSalt` (10 :: Int)
+    hashWithSalt salt QueryTagTeamMember   = salt `hashWithSalt` (11 :: Int)
     hashWithSalt salt (QueryTagEnumDesc p) = salt
         -- We don't add a int prehash, as it's unnecessary
         `hashWithSalt` (symbolVal p)
@@ -211,7 +216,7 @@ instance NFData (QueryTag f a) where
   --
 -- * @'Binary' ('SomeQueryTag' 'Vector')@
   --
-instance SBoolI (f == I) => Binary (SomeQueryTag f) where
+instance (SBoolI (f == I), SBoolI (f == Vector)) => Binary (SomeQueryTag f) where
     put (SomeQueryTag (QueryTagEnumDesc p)) = do
         put (0 :: Word8)
         put (symbolVal p)
@@ -226,23 +231,25 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
     put (SomeQueryTag QueryTagAbsence)      = put (9 :: Word8)
     put (SomeQueryTag QueryTagAccount)      = put (10 :: Word8)
     put (SomeQueryTag QueryTagCalendar)     = put (11 :: Word8)
+    put (SomeQueryTag QueryTagTeamMember)   = put (12 :: Word8)
 
-    get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I)) of
-        (0, Just Refl) -> do
+    get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I), sboolEqRefl :: Maybe (f :~: Vector)) of
+        (0, Just Refl, _)  -> do
             val <- get
             pure $ reifySymbol val $ \p -> SomeQueryTag (QueryTagEnumDesc p)
 
-        (1, Just Refl) -> pure $ SomeQueryTag QueryTagMe
-        (2, Just Refl) -> pure $ SomeQueryTag QueryTagMeta
-        (3, _)         -> pure $ SomeQueryTag QueryTagTeam
-        (4, _)         -> pure $ SomeQueryTag QueryTagUser
-        (5, Just Refl) -> pure $ SomeQueryTag QueryTagTimebalance
-        (6, Just Refl) -> pure $ SomeQueryTag QueryTagTimereport
-        (7, _)         -> pure $ SomeQueryTag QueryTagTask
-        (8, _)         -> pure $ SomeQueryTag QueryTagProject
-        (9, _)         -> pure $ SomeQueryTag QueryTagAbsence
-        (10, _)        -> pure $ SomeQueryTag QueryTagAccount
-        (11, _)        -> pure $ SomeQueryTag QueryTagCalendar
+        (1, Just Refl, _)  -> pure $ SomeQueryTag QueryTagMe
+        (2, Just Refl, _)  -> pure $ SomeQueryTag QueryTagMeta
+        (3, _, _)          -> pure $ SomeQueryTag QueryTagTeam
+        (4, _, _)          -> pure $ SomeQueryTag QueryTagUser
+        (5, Just Refl, _)  -> pure $ SomeQueryTag QueryTagTimebalance
+        (6, Just Refl, _)  -> pure $ SomeQueryTag QueryTagTimereport
+        (7, _, _)          -> pure $ SomeQueryTag QueryTagTask
+        (8, _, _)          -> pure $ SomeQueryTag QueryTagProject
+        (9, _, _)          -> pure $ SomeQueryTag QueryTagAbsence
+        (10, _, _)         -> pure $ SomeQueryTag QueryTagAccount
+        (11, _, _)         -> pure $ SomeQueryTag QueryTagCalendar
+        (12, _, Just Refl) -> pure $ SomeQueryTag QueryTagTeamMember
 
         _ -> fail $ "Invalid tag " ++ show n
 
@@ -258,30 +265,33 @@ instance ToJSON (QueryTag f a) where
     toJSON QueryTagAbsence      = String "absence"
     toJSON QueryTagAccount      = String "account"
     toJSON QueryTagCalendar     = String "calendar"
+    toJSON QueryTagTeamMember   = String "teammember"
     toJSON (QueryTagEnumDesc p) = String $ "enumdesc-" <> symbolVal p ^. packed
 
 instance ToJSON (SomeQueryTag f) where
     toJSON (SomeQueryTag t) = toJSON t
 
-instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
-    parseJSON = withText "SomeQueryTag" $ \t -> case (t, sboolEqRefl :: Maybe (f :~: I)) of
-        ("me",   Just Refl)        -> pure $ SomeQueryTag QueryTagMe
-        ("meta", Just Refl)        -> pure $ SomeQueryTag QueryTagMeta
-        ("team", _)                -> pure $ SomeQueryTag QueryTagTeam
-        ("user", _)                -> pure $ SomeQueryTag QueryTagUser
-        ("timebalance", Just Refl) -> pure $ SomeQueryTag QueryTagTimebalance
-        ("timereport", Just Refl)  -> pure $ SomeQueryTag QueryTagTimereport
-        ("task", _)                -> pure $ SomeQueryTag QueryTagTask
-        ("project", _)             -> pure $ SomeQueryTag QueryTagProject
-        ("absence", _)             -> pure $ SomeQueryTag QueryTagAbsence
-        ("account", _)             -> pure $ SomeQueryTag QueryTagAccount
-        ("calendar", _)            -> pure $ SomeQueryTag QueryTagCalendar
-        (_, Just Refl) | T.isPrefixOf pfx t
-            -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
-          where
-            pfx = "enumdesc-"
-            mk p = SomeQueryTag (QueryTagEnumDesc p)
-        _ -> fail $ "Invalid tag: " ++ show t
+instance (SBoolI (f == I), SBoolI (f == Vector)) => FromJSON (SomeQueryTag f) where
+    parseJSON = withText "SomeQueryTag" $ \t ->
+        case (t, sboolEqRefl :: Maybe (f :~: I), sboolEqRefl :: Maybe (f :~: Vector)) of
+            ("me",   Just Refl, _)        -> pure $ SomeQueryTag QueryTagMe
+            ("meta", Just Refl, _)        -> pure $ SomeQueryTag QueryTagMeta
+            ("team", _, _)                -> pure $ SomeQueryTag QueryTagTeam
+            ("user", _, _)                -> pure $ SomeQueryTag QueryTagUser
+            ("timebalance", Just Refl, _) -> pure $ SomeQueryTag QueryTagTimebalance
+            ("timereport", Just Refl, _)  -> pure $ SomeQueryTag QueryTagTimereport
+            ("task", _, _)                -> pure $ SomeQueryTag QueryTagTask
+            ("project", _, _)             -> pure $ SomeQueryTag QueryTagProject
+            ("absence", _, _)             -> pure $ SomeQueryTag QueryTagAbsence
+            ("account", _, _)             -> pure $ SomeQueryTag QueryTagAccount
+            ("calendar", _, _)            -> pure $ SomeQueryTag QueryTagCalendar
+            ("teammember", _, Just Refl)  -> pure $ SomeQueryTag QueryTagTeamMember
+            (_, Just Refl, _) | T.isPrefixOf pfx t
+                -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
+              where
+                pfx = "enumdesc-"
+                mk p = SomeQueryTag (QueryTagEnumDesc p)
+            _ -> fail $ "Invalid tag: " ++ show t
 
 instance HasStructuralInfo (QueryTag f a) where
     structuralInfo _ = StructuralInfo "QueryTag"
@@ -297,6 +307,7 @@ instance HasStructuralInfo (QueryTag f a) where
         ,  NominalType "QueryTagAbsence"
         ,  NominalType "QueryTagAccount"
         ,  NominalType "QueryTagCalendar"
+        ,  NominalType "QueryTagTeamMember"
         ]]
 
 -------------------------------------------------------------------------------
@@ -428,6 +439,7 @@ type QueryTypes = '[ Timereports, UserCapacities
     , Absence, Absences
     , Account, Accounts
     , CapacityCalendar, CapacityCalendars
+    , TeamMembers
     ]
 
 -- | A bit fancier than ':~:'
@@ -453,13 +465,14 @@ queryTagType (QueryTagEnumDesc p) = Left $ IsSomeEnumDesc p
 queryTagVectorType
     :: QueryTag Vector a
     -> NS ((:~:) (Vector a)) QueryTypes
-queryTagVectorType QueryTagUser     = insertNS Refl
-queryTagVectorType QueryTagTeam     = insertNS Refl
-queryTagVectorType QueryTagTask     = insertNS Refl
-queryTagVectorType QueryTagProject  = insertNS Refl
-queryTagVectorType QueryTagAbsence  = insertNS Refl
-queryTagVectorType QueryTagAccount  = insertNS Refl
-queryTagVectorType QueryTagCalendar = insertNS Refl
+queryTagVectorType QueryTagUser       = insertNS Refl
+queryTagVectorType QueryTagTeam       = insertNS Refl
+queryTagVectorType QueryTagTask       = insertNS Refl
+queryTagVectorType QueryTagProject    = insertNS Refl
+queryTagVectorType QueryTagAbsence    = insertNS Refl
+queryTagVectorType QueryTagAccount    = insertNS Refl
+queryTagVectorType QueryTagCalendar   = insertNS Refl
+queryTagVectorType QueryTagTeamMember = insertNS Refl
 #if __GLASGOW_HASKELL__ < 800
 queryTagVectorType _ = error "queryTagVectorType: panic!"
 #endif

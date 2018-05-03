@@ -131,6 +131,7 @@ library
       PlanMill.Types.ResultInterval
       PlanMill.Types.ResultOrder
       PlanMill.Types.Task
+      PlanMill.Types.TeamMember
       PlanMill.Types.TimeBalance
       PlanMill.Types.Timereport
       PlanMill.Types.UOffset

@@ -17,6 +17,7 @@ module PlanMill.Types.User (
     UserId,
     Users,
     userLogin,
+    userHref_,
     -- * Team
     Team(..),
     TeamId,
@@ -25,7 +26,7 @@ module PlanMill.Types.User (
 
 import Data.Aeson.Extra.SymTag         (SymTag)
 import Futurice.Constants              (planmillPublicUrl)
-import Lucid                           (a_, class_, href_, toHtml)
+import Lucid                           (Attribute, a_, class_, href_, toHtml)
 import PlanMill.Internal.Prelude
 import PlanMill.Types.Account          (AccountId)
 import PlanMill.Types.CapacityCalendar (CapacityCalendarId)
@@ -39,13 +40,19 @@ import qualified FUM.Types.Login as FUM
 import PlanMill.Types.UOffset          (UOffset (..))
 
 instance IdentifierToHtml User where
-    identifierToHtml (Ident i) = a_ attrs (toHtml t)
+    identifierToHtml uid@(Ident i) = a_ attrs (toHtml t)
       where
         t = textShow i
         attrs =
             [ class_ "planmill"
-            , href_ $ planmillPublicUrl <> "?category=Employee directory.Contact.Single contact.Summary&Id=" <> t
+            , userHref_ uid
             ]
+
+userHref_ :: UserId -> Attribute
+userHref_  (Ident i) = href_ $
+    planmillPublicUrl <> "?category=Employee directory.Contact.Single contact.Summary&Id=" <> t
+  where
+    t = textShow i
 
 data User = User
     { _uId               :: !UserId

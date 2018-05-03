@@ -17,6 +17,7 @@ module PlanMill.Types (
     module PlanMill.Types.Meta,
     module PlanMill.Types.Project,
     module PlanMill.Types.ReportableAssignment,
+    module PlanMill.Types.TeamMember,
     module PlanMill.Types.TimeBalance,
     module PlanMill.Types.Timereport,
     module PlanMill.Types.User,
@@ -49,6 +50,7 @@ import PlanMill.Types.Hook
 import PlanMill.Types.Meta
 import PlanMill.Types.Project
 import PlanMill.Types.ReportableAssignment
+import PlanMill.Types.TeamMember
 import PlanMill.Types.TimeBalance
 import PlanMill.Types.Timereport
 import PlanMill.Types.User
