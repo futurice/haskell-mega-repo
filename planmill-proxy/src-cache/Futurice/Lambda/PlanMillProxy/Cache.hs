@@ -9,7 +9,7 @@ module Futurice.Lambda.PlanMillProxy.Cache (
 import Data.Aeson         (FromJSON, Value, object, (.=))
 import Data.Binary.Tagged (HasSemanticVersion, HasStructuralInfo, taggedEncode)
 import Data.Constraint    (Dict (..))
-import Data.Time          (addUTCTime)
+import Data.Time          (addDays)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
@@ -46,17 +46,17 @@ planMillProxyCacheLambda = makeAwsLambda impl
         pool <- createPostgresPool cfgPostgresConnInfo
         ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
         now <- currentTime
-        today <- currentDay
 
         -- cleanup cache
         cleanupCache pool
 
-        -- utctoday - 3
-        let stamp' = UTCTime today (3600 * 3)
+        -- We want a UTC 02:00 point before `now`.
+        let UTCTime today offset = now
         let stamp
-                | stamp' < now = stamp'
-                | otherwise    = addUTCTime (-76800) stamp'
+              | offset < 7200 = UTCTime (addDays (-1) today) 7200
+              | otherwise     = UTCTime today 7200
 
+        logInfo "Fetching outdated queries" stamp
         qs <- safePoolQuery pool selectQuery (Only stamp)
         logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
         for_ qs $ \(Only (PM.SomeQuery q)) -> do
