@@ -1,10 +1,12 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Futurice.App.HC.PersonioValidation (validationReport) where
 
 import Data.Ord         (Down (..))
 import Data.Time        (addDays)
 import Futurice.Prelude
+import Futurice.Office
 import Prelude ()
 
 import qualified Personio as P
@@ -12,17 +14,34 @@ import qualified Personio as P
 import Futurice.App.HC.Markup
 
 -- | TODO move this checks to personio-client
-data Consistency = ActiveAfterContractEndDate
+data Consistency
+    = ActiveAfterContractEndDate
+    | CountryOfficeMismatch Office Text
   deriving Show
 
 checkConsistency :: Day -> P.Employee -> [Consistency]
 checkConsistency today e = catMaybes
     [ check ActiveAfterContractEndDate $
         e ^. P.employeeStatus == P.Active && maybe False (< today) (e ^. P.employeeEndDate)
+    , check (CountryOfficeMismatch office country) $
+        officeToCountry office /= country
     ]
   where
     check x True  = Just x
     check _ False = Nothing
+
+    office = e ^. P.employeeOffice
+    country = e ^. P.employeeCountry
+
+    officeToCountry o
+        | o == offHelsinki = "Finland"
+        | o == offTampere  = "Finland"
+        | o == $(mkOffice "Oslo") = "Norway"
+        | o == $(mkOffice "Munich") = "Germany"
+        | o == $(mkOffice "Berlin") = "Germany"
+        | o == $(mkOffice "Stockholm") = "Sweden"
+        | o == $(mkOffice "London") = "United Kingdom"
+        | otherwise        = "Unknown"
 
 data V = V
     { vEmployee    :: P.Employee
