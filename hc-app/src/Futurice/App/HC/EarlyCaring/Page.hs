@@ -186,6 +186,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         = sortOn (fmap (view P.employeeTribe) . balanceSupervisor . NE.head)
         $ NE.groupBy ((==) `on` superId)
         $ sortOn superId
+        $ filter (not . isHourly)
         $ filter (not . isPermanentAllIn)
         $ filter (not . balanceNormal today)
         $ map (uncurry toBalance) inPlanMill
