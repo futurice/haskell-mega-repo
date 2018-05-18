@@ -119,6 +119,10 @@ isPermanentAllIn :: Balance -> Bool
 isPermanentAllIn b =
     Just P.PermanentAllIn == balanceEmployee b ^. P.employeeContractType
 
+isHourly :: Balance -> Bool
+isHourly b =
+    Just P.Hourly == balanceEmployee b ^. P.employeeSalaryType
+
 balanceNormal :: Day -> Balance -> Bool
 balanceNormal = balanceNormalFlex /\ balanceNormalMonthFlex /\ balanceNormalAbsences /\ balanceNormalAbsenceDays
 
