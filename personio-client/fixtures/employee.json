@@ -349,6 +349,10 @@
         "label": "Contract type",
         "value": "permanent"
     },
+    "dynamic_72936": {
+        "label": "Salary type",
+        "value": "monthly"
+    },
     "dynamic_72938": {
       "label": "Private phone",
       "value": "+123 5678910"
