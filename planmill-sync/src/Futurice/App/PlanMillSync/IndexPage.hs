@@ -1,12 +1,10 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TupleSections         #-}
-
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
 import Control.Lens
@@ -18,10 +16,10 @@ import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
 import Data.These                  (_That, _These, _This)
 import FUM.Types.Login             (Login, loginRegexp, loginToText)
-import Futurice.Company            (companyFuturiceOy, companyToText)
+import Futurice.Company
+       (companyToText, countryCompany, countryFinland)
 import Futurice.Constants          (competenceMap)
 import Futurice.CostCenter
-import Futurice.Office             (Office, officeCompany)
 import Futurice.Prelude
 import Prelude ()
 import Servant                     (toUrlPiece)
@@ -288,7 +286,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             let personioNum = p ^. P.employeeHRNumber
 
             -- only internals at helsinki & tampere -offices
-            when (p ^. P.employeeEmploymentType == Just P.Internal && p ^. P.employeeOffice `elem` finnishOffices) $ do
+            when (p ^. P.employeeEmploymentType == Just P.Internal && p ^. P.employeeCountry == countryFinland) $ do
                 traverse_ (toHtml . show) personioNum
                 unless (fromMaybe False $ liftA2 (==) planmillNum personioNum) $do
                     markErrorCell "HR number doesn't match"
@@ -319,9 +317,9 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             Nothing -> markErrorCell "PlanMill employee doesn't have account set"
             Just a  -> do
                 let name = PM.saName a
-                when (name /= companyToText (p ^. P.employeeEmployer)) $ do
-                    markErrorCell "PM Account doesn't agree with Personio Office value"
-                    toHtml (p ^. P.employeeEmployer)
+                unless (name == companyToText (countryCompany $ p ^. P.employeeCountry)) $ do
+                    markErrorCell "PM Account doesn't agree with Personio Country value"
+                    toHtml (p ^. P.employeeCountry)
                     " ≠ "
                 toHtml name
 
@@ -380,11 +378,8 @@ personioHtml p = fst $ runWriter $ commuteHtmlT $ do
         noWrapSpan_ $ toHtml $ formatDateSpan pStart pEnd
     cell_ $ case p ^. P.employeeHRNumber of
         Just x | x > 0 -> toHtml (show x) -- TODO: remove check, fix personio-client
-        _ -> when (p ^. P.employeeOffice `elem` finnishOffices) $
+        _ -> when (p ^. P.employeeCountry == countryFinland) $
             markErrorCell "HR Number is required for people working in Finland"
-
-finnishOffices :: [Office]
-finnishOffices = filter (\o -> officeCompany o == companyFuturiceOy) [minBound .. maxBound]
 
 -------------------------------------------------------------------------------
 -- Competence

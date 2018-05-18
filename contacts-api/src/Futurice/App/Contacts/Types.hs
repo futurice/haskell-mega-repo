@@ -93,6 +93,7 @@ data Contact avatar = Contact
     , contactTeam       :: !Tribe
     , contactOffice     :: !Office
     , contactEmployer   :: !Company
+    , contactCountry    :: !Country
     , contactCompetence :: !Text
     , contactExternal   :: !Bool
     , contactHrnumber   :: !(Maybe Int)

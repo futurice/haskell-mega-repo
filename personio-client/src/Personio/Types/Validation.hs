@@ -31,6 +31,7 @@ import Personio.Types.Employee
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
 import Personio.Types.PersonalIdValidations
+import Personio.Types.SalaryType
 import Personio.Types.Status
 
 import qualified Data.Map.Strict as Map
@@ -41,6 +42,7 @@ import Personio.Types.Internal
 data ValidationMessage
     = CareerPathLevelMissing
     | ContractTypeMissing
+    | SalaryTypeMissing
     | CostCenterMissing
     | CostCenterMultiple [Text]
     | CostCenterTribeMissMatch !CostCenter
@@ -92,7 +94,8 @@ data ValidationMessage
     | WorkPermitMissing
     | WorkPhoneMissing
     | SupervisorNotActive !Text
-    | OfficeCompanyDontMatch Office Company
+    | OfficeCountryDontMatch Office Country
+    | EmployerCountryDontMatch Country Company
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToJSON ValidationMessage
@@ -155,6 +158,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeObjectMissing "office" OfficeMissing
         , costCenterValidate
         , dynamicAttributeMissing "Contract type" ContractTypeMissing
+        , dynamicAttributeMissing "Salary type" SalaryTypeMissing
         , when isInternal $ dynamicAttributeMissing "Home city" HomeCityMissing
         , when isInternal $ dynamicAttributeMissing "Home country" HomeCountryMissing
         , when isInternal $ dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
@@ -187,11 +191,13 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , withValidatorValidate "(GB) National Insurance Number" GBNINOInvalid isValidGbNINO
         , withValidatorValidate "(SE) Personal number" SEPersonalIdInvalid isValidSwePIN
         , workPermitEndsMissing
-        , officeCompanyDontMatch
+        , officeCountryDontMatch
+        , employerCountryDontMatch
         ]
       where
         isExternal = e ^. employeeEmploymentType == Just External
         isInternal = e ^. employeeEmploymentType == Just Internal
+        isExpat    = e ^. employeeExpat
 
         privEmailRegexp = some anySym *> string "@" *> some anySym *> string "." *> some anySym
 
@@ -450,17 +456,15 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         salaryValidate = do
             monthlyS <- lift (parseDynamicAttribute obj "Monthly fixed salary 100%")
             hourlyS <- lift (parseDynamicAttribute obj "Hourly salary")
-            if xor (salarySet monthlyS) (salarySet hourlyS)
-                then pure ()
-                else tell [SalaryInvalid (msg monthlyS hourlyS)]
-          where
-            xor a b = (not a && b) || (a && not b)
 
-            msg m h = T.pack $
-                concat [ "monthly fixed: "
-                       , show $ salarySet m
-                       , ", hourly: "
-                       , show $ salarySet h]
+            for_ (e ^. employeeSalaryType) $ \st ->
+                if st == Monthly
+                then do
+                    when   (salarySet hourlyS)  $ tell [ SalaryInvalid "Type: Monthly: hourly salary set" ]
+                    unless (salarySet monthlyS) $ tell [ SalaryInvalid "Type: Monthly: monthly salary not set" ]
+                else do
+                    unless (salarySet hourlyS)  $ tell [ SalaryInvalid "Type: Hourly: hourly salary not set" ]
+                    when   (salarySet monthlyS) $ tell [ SalaryInvalid "Type: Hourly: monthly salary set" ]
 
         monthlyVariableSalaryValidate :: WriterT [ValidationMessage] Parser ()
         monthlyVariableSalaryValidate = do
@@ -500,15 +504,25 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 then pure ()
                 else tell [IdentificationNumberMissing]
 
-        officeCompanyDontMatch :: WriterT [ValidationMessage] Parser ()
-        officeCompanyDontMatch = do
-            let c = e ^. employeeEmployer
-            let o = e ^. employeeOffice
-            when (c /= officeCompany o) $
-                tell [OfficeCompanyDontMatch o c]
+        officeCountryDontMatch :: WriterT [ValidationMessage] Parser ()
+        officeCountryDontMatch = unless (c == officeCountry o) $
+            tell [OfficeCountryDontMatch o c]
+          where
+            c = e ^. employeeCountry
+            o = e ^. employeeOffice
+
+        employerCountryDontMatch :: WriterT [ValidationMessage] Parser ()
+        employerCountryDontMatch = cond (c /= companyCountry em) $
+            tell [EmployerCountryDontMatch c em]
+          where
+            cond | isExternal || not isExpat = when
+                 | otherwise                 = unless
+
+            c  = e ^. employeeCountry
+            em = e ^. employeeEmployer
 
         finnishOffices :: [Office]
-        finnishOffices = filter (\o -> officeCompany o == companyFuturiceOy) [minBound .. maxBound]
+        finnishOffices = filter (\o -> officeCountry o == countryFinland) [minBound .. maxBound]
 
 -- | Validate IBAN.
 --

@@ -276,7 +276,7 @@ validations = testGroup "Validations"
             & attributeValue "dynamic_72972" . _String .~ "" -- Expat bonus and allowance currency
     , testValidation
         "salary"
-        (SalaryInvalid "monthly fixed: False, hourly: False")
+        (SalaryInvalid "Type: Monthly: monthly salary not set")
         $ correctEmployeeValue
             & attributeValue "employment_type" . _String .~ "internal"
             & attributeValue "dynamic_27160" .~ Number 0 -- Monthly fixed salary 100%

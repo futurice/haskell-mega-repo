@@ -1,6 +1,6 @@
 [
-  {"name": "Futurice Oy"},
-  {"name": "Futurice Ltd"},
-  {"name": "Futurice GmbH"},
-  {"name": "Futu Sweden AB"}
+  {"name": "Futurice Oy", "country": "Finland"},
+  {"name": "Futurice Ltd", "country": "United Kingdom"},
+  {"name": "Futurice GmbH", "country": "Germany"},
+  {"name": "Futu Sweden AB", "country": "Sweden"}
 ]

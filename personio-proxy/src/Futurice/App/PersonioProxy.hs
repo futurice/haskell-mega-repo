@@ -19,7 +19,7 @@ import Futurice.App.PersonioProxy.Types
 
 import qualified Data.Map.Strict as Map
 import qualified Futurice.IdMap  as IdMap
-import qualified Personio
+import qualified Personio        as P
 
 server :: Ctx -> Server PersonioProxyAPI
 server ctx = pure "Try /swagger-ui/"
@@ -36,8 +36,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 
 newCtx
     :: Logger
-    -> IdMap Personio.Employee
-    -> [Personio.EmployeeValidation]
+    -> IdMap P.Employee
+    -> [P.EmployeeValidation]
     -> IO Ctx
 newCtx lgr es vs = do
     Ctx lgr <$> newTVarIO es <*> newTVarIO vs
@@ -45,8 +45,11 @@ newCtx lgr es vs = do
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
 makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
     -- employees
-    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfg Personio.PersonioAll
-    (employees, validations) <- fetchEmployees
+    let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
+    (employees', validations') <- fetchEmployees
+
+    let employees = filter notMachine employees'
+    let validations = filter (notMachine . view P.evEmployee) validations'
 
     -- context
     ctx <- newCtx lgr (IdMap.fromFoldable employees) validations
@@ -57,7 +60,7 @@ makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
 
     pure (ctx, [ employeesJob ])
   where
-    updateJob :: Ctx -> IO ([Personio.Employee], [Personio.EmployeeValidation]) -> IO ()
+    updateJob :: Ctx -> IO ([P.Employee], [P.EmployeeValidation]) -> IO ()
     updateJob ctx fetchEmployees = do
         (employees, validations) <- fetchEmployees
         changed <- atomically $ do
@@ -72,10 +75,19 @@ makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
                 logInfo "Personio updated, data changed" changed
                 liftIO $ publishMessage mq PersonioUpdated
 
+notMachine :: P.Employee -> Bool
+notMachine e = case e ^. P.employeeId of
+    -- hardcoded here, these are ids of emailer accounts. they are no humans.
+    P.EmployeeId 331863 -> False
+    P.EmployeeId 386126 -> False
+    P.EmployeeId 590516 -> False
+    P.EmployeeId 656474 -> False
+    _      -> True
+
 comparePersonio
-    :: IdMap Personio.Employee                    -- ^ old
-    -> IdMap Personio.Employee                    -- ^ new
-    -> Map Personio.EmployeeId (These Personio.Employee Personio.Employee) -- ^ "diff"
+    :: IdMap P.Employee                    -- ^ old
+    -> IdMap P.Employee                    -- ^ new
+    -> Map P.EmployeeId (These P.Employee P.Employee) -- ^ "diff"
 comparePersonio old new =
     Map.mapMaybe id $ alignWith f (IdMap.toMap old) (IdMap.toMap new)
   where
