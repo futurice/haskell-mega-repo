@@ -56,6 +56,7 @@ data Employee = Employee
     , _employeeTribe            :: !Tribe  -- ^ defaults to 'defaultTribe'
     , _employeeOffice           :: !Office  -- ^ defaults to 'OffOther'
     , _employeeEmployer         :: !Company -- ^ default so Futurice Oy, 'companyFuturiceOy'
+    , _employeeCountry          :: !Country
     , _employeeCostCenter       :: !(Maybe CostCenter)
     , _employeeGithub           :: !(Maybe (GH.Name GH.User))
     , _employeeFlowdock         :: !(Maybe FD.UserId)
@@ -139,6 +140,7 @@ parseEmployeeObject obj' = Employee
     <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
     <*> fmap (fromMaybe offOther . getName) (parseAttribute obj "office")
     <*> (parseDynamicAttribute obj "Employer" <|> pure companyFuturiceOy)
+    <*> (parseDynamicAttribute obj "Country" <|> pure countryFinland)
     <*> fmap (fmap getCostCenter' . listToMaybe) (parseAttribute obj "cost_centers")
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
     <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")

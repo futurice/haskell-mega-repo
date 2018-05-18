@@ -41,8 +41,9 @@ earlyCaringPage
     -> [P.Employee]
     -> [EarlyCaringPlanMill]
     -> PM.Absences
+    -> Map (PM.EnumValue PM.Absence "absenceType") Text
     -> HtmlPage "early-caring"
-earlyCaringPage secret today interval personioEmployees0 planmillData absences0 = page_ "Early caring report" (Just NavEarlyCaring) $ do
+earlyCaringPage secret today interval personioEmployees0 planmillData absences0 absenceTypes = page_ "Early caring report" (Just NavEarlyCaring) $ do
     ul_ $ do
         li_ $ toHtml $ "To approximate missing hours the PlanMill hour making data from " ++ show interval ++ " is used"
         li_ "Externals are filtered from this report"
@@ -165,6 +166,10 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         -- which types are sick leaves.
         sickAbsences = map PM.EnumValue [1010, 1025]
 
+    absencesMap' :: Map PM.UserId [PM.Absence]
+    absencesMap' = Map.fromListWith (++) $ map f $ toList absences0 where
+        f a = (PM.absencePerson a, [a])
+
     supervisor :: P.Employee -> Maybe P.Employee
     supervisor e = do
         eid <- e ^. P.employeeSupervisorId
@@ -181,6 +186,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         = sortOn (fmap (view P.employeeTribe) . balanceSupervisor . NE.head)
         $ NE.groupBy ((==) `on` superId)
         $ sortOn superId
+        $ filter (not . isHourly)
         $ filter (not . isPermanentAllIn)
         $ filter (not . balanceNormal today)
         $ map (uncurry toBalance) inPlanMill
@@ -201,20 +207,41 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         ab = absences (ecpmPMUid pm)
 
     monthFlex :: EarlyCaringPlanMill -> Map Month MonthFlex
-    monthFlex pm = Map.fromListWith (<>) $
-        map fromUC (toList $  ecpmCapacities pm) <> map fromTR (toList $ ecpmTimereports pm)
+    monthFlex pm = Map.unionWith (<>) result absenceResult
       where
+        -- hours
+        result = Map.fromListWith (<>) $
+            map fromUC (toList $ ecpmCapacities pm) <> map fromTR (toList $ ecpmTimereports pm)
+
+        absenceResult = Map.restrictKeys fromAbsences (Map.keysSet result)
+
         fromUC :: PM.UserCapacity -> (Month, MonthFlex)
         fromUC uc =
             ( dayToMonth $ PM.userCapacityDate uc
             , MonthFlex 0 (ndtConvert' $ PM.userCapacityAmount uc)
             )
 
+        ucPerDay :: Map Day (NDT 'Minutes Int)
+        ucPerDay = Map.fromList
+            [ (PM.userCapacityDate uc, PM.userCapacityAmount uc)
+            | uc <- toList $ ecpmCapacities pm
+            ]
+
         fromTR :: PM.Timereport -> (Month, MonthFlex)
-        fromTR tr =
-            ( dayToMonth $ PM.trStart tr
-            , MonthFlex (ndtConvert' $ PM.trAmount tr) 0
-            )
+        fromTR tr = (month , MonthFlex (ndtConvert' $ PM.trAmount tr) 0)
+          where
+            month = dayToMonth (PM.trStart tr)
+
+        -- we go thru absences, substracting flex balances from MonthFlex
+        fromAbsences :: Map Month MonthFlex
+        fromAbsences = Map.unionsWith (<>) $ map f (absencesMap' ^. ix (ecpmPMUid pm)) where
+            f :: PM.Absence -> Map Month MonthFlex
+            f a | absenceTypes ^? ix (PM.absenceAbsenceType a) == Just "Balance leave" =
+                Map.fromListWith (<>)
+                    [ (dayToMonth day, MonthFlex (negate $ maybe 0 ndtConvert' $ ucPerDay ^? ix day) 0)
+                    | day <- [ PM.absenceStart a .. PM.absenceFinish a ]
+                    ]
+                | otherwise = mempty
 
     monthFlexHtml :: Monad m => MonthFlex -> HtmlT m ()
     monthFlexHtml (MonthFlex marked capa) = do

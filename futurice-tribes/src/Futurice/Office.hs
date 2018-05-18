@@ -12,7 +12,7 @@ module Futurice.Office (
     officeToText,
     officeFromText,
     officeShortName,
-    officeCompany,
+    officeCountry,
     -- * Prism
     _Office,
     -- * known values
@@ -131,8 +131,8 @@ officeName = offName . officeInfo
 officeShortName :: Office -> Text
 officeShortName = offShortName . officeInfo
 
-officeCompany :: Office -> Company
-officeCompany = offCompany . officeInfo
+officeCountry :: Office -> Country
+officeCountry = offCountry . officeInfo
 
 -------------------------------------------------------------------------------
 -- Instances

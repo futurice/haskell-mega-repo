@@ -86,6 +86,7 @@ employeeToContact e = Contact
     , contactTeam       = e ^. Personio.employeeTribe
     , contactOffice     = e ^. Personio.employeeOffice
     , contactEmployer   = e ^. Personio.employeeEmployer
+    , contactCountry    = e ^. Personio.employeeCountry
     , contactCompetence = e ^. Personio.employeeRole
     , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
     , contactHrnumber   = e ^. Personio.employeeHRNumber

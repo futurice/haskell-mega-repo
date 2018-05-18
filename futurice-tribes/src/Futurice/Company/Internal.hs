@@ -8,11 +8,13 @@ import Futurice.Prelude
 import Language.Haskell.TH.Syntax (Lift)
 import Prelude ()
 
-newtype CompanyInfo = CompanyInfo
-    { cName        :: Text
+data CompanyInfo = CompanyInfo
+    { cName        :: !Text
+    , cCountry     :: !Text
     }
   deriving (Eq, Show, Lift)
 
 instance FromJSON CompanyInfo where
     parseJSON = withObject "CompanyInfo" $ \obj -> CompanyInfo
         <$> obj .: "name"
+        <*> obj .: "country"
