@@ -46,7 +46,7 @@ check-checksums : data.sha256sums
 	sha256sum -c data.sha256sums
 
 generate-checksums :
-	sha256sum $(SECRETJSONS)
+	sha256sum $(SECRETJSONS) > data.sha256sums
 
 copy-samples :
 	for datafile in ${SECRETJSONS}; do echo $${datafile}; if [ -f $${datafile} ]; then echo "exists!"; else cp $$(echo $${datafile} | sed -E 's/.(json|template)/.sample.\1/') $${datafile}; fi; done

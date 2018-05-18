@@ -1,21 +1,31 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE ImpredicativeTypes #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE RecordWildCards    #-}
-{-# LANGUAGE TemplateHaskell    #-}
-{-# LANGUAGE TypeFamilies       #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveLift                 #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 module Futurice.Company (
+    -- * Company
     Company,
     mkCompany,
     companyToText,
     companyFromText,
     _Company,
-    -- * known values
+    -- ** Known values
     companyFuturiceOy,
     companyFuturiceLtd,
     companyFuturiceGmbH,
     companyFutuSwedenAB,
+
+    -- * Country
+    Country (..),
+    companyCountry,
+    countryToText,
+    countryFromText,
+    -- ** Known values
+    countryFinland,
     ) where
 
 import Control.Monad             ((>=>))
@@ -25,6 +35,7 @@ import Futurice.Prelude
 import Language.Haskell.TH       (ExpQ)
 import Lucid                     (ToHtml (..))
 import Prelude ()
+import Text.Regex.Applicative.Text (match, psym)
 
 import qualified Data.Csv        as Csv
 import qualified Data.Map        as Map
@@ -36,9 +47,7 @@ import qualified Test.QuickCheck as QC
 
 -- | Company.
 newtype Company = Company Int
-  deriving (Eq, Ord)
-
-deriveLift ''Company
+  deriving (Eq, Ord, Lift)
 
 instance Show Company where
     showsPrec d t = showsPrec d (companyToText t)
@@ -72,6 +81,9 @@ companyFuturiceGmbH = fromMaybe (error "Company Futurice GmbH") $ companyFromTex
 companyFutuSwedenAB :: Company
 companyFutuSwedenAB = fromMaybe (error "Company FutuSweden AB") $ companyFromText "Futu Sweden AB"
 
+countryFinland :: Country
+countryFinland = Country companyFuturiceOy
+
 -------------------------------------------------------------------------------
 -- Magic
 -------------------------------------------------------------------------------
@@ -91,6 +103,12 @@ companyLookup
     $ toList companyInfos
   where
     f (i, off) = [ (T.toLower (cName off), (i, off)) ]
+
+countryLookup :: Map Text Country
+countryLookup = Map.fromList
+    [ (T.toLower (cCountry ci), Country (Company i))
+    | (i, ci) <- Map.elems companyLookup
+    ]
 
 -------------------------------------------------------------------------------
 -- Template Haskell
@@ -115,6 +133,9 @@ companyInfo (Company i)
 
 companyName :: Company -> Text
 companyName = cName . companyInfo
+
+companyCountry :: Company -> Country
+companyCountry = Country
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -175,3 +196,71 @@ instance FromHttpApiData Company where
 
 instance ToHttpApiData Company where
     toUrlPiece = companyToText
+
+-------------------------------------------------------------------------------
+-- Country
+-------------------------------------------------------------------------------
+
+-- | Countries and companies are 1-to-1 at the moment.
+newtype Country = Country { countryCompany :: Company }
+  deriving stock (Eq, Ord, Show, Generic, Lift)
+  deriving newtype (NFData, Binary, Hashable)
+
+countryToText :: Country -> Text
+countryToText (Country c) = cCountry ci <> " / " <> cName ci where
+    ci = companyInfo c
+
+countryFromText :: Text -> Maybe Country
+countryFromText k = do 
+    m <- match re k
+    case m of
+        (country, Nothing) -> countryLookup ^? ix (T.toLower $ country ^. packed)
+        (_, Just company)  -> Country <$> companyFromText (company ^. packed)
+  where
+    re = liftA2 (,) (some c) (optional $ " / " *> some c)
+    c = psym (/= '/')
+
+countryFromTextE :: Text -> Either String Country
+countryFromTextE k =
+    maybe (Left $ "Invalid country " ++ show k) Right (countryFromText k)
+
+-------------------------------------------------------------------------------
+-- Country instances
+-------------------------------------------------------------------------------
+
+instance ToHtml Country where
+    toHtmlRaw = toHtml
+    toHtml (Country c) = toHtml (cCountry ci) <> " / " <> toHtml c where
+        ci = companyInfo c
+
+instance Arbitrary Country where
+    arbitrary = Country <$> arbitrary
+
+instance ToParamSchema Country where
+    toParamSchema _ = mempty
+        & Swagger.type_ .~ Swagger.SwaggerString
+        -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
+
+instance ToSchema Country where
+    declareNamedSchema p = pure $ Swagger.NamedSchema (Just "Country") $ mempty
+        & Swagger.paramSchema .~ toParamSchema p
+
+instance ToJSON Country where
+    toJSON = Aeson.String . countryToText
+
+instance FromJSON Country where
+    parseJSON = Aeson.withTextDump "Country" $
+        either (fail . view unpacked) pure . countryFromTextE
+
+instance Csv.ToField Country where
+    toField = Csv.toField . countryToText
+
+instance Csv.FromField Country where
+    parseField = Csv.parseField >=>
+        either (fail . view unpacked) pure . countryFromTextE
+
+instance FromHttpApiData Country where
+    parseUrlPiece = first (view packed) . countryFromTextE
+
+instance ToHttpApiData Country where
+    toUrlPiece = countryToText
