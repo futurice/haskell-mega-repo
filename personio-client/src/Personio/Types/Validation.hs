@@ -31,6 +31,7 @@ import Personio.Types.Employee
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
 import Personio.Types.PersonalIdValidations
+import Personio.Types.SalaryType
 import Personio.Types.Status
 
 import qualified Data.Map.Strict as Map
@@ -41,6 +42,7 @@ import Personio.Types.Internal
 data ValidationMessage
     = CareerPathLevelMissing
     | ContractTypeMissing
+    | SalaryTypeMissing
     | CostCenterMissing
     | CostCenterMultiple [Text]
     | CostCenterTribeMissMatch !CostCenter
@@ -156,6 +158,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeObjectMissing "office" OfficeMissing
         , costCenterValidate
         , dynamicAttributeMissing "Contract type" ContractTypeMissing
+        , dynamicAttributeMissing "Salary type" SalaryTypeMissing
         , when isInternal $ dynamicAttributeMissing "Home city" HomeCityMissing
         , when isInternal $ dynamicAttributeMissing "Home country" HomeCountryMissing
         , when isInternal $ dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
@@ -453,17 +456,15 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         salaryValidate = do
             monthlyS <- lift (parseDynamicAttribute obj "Monthly fixed salary 100%")
             hourlyS <- lift (parseDynamicAttribute obj "Hourly salary")
-            if xor (salarySet monthlyS) (salarySet hourlyS)
-                then pure ()
-                else tell [SalaryInvalid (msg monthlyS hourlyS)]
-          where
-            xor a b = (not a && b) || (a && not b)
 
-            msg m h = T.pack $
-                concat [ "monthly fixed: "
-                       , show $ salarySet m
-                       , ", hourly: "
-                       , show $ salarySet h]
+            for_ (e ^. employeeSalaryType) $ \st ->
+                if st == Monthly
+                then do
+                    when   (salarySet hourlyS)  $ tell [ SalaryInvalid "Type: Monthly: hourly salary set" ]
+                    unless (salarySet monthlyS) $ tell [ SalaryInvalid "Type: Monthly: monthly salary not set" ]
+                else do
+                    unless (salarySet hourlyS)  $ tell [ SalaryInvalid "Type: Hourly: hourly salary not set" ]
+                    when   (salarySet monthlyS) $ tell [ SalaryInvalid "Type: Hourly: monthly salary set" ]
 
         monthlyVariableSalaryValidate :: WriterT [ValidationMessage] Parser ()
         monthlyVariableSalaryValidate = do
@@ -509,7 +510,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
           where
             c = e ^. employeeCountry
             o = e ^. employeeOffice
-        
+
         employerCountryDontMatch :: WriterT [ValidationMessage] Parser ()
         employerCountryDontMatch = cond (c /= companyCountry em) $
             tell [EmployerCountryDontMatch c em]
