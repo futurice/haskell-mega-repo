@@ -16,6 +16,7 @@ import Futurice.Aeson         (object, (.=))
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Prelude
+import Linear                 (M33, V3 (..))
 import Prelude ()
 import System.IO.Unsafe       (unsafePerformIO)
 
@@ -76,7 +77,25 @@ avatarProcessLambda = makeAwsLambda impl where
 -------------------------------------------------------------------------------
 
 transformImage :: Int -> Image PixelRGBA8 -> Image PixelRGBA8
-transformImage avatarSize = scale (avatarSize, avatarSize) . cropImage
+transformImage avatarSize = convoluteM33 mask . scale (avatarSize, avatarSize) . cropImage
+  where
+    mask (V3 (V3 y0 z0 y1) (V3 z1 x z2) (V3 y2 z3 y3)) = truncate $ clamp $ sum
+        [ k0 * fromIntegral x
+        , k1 * fromIntegral z0
+        , k1 * fromIntegral z1
+        , k1 * fromIntegral z2
+        , k1 * fromIntegral z3
+        , k2 * fromIntegral y0
+        , k2 * fromIntegral y1
+        , k2 * fromIntegral y2
+        , k2 * fromIntegral y3
+        ]
+      where
+        k0 = 1.75 :: Double
+        k1 = -0.125 -- 2/16
+        k2 = -0.0625 -- 1/16
+
+    clamp = max 0 . min 255
 
 cropImage :: Image PixelRGBA8 -> Image PixelRGBA8
 cropImage img@(Image w h _) = trimImage img wh tl
@@ -111,3 +130,29 @@ trimImage (Image w _ vec) (w', h') (x0, y0) =
             copyBytes (plusPtr dst $ y * w' * 4) (plusPtr ptr $ (*4) $ (y + y0) * w + x0) (4 * w')
         Image w' h' `fmap` V.unsafeFreeze mv
 {-# NOINLINE trimImage #-}
+
+convoluteM33 :: (M33 Word8 -> Word8) -> Image PixelRGBA8 -> Image PixelRGBA8
+convoluteM33 k (Image w h d) = Image w h $ V.imap f d where
+    f i p11 = k (V3 (V3 p00 p01 p02) (V3 p10 p11 p12) (V3 p20 p21 p22))
+      where
+        (xy, o) = i `divMod` 4
+        (y, x)  = xy `divMod` w
+
+        x_ = max 0 (x - 1)
+        x' = min (w - 1) (x + 1)
+
+        y_ = max 0 (y - 1)
+        y' = min (h - 1) (y + 1)
+
+        p10 = d V.! (4 * (y * w + x_) + o)
+        p12 = d V.! (4 * (y * w + x') + o)
+
+        p00 = d V.! (4 * (y_ * w + x_) + o)
+        p01 = d V.! (4 * (y_ * w + x ) + o)
+        p02 = d V.! (4 * (y_ * w + x') + o)
+
+        p20 = d V.! (4 * (y' * w + x_) + o)
+        p21 = d V.! (4 * (y' * w + x ) + o)
+        p22 = d V.! (4 * (y' * w + x') + o)
+
+
