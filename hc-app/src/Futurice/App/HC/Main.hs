@@ -121,6 +121,7 @@ earlyCaringAction ctx = impl ctx
             <$> personio P.PersonioEmployees
             <*> pmData interval
             <*> PMQ.absences
+            <*> PMQ.allEnumerationValues Proxy Proxy
 
     secret = ctxSecret ctx
 
