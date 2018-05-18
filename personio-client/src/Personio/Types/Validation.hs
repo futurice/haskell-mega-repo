@@ -92,7 +92,8 @@ data ValidationMessage
     | WorkPermitMissing
     | WorkPhoneMissing
     | SupervisorNotActive !Text
-    | OfficeCompanyDontMatch Office Company
+    | OfficeCountryDontMatch Office Country
+    | EmployerCountryDontMatch Country Company
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToJSON ValidationMessage
@@ -187,11 +188,13 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , withValidatorValidate "(GB) National Insurance Number" GBNINOInvalid isValidGbNINO
         , withValidatorValidate "(SE) Personal number" SEPersonalIdInvalid isValidSwePIN
         , workPermitEndsMissing
-        , officeCompanyDontMatch
+        , officeCountryDontMatch
+        , employerCountryDontMatch
         ]
       where
         isExternal = e ^. employeeEmploymentType == Just External
         isInternal = e ^. employeeEmploymentType == Just Internal
+        isExpat    = e ^. employeeExpat
 
         privEmailRegexp = some anySym *> string "@" *> some anySym *> string "." *> some anySym
 
@@ -500,15 +503,25 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 then pure ()
                 else tell [IdentificationNumberMissing]
 
-        officeCompanyDontMatch :: WriterT [ValidationMessage] Parser ()
-        officeCompanyDontMatch = do
-            let c = e ^. employeeEmployer
-            let o = e ^. employeeOffice
-            when (c /= officeCompany o) $
-                tell [OfficeCompanyDontMatch o c]
+        officeCountryDontMatch :: WriterT [ValidationMessage] Parser ()
+        officeCountryDontMatch = unless (c == officeCountry o) $
+            tell [OfficeCountryDontMatch o c]
+          where
+            c = e ^. employeeCountry
+            o = e ^. employeeOffice
+        
+        employerCountryDontMatch :: WriterT [ValidationMessage] Parser ()
+        employerCountryDontMatch = cond (c /= companyCountry em) $
+            tell [EmployerCountryDontMatch c em]
+          where
+            cond | isExternal || not isExpat = when
+                 | otherwise                 = unless
+
+            c  = e ^. employeeCountry
+            em = e ^. employeeEmployer
 
         finnishOffices :: [Office]
-        finnishOffices = filter (\o -> officeCompany o == companyFuturiceOy) [minBound .. maxBound]
+        finnishOffices = filter (\o -> officeCountry o == countryFinland) [minBound .. maxBound]
 
 -- | Validate IBAN.
 --

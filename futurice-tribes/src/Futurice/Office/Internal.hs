@@ -12,7 +12,7 @@ import Prelude ()
 data OfficeInfo = OfficeInfo
     { offName        :: !Text
     , offShortName   :: !Text
-    , offCompany     :: !Company
+    , offCountry     :: !Country
     , offDefault     :: !Bool
     }
   deriving (Eq, Show, Lift)
@@ -21,5 +21,5 @@ instance FromJSON OfficeInfo where
     parseJSON = withObject "OfficeInfo" $ \obj -> OfficeInfo
         <$> obj .: "name"
         <*> obj .: "short"
-        <*> obj .: "company"
+        <*> obj .: "country"
         <*> obj .:? "default" .!= False
