@@ -108,6 +108,7 @@ foreign-library avatar-process-lambda
     , http-client
     , JuicyPixels >=3.2.7
     , JuicyPixels-scale-dct >=0.1.0.0
+    , linear
     , vector
 
   build-depends:
