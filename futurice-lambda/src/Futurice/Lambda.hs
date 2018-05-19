@@ -11,6 +11,7 @@ module Futurice.Lambda (
 import Data.Aeson
        (FromJSON, ToJSON, Value, eitherDecodeStrict, encode, object, (.=))
 import Data.Aeson.Types           (emptyObject)
+import Data.Char                  (toUpper)
 import Foreign.C                  (CString, peekCString, withCString)
 import Foreign.Ptr                (Ptr)
 import Futurice.EnvConfig         (Configure, getConfig)
@@ -81,7 +82,7 @@ makeAwsLambda handler input lc lf = do
 
     inputBS  <- BS.packCString input
     output <- runLogT fnNameT lgr $ do
-        cfg <- getConfig fnName
+        cfg <- getConfig (map toUpper fnName)
         case eitherDecodeStrict inputBS of
             Left err -> do
                 logAttention "Invalid JSON" err
