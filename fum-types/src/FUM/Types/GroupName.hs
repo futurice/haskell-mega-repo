@@ -17,7 +17,6 @@ import Data.Aeson.Types
 import Futurice.EnvConfig          (FromEnvVar (..), FromEnvVarList (..))
 import Futurice.Generics
 import Futurice.Prelude
-import Kleene                      (Kleene, kleeneElem, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..))
 import Prelude ()
@@ -31,6 +30,7 @@ import qualified Data.Swagger                         as Swagger
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Kleene.Functor                       as K
 import qualified Test.QuickCheck                      as QC
 import qualified Text.Parsec                          as Parsec
 
@@ -77,8 +77,8 @@ parseGroupName' = first show . Parsec.parse groupNameParser "<input>"
 validChars :: String
 validChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0' .. '9'] ++ " ._-"
 
-groupNameKleene :: Kleene Char GroupName
-groupNameKleene =  GroupName . T.pack <$> some (kleeneElem validChars)
+groupNameKleene :: K.K Char GroupName
+groupNameKleene =  GroupName . T.pack <$> some (K.oneof validChars)
 
 groupNameParser :: CharParsing m => m GroupName
 groupNameParser = GroupName . T.pack <$> some c where
@@ -89,7 +89,7 @@ groupNameParser = GroupName . T.pack <$> some c where
 --
 -- /Note:/ use `parseGroupName` if possible, as it provides better errors.
 groupNameRegexp :: RE' GroupName
-groupNameRegexp = kleeneToRA groupNameKleene
+groupNameRegexp = K.toRA groupNameKleene
 
 -------------------------------------------------------------------------------
 -- Instances
