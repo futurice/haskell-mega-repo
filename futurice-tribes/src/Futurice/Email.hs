@@ -14,7 +14,6 @@ import Data.Aeson
        ToJSONKey (..), withText)
 import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Prelude
-import Kleene                      (Kleene, kleeneEverything1, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, href_)
 import Prelude ()
@@ -22,6 +21,7 @@ import Test.QuickCheck             (Arbitrary (..))
 import Text.Regex.Applicative.Text (RE', match)
 import Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 
+import qualified Kleene.Functor as K
 import qualified Data.Csv     as Csv
 import qualified Data.Swagger as S
 import qualified Data.Text    as T
@@ -117,13 +117,13 @@ instance FromEnvVar Email where
 -- helpers
 -------------------------------------------------------------------------------
 
-emailKleene :: Kleene Char Email
+emailKleene :: K.K Char Email
 emailKleene = Email . T.toLower . view packed
-    <$> kleeneEverything1
-    <* (suffix :: Kleene Char String)
+    <$> K.everything1
+    <* (suffix :: K.K Char String)
 
 emailRegexp :: RE' Email
-emailRegexp = kleeneToRA emailKleene
+emailRegexp = K.toRA emailKleene
 
 suffix :: IsString a => a
 suffix = "@futurice.com"
