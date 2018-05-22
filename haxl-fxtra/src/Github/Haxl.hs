@@ -60,8 +60,8 @@ instance DataSourceName GithubRequest where
     dataSourceName _ = "GithubDataSource"
 
 instance DataSource u GithubRequest where
-    fetch (GithubDataState auth) _flags _userEnv blockedFetches =
-        SyncFetch $ batchFetch auth blockedFetches
+    fetch (GithubDataState auth) _flags _userEnv = SyncFetch $ \blockedFetches ->
+        batchFetch auth blockedFetches
 
 batchFetch :: GH.Auth  -> [BlockedFetch GithubRequest] -> IO ()
 batchFetch auth fetches =
@@ -79,7 +79,7 @@ doFetch auth (BlockedFetch (GithubRequest req) v) =
   where
     action = first show <$> GH.executeRequest auth req
 
-data GithubDataSourceException = GithubDataSourceException String
+newtype GithubDataSourceException = GithubDataSourceException String
   deriving (Show, Typeable)
 
 instance Exception GithubDataSourceException where

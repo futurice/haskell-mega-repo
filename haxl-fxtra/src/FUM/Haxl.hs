@@ -69,8 +69,9 @@ instance DataSourceName FumRequest where
     dataSourceName _ = "FumDataSource"
 
 instance DataSource u FumRequest where
-    fetch (FumState mgr token baseUrl) _flags _userEnv blockedFetches =
-        SyncFetch $ batchFetch mgr token baseUrl blockedFetches
+    -- TODO: hint dispatch immediately + background fetch
+    fetch (FumState mgr token baseUrl) _flags _userEnv = SyncFetch $ \blockedFetches ->
+        batchFetch mgr token baseUrl blockedFetches
 
 batchFetch :: Manager
            -> FUM.AuthToken

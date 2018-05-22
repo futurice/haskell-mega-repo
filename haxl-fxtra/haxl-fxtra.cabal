@@ -53,8 +53,5 @@ library
       Flowdock.Haxl
       FUM.Haxl
       Github.Haxl
-      Haxl.Extra.HttpDataSource
-      Haxl.Extra.IODataSource
-      Haxl.Extra.LogDataSource
       Personio.Haxl
   default-language: Haskell2010

@@ -43,7 +43,7 @@ import qualified Network.HTTP.Client.TLS  as HTTP
 instance Haxl.Core.ShowP Query where showp = show
 
 instance StateKey Query where
-    data State Query = QueryFunction ([BlockedFetch Query] -> PerformFetch)
+    data State Query = QueryFunction (PerformFetch Query)
 
 instance DataSourceName Query where
     dataSourceName _ = "Planmill.Query"
@@ -57,7 +57,7 @@ instance DataSource u Query where
 --
 -- /TODO/ take 'HTTP.Manager' as a param
 initDataSourceSimpleIO :: Logger -> Cfg -> State Query
-initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ do
+initDataSourceSimpleIO lgr cfg = QueryFunction $ SyncFetch $ \blockedFetches -> do
     prng <- mkCryptoGen
     manager <- HTTP.newManager HTTP.tlsManagerSettings
         -- 5 min timeout
@@ -78,7 +78,8 @@ initDataSourceSimpleIO lgr cfg = QueryFunction $ \blockedFetches -> SyncFetch $ 
 
 -- | Query function using 'Workers'.
 initDataSourceWorkers :: Workers -> State Query
-initDataSourceWorkers w = QueryFunction $ \blockedFetches -> SyncFetch $
+initDataSourceWorkers w = QueryFunction $ SyncFetch $ \blockedFetches -> do
+    -- TODO: this can be rewritten in terms of backgroundfetch
     for_ blockedFetches $ \(BlockedFetch q v) ->
         case (queryDict (Proxy :: Proxy FromJSON) q, queryDict (Proxy :: Proxy NFData) q) of
             (Dict, Dict) -> do
@@ -109,8 +110,8 @@ initDataSourceBatch lgr mgr req = QueryFunction queryFunction
             = "POST"
         }
 
-    queryFunction :: [BlockedFetch Query] -> PerformFetch
-    queryFunction blockedFetches = AsyncFetch $ \inner -> do
+    queryFunction :: PerformFetch Query
+    queryFunction = AsyncFetch $ \blockedFetches inner -> do
         -- We execute queries in batches
         let batchSize = clamp (32 ... maxBatchSize) $ 1 + length blockedFetches `div` 4
         let blockedFetchesChunks = chunksOf batchSize blockedFetches

@@ -139,7 +139,7 @@ instance Haxl.DataSourceName PlanMillRequest where
   dataSourceName _ = "PlanMillRequest"
 
 instance Haxl.DataSource u PlanMillRequest where
-    fetch (PlanMillDataState lgr cache workers) _f _u blockedFetches = Haxl.SyncFetch $
+    fetch (PlanMillDataState lgr cache workers) _f _u = Haxl.SyncFetch $ \blockedFetches ->
         for_ blockedFetches $ \(Haxl.BlockedFetch r v) -> case r of
             PlanMillRequest pm -> PM.submitPlanMillE workers pm >>= Haxl.putResult v
             PlanMillRequestCached pm -> do
