@@ -46,7 +46,7 @@ instance H.DataSourceName GHR where
     dataSourceName _ = "GitHub.Request"
 
 instance H.DataSource u GHR where
-    fetch (GHState lgr mgr baseReq) _flags _userEnv blockedFetches = H.AsyncFetch $ \inner -> do
+    fetch (GHState lgr mgr baseReq) _flags _userEnv = H.AsyncFetch $ \blockedFetches inner -> do
         -- We execute queries in batches
         let batchSize = clamp (32 ... maxBatchSize) $ 1 + length blockedFetches `div` 4
         let blockedFetchesChunks = chunksOf batchSize blockedFetches
