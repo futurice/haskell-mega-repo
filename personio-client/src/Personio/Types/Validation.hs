@@ -158,7 +158,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeObjectMissing "office" OfficeMissing
         , costCenterValidate
         , dynamicAttributeMissing "Contract type" ContractTypeMissing
-        , dynamicAttributeMissing "Salary type" SalaryTypeMissing
+        , when isInternal $ dynamicAttributeMissing "Salary type" SalaryTypeMissing
         , when isInternal $ dynamicAttributeMissing "Home city" HomeCityMissing
         , when isInternal $ dynamicAttributeMissing "Home country" HomeCountryMissing
         , when isInternal $ dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
