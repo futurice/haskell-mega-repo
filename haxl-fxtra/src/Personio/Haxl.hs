@@ -45,7 +45,7 @@ instance DataSourceName PersonioRequest where
     dataSourceName _ = "PersonioDataSource"
 
 instance DataSource u PersonioRequest where
-    fetch (PersonioState _lgr mgr baseReq) _f _u blockedFetches = SyncFetch $ do
+    fetch (PersonioState _lgr mgr baseReq) _f _u = SyncFetch $ \blockedFetches -> do
         res <- HTTP.httpLbs req mgr
         Personio.SomePersonioRes pReq pRes <- Aeson.decode (HTTP.responseBody res)
         case pReq of

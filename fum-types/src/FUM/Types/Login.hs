@@ -19,8 +19,6 @@ import Futurice.Constants          (fumPublicUrl)
 import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Prelude
-import Kleene
-       (Kleene, kleeneCharRange, kleeneToRA)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
@@ -32,6 +30,7 @@ import qualified Data.Swagger                         as Swagger
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Kleene.Functor                       as K
 import qualified Test.QuickCheck                      as QC
 
 -- | Login name. @[a-z]{4,5}|itteam@.
@@ -83,10 +82,11 @@ parseLogin' t
 
 -- | Login's regular expression.
 --
--- >>> Kleene.kleeneToJS loginKleene
--- "^[a-z][a-z][a-z][a-z][a-z]?$"
-loginKleene :: Kleene Char Login
-loginKleene = Login . T.pack <$> range 4 5 (kleeneCharRange 'a' 'z')
+-- >>> K.putPretty loginKleene
+-- ^[a-z][a-z][a-z][a-z][a-z]?$
+--
+loginKleene :: K.K Char Login
+loginKleene = Login . T.pack <$> range 4 5 (K.charRange 'a' 'z')
   where
     range
         :: Alternative f
@@ -112,7 +112,7 @@ loginKleene = Login . T.pack <$> range 4 5 (kleeneCharRange 'a' 'z')
 -- * this is strict @[a-z]{4,5}@ regexp.
 --
 loginRegexp :: RE' Login
-loginRegexp = kleeneToRA loginKleene
+loginRegexp = K.toRA loginKleene
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -177,3 +177,6 @@ instance Postgres.FromField Login where
 
 instance FromEnvVar Login where
     fromEnvVar = fromEnvVar >=> parseLogin
+
+-- $setup
+-- >>> import qualified Kleene.Internal.Pretty as K

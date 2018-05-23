@@ -57,8 +57,9 @@ instance DataSourceName FlowdockRequest where
   dataSourceName _ = "FlowdockDataSource"
 
 instance DataSource u FlowdockRequest where
-    fetch (FlowdockDataState mgr auth) _flags _userEnv blockedFetches =
-        SyncFetch $ batchFetch mgr auth blockedFetches
+    -- TODO: hint immediatesubmit + background fetch
+    fetch (FlowdockDataState mgr auth) _flags _userEnv = SyncFetch $ \blockedFetches ->
+        batchFetch mgr auth blockedFetches
 
 batchFetch :: Manager
            -> FD.AuthToken

@@ -1,15 +1,20 @@
-index-state: 2018-04-13T13:19:04Z
+index-state: 2018-05-21T17:25:29Z
 
+-- cabal.project is probably better place than
+-- repeating those all over the packages
 constraints:
-  aeson              ^>= 1.3.0.0,
+  aeson              ^>= 1.3.1.1,
+  amazonka-core      ^>= 1.6.0,
   cabal-plan         ^>= 0.3.0.0,
   Chart              ^>= 1.8.3,
+  conduit            ^>= 1.3.0.2,
   github             ^>= 0.19,
+  haxl               ^>= 2.0.0.0,
   http-types         ^>= 0.12,
   lens               ^>= 4.16,
   log-base           ^>= 0.7.4.0,
   semigroupoids      ^>= 5.2.2,
-  servant            ^>= 0.13,
+  servant            ^>= 0.13.0.1,
   servant-lucid      ^>= 0.8,
   servant-client     ^>= 0.13,
   servant-server     ^>= 0.13,
@@ -17,20 +22,11 @@ constraints:
   unix-time          ^>= 0.3.8,
   tdigest            ^>= 0.2
 
+constraints:
+  JuicyPixels-scale-dct ^>= 0.1.2
+
 allow-newer:
   *:Cabal
-
--- https://github.com/brendanhay/amazonka/pull/448
-constraints:
-  conduit           <1.3,
-  conduit-extra     <1.3,
-  http-conduit      <2.3,
-  resourcet         <1.2,
-  streaming-commons <0.2,
-  xml-conduit       <1.8,
-
-  -- do not try transformers-compat-0.6 as it's not supported by resourcet-1.11
-  transformers-compat ==0.5.1.4
 
 allow-newer:
   -- lens-4.16
@@ -39,26 +35,13 @@ allow-newer:
   diagrams-postscript:lens,
   diagrams-core:lens,
   diagrams-lib:lens,
-  diagrams-svg:lens,
-
-  -- https://github.com/facebook/Haxl/pull/88
-  haxl:aeson,
-  haxl:exceptions,
-
-  -- https://github.com/haskell-hvr/cabal-plan/pull/17
-  cabal-plan:aeson,
-  cabal-plan:lens,
-  cabal-plan:base-compat,
-  cabal-plan:base-orphans,
-  cabal-plan:ansi-terminal
+  diagrams-svg:lens
 
 packages:
-  -- ansi-pretty/
   arcola/
   avatar-app/
   avatar-client/
   aws-lambda-kleisli/package-aws-lambda/
-  -- base64-bytestring-type/
   checklist-app/
   contacts-api/
   dynmap-cache/
@@ -89,7 +72,6 @@ packages:
   haxl-fxtra/
   hc-app/
   hours-api/
-  kleene/
   lambdacss/
   log-cloudwatch/
   mega-repo-tool/
