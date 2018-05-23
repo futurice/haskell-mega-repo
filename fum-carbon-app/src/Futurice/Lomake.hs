@@ -25,7 +25,6 @@ import Futurice.Generics.SOP     (strippedFieldNames)
 import Futurice.List             (UnSingleton)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Kleene
 import Prelude ()
 import Servant.API               (Link)
 
@@ -35,6 +34,8 @@ import qualified Data.Aeson.Compat   as Aeson
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Swagger        as S
 import qualified Generics.SOP        as SOP
+import qualified Kleene.Functor      as K
+import qualified Kleene.Internal.Pretty      as K
 
 -------------------------------------------------------------------------------
 -- FieldName
@@ -61,7 +62,7 @@ data Field a where
 
 data TextFieldOptions a = TextFieldOptions
     { tfoName   :: FieldName
-    , tfoRegexp :: Kleene Char ()
+    , tfoRegexp :: K.K Char ()
     , tfoEncode :: a -> Text
     , tfoDecode :: Text -> Either Text a
     }
@@ -95,7 +96,7 @@ textField
     => FieldName -> Field a
 textField n = TextField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = void kleeneEverything
+    , tfoRegexp = void K.everything
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -103,7 +104,7 @@ textField n = TextField TextFieldOptions
 -- | Note regexp isn't used to validate the data.
 textFieldWithRegexp
     :: (ToHttpApiData a, FromHttpApiData a)
-    => FieldName -> Kleene Char a -> Field a
+    => FieldName -> K.K Char a -> Field a
 textFieldWithRegexp n re = TextField TextFieldOptions
     { tfoName   = n
     , tfoRegexp = void re
@@ -116,7 +117,7 @@ hiddenField
     => FieldName -> Field a
 hiddenField n = HiddenField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = void kleeneEverything
+    , tfoRegexp = void K.everything
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -240,8 +241,9 @@ lomakeHtml formOpts fields names values =
                 , type_ "text"
                 , value_ $ vMaybe "" (tfoEncode opts) value
                 ] ++
-                [ data_ "lomake-regexp" $ view packed $ kleeneToJS $ tfoRegexp opts
-                | not (isKleeneEverything (tfoRegexp opts)) ]
+                [ data_ "lomake-regexp" $ view packed $ K.pretty $ tfoRegexp opts
+                | not (K.isEverything (tfoRegexp opts))
+                ]
 
     render (EnumField opts) n v@VHidden {} =
         render (HiddenField opts') n v
@@ -249,7 +251,7 @@ lomakeHtml formOpts fields names values =
         -- TODO: make 'Lens opts HiddenFieldOpts'
         opts' = TextFieldOptions
             { tfoName   = efoName opts
-            , tfoRegexp = void kleeneEverything
+            , tfoRegexp = void K.everything
             , tfoEncode = efoEncode opts
             , tfoDecode = efoDecode opts
             }

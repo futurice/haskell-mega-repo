@@ -7,26 +7,26 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Avatar (defaultMain) where
 
-import Codec.Picture           (DynamicImage)
-import Data.Aeson.Compat       (Value (..), toJSON)
-import Data.Conduit.Binary     (sinkLbs)
+import Codec.Picture         (DynamicImage)
+import Data.Aeson.Compat     (encode)
+import Data.Conduit.Binary   (sinkLbs)
 import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
 import Servant.Cached
-import Servant.JuicyPixels     (PNG)
+import Servant.JuicyPixels   (PNG)
 
-import qualified Control.Monad.Trans.AWS     as AWS
-import qualified Data.ByteString.Lazy        as LBS
-import qualified Data.Map.Strict             as Map
+import qualified Control.Monad.Trans.AWS      as AWS
+import qualified Data.ByteString.Lazy         as LBS
+import qualified Data.Map.Strict              as Map
 import qualified FUM
-import qualified Network.AWS.Env             as AWS
-import qualified Network.AWS.Lambda.Invoke   as AWS
-import qualified Network.AWS.S3.GetObject    as AWS
-import qualified Network.AWS.S3.ListObjectsV as AWS
-import qualified Network.AWS.S3.Types        as AWS
+import qualified Network.AWS.Env              as AWS
+import qualified Network.AWS.Lambda.Invoke    as AWS
+import qualified Network.AWS.S3.GetObject     as AWS
+import qualified Network.AWS.S3.ListObjectsV2 as AWS
+import qualified Network.AWS.S3.Types         as AWS
 
 -- Avatar modules
 import Futurice.App.Avatar.API
@@ -37,19 +37,18 @@ import Futurice.App.Avatar.Types
 
 type DynamicImage' = Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage)
 
-cachedAvatar :: Ctx -> AvatarProcess -> LogT Handler DynamicImage'
+cachedAvatar :: Ctx -> AvatarProcess -> LogT IO DynamicImage'
 cachedAvatar (Ctx _ _ _ cfg env) ap =
     AWS.runResourceT $ AWS.runAWST env $ do
         -- logTrace "listObjectsV" digest
-        r <- AWS.send $ AWS.listObjectsV bucketName
-            & AWS.lPrefix ?~ digest
+        r <- AWS.send $ AWS.listObjectsV2 bucketName
+            & AWS.lovPrefix ?~ digest
         -- logTrace "listObjectV Response" (show r)
-        case r ^? AWS.lrsContents . folded of
+        case r ^? AWS.lovrsContents . folded of
             -- TODO: check time
             Just obj -> fetchAvatar (obj ^. AWS.oKey)
             _        -> do
-                let Object hm = toJSON ap
-                _r2 <- AWS.send $ AWS.invoke "AvatarCacheProcess" hm
+                _r2 <- AWS.send $ AWS.invoke "AvatarCacheProcess" (encode ap ^. strict)
                 -- logTrace "invoke Response" (show r2)
                 fetchAvatar (AWS.ObjectKey digest)
   where
@@ -74,7 +73,7 @@ mkAvatar
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkAvatar ctx url msize grey = runLogT "avatar" (ctxLogger ctx) $ do
+mkAvatar ctx url msize grey = liftIO $ runLogT "avatar" (ctxLogger ctx) $ do
     let ap = AvatarProcess url (maybe 64 (clamp 16 256) msize) grey
     logTrace "fetching image" ap
     cachedAvatar ctx ap
@@ -85,7 +84,7 @@ mkFum
     -> Maybe Int   -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = runLogT "avatar-fum" lgr $ do
+mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = liftIO $ runLogT "avatar-fum" lgr $ do
     fumMap <- liftIO $ cachedIO lgr cache 3600 () getFumMap
     case fumMap ^? ix login of
         Nothing -> return fallback

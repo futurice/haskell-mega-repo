@@ -1,9 +1,6 @@
 [submodule "flowdock-rest"]
 	path = flowdock-rest
 	url = https://github.com/futurice/haskell-flowdock-rest
-[submodule "ansi-pretty"]
-	path = ansi-pretty
-	url = https://github.com/futurice/haskell-ansi-pretty
 [submodule "flowdock-grep"]
 	path = flowdock-grep
 	url = https://github.com/futurice/haskell-flowdock-grep
@@ -13,18 +10,9 @@
 [submodule "monad-http"]
 	path = monad-http
 	url = https://github.com/futurice/haskell-monad-http.git
-[submodule "postgresql-simple-url"]
-	path = postgresql-simple-url
-	url = https://github.com/futurice/postgresql-simple-url.git
-[submodule "base64-bytestring-type"]
-	path = base64-bytestring-type
-	url = https://github.com/futurice/haskell-base64-bytestring-type.git
 [submodule "futurice-prelude"]
 	path = futurice-prelude
 	url = https://github.com/futurice/haskell-futurice-prelude.git
-[submodule "tdigest"]
-	path = tdigest
-	url = https://github.com/futurice/haskell-tdigest.git
 [submodule "vendor/chart"]
 	path = vendor/chart
 	url = https://github.com/timbod7/haskell-chart.git

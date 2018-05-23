@@ -153,8 +153,8 @@ initDataSource :: Logger -> Manager -> HTTP.Request -> State FUM6
 initDataSource = FUM6State
 
 instance DataSource u FUM6 where
-    fetch (FUM6State lgr mgr baseReq) _flags _userEnv bf =
-        AsyncFetch $ \inn -> runLogT "fum6-haxl" lgr $ do
+    fetch (FUM6State lgr mgr baseReq) _flags _userEnv = AsyncFetch $ \bf inn ->
+        runLogT "fum6-haxl" lgr $ do
             let queries = map toQuery bf
             logTrace "request" queries
             a <- liftIO $ async $ do
