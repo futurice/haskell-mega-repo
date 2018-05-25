@@ -89,6 +89,9 @@ packages:
   sms-proxy/
   theme-app/
 
+  vendor/chart/chart
+  vendor/chart/chart-diagrams
+
   vendor/diffusionkinetics-open/dashdo
   vendor/diffusionkinetics-open/plotlyhs
   vendor/diffusionkinetics-open/lucid-extras
