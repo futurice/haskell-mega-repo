@@ -30,7 +30,7 @@ library
   ghc-options: -Wall
   build-depends:
       algebraic-graphs
-    , base           >=4.9   && <4.11
+    , base           >=4.9   && <4.12
     , bytestring
     , deepseq
     , http-media     >=0.6.2

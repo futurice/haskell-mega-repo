@@ -35,7 +35,7 @@ library
     ScopedTypeVariables
     StandaloneDeriving
   build-depends:
-      base                  >=4.7   && <4.11
+      base                  >=4.7   && <4.12
     , aeson
     , aeson-compat
     , async
