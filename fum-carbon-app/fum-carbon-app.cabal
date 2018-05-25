@@ -26,7 +26,7 @@ library
     DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.11
+      base >= 4.7 && <4.12
     , adjunctions
     , aeson
     , aeson-compat
@@ -159,7 +159,7 @@ executable fum-carbon-server
       srv
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
-      base >= 4.7 && <4.11
+      base >= 4.7 && <4.12
     , fum-carbon-app
   default-language: Haskell2010
 
@@ -170,7 +170,7 @@ test-suite unit-tests
       tests/
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.11
+      base >= 4.7 && <4.12
     -- , fum-carbon-app
     , futurice-prelude
     , tasty

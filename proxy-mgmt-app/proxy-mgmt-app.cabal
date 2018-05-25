@@ -25,7 +25,7 @@ library
       src
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   build-depends:
-      base                  >=4.7   && <4.11
+      base                  >=4.7   && <4.12
     , aeson
     , aeson-compat
     , base-compat

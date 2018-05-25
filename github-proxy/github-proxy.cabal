@@ -26,7 +26,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.7   && <4.11
+      base >=4.7   && <4.12
     , constraints
     , env-config
     , futurice-github
@@ -82,7 +82,7 @@ executable github-proxy-client
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      base >=4.7   && <4.11
+      base >=4.7   && <4.12
     , constraints
     , env-config
     , futurice-github
@@ -109,7 +109,7 @@ executable github-proxy-server
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      base >=4.7   && <4.11
+      base >=4.7   && <4.12
     , constraints
     , env-config
     , futurice-github

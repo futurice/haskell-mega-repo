@@ -1,4 +1,4 @@
-index-state: 2018-05-21T17:25:29Z
+index-state: 2018-05-25T18:06:53Z
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
@@ -25,17 +25,12 @@ constraints:
 constraints:
   JuicyPixels-scale-dct ^>= 0.1.2
 
+-- https://github.com/tvh/servant-JuicyPixels/pull/6
 allow-newer:
-  *:Cabal
+  servant-JuicyPixels:base
 
 allow-newer:
-  -- lens-4.16
-  Chart:lens,
-  Chart-diagrams:lens,
-  diagrams-postscript:lens,
-  diagrams-core:lens,
-  diagrams-lib:lens,
-  diagrams-svg:lens
+  *:Cabal
 
 packages:
   arcola/

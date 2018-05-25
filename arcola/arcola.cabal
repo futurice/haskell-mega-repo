@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Network.Arcola
   build-depends:
-    base >=4.9 && <4.11,
+    base >=4.9 && <4.12,
     bytestring,
     streaming-commons,
     network
