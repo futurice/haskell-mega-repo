@@ -24,7 +24,7 @@ library
   exposed-modules:
     Dashdo.Servant
   build-depends:
-    base            >=4.9     && <4.11,
+    base            >=4.9     && <4.12,
     dashdo,
     bytestring,
     containers,
