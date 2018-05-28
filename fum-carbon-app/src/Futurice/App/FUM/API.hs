@@ -16,7 +16,6 @@ import Servant.HTML.Lucid        (HTML)
 
 import Futurice.App.FUM.API.Pages
 import Futurice.App.FUM.Command
-import Futurice.App.FUM.Types.ScheduleEmployee
 import Futurice.FUM.MachineAPI
 
 import qualified Personio
@@ -39,7 +38,6 @@ type FumCarbonMachineApi = FUMMachineAPI
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
     :<|> "raw-employees" :> Get '[JSON] [Personio.Employee]
     :<|> "raw-employee-validations" :> Get '[JSON] [Personio.EmployeeValidation]
-    :<|> Summary "Tailor made for schedule.app" :> "schedule-info" :> Get '[JSON] [ScheduleEmployee]
 
 fumCarbonApi :: Proxy FumCarbonApi
 fumCarbonApi = Proxy
