@@ -13,6 +13,7 @@ type PersonioProxyAPI =
     Get '[JSON] Text
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
     :<|> "employees" :> Get '[JSON] [Personio.Employee]
+    :<|> Summary "Tailor made for schedule.app" :> "schedule-info" :> Get '[JSON] [Personio.ScheduleEmployee]
 
 personioProxyApi :: Proxy PersonioProxyAPI
 personioProxyApi = Proxy

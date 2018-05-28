@@ -9,6 +9,7 @@ module Personio.Types (
     module Personio.Types.SalaryType,
     module Personio.Types.Status,
     module Personio.Types.Validation,
+    module Personio.Types.ScheduleEmployee
     ) where
 
 import Personio.Types.Cfg
@@ -19,5 +20,6 @@ import Personio.Types.EmploymentType
 import Personio.Types.Envelope
 import Personio.Types.PersonalIdValidations
 import Personio.Types.SalaryType
+import Personio.Types.ScheduleEmployee
 import Personio.Types.Status
 import Personio.Types.Validation
