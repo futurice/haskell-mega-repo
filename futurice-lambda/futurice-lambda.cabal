@@ -10,7 +10,7 @@ library
     Futurice.Lambda
 
   build-depends:
-    , base ^>=4.10
+    , base ^>=4.10 || ^>=4.11
     , aeson
     , amazonka
     , amazonka-cloudwatch

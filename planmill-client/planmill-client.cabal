@@ -26,7 +26,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.11
+      base >=4.8 && <4.12
     , aeson
     , aeson-compat
     , aeson-extra
@@ -147,7 +147,7 @@ executable planmill-client
       cli
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.11
+      base >=4.8 && <4.12
     , aeson
     , aeson-compat
     , aeson-extra
@@ -230,7 +230,7 @@ executable pm-cli
       cli2
   ghc-options: -Wall -rtsopts -threaded
   build-depends:
-      base >=4.8 && <4.11
+      base >=4.8 && <4.12
     , aeson
     , aeson-compat
     , aeson-extra
@@ -313,7 +313,7 @@ test-suite integration
       integration
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.11
+      base >=4.8 && <4.12
     , aeson
     , aeson-compat
     , aeson-extra
@@ -391,7 +391,7 @@ test-suite test
       test
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.11
+      base >=4.8 && <4.12
     , aeson
     , aeson-compat
     , aeson-extra

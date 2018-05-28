@@ -1,8 +1,3 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
-name:           avar
 version:        0
 synopsis:       TVar that can be asynchronously set
 description:    See the <http://docs.futurice.com/haskell-mega-repo/avar-0/Futurice-AVar.html haddocks>.
@@ -30,7 +25,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7   && <4.11
+      base                  >=4.7   && <4.12
     , base-compat
     , async
     , stm

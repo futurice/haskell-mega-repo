@@ -31,7 +31,7 @@ library
     DerivingStrategies
     ScopedTypeVariables
   build-depends:
-      base >= 4.7 && <4.11
+      base >= 4.7 && <4.12
     , adjunctions
     , aeson
     , aeson-compat
@@ -139,7 +139,7 @@ executable checklist-app-server
       srv
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
-      base >= 4.7 && <4.11
+      base >= 4.7 && <4.12
     , adjunctions
     , aeson
     , aeson-compat
@@ -201,7 +201,7 @@ test-suite unit-tests
       tests/
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.11
+      base
     , aeson
     , futurice-prelude
     , tasty
