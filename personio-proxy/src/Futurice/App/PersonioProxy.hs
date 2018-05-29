@@ -4,6 +4,7 @@
 module Futurice.App.PersonioProxy (defaultMain) where
 
 import Control.Concurrent.STM (atomically, newTVarIO, readTVar, writeTVar)
+import Data.Aeson.Types       (parseEither, parseJSON, toJSON)
 import Futurice.IdMap         (IdMap)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -17,9 +18,10 @@ import Futurice.App.PersonioProxy.Config
 import Futurice.App.PersonioProxy.Logic
 import Futurice.App.PersonioProxy.Types
 
-import qualified Data.Map.Strict as Map
-import qualified Futurice.IdMap  as IdMap
-import qualified Personio        as P
+import qualified Data.Map.Strict   as Map
+import qualified Futurice.IdMap    as IdMap
+import qualified Futurice.Postgres as Postgres
+import qualified Personio          as P
 
 server :: Ctx -> Server PersonioProxyAPI
 server ctx = pure "Try /swagger-ui/"
@@ -37,25 +39,50 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 
 newCtx
     :: Logger
+    -> Postgres.Pool Postgres.Connection
     -> IdMap P.Employee
     -> [P.EmployeeValidation]
     -> IO Ctx
-newCtx lgr es vs = do
-    Ctx lgr <$> newTVarIO es <*> newTVarIO vs
+newCtx lgr pool es vs = Ctx lgr pool
+    <$> newTVarIO es
+    <*> newTVarIO vs
+
+selectLastQuery :: Postgres.Query
+selectLastQuery = fromString $ unwords
+    [ "SELECT contents FROM \"personio-proxy\".log"
+    , "ORDER BY timestamp DESC LIMIT 1"
+    , ";"
+    ]
+
+insertQuery :: Postgres.Query
+insertQuery = fromString $ unwords
+    [ "INSERT INTO \"personio-proxy\".log (contents) VALUES (?)"
+    , ";"
+    ]
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
+makeCtx (Config cfg pgCfg intervalMin) lgr mgr _cache mq = do
+    pool <- Postgres.createPostgresPool pgCfg
     -- employees
-    let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
-    (employees', validations') <- fetchEmployees
+    employees <- runLogT "startup" lgr $ do
+        rows <- Postgres.safePoolQuery_ pool selectLastQuery
+        case rows of
+            [] -> do
+                logInfo_ "No previous Personio data in cache"
+                return []
 
-    let employees = filter notMachine employees'
-    let validations = filter (notMachine . view P.evEmployee) validations'
+            -- Note: if Personio.Employee changes, we have to make adoptions here!
+            (Postgres.Only v : _) -> case parseEither parseJSON v of
+                Right employees -> return employees
+                Left err        -> do
+                    logAttention "Cannot parse previous Personio data" err
+                    return []
 
     -- context
-    ctx <- newCtx lgr (IdMap.fromFoldable employees) validations
+    ctx <- newCtx lgr pool (IdMap.fromFoldable employees) []
 
     -- jobs
+    let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
     let intervalSec = unNDT (ndtConvert' intervalMin :: NDT 'Seconds NominalDiffTime) -- TODO: add this to futurice-prelude
     let employeesJob   = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every intervalSec
 
@@ -63,7 +90,10 @@ makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
   where
     updateJob :: Ctx -> IO ([P.Employee], [P.EmployeeValidation]) -> IO ()
     updateJob ctx fetchEmployees = do
-        (employees, validations) <- fetchEmployees
+        (employees', validations') <- fetchEmployees
+        let employees = filter notMachine employees'
+        let validations = filter (notMachine . view P.evEmployee) validations'
+
         changed <- atomically $ do
             oldMap <- readTVar (ctxPersonio ctx)
             let newMap = IdMap.fromFoldable employees
@@ -72,8 +102,11 @@ makeCtx (Config cfg intervalMin) lgr mgr _cache mq = do
             return (comparePersonio oldMap newMap)
 
         unless (null changed) $ do
-            runLogT "updated" (ctxLogger ctx) $ do
+            runLogT "update" (ctxLogger ctx) $ do
                 logInfo "Personio updated, data changed" changed
+                -- Save in DB
+                _ <- Postgres.safePoolExecute ctx insertQuery (Postgres.Only $ toJSON employees)
+                -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
 
 notMachine :: P.Employee -> Bool
