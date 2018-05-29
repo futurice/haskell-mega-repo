@@ -27,8 +27,10 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.7   && <4.12
+    , aeson
     , containers
     , env-config
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , periocron
@@ -36,10 +38,8 @@ library
     , servant-server
     , stm
     , swagger2
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=30
-  else
-    ghc-options: -fcontext-stack=30
+
+  ghc-options: -freduction-depth=30
   exposed-modules:
       Futurice.App.PersonioProxy
       Futurice.App.PersonioProxy.API
