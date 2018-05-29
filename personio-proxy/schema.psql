@@ -1,0 +1,8 @@
+-- CREATE SCHEMA "personio-proxy"
+
+CREATE TABLE "personio-proxy".log (
+  timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  contents JSONB NOT NULL
+);
+
+CREATE UNIQUE INDEX ON "personio-proxy".log (timestamp DESC);

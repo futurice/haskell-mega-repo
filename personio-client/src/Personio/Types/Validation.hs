@@ -393,7 +393,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                                       else tell [SalaryCurrencyInvalid cur]
                     _          -> lift (typeMismatch "Salary currency" currency)
               where
-                currencyRegExp = match (string "EUR" <|> string "GBP" <|> string "SEK")
+                currencyRegExp = match (string "EUR" <|> string "GBP" <|> string "SEK" <|> string "NOK")
 
             sweValidations = do
                 nat <- lift (parseDynamicAttribute obj "Nationality")
@@ -500,7 +500,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             deSSN <- lift (parseDynamicAttribute obj "(DE) Social security number (SV)")
             gbNIN <- lift (parseDynamicAttribute obj "(GB) National Insurance Number")
             sePIN <- lift (parseDynamicAttribute obj "(SE) Personal number")
-            if (length . catMaybes $ map isSomeText [fiSSN, deSSN, gbNIN, sePIN] ) > 0
+            noPIN <- lift (parseDynamicAttribute obj "(NO) Personal number" <|> pure "")
+            if (length . catMaybes $ map isSomeText [fiSSN, deSSN, gbNIN, sePIN, noPIN] ) > 0
                 then pure ()
                 else tell [IdentificationNumberMissing]
 
