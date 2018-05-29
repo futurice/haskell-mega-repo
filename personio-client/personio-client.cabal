@@ -69,6 +69,7 @@ library
       Personio.Types.Envelope
       Personio.Types.PersonalIdValidations
       Personio.Types.SalaryType
+      Personio.Types.ScheduleEmployee
       Personio.Types.Status
       Personio.Types.Validation
   other-modules:
