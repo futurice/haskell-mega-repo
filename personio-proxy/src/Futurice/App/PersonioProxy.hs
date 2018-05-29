@@ -84,7 +84,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr _cache mq = do
     -- jobs
     let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
     let intervalSec = unNDT (ndtConvert' intervalMin :: NDT 'Seconds NominalDiffTime) -- TODO: add this to futurice-prelude
-    let employeesJob   = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every intervalSec
+    let employeesJob   = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ every intervalSec
 
     pure (ctx, [ employeesJob ])
   where
