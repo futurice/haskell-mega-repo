@@ -26,3 +26,9 @@ rawEmployees ctx = do
     es <- liftIO $ readTVarIO $ ctxPersonio ctx
     -- no filtering, all employees
     pure $ toList es
+
+scheduleEmployees :: Ctx -> Handler [Personio.ScheduleEmployee]
+scheduleEmployees ctx = do
+    es <- liftIO $ readTVarIO $ ctxPersonio ctx
+    -- no filtering, all employees
+    pure $ Personio.fromPersonio $ toList es

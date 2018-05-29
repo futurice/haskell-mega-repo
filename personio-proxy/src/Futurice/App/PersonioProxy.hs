@@ -25,6 +25,7 @@ server :: Ctx -> Server PersonioProxyAPI
 server ctx = pure "Try /swagger-ui/"
     :<|> personioRequest ctx
     :<|> rawEmployees ctx
+    :<|> scheduleEmployees ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
