@@ -52,11 +52,16 @@ validationReport validations0 today = do
             li_ $ do
                 "There are separate lists for "
                 a_ [ href_ "#employees" ] "Employees"
+                ", "
+                a_ [ href_ "#onboarding" ] "Onboarding people"
                 " and "
                 a_ [ href_ "#externals" ] "Externals"
 
         fullRow_ $ a_ [ name_ "employees" ] $ h2_ "Employees"
         fullRow_ $ showValidations intValidations
+
+        fullRow_ $ a_ [ name_ "onboarding" ] $ h2_ "Onboarding"
+        fullRow_ $ showValidations onbValidations
 
         fullRow_ $ a_ [ name_ "externals" ] $ h2_ "Externals"
         fullRow_ $ showValidations extValidations
@@ -64,8 +69,13 @@ validationReport validations0 today = do
     isInternal :: V -> Bool
     isInternal (V e _ _) = Just P.Internal == e ^. P.employeeEmploymentType
 
-    intValidations = filter isInternal validations
-    extValidations = filter (not . isInternal) validations
+    isOnboarding :: V -> Bool
+    isOnboarding (V e _ _ ) = P.Onboarding == e ^. P.employeeStatus
+
+    validations'   = filter isInternal           validations
+    intValidations = filter (not . isOnboarding) validations'
+    onbValidations = filter isOnboarding         validations'
+    extValidations = filter (not . isInternal)   validations
 
     -- don't check contract end dates here
     isActive p = p ^. P.employeeStatus == P.Active
