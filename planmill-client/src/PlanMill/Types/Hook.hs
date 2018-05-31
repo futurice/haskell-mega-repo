@@ -60,7 +60,7 @@ instance FromJSON Hook where
         <*>  obj  .:  "eventUser"
         <*>  obj  .:  "eventProject"
 
-makeLenses ''Hook
+-- makeLenses ''Hook
 deriveGeneric ''Hook
 
 data NewHook = NewHook
@@ -73,7 +73,7 @@ instance Hashable NewHook
 instance NFData NewHook
 instance AnsiPretty NewHook
 
-makeLenses ''NewHook
+-- makeLenses ''NewHook
 deriveGeneric ''NewHook
 
 instance ToJSON NewHook where
