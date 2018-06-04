@@ -12,6 +12,7 @@ module Futurice.App.HoursApi.Logic (
     entryEndpoint,
     entryEditEndpoint,
     entryDeleteEndpoint,
+    entryDeleteMultipleEndpoint,
     ) where
 
 import Control.Lens              (maximumOf, (<&>))
@@ -93,6 +94,19 @@ entryDeleteEndpoint eid = do
     tr <- H.timereport eid
     _ <- H.deleteTimereport eid
     entryUpdateResponse (tr ^. H.timereportDay)
+
+-- | POST /delete-timereports@
+entryDeleteMultipleEndpoint :: H.MonadHours m => TimereportDelete -> m EntryUpdateResponse
+entryDeleteMultipleEndpoint (TimereportDelete eids _) = do
+    let deleteTimereport eid = do
+            tr <- H.timereport eid
+            _ <- H.deleteTimereport eid
+            pure tr
+        days = sort . map (^. H.timereportDay)
+        firstDay = head . days
+        lastDay = last . days
+    trs <- mapM deleteTimereport eids
+    EntryUpdateResponse <$> userResponse <*> hoursResponse (firstDay trs ... lastDay trs)
 
 -------------------------------------------------------------------------------
 -- Logic

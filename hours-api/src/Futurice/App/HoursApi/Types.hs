@@ -26,10 +26,10 @@ import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 import Test.QuickCheck           (arbitraryBoundedEnum)
 
-import qualified Data.Map        as Map
-import qualified PlanMill        as PM
-import qualified Test.QuickCheck as QC
+import qualified Data.Map                  as Map
 import qualified Numeric.Interval.NonEmpty as Interval
+import qualified PlanMill                  as PM
+import qualified Test.QuickCheck           as QC
 
 -------------------------------------------------------------------------------
 -- Project
@@ -103,6 +103,13 @@ data LatestEntry = LatestEntry
     { _latestEntryDescription :: !Text
     , _latestEntryDate        :: !Day
     , _latestEntryHours       :: !(NDT 'Hours Centi)
+    }
+  deriving (Eq, Show, Typeable, Generic)
+
+-- | Data type that contains id's of Timereports that should be deleted
+data TimereportDelete = TimereportDelete
+    { _toBeDeleted :: ![PM.TimereportId]
+    , _notUsed :: !(Maybe Text) --TODO: Why is this padding needed?
     }
   deriving (Eq, Show, Typeable, Generic)
 
@@ -193,6 +200,9 @@ deriveGeneric ''MarkedTask
 
 makeLenses ''LatestEntry
 deriveGeneric ''LatestEntry
+
+makeLenses ''TimereportDelete
+deriveGeneric ''TimereportDelete
 
 makeLenses ''Entry
 deriveGeneric ''Entry
@@ -331,6 +341,11 @@ deriveVia [t| Arbitrary LatestEntry `Via` Sopica LatestEntry |]
 deriveVia [t| ToJSON LatestEntry    `Via` Sopica LatestEntry |]
 deriveVia [t| FromJSON LatestEntry  `Via` Sopica LatestEntry |]
 instance ToSchema LatestEntry where declareNamedSchema = sopDeclareNamedSchema
+
+deriveVia [t| Arbitrary TimereportDelete `Via` Sopica TimereportDelete |]
+deriveVia [t| ToJSON TimereportDelete    `Via` Sopica TimereportDelete |]
+deriveVia [t| FromJSON TimereportDelete  `Via` Sopica TimereportDelete |]
+instance ToSchema TimereportDelete where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary Entry `Via` Sopica Entry |]
 deriveVia [t| ToJSON Entry    `Via` Sopica Entry |]
