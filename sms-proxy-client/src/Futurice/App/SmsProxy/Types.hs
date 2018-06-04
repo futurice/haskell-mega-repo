@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
 {-# LANGUAGE TypeOperators   #-}
@@ -12,13 +13,16 @@ data Res = Res
     { _resTo     :: !Text
     , _resStatus :: !Text
     }
-  deriving (Show)
+  deriving (Show, Generic)
 
 data Req = Req
     { _reqTo   :: !Text
     , _reqText :: !Text
     }
-  deriving (Show)
+  deriving (Show, Generic)
+
+instance NFData Res
+instance NFData Req
 
 -------------------------------------------------------------------------------
 -- instances
