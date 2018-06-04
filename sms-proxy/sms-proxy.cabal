@@ -37,14 +37,13 @@ library
     , http-client-tls
     , http-types
     , servant-server
+    , sms-proxy-client
     , text
   exposed-modules:
       Futurice.App.SmsProxy
-      Futurice.App.SmsProxy.API
       Futurice.App.SmsProxy.Config
       Futurice.App.SmsProxy.Ctx
       Futurice.App.SmsProxy.Logic
-      Futurice.App.SmsProxy.Types
   default-language: Haskell2010
 
 executable sms-proxy-server
