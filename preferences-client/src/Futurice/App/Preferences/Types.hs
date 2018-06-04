@@ -14,6 +14,12 @@ data Preferences = Preferences
     }
   deriving stock (Eq, Show, Generic)
 
+defaultPreferences :: Preferences
+defaultPreferences = Preferences
+    { _prefHoursPingSMS   = False
+    , _prefHoursPingEmail = False
+    }
+
 makeLenses ''Preferences
 deriveGeneric ''Preferences
 

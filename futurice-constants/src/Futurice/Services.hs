@@ -36,12 +36,13 @@ data Service
     | HoursService
     | HoursApiService
     | HCService
-    | PersonioService
     | PersonioProxyService
-    | PlanmillService
+    | PersonioService
     | PlanmillProxyService
+    | PlanmillService
     | PlanmillSyncService
     | PowerService
+    | PreferencesService
     | ProxMgmtService
     | ProxService
     | ReportsService
@@ -74,6 +75,7 @@ instance TextEnum Service where
         , "planmill-proxy"
         , "planmill-sync"
         , "power"
+        , "preferences"
         , "prox-mgmt"
         , "prox"
         , "reports"
@@ -130,10 +132,11 @@ data PerService a = PerService
     , perPlanmillProxy :: a
     , perPlanmillSync  :: a
     , perPower         :: a
+    , perPreferences   :: a
     , perProxMgmt      :: a
     , perProx          :: a
     , perReports       :: a
-    , perSmileysApi       :: a
+    , perSmileysApi    :: a
     , perSmsProxy      :: a
     , perTheme         :: a
     }
@@ -164,6 +167,7 @@ instance Representable PerService where
     index p PlanmillService      = perPlanmill p
     index p PlanmillSyncService  = perPlanmillSync p
     index p PowerService         = perPower p
+    index p PreferencesService   = perPreferences p
     index p ProxMgmtService      = perProxMgmt p
     index p ProxService          = perProx p
     index p ReportsService       = perReports p
@@ -172,30 +176,31 @@ instance Representable PerService where
     index p ThemeService         = perTheme p
 
     tabulate f = PerService
-        {  perAvatar        = f AvatarService
-        ,  perChecklist     = f ChecklistService
-        ,  perContacts      = f ContactsService
-        ,  perContactsApi   = f ContactsApiService
-        ,  perEmailProxy    = f ContactsApiService
-        ,  perFumCarbon     = f FumCarbonService
-        ,  perFum           = f FumService
-        ,  perGithubProxy   = f GithubProxyService
-        ,  perGithubSync    = f GithubSyncService
-        ,  perHours         = f HoursService
-        ,  perHoursApi      = f HoursApiService
-        ,  perHC            = f HCService
-        ,  perPersonio      = f PersonioService
-        ,  perPersonioProxy = f PersonioProxyService
-        ,  perPlanmill      = f PlanmillService
-        ,  perPlanmillProxy = f PlanmillProxyService
-        ,  perPlanmillSync  = f PlanmillSyncService
-        ,  perPower         = f PowerService
-        ,  perProxMgmt      = f ProxMgmtService
-        ,  perProx          = f ProxService
-        ,  perReports       = f ReportsService
-        ,  perSmileysApi       = f SmileysApiService
-        ,  perSmsProxy      = f SmsProxyService
-        ,  perTheme         = f ThemeService
+        { perAvatar        = f AvatarService
+        , perChecklist     = f ChecklistService
+        , perContacts      = f ContactsService
+        , perContactsApi   = f ContactsApiService
+        , perEmailProxy    = f ContactsApiService
+        , perFumCarbon     = f FumCarbonService
+        , perFum           = f FumService
+        , perGithubProxy   = f GithubProxyService
+        , perGithubSync    = f GithubSyncService
+        , perHours         = f HoursService
+        , perHoursApi      = f HoursApiService
+        , perHC            = f HCService
+        , perPersonio      = f PersonioService
+        , perPersonioProxy = f PersonioProxyService
+        , perPlanmill      = f PlanmillService
+        , perPlanmillProxy = f PlanmillProxyService
+        , perPlanmillSync  = f PlanmillSyncService
+        , perPower         = f PowerService
+        , perPreferences   = f PreferencesService
+        , perProxMgmt      = f ProxMgmtService
+        , perProx          = f ProxService
+        , perReports       = f ReportsService
+        , perSmileysApi       = f SmileysApiService
+        , perSmsProxy      = f SmsProxyService
+        , perTheme         = f ThemeService
         }
 
 instance FromJSON a => FromJSON (PerService a) where
