@@ -24,8 +24,8 @@ import Futurice.App.HoursApi.API
 import Futurice.App.HoursApi.Config
 import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
-       (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
-       projectEndpoint, userEndpoint)
+       (entryDeleteEndpoint, entryDeleteMultipleEndpoint, entryEditEndpoint,
+       entryEndpoint, hoursEndpoint, projectEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
 
 import qualified Data.HashMap.Strict as HM
@@ -49,6 +49,7 @@ v1Server ctx =
     :<|> (\mfum eu     -> authorisedUser ctx mfum "entry"   (entryEndpoint eu))
     :<|> (\mfum eid eu -> authorisedUser ctx mfum "edit"    (entryEditEndpoint eid eu))
     :<|> (\mfum eid    -> authorisedUser ctx mfum "delete"  (entryDeleteEndpoint eid))
+    :<|> (\mfum eids   -> authorisedUser ctx mfum "deleteMultiple" (entryDeleteMultipleEndpoint eids))
 
 authorisedUser
     :: Ctx
