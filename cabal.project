@@ -89,6 +89,7 @@ packages:
   servant-Chart/
   servant-dashdo/
   smileys-app/
+  sms-proxy-client/
   sms-proxy/
   theme-app/
 
