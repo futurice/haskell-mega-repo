@@ -9,21 +9,29 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.Reports (defaultMain) where
 
-import Control.Lens               (_5)
-import Dashdo.Servant             (DashdoAPI)
+import Control.Lens                (_4, _5)
+import Dashdo.Servant              (DashdoAPI)
+import Data.Aeson                  (object, (.=))
+import Data.Time                   (addDays, defaultTimeLocale, formatTime)
+import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
-       (Integrations, beginningOfPrev2Month, runIntegrations)
-import Futurice.Metrics.RateMeter (mark)
+       (Integrations, beginningOfPrev2Month, personioPlanmillMap,
+       runIntegrations)
+import Futurice.Metrics.RateMeter  (mark)
 import Futurice.Periocron
 import Futurice.Prelude
+import Futurice.Report.Columns     (Report (..))
 import Futurice.Servant
-import Generics.SOP               (All, hcmap, hcollapse)
-import GHC.TypeLits               (KnownSymbol, symbolVal)
-import Numeric.Interval.NonEmpty  (Interval, (...))
+import Generics.SOP                (All, hcmap, hcollapse)
+import GHC.TypeLits                (KnownSymbol, symbolVal)
+import Numeric.Interval.NonEmpty   (Interval, (...))
 import Prelude ()
 import Servant
-import Servant.Chart              (Chart (..))
-import Servant.Graph              (Graph (..))
+import Servant.Chart               (Chart (..))
+import Servant.Graph               (Graph (..))
+
+import Futurice.App.Preferences.Client (getPreferences)
+import Futurice.App.Preferences.Types
 
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
@@ -32,7 +40,7 @@ import Futurice.App.Reports.Config
 import Futurice.App.Reports.Dashdo            (makeDashdoServer)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
-       (MissingHoursReport, missingHoursReport)
+       (MissingHoursReport, missingHourDay, missingHoursReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
 import Futurice.App.Reports.PowerAbsences
@@ -41,11 +49,18 @@ import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.SupervisorsGraph  (supervisorsGraph)
+import Futurice.App.Reports.Templates
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
 import Futurice.App.Reports.UtzChart          (utzChartData, utzChartRender)
 
-import qualified Personio as P
+import qualified Futurice.App.EmailProxy.Client as E
+import qualified Futurice.App.EmailProxy.Types  as E
+import qualified Futurice.App.SmsProxy.Client   as S
+import qualified Futurice.App.SmsProxy.Types    as S
+
+import qualified Data.HashMap.Strict as HM
+import qualified Personio            as P
 
 -- /TODO/ Make proper type
 type Ctx = (Cache, Manager, Logger, Config, Server DashdoAPI)
@@ -72,10 +87,11 @@ missingHoursEmployeePredicate interval p = and
     , P.employeeIsActiveInterval interval p
     ]
 
--- Stricter predicate, TODO: filter out Weekly salary type people.
+-- Stricter predicate
 missingHoursEmployeePredicate' :: Interval Day -> P.Employee -> Bool
 missingHoursEmployeePredicate' interval p = and
     [ p ^. P.employeeEmploymentType == Just P.Internal
+    , p ^. P.employeeSalaryType == Just P.Monthly
     , P.employeeIsActiveInterval interval p
     ]
 
@@ -92,13 +108,19 @@ serveMissingHoursReport
 serveMissingHoursReport allContracts ctx = do
     cachedIO' ctx allContracts $ do
         day <- currentDay
-        -- TODO: end date to the last friday
-        let interval = beginningOfPrev2Month day ... pred day
+        let interval = beginningOfPrev2Month day ... previousFriday day
         runIntegrations' ctx (missingHoursReport predicate interval)
   where
     predicate
         | allContracts = missingHoursEmployeePredicate
         | otherwise    = missingHoursEmployeePredicate'
+
+previousFriday :: Day -> Day
+previousFriday d
+    | wd >= 5   = addDays (fromIntegral $ 7 - wd) d
+    | otherwise = addDays (fromIntegral $ -2 - wd) d
+  where
+    (_, _, wd) = toWeekDate d
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
 servePowerUsersReport ctx = do
@@ -151,6 +173,68 @@ missingHoursChartData'
 missingHoursChartData' _ctx =
     missingHoursChartData missingHoursEmployeePredicate'
 
+missingHoursNotifications :: Ctx -> IO Text
+missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
+    day <- currentDay
+    -- TODO: end date to the last friday
+    let interval = beginningOfPrev2Month day ... previousFriday day
+
+    (ppm, Report _ report) <- liftIO $ runIntegrations' ctx $ (,)
+        <$>personioPlanmillMap
+        <*> missingHoursReport missingHoursEmployeePredicate' interval
+
+    let logins = HM.keys report
+    prefs <- liftIO $ getPreferences mgr preferencesBurl logins
+    ifor_ report $ \login r -> do
+        let pref = fromMaybe defaultPreferences $ prefs ^? ix login
+
+        case ppm ^? ix login . _1 of
+            Nothing -> logAttention "Unknown login" login
+            Just p -> do
+                let humanDay :: Day -> Value
+                    humanDay d = object
+                        [ "day" .= formatTime defaultTimeLocale "%A %F" d
+                        ]
+
+                let days = r ^.. _2 . folded . missingHourDay . getter humanDay
+
+                let params = object
+                        [ "name"     .= (p ^. P.employeeFirst)
+                        , "interval" .= show interval
+                        , "ndays"    .= length days
+                        , "hours"    .= days
+                        ]
+
+                when (pref ^. prefHoursPingEmail) $ case p ^. P.employeeEmail of
+                    Nothing -> logAttention "Employee without email" login
+                    Just addr -> do
+                        x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail addr)
+                            & E.reqSubject .~ "Missing hours"
+                            & E.reqBody    .~ renderMustache missingHoursEmailTemplate params ^. strict
+                        case x of
+                            Left exc -> logAttention "sendEmail failed" (show exc)
+                            Right () -> return ()
+
+                when (pref ^. prefHoursPingSMS) $ case p ^. P.employeeWorkPhone of
+                    Nothing -> logAttention "Employee without phone" login
+                    Just numb -> do
+                        x <- liftIO $ tryDeep $ S.sendSms mgr smsProxyBurl $ S.Req numb $
+                            renderMustache missingHoursSmsTemplate params ^. strict
+                        case x of
+                            Left exc -> logAttention "sendSms failed" (show exc)
+                            Right _  -> return ()
+
+
+    return "OK"
+  where
+    mgr = ctx ^. _2
+    lgr = ctx ^. _3
+    cfg = ctx ^. _4
+
+    preferencesBurl = cfgPreferencesAppBaseurl cfg
+    emailProxyBurl  = cfgEmailProxyBaseurl cfg
+    smsProxyBurl    = cfgSmsProxyBaseurl cfg
+
 makeServer
     :: All RClass reports
     => Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
@@ -181,6 +265,8 @@ server ctx = makeServer ctx reports
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
+    -- missing hours notifications
+    :<|> liftIO (missingHoursNotifications ctx)
     -- dashdo
     :<|> view _5 ctx
 
