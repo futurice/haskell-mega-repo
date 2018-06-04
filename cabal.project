@@ -79,6 +79,7 @@ packages:
   planmill-client/
   planmill-proxy/
   planmill-sync/
+  preferences-client/
   proxy-app/
   proxy-mgmt-app/
   reports-app/
