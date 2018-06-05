@@ -106,13 +106,6 @@ data LatestEntry = LatestEntry
     }
   deriving (Eq, Show, Typeable, Generic)
 
--- | Data type that contains id's of Timereports that should be deleted
-data TimereportDelete = TimereportDelete
-    { _toBeDeleted :: ![PM.TimereportId]
-    , _notUsed :: !(Maybe Text) --TODO: Why is this padding needed?
-    }
-  deriving (Eq, Show, Typeable, Generic)
-
 -- | When frontend sends closed entry to be updated, API doesn't do anything, just respond ok
 --
 -- /TODO:/ is this *new* entry, probably we don't need closed field at all?
@@ -200,9 +193,6 @@ deriveGeneric ''MarkedTask
 
 makeLenses ''LatestEntry
 deriveGeneric ''LatestEntry
-
-makeLenses ''TimereportDelete
-deriveGeneric ''TimereportDelete
 
 makeLenses ''Entry
 deriveGeneric ''Entry
@@ -341,11 +331,6 @@ deriveVia [t| Arbitrary LatestEntry `Via` Sopica LatestEntry |]
 deriveVia [t| ToJSON LatestEntry    `Via` Sopica LatestEntry |]
 deriveVia [t| FromJSON LatestEntry  `Via` Sopica LatestEntry |]
 instance ToSchema LatestEntry where declareNamedSchema = sopDeclareNamedSchema
-
-deriveVia [t| Arbitrary TimereportDelete `Via` Sopica TimereportDelete |]
-deriveVia [t| ToJSON TimereportDelete    `Via` Sopica TimereportDelete |]
-deriveVia [t| FromJSON TimereportDelete  `Via` Sopica TimereportDelete |]
-instance ToSchema TimereportDelete where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary Entry `Via` Sopica Entry |]
 deriveVia [t| ToJSON Entry    `Via` Sopica Entry |]
