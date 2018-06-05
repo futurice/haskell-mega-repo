@@ -38,7 +38,7 @@ library
     , http-client
     , http-types
     , lens
-    , servant-server
+    , servant
     , servant-client
     , text
     , time

@@ -28,6 +28,7 @@ server ctx = pure "Try /swagger-ui/"
     :<|> personioRequest ctx
     :<|> rawEmployees ctx
     :<|> scheduleEmployees ctx
+    :<|> employeesChart ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -39,11 +40,12 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 
 newCtx
     :: Logger
+    -> Cache
     -> Postgres.Pool Postgres.Connection
     -> IdMap P.Employee
     -> [P.EmployeeValidation]
     -> IO Ctx
-newCtx lgr pool es vs = Ctx lgr pool
+newCtx lgr cache pool es vs = Ctx lgr cache pool
     <$> newTVarIO es
     <*> newTVarIO vs
 
@@ -61,7 +63,7 @@ insertQuery = fromString $ unwords
     ]
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx (Config cfg pgCfg intervalMin) lgr mgr _cache mq = do
+makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
     pool <- Postgres.createPostgresPool pgCfg
     -- employees
     employees <- runLogT "startup" lgr $ do
@@ -79,7 +81,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr _cache mq = do
                     return []
 
     -- context
-    ctx <- newCtx lgr pool (IdMap.fromFoldable employees) []
+    ctx <- newCtx lgr cache pool (IdMap.fromFoldable employees) []
 
     -- jobs
     let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll

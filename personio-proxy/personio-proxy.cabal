@@ -27,14 +27,20 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.7   && <4.12
+    , adjunctions
     , aeson
+    , Chart
     , containers
+    , distributive
+    , dynmap-cache
     , env-config
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , lens
     , periocron
     , personio-client
+    , servant-Chart
     , servant-server
     , stm
     , swagger2

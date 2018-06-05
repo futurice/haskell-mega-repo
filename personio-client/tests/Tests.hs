@@ -173,13 +173,6 @@ validations = testGroup "Validations"
         (EmailInvalid "invalid.mail")
         $ correctEmployeeValue
             & attributeValue "email" . _String .~ "invalid.mail"
-    {-
-    , testValidation
-        "position"
-        PositionMissing
-        $ correctEmployeeValue
-            & attributeValue "position" . _String .~ ""
-    -}
     , testValidation
         "hire-date"
         HireDateMissing

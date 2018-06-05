@@ -2,7 +2,7 @@ module Futurice.App.EmailProxy.Client (sendEmail) where
 
 import Futurice.Prelude
 import Prelude ()
-import Servant
+import Servant.API
 import Servant.Client
 import Futurice.App.EmailProxy.API
 import Futurice.App.EmailProxy.Types

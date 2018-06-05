@@ -9,7 +9,7 @@ module Futurice.App.EmailProxy.API where
 
 import Futurice.Prelude
 import Prelude ()
-import Servant
+import Servant.API
 import Futurice.App.EmailProxy.Types
 
 type EmailProxyAPI =

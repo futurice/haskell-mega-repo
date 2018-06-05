@@ -10,7 +10,7 @@ CONCURRENCY?=2
 HC:=ghc-8.2.2
 LOCALBIN:=${HOME}/.local/bin
 
-SECRETJSONS:=futurice-constants/constants.json futurice-tribes/tribes.json futurice-tribes/cost-centers.json futurice-tribes/offices.json futurice-tribes/companies.json hc-app/early-caring.template
+SECRETJSONS:=futurice-constants/constants.json futurice-tribes/tribes.json futurice-tribes/cost-centers.json futurice-tribes/offices.json futurice-tribes/companies.json hc-app/early-caring.template reports-app/missing-hours-email.template reports-app/missing-hours-sms.template
 
 # Build everything
 all :

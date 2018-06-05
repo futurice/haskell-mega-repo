@@ -71,6 +71,8 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+    -- missing hours notification
+    :<|> "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
     -- dashdo
     :<|> "dashdo" :> DashdoAPI
 

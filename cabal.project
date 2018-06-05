@@ -79,6 +79,8 @@ packages:
   planmill-client/
   planmill-proxy/
   planmill-sync/
+  preferences-app/
+  preferences-client/
   proxy-app/
   proxy-mgmt-app/
   reports-app/
@@ -87,6 +89,7 @@ packages:
   servant-Chart/
   servant-dashdo/
   smileys-app/
+  sms-proxy-client/
   sms-proxy/
   theme-app/
 
