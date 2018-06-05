@@ -500,7 +500,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             deSSN <- lift (parseDynamicAttribute obj "(DE) Social security number (SV)")
             gbNIN <- lift (parseDynamicAttribute obj "(GB) National Insurance Number")
             sePIN <- lift (parseDynamicAttribute obj "(SE) Personal number")
-            noPIN <- lift (parseDynamicAttribute obj "(NO) Personal number" <|> pure "")
+            noPIN <- lift (parseDynamicAttribute obj "(NO) Personal identification number" <|> pure "")
             if (length . catMaybes $ map isSomeText [fiSSN, deSSN, gbNIN, sePIN, noPIN] ) > 0
                 then pure ()
                 else tell [IdentificationNumberMissing]
