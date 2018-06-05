@@ -28,14 +28,14 @@ module Futurice.Company (
     countryFinland,
     ) where
 
-import Control.Monad             ((>=>))
+import Control.Monad               ((>=>))
 import Futurice.Company.Internal
 import Futurice.Generics
 import Futurice.Prelude
-import Language.Haskell.TH       (ExpQ)
-import Lucid                     (ToHtml (..))
+import Language.Haskell.TH         (ExpQ)
+import Lucid                       (ToHtml (..))
 import Prelude ()
-import Text.Regex.Applicative.Text (match, psym)
+import Text.Regex.Applicative.Text (few, match, psym, sym)
 
 import qualified Data.Csv        as Csv
 import qualified Data.Map        as Map
@@ -211,14 +211,19 @@ countryToText (Country c) = cCountry ci <> " / " <> cName ci where
     ci = companyInfo c
 
 countryFromText :: Text -> Maybe Country
-countryFromText k = do 
+countryFromText k = do
     m <- match re k
     case m of
         (country, Nothing) -> countryLookup ^? ix (T.toLower $ country ^. packed)
         (_, Just company)  -> Country <$> companyFromText (company ^. packed)
   where
-    re = liftA2 (,) (some c) (optional $ " / " *> some c)
+    re = liftA2 (,) (some c) (optional $ spaces *> sym '/' *> spaces *> someFew c <* optional dot)
     c = psym (/= '/')
+
+    someFew p = liftA2 (:) p (few p)
+
+    spaces = many (sym ' ')
+    dot = sym '.' -- For some reason we have "Futurice Ltd."
 
 countryFromTextE :: Text -> Either String Country
 countryFromTextE k =

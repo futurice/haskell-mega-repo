@@ -46,8 +46,10 @@ library
     , dashdo
     , deepseq
     , directory
+    , email-proxy-client
     , env-config
     , exceptions
+    , file-embed
     , filepath
     , fin
     , flowdock-rest
@@ -71,6 +73,7 @@ library
     , lens
     , lucid
     , lucid-extras
+    , microstache
     , mtl
     , optparse-applicative
     , periocron
@@ -79,6 +82,7 @@ library
     , plotlyhs
     , postgresql-simple
     , postgresql-simple-url
+    , preferences-client
     , regex-applicative
     , regex-applicative-text
     , resource-pool
@@ -86,10 +90,12 @@ library
     , servant-algebraic-graphs
     , servant-cassava
     , servant-Chart
+    , servant-client
     , servant-dashdo
     , servant-lucid
-    , servant-server
     , SHA
+    , servant-server
+    , sms-proxy-client
     , stm
     , strict-base-types
     , swagger2
@@ -119,6 +125,7 @@ library
       Futurice.App.Reports.PowerProjects
       Futurice.App.Reports.PowerUser
       Futurice.App.Reports.SupervisorsGraph
+      Futurice.App.Reports.Templates
       Futurice.App.Reports.TimereportsByTask
       Futurice.App.Reports.UtzChart
       Futurice.Chart.Stacked

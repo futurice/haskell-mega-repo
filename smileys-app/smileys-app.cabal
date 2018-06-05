@@ -72,7 +72,6 @@ library
       Futurice.App.Smileys.Ctx
       Futurice.App.Smileys.Logic
       Futurice.App.Smileys.Types
-      Futurice.Chart.Stacked
   default-language: Haskell2010
 
 executable smileys-app-server

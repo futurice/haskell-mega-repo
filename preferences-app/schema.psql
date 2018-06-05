@@ -1,0 +1,9 @@
+-- CREATE SCHEMA "preferences";
+
+CREATE TABLE preferences.values (
+  login TEXT,
+  preference TEXT,
+  updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  value JSONB NOT NULL,
+  PRIMARY KEY (login, preference)
+);
