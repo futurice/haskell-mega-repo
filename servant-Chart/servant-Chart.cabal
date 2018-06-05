@@ -37,6 +37,10 @@ library
     , swagger2
     , svg-builder
     , SVGFonts
+  -- Futurice.Chart.Stacked
+  build-depends:
+    adjunctions, futurice-prelude, mtl
   exposed-modules:
       Servant.Chart
+      Futurice.Chart.Stacked
   default-language: Haskell2010
