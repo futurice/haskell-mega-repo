@@ -185,7 +185,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         -- TODO: , phoneValidate "Emergency contact phone" EmergencyContactPhoneInvalid
         , privateEmailValidate
         , supervisorValidate
-        , withValidatorValidate "(DE) ID number" DEIDInvalid isValidDeID
+        , withValidatorValidate "(DE) Tax ID number" DEIDInvalid isValidDeID
         , withValidatorValidate "(DE) Social security number (SV)" DESVInvalid isValidDeSV
         , withValidatorValidate "(FI) Social Security Number" FISSNInvalid isValidFinSSN
         , withValidatorValidate "(GB) National Insurance Number" GBNINOInvalid isValidGbNINO
