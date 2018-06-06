@@ -97,20 +97,21 @@ entryDeleteEndpoint eid = do
 
 -- | POST /delete-timereports@
 entryDeleteMultipleEndpoint :: H.MonadHours m => [PM.TimereportId] -> m EntryUpdateResponse
-entryDeleteMultipleEndpoint eids = do
-    let deleteTimereport eid = do
-            tr <- H.timereport eid
-            _ <- H.deleteTimereport eid
-            pure tr
-        days = NE.sort . NE.map (^. H.timereportDay)
-        firstDay = NE.head . days
-        lastDay = NE.last . days
-    today <- currentDay
-    case NE.nonEmpty eids of
-      Just eids -> do
-          trs <- mapM deleteTimereport eids
-          EntryUpdateResponse <$> userResponse <*> hoursResponse (firstDay trs ... lastDay trs)
-      Nothing -> EntryUpdateResponse <$> userResponse <*> hoursResponse (today ... today)
+entryDeleteMultipleEndpoint eids = case NE.nonEmpty eids of
+    Just eids -> do
+        trs <- traverse deleteTimereport eids
+        EntryUpdateResponse <$> userResponse <*> hoursResponse (firstDay trs ... lastDay trs)
+    Nothing -> do
+        today <- currentDay
+        EntryUpdateResponse <$> userResponse <*> hoursResponse (today ... today)
+  where
+    deleteTimereport eid = do
+        tr <- H.timereport eid
+        _ <- H.deleteTimereport eid
+        pure tr
+    days = NE.sort . NE.map (view H.timereportDay)
+    firstDay = NE.head . days
+    lastDay = NE.last . days
 
 -------------------------------------------------------------------------------
 -- Logic
