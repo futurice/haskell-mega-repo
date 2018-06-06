@@ -117,7 +117,7 @@ serveMissingHoursReport allContracts ctx = do
 
 previousFriday :: Day -> Day
 previousFriday d
-    | wd >= 5   = addDays (fromIntegral $ 7 - wd) d
+    | wd >= 6   = addDays (fromIntegral $ 7 - wd) d
     | otherwise = addDays (fromIntegral $ -2 - wd) d
   where
     (_, _, wd) = toWeekDate d
@@ -279,13 +279,18 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx         .~ "REPORTSAPP"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx cfg lgr manager cache _mq = do
+    makeCtx cfg lgr manager cache mq = do
         let ctx' = (cache, manager, lgr, cfg)
         dashDoApp <- makeDashdoServer ctx'
         let ctx = (cache, manager, lgr, cfg, dashDoApp)
 
         let jobs = hcollapse $
                 hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
+
+        -- listen to MQ, especially for missing hours ping
+        void $ forEachMessage mq $ \msg -> case msg of
+            MissingHoursPing -> void $ missingHoursNotifications ctx
+            _                -> pure ()
 
         return (ctx, jobs)
 

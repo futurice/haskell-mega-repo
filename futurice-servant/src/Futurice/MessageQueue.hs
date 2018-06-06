@@ -69,6 +69,7 @@ newtype Subscription = Sub (STM.STM Message)
 data Message
     = ServiceStarting Service
     | PersonioUpdated
+    | MissingHoursPing
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message
@@ -81,11 +82,13 @@ instance FromJSON Message
 data Topic
     = TopicServiceStarting
     | TopicPersonioUpdated
+    | TopicMissingHoursPing
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 data PerTopic a = PerTopic
-    { perServiceStarting :: a
-    , perPersonioUpdated :: a
+    { perServiceStarting  :: a
+    , perPersonioUpdated  :: a
+    , perMissingHoursPing :: a
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -96,17 +99,20 @@ instance Distributive PerTopic where
 instance Representable PerTopic where
     type Rep PerTopic = Topic
 
-    index p TopicServiceStarting = perServiceStarting p
-    index p TopicPersonioUpdated = perPersonioUpdated p
+    index p TopicServiceStarting  = perServiceStarting p
+    index p TopicPersonioUpdated  = perPersonioUpdated p
+    index p TopicMissingHoursPing = perMissingHoursPing p
 
     tabulate f = PerTopic
-        { perServiceStarting = f TopicServiceStarting
-        , perPersonioUpdated = f TopicPersonioUpdated
+        { perServiceStarting  = f TopicServiceStarting
+        , perPersonioUpdated  = f TopicPersonioUpdated
+        , perMissingHoursPing = f TopicMissingHoursPing
         }
 
 messageTopic :: Message -> Topic
-messageTopic ServiceStarting {} = TopicServiceStarting
-messageTopic PersonioUpdated {} = TopicPersonioUpdated
+messageTopic ServiceStarting {}  = TopicServiceStarting
+messageTopic PersonioUpdated {}  = TopicPersonioUpdated
+messageTopic MissingHoursPing {} = TopicMissingHoursPing
 
 -- | A subject of email
 messageSubject :: Message -> Text
@@ -115,8 +121,9 @@ messageSubject (ServiceStarting service) =
 messageSubject msg = textShow (messageTopic msg) -- default
 
 topicName :: Text -> Topic -> Text
-topicName awsGroup TopicServiceStarting = awsGroup <> "-service-starting"
-topicName awsGroup TopicPersonioUpdated = awsGroup <> "-personio-updated"
+topicName awsGroup TopicServiceStarting  = awsGroup <> "-service-starting"
+topicName awsGroup TopicPersonioUpdated  = awsGroup <> "-personio-updated"
+topicName awsGroup TopicMissingHoursPing = awsGroup <> "-missing-hours-ping"
 
 -------------------------------------------------------------------------------
 -- Functions
