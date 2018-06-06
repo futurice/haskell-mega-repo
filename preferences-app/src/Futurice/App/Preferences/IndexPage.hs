@@ -51,9 +51,6 @@ indexPage pref = page_ "Preferences" (Just NavHome) $ do
         ] $
         "Turn " <> if sms then "Off" else "On"
 
-    p_ "It's not possible to opt-out of email missing hours notifications."
-
-{-
     let email = pref ^. prefHoursPingEmail
     p_ $ do 
         "Receive missing hours notifications via Email: "
@@ -65,7 +62,6 @@ indexPage pref = page_ "Preferences" (Just NavHome) $ do
         , disabled_ "disabled"
         ] $
         "Turn " <> if email then "Off" else "On"
--}
 
 linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l
