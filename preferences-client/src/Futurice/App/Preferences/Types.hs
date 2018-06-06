@@ -16,8 +16,8 @@ data Preferences = Preferences
 
 defaultPreferences :: Preferences
 defaultPreferences = Preferences
-    { _prefHoursPingSMS   = False
-    , _prefHoursPingEmail = False
+    { _prefHoursPingSMS   = True
+    , _prefHoursPingEmail = True
     }
 
 makeLenses ''Preferences
