@@ -198,32 +198,32 @@ missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
 
                 let days = r ^.. _2 . folded . missingHourDay . getter humanDay
 
-                let params = object
-                        [ "name"     .= (p ^. P.employeeFirst)
-                        , "interval" .= show interval
-                        , "ndays"    .= length days
-                        , "hours"    .= days
-                        ]
+                unless (null days) $ do
+                    let params = object
+                            [ "name"     .= (p ^. P.employeeFirst)
+                            , "interval" .= show interval
+                            , "ndays"    .= length days
+                            , "hours"    .= days
+                            ]
 
-                when (pref ^. prefHoursPingEmail) $ case p ^. P.employeeEmail of
-                    Nothing -> logAttention "Employee without email" login
-                    Just addr -> do
-                        x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail addr)
-                            & E.reqSubject .~ "Missing hours"
-                            & E.reqBody    .~ renderMustache missingHoursEmailTemplate params ^. strict
-                        case x of
-                            Left exc -> logAttention "sendEmail failed" (show exc)
-                            Right () -> return ()
+                    when (pref ^. prefHoursPingEmail) $ case p ^. P.employeeEmail of
+                        Nothing -> logAttention "Employee without email" login
+                        Just addr -> do
+                            x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail addr)
+                                & E.reqSubject .~ "Missing hours"
+                                & E.reqBody    .~ renderMustache missingHoursEmailTemplate params ^. strict
+                            case x of
+                                Left exc -> logAttention "sendEmail failed" (show exc)
+                                Right () -> return ()
 
-                when (pref ^. prefHoursPingSMS) $ case p ^. P.employeeWorkPhone of
-                    Nothing -> logAttention "Employee without phone" login
-                    Just numb -> do
-                        x <- liftIO $ tryDeep $ S.sendSms mgr smsProxyBurl $ S.Req numb $
-                            renderMustache missingHoursSmsTemplate params ^. strict
-                        case x of
-                            Left exc -> logAttention "sendSms failed" (show exc)
-                            Right _  -> return ()
-
+                    when (pref ^. prefHoursPingSMS) $ case p ^. P.employeeWorkPhone of
+                        Nothing -> logAttention "Employee without phone" login
+                        Just numb -> do
+                            x <- liftIO $ tryDeep $ S.sendSms mgr smsProxyBurl $ S.Req numb $
+                                renderMustache missingHoursSmsTemplate params ^. strict
+                            case x of
+                                Left exc -> logAttention "sendSms failed" (show exc)
+                                Right _  -> return ()
 
     return "OK"
   where
