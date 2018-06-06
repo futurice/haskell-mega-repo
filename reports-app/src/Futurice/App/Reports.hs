@@ -180,7 +180,7 @@ missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
     let interval = beginningOfPrev2Month day ... previousFriday day
 
     (ppm, Report _ report) <- liftIO $ runIntegrations' ctx $ (,)
-        <$>personioPlanmillMap
+        <$> personioPlanmillMap
         <*> missingHoursReport missingHoursEmployeePredicate' interval
 
     let logins = HM.keys report

@@ -6,6 +6,8 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 import Generics.SOP (hpure, hsequenceK, hcmap)
+import Futurice.Services (Service (..))
+import Futurice.Constants (servicePublicUrl)
 
 import Futurice.App.Reports.API
 
@@ -40,6 +42,9 @@ indexPage = page_ "Reports" $ do
         li_ $ a_ [ href_ "/charts/career-length" ] "Distribution of career lengths over time, absolute"
         li_ $ a_ [ href_ "/charts/career-length-relative" ] "Distribution of career length over time, relative"
 
+        li_ $ a_ [ href_ "/charts/missing-hours" ] "Missing hours by tribe per employee per week"
+        li_ $ a_ [ href_ "/charts/utz" ] "Company UTZ"
+
     fullRow_ $ h2_ "Graphs"
     fullRow_ $ ul_ $ do
         li_ $ a_ [ href_ "/graphs/supervisors" ] "Supervisor graph"
@@ -53,3 +58,29 @@ indexPage = page_ "Reports" $ do
         li_ $ a_ [ href_ "/power/users" ] "Users"
         li_ $ a_ [ href_ "/power/projects" ] "Projects"
         li_ $ a_ [ href_ "/power/absences" ] "Absences"
+
+    fullRow_ $ h2_ "Reports and charts elsewhere"
+    fullRow_ $ do
+        p_ "Some links require superpowers"
+
+        ul_ $ do
+            elink_ HCService "/personio-validation"
+                "Personio data validation: empty fields etc."
+            elink_ FumCarbonService "/reports/compare-old-fum"
+                "Personio ↔ FUM5: check emails and phone numbers"
+            elink_ PlanmillSyncService "/"
+                "Personio → PlanMill: data agree"
+            elink_ GithubSyncService "/"
+                "Personio → GitHub: data agree"
+            elink_ PersonioProxyService "/charts/employees.svg"
+                "Personio active employees chart"
+            elink_ SmileysApiService "/charts/absolute.svg"
+                "Smileys absolute count chart"
+  where
+    elink_ :: Monad m => Service -> Text -> Text -> HtmlT m ()
+    elink_ service href description = li_ $ do
+        a_ [ href_ href' ] (toHtml href')
+        toHtmlRaw (" &ndash; " :: String)
+        toHtml description
+      where
+        href' =  servicePublicUrl service <> href
