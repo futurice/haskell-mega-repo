@@ -8,9 +8,9 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursMock (defaultMain) where
 
-import Prelude ()
 import Futurice.Prelude
 import Futurice.Servant
+import Prelude ()
 import Servant
 
 import Futurice.App.HoursApi.API
@@ -33,6 +33,7 @@ v1Server ctx =
     :<|> (\_ eu     -> runHours ctx (entryEndpoint eu))
     :<|> (\_ eid eu -> runHours ctx (entryEditEndpoint eid eu))
     :<|> (\_ eid    -> runHours ctx (entryDeleteEndpoint eid))
+    :<|> (\_ eids    -> runHours ctx (entryDeleteMultipleEndpoint eids))
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

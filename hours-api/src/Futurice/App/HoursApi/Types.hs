@@ -26,10 +26,10 @@ import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 import Test.QuickCheck           (arbitraryBoundedEnum)
 
-import qualified Data.Map        as Map
-import qualified PlanMill        as PM
-import qualified Test.QuickCheck as QC
+import qualified Data.Map                  as Map
 import qualified Numeric.Interval.NonEmpty as Interval
+import qualified PlanMill                  as PM
+import qualified Test.QuickCheck           as QC
 
 -------------------------------------------------------------------------------
 -- Project
