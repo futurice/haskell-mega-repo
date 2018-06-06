@@ -9,6 +9,7 @@ module Futurice.App.Reports.Templates (
 import Data.FileEmbed            (embedStringFile, makeRelativeToProject)
 import Text.Microstache (Template, compileMustacheText, renderMustache)
 
+
 missingHoursEmailTemplate :: Template
 missingHoursEmailTemplate = either (error . show) id
     $ compileMustacheText "missing-hours-email.template"
