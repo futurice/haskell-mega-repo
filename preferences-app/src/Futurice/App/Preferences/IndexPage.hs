@@ -25,7 +25,7 @@ type UpdatePrefPingSMS = SSOUser :> "update-ping-sms" :> Capture "value" Bool :>
 updatePrefPingSMS :: Proxy UpdatePrefPingSMS
 updatePrefPingSMS = Proxy
 
-type UpdatePrefPingEmail = SSOUser :> "update-ping-sms" :> Capture "value" Bool :> Post '[JSON] (CommandResponse ())
+type UpdatePrefPingEmail = SSOUser :> "update-ping-email" :> Capture "value" Bool :> Post '[JSON] (CommandResponse ())
 
 updatePrefPingEmail :: Proxy UpdatePrefPingEmail
 updatePrefPingEmail = Proxy
