@@ -11,16 +11,16 @@
 {-# LANGUAGE UndecidableInstances       #-}
 module Main (main) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens          (taking)
 import Control.Monad.Http    (MonadHttp (..))
 import Data.Constraint
 import Futurice.CryptoRandom (CryptoGenError)
 import Futurice.EnvConfig    (getConfig)
+import Futurice.Prelude
 import Futurice.Trans.PureT
 import Log.Class             (MonadLog (..))
 import PlanMill.Eval         (evalPlanMill)
+import Prelude ()
 
 import Control.Concurrent.Async.Lifted.Safe    (Concurrently (..))
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
@@ -57,6 +57,7 @@ data Cmd
     | CmdTask PM.TaskId
     | CmdMeta Text
     | CmdEnumeration Text
+    | CmdProjects
     | CmdProject PM.ProjectId
     | CmdAccounts
     | CmdAccount PM.AccountId
@@ -206,6 +207,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdMeta path  -> do
         x <- PM.planmillAction $ PM.planMillGet path
         putPretty (x :: PM.Meta)
+    CmdProjects -> do
+        x <- PM.planmillAction $ PM.projects
+        putPretty x
     CmdProject pid -> do
         x <- PM.planmillAction $ PM.project pid
         putPretty x
