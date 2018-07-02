@@ -22,6 +22,7 @@ import Futurice.Servant
 import Prelude ()
 import Servant
 
+
 import qualified Data.Map as Map
 
 import Futurice.App.Preferences.Config
