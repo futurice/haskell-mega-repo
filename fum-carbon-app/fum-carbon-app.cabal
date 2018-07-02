@@ -20,10 +20,16 @@ library
   hs-source-dirs:
       src
   default-extensions:
-    GeneralizedNewtypeDeriving
     DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
     DerivingStrategies
-    DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base >= 4.7 && <4.12

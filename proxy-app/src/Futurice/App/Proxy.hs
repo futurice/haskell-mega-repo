@@ -215,11 +215,15 @@ instance (Given FUM.AuthToken, HasClient m api)
     => HasClient m (WithFumAuthToken :> api)
   where
     type Client m (WithFumAuthToken :> api) = Client m api
+
+    hoistClientMonad pm _ = hoistClientMonad pm (Proxy :: Proxy api)
+
     clientWithRoute m _ req = clientWithRoute m (Proxy :: Proxy api) req'
       where
         req' = req
             { requestHeaders = ("Authorization", "Token " <> encodeUtf8 (given ^. FUM.getAuthToken)) <| requestHeaders req
             }
+
 
 -------------------------------------------------------------------------------
 -- WAI/startup
