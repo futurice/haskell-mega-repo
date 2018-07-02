@@ -38,6 +38,7 @@ import Futurice.App.HC.Ctx
 import Futurice.App.HC.EarlyCaring.Page
 import Futurice.App.HC.EarlyCaring.Types
 import Futurice.App.HC.IndexPage
+import Futurice.App.HC.HRNumbers
 import Futurice.App.HC.PersonioValidation
 import Futurice.App.HC.PrivateContacts
 
@@ -46,6 +47,7 @@ server ctx = indexPageAction ctx
     :<|> personioValidationAction ctx
     :<|> personioPrivateContactsAction ctx
     :<|> anniversariesAction ctx
+    :<|> hrnumbersAction ctx
     :<|> earlyCaringAction ctx
     :<|> earlyCaringSubmitAction ctx
 
@@ -107,6 +109,15 @@ anniversariesAction = withAuthUser $ \_ -> do
     today <- currentDay
     es <- personio P.PersonioEmployees
     return (anniversaries es today)
+
+hrnumbersAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "hr-numbers")
+hrnumbersAction = withAuthUser $ \_ -> do
+    today <- currentDay
+    es <- personio P.PersonioEmployees
+    return (hrnumbers es today)
 
 earlyCaringAction
     :: Ctx

@@ -13,6 +13,7 @@ type HCAPI = SSOUser :> Get '[HTML] (HtmlPage "index-page")
     :<|> SSOUser :> "personio-validation" :> Get '[HTML] (HtmlPage "personio-validation")
     :<|> SSOUser :> "private-contacts" :> Get '[HTML] (HtmlPage "private-contacts")
     :<|> SSOUser :> "anniversaries" :> Get '[HTML] (HtmlPage "anniversaries")
+    :<|> SSOUser :> "hr-numbers" :> Get '[HTML] (HtmlPage "hr-numbers")
     :<|> SSOUser :> "early-caring" :> Get '[HTML] (HtmlPage "early-caring")
     :<|> SSOUser :> "early-caring-submit" :> ReqBody '[JSON] (SignedBlob EarlyCaringEmail) :> Post '[JSON] Bool
 

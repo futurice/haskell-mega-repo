@@ -21,6 +21,8 @@ indexPage _fu = page_ "HC app" (Just NavHome) $ do
         li_ $ do
             a_ [href_ "/anniversaries"] "Anniversaries"
             " - decades at Futurice or on Earth"
+            a_ [href_ "/hr-numbers"] "HR Numbers"
+            " - simple table of employees' HR numbers"
         li_ $ do
             a_ [href_ "/private-contacts"] "Private concacts"
             " - people private email and phone number on a single page"
