@@ -60,15 +60,16 @@ library
  
   exposed-modules:
       Futurice.App.HC.Anniversaries
-      Futurice.App.HC.Main
       Futurice.App.HC.API
-      Futurice.App.HC.IndexPage
       Futurice.App.HC.Config
       Futurice.App.HC.Ctx
-      Futurice.App.HC.Markup
       Futurice.App.HC.EarlyCaring.Page
-      Futurice.App.HC.EarlyCaring.Types
       Futurice.App.HC.EarlyCaring.Template
+      Futurice.App.HC.EarlyCaring.Types
+      Futurice.App.HC.HRNumbers
+      Futurice.App.HC.IndexPage
+      Futurice.App.HC.Main
+      Futurice.App.HC.Markup
       Futurice.App.HC.PersonioValidation
       Futurice.App.HC.PrivateContacts
 

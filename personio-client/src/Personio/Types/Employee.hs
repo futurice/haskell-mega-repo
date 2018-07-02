@@ -147,7 +147,7 @@ parseEmployeeObject obj' = Employee
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
     <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
     <*> parseAttribute obj "status"
-    <*> parseDynamicAttribute obj "(FI) HR number"
+    <*> fmap (>>= notZero) (parseDynamicAttribute obj "(FI) HR number")
     <*> parseAttribute obj "employment_type"
     <*> optional (parseDynamicAttribute obj "Contract type")
     <*> optional (parseDynamicAttribute obj "Salary type")
@@ -169,6 +169,10 @@ parseEmployeeObject obj' = Employee
         a <- fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
         b <- fmap (fmap zonedDay) (parseAttribute obj "termination_date")
         return $ fmap getMin $ fmap Min a <> fmap Min b
+
+    notZero n
+        | n <= 0    = Nothing
+        | otherwise = Just n
 
 fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 fmap2 = fmap . fmap
