@@ -1,9 +1,9 @@
-index-state: 2018-05-28T04:51:29Z
+index-state: 2018-07-02T09:57:50Z
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
 constraints:
-  aeson              ^>= 1.3.1.1,
+  aeson              ^>= 1.4.0.0,
   amazonka-core      ^>= 1.6.0,
   cabal-plan         ^>= 0.3.0.0,
   Chart              ^>= 1.8.3,
@@ -15,10 +15,10 @@ constraints:
   lens               ^>= 4.16,
   log-base           ^>= 0.7.4.0,
   semigroupoids      ^>= 5.2.2,
-  servant            ^>= 0.13.0.1,
+  servant            ^>= 0.14,
   servant-lucid      ^>= 0.8,
-  servant-client     ^>= 0.13,
-  servant-server     ^>= 0.13,
+  servant-client     ^>= 0.14,
+  servant-server     ^>= 0.14,
   servant-swagger-ui ^>= 0.3.0.3.13.2,
   unix-time          ^>= 0.3.8,
   tdigest            ^>= 0.2
@@ -26,11 +26,8 @@ constraints:
 constraints:
   JuicyPixels-scale-dct ^>= 0.1.2
 
--- https://github.com/tvh/servant-JuicyPixels/pull/6
 allow-newer:
-  servant-JuicyPixels:base
-
-allow-newer:
+  cabal-plan:aeson,
   *:Cabal
 
 packages:
