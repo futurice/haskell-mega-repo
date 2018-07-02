@@ -37,7 +37,7 @@ data Project = Project
     , pInvoicedRevenue            :: !(Maybe Double) -- TODO: better type
     -- , pOperationalId              :: !(Maybe Int) -- TODO: failed to parse field operationalId: expected Int, encountered String"
     , pPlannedEffort              :: !(Maybe Int)
-    , pPortfolio                  :: !Int
+    , pPortfolio                  :: !Int  -- TODO: remove field (bustes cache)
     , pProjectManager             :: !(Maybe UserId)
     , pRemainingEffort            :: !(Maybe Int)
     , pReportedHours              :: !(Maybe Int)
@@ -89,7 +89,7 @@ instance FromJSON Project where
                 <*> obj .:? "invoicedRevenue"
                 -- <*> obj .: "operationalId"
                 <*> obj .:? "plannedEffort"
-                <*> obj .: "portfolio"
+                <*> (obj .: "portfolio" <|> pure (-1)) -- TODO: remove field (bustes cache)
                 <*> obj .:? "projectManager"
                 <*> obj .:? "remainingEffort"
                 <*> obj .:? "reportedHours"
