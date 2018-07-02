@@ -558,8 +558,8 @@ instance HasServer api context => HasServer (SSOUser :> api) context where
             FUM.parseLogin . decodeLatin1 $ l
 
 instance HasLink api => HasLink (SSOUser :> api) where
-    type MkLink (SSOUser :> api) = MkLink api
-    toLink _ = toLink (Proxy :: Proxy api)
+    type MkLink (SSOUser :> api) a = MkLink api a
+    toLink toA _ = toLink toA (Proxy :: Proxy api)
 
 instance HasSwagger api => HasSwagger (SSOUser :> api) where
     toSwagger _ = toSwagger (Proxy :: Proxy api)
