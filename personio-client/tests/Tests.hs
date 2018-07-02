@@ -68,7 +68,7 @@ examples = testGroup "HUnit"
         Just "gitMastur" @=? e ^. employeeGithub
         Nothing @=? e ^. employeeFlowdock
         Active @=? e ^. employeeStatus
-        Just 0 @=? e ^. employeeHRNumber
+        Just 2 @=? e ^. employeeHRNumber
         Just Internal @=? e ^. employeeEmploymentType
         Just "+123 5678910" @=? e ^. employeeHomePhone
     , validations
