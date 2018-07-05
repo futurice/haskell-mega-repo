@@ -97,6 +97,9 @@ packages:
   vendor/diffusionkinetics-open/plotlyhs
   vendor/diffusionkinetics-open/lucid-extras
 
+  -- we need a release with https://github.com/brendanhay/amazonka/issues/463
+  vendor/amazonka/amazonka
+
 package theme-app
   ghc-options: +RTS -M2G -RTS
 
