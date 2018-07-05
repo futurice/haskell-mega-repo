@@ -47,6 +47,7 @@ data Service
     | ProxMgmtService
     | ProxService
     | ReportsService
+    | SisosotaService
     | SmileysApiService
     | SmsProxyService
     | ThemeService
@@ -80,6 +81,7 @@ instance TextEnum Service where
         , "prox-mgmt"
         , "prox"
         , "reports"
+        , "sisosota"
         , "smileys-api"
         , "sms-proxy"
         , "theme"
@@ -137,6 +139,7 @@ data PerService a = PerService
     , perProxMgmt      :: a
     , perProx          :: a
     , perReports       :: a
+    , perSisosota      :: a
     , perSmileysApi    :: a
     , perSmsProxy      :: a
     , perTheme         :: a
@@ -172,7 +175,8 @@ instance Representable PerService where
     index p ProxMgmtService      = perProxMgmt p
     index p ProxService          = perProx p
     index p ReportsService       = perReports p
-    index p SmileysApiService       = perSmileysApi p
+    index p SisosotaService      = perSisosota p
+    index p SmileysApiService    = perSmileysApi p
     index p SmsProxyService      = perSmsProxy p
     index p ThemeService         = perTheme p
 
@@ -199,7 +203,8 @@ instance Representable PerService where
         , perProxMgmt      = f ProxMgmtService
         , perProx          = f ProxService
         , perReports       = f ReportsService
-        , perSmileysApi       = f SmileysApiService
+        , perSisosota      = f SisosotaService
+        , perSmileysApi    = f SmileysApiService
         , perSmsProxy      = f SmsProxyService
         , perTheme         = f ThemeService
         }

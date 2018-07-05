@@ -43,6 +43,7 @@ module Futurice.Servant (
     serverService,
     serverDescription,
     serverApp,
+    serverHtmlApp,
     serverMiddleware,
     serverColour,
     serverEnvPfx,
@@ -169,9 +170,10 @@ futuriceServer t d _cache papi server
 -------------------------------------------------------------------------------
 
 -- | Data type containing the server setup
-data ServerConfig f g opts (colour :: Colour) ctx api = SC
+data ServerConfig f g opts (colour :: Colour) ctx htmlApi api = SC
     { _serverService     :: !(f Service)
     , _serverDescription :: !Text
+    , _serverHtml        :: ctx -> Server htmlApi
     , _serverApplication :: ctx -> Server api
     , _serverMiddleware  :: ctx -> Middleware
     , _serverEnvPfx      :: !(g Text)
@@ -180,11 +182,12 @@ data ServerConfig f g opts (colour :: Colour) ctx api = SC
 
 -- | Default server config, through the lenses the type of api will be refined
 --
-emptyServerConfig :: ServerConfig Proxy Proxy () 'FutuGreen ctx (Get '[JSON] ())
+emptyServerConfig :: ServerConfig Proxy Proxy () 'FutuGreen ctx EmptyAPI EmptyAPI
 emptyServerConfig = SC
     { _serverService      = Proxy
     , _serverDescription  = "Some futurice service"
-    , _serverApplication  = \_ -> pure ()
+    , _serverHtml         = \_ -> emptyServer
+    , _serverApplication  = \_ -> emptyServer
     , _serverMiddleware   = futuriceNoMiddleware
     , _serverEnvPfx       = Proxy
     , _serverOpts         = pure ()
@@ -199,18 +202,18 @@ liftFuturiceMiddleware :: Middleware -> ctx -> Middleware
 liftFuturiceMiddleware mw _ = mw
 
 serverService :: Lens
-    (ServerConfig f g opts colour ctx api)
-    (ServerConfig I g opts colour ctx api)
+    (ServerConfig f g opts colour ctx htmlApi api)
+    (ServerConfig I g opts colour ctx htmlApi api)
     (f Service)
     Service
 serverService = lens _serverService $ \sc x -> sc { _serverService = I x }
 
-serverDescription :: Lens' (ServerConfig f g opts colour ctx api) Text
+serverDescription :: Lens' (ServerConfig f g opts colour ctx htmlApi api) Text
 serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
 
 serverEnvPfx :: Lens
-    (ServerConfig f g opts colour ctx api)
-    (ServerConfig f I opts colour ctx api)
+    (ServerConfig f g opts colour ctx htmlApi api)
+    (ServerConfig f I opts colour ctx htmlApi api)
     (g Text)
     Text
 serverEnvPfx = lens _serverEnvPfx $ \sc x -> sc { _serverEnvPfx = I x }
@@ -218,20 +221,28 @@ serverEnvPfx = lens _serverEnvPfx $ \sc x -> sc { _serverEnvPfx = I x }
 serverApp
     :: Functor ff
     => Proxy api'
-    -> LensLike ff (ServerConfig f g opts colour ctx api) (ServerConfig f g opts colour ctx api')
+    -> LensLike ff (ServerConfig f g opts colour ctx htmlApi api) (ServerConfig f g opts colour ctx htmlApi api')
        (ctx -> Server api) (ctx -> Server api')
 serverApp _ = lens _serverApplication $ \sc x -> sc { _serverApplication = x }
 
-serverMiddleware :: Lens' (ServerConfig f g opts colour ctx api) (ctx -> Middleware)
+-- | This api is not visible in swagger docs
+serverHtmlApp
+    :: Functor ff
+    => Proxy htmlApi'
+    -> LensLike ff (ServerConfig f g opts colour ctx htmlApi api) (ServerConfig f g opts colour ctx htmlApi' api)
+       (ctx -> Server htmlApi) (ctx -> Server htmlApi')
+serverHtmlApp _ = lens _serverHtml $ \sc x -> sc { _serverHtml = x }
+
+serverMiddleware :: Lens' (ServerConfig f g opts colour ctx htmlApi api) (ctx -> Middleware)
 serverMiddleware = lens _serverMiddleware $ \sc x -> sc { _serverMiddleware = x }
 
 serverColour
-    :: Lens (ServerConfig f g opts colour ctx api) (ServerConfig f g opts colour' ctx api)
+    :: Lens (ServerConfig f g opts colour ctx htmlApi api) (ServerConfig f g opts colour' ctx htmlApi api)
        (Proxy colour) (Proxy colour')
 serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 
 serverOpts
-    :: Lens (ServerConfig f g opts colour ctx api) (ServerConfig f g opts' colour ctx api)
+    :: Lens (ServerConfig f g opts colour ctx htmlApi api) (ServerConfig f g opts' colour ctx htmlApi api)
        (O.Parser opts) (O.Parser opts')
 serverOpts = lens _serverOpts $ \sc x -> sc { _serverOpts = x }
 
@@ -256,14 +267,14 @@ args o = (,,)
         app req res
 
 futuriceServerMain
-    :: forall cfg opts ctx api colour.
-       (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
+    :: forall cfg opts ctx htmlApi api colour.
+       (Configure cfg, HasServer htmlApi '[], HasSwagger api, HasServer api '[], SColour colour)
     => (opts -> cfg -> Logger -> Manager -> Cache -> MessageQueue -> IO (ctx, [Job]))
        -- ^ Initialise the context for application, add periocron jobs
-    -> ServerConfig I I opts colour ctx api
+    -> ServerConfig I I opts colour ctx htmlApi api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP) = do
+futuriceServerMain makeCtx (SC (I service) d htmlServer server middleware1 (I envpfx) optsP) = do
     (_showEnvConvig, middleware2, opts) <- O.execParser $ O.info (O.helper <*> args optsP) $ mconcat
         [ O.fullDesc
         , O.progDesc (d ^. unpacked)
@@ -313,7 +324,8 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
         cache          <- newCache
         (ctx, jobs)    <- makeCtx opts cfg lgr mgr cache mq
         let server'    =  futuriceServer (serviceToText service) d cache proxyApi (server ctx)
-                       :: Server (FuturiceAPI api colour)
+                       :<|> htmlServer ctx
+                       :: Server (FuturiceAPI api colour :<|> htmlApi)
 
         statsEnabled <-
 #if MIN_VERSION_base(4,10,0)
@@ -423,7 +435,7 @@ futuriceServerMain makeCtx (SC (I service) d server middleware1 (I envpfx) optsP
     proxyApi :: Proxy api
     proxyApi = Proxy
 
-    proxyApi' :: Proxy (FuturiceAPI api colour)
+    proxyApi' :: Proxy (FuturiceAPI api colour :<|> htmlApi)
     proxyApi' = Proxy
 
 -------------------------------------------------------------------------------
