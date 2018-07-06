@@ -23,3 +23,6 @@
 [submodule "aws-lambda-kleisli"]
 	path = aws-lambda-kleisli
 	url = https://github.com/futurice/haskell-aws-lambda-kleisli.git
+[submodule "vendor/amazonka"]
+	path = vendor/amazonka
+	url = https://github.com/brendanhay/amazonka.git
