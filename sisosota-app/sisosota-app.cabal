@@ -1,0 +1,88 @@
+cabal-version:  2.0
+name:           sisosota-app
+version:        0
+
+synopsis:       Simple CAS
+description:    Simple CAS
+category:       Web
+homepage:       https://github.com/futurice/haskell-mega-rpo#readme
+bug-reports:    https://github.com/futurice/haskell-mega-rpo/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-mega-rpo
+
+library
+  ghc-options: -Wall
+  hs-source-dirs:
+      src
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
+  build-depends:
+      base                  >=4.7   && <4.12
+    , aeson
+    , aeson-compat
+    , amazonka
+    , amazonka-s3
+    , bytestring
+    , base-compat
+    , base64-bytestring
+    , clay
+    , containers
+    , entropy
+    , env-config
+    , fum-api
+    , fum-types
+    , futurice-constants
+    , futurice-foundation
+    , futurice-integrations
+    , futurice-logo
+    , futurice-postgres
+    , futurice-prelude
+    , futurice-servant
+    , generics-sop
+    , lens
+    , lucid
+    , lucid-extras
+    , plotlyhs
+    , postgresql-simple
+    , resource-pool
+    , servant
+    , servant-lucid
+    , servant-multipart
+    , servant-server
+    , sisosota-client
+    , swagger2
+    , text
+    , time
+    , vector
+  exposed-modules:
+      Futurice.App.Sisosota.Config
+      Futurice.App.Sisosota.Ctx
+      Futurice.App.Sisosota.IndexPage
+      Futurice.App.Sisosota.Main
+      Futurice.App.Sisosota.Markup
+  default-language: Haskell2010
+
+executable sisosota-app-server
+  main-is: Main.hs
+  hs-source-dirs:
+      srv
+  ghc-options: -threaded -rtsopts
+  build-depends:
+      base
+    , sisosota-app
+  default-language: Haskell2010

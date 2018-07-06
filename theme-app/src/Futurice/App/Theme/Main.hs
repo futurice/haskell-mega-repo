@@ -29,7 +29,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ (emptyServerConfig
     & serverDescription  .~ "Futurice theme guidelines"
     & serverColour       .~ (Proxy :: Proxy 'FutuGreen)
     & serverApp themeApi .~ server
-    & serverEnvPfx       .~ "THEMEAPP" :: ServerConfig I I () 'FutuGreen () ThemeAPI)
+    & serverEnvPfx       .~ "THEMEAPP" :: ServerConfig I I () 'FutuGreen () EmptyAPI ThemeAPI)
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO ((), [Job])
     makeCtx _ _ _ _ _ = pure ((), [])
