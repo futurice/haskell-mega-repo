@@ -7,19 +7,24 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Avatar (defaultMain) where
 
-import Codec.Picture         (DynamicImage)
-import Data.Aeson.Compat     (encode)
-import Data.Conduit.Binary   (sinkLbs)
+import Codec.Picture
+       (DynamicImage (ImageRGBA8), convertRGBA8, decodeImage)
+import Codec.Picture.Png         (encodeDynamicPng)
+import Data.Aeson.Compat         (encode)
+import Data.Conduit.Binary       (sinkLbs)
 import Futurice.Integrations
+import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
 import Servant.Cached
-import Servant.JuicyPixels   (PNG)
+import Servant.JuicyPixels       (PNG)
+import Servant.Server.Generic
 
 import qualified Control.Monad.Trans.AWS      as AWS
 import qualified Data.ByteString.Lazy         as LBS
+import qualified Data.ByteString.Lazy         as BSL
 import qualified Data.Map.Strict              as Map
 import qualified FUM
 import qualified Network.AWS.Env              as AWS
@@ -27,6 +32,7 @@ import qualified Network.AWS.Lambda.Invoke    as AWS
 import qualified Network.AWS.S3.GetObject     as AWS
 import qualified Network.AWS.S3.ListObjectsV2 as AWS
 import qualified Network.AWS.S3.Types         as AWS
+import qualified Network.HTTP.Client          as HTTP
 
 -- Avatar modules
 import Futurice.App.Avatar.API
@@ -34,6 +40,29 @@ import Futurice.App.Avatar.Config
 import Futurice.App.Avatar.Ctx
 import Futurice.App.Avatar.Embedded
 import Futurice.App.Avatar.Types
+
+-------------------------------------------------------------------------------
+-- HTML
+-------------------------------------------------------------------------------
+
+type HtmlAPI = SSOUser :> Get '[HTML] (HtmlPage "index")
+
+htmlApi :: Proxy HtmlAPI
+htmlApi = Proxy
+
+htmlServer :: a -> Server HtmlAPI
+htmlServer _ mfu = return $ page_ "Avatar" $ fullRow_ $ do
+    h1_ "Avatar"
+    for_ mfu $ \login -> do
+        p_ $ "AVatars of  " <> toHtml login
+        p_ $ do
+            img_ [ src_ $ fieldLink' toUrlPiece recFum login (Just (Square 128)) False ]
+            img_ [ src_ $ fieldLink' toUrlPiece recFum login (Just (Square 64)) False ]
+            img_ [ src_ $ fieldLink' toUrlPiece recFum login (Just (Square 32)) False ]
+
+-------------------------------------------------------------------------------
+-- API
+-------------------------------------------------------------------------------
 
 type DynamicImage' = Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage)
 
@@ -61,38 +90,56 @@ cachedAvatar (Ctx _ _ _ cfg env) ap =
         lbs <- AWS.sinkBody (r ^. AWS.gorsBody) sinkLbs
         return $ addHeader "pubic, max-age=3600" $ unsafeMkCached lbs
 
-clamp :: Ord a => a -> a -> a -> a
-clamp mi ma x
-    | x < mi    = mi
-    | x > ma    = ma
-    | otherwise = x
+processOriginal :: Ctx ->  Text -> LogT IO DynamicImage'
+processOriginal ctx url = do
+    req <- HTTP.parseUrlThrow (url ^. unpacked)
+    res <- liftIO $ HTTP.httpLbs req mgr
+    let body = HTTP.responseBody res
+    either fail return' $ do
+        origImg <- decodeImage (BSL.toStrict body)
+        encodeDynamicPng $ ImageRGBA8 $ convertRGBA8 origImg
+  where
+    mgr = ctxManager ctx
+    return' = return . addHeader "pubic, max-age=3600" . unsafeMkCached
 
 mkAvatar
     :: Ctx
     -> Text        -- ^ URL, is mandatory
-    -> Maybe Int   -- ^ size, minimum size is 16
+    -> Maybe Size  -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkAvatar ctx url msize grey = liftIO $ runLogT "avatar" (ctxLogger ctx) $ do
-    let ap = AvatarProcess url (maybe 64 (clamp 16 256) msize) grey
-    logTrace "fetching image" ap
-    cachedAvatar ctx ap
+mkAvatar ctx url msize grey = case fromMaybeSize msize of
+    Original -> undefined
+    Square size -> liftIO $ runLogT "avatar" (ctxLogger ctx) $ do
+        let ap = AvatarProcess url size grey
+        logTrace "fetching image" ap
+        cachedAvatar ctx ap
 
 mkFum
     :: Ctx
     -> FUM.Login
-    -> Maybe Int   -- ^ size, minimum size is 16
+    -> Maybe Size  -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = liftIO $ runLogT "avatar-fum" lgr $ do
-    fumMap <- liftIO $ cachedIO lgr cache 3600 () getFumMap
-    case fumMap ^? ix login of
-        Nothing -> return fallback
-        Just u  -> do
-            case u ^. FUM.userImageUrl . lazy of
-                Nothing -> return fallback
-                Just url -> cachedAvatar ctx $
-                    AvatarProcess url (maybe 64 (clamp 16 256) msize) grey
+mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = case fromMaybeSize msize of
+    Original -> liftIO $ runLogT "original-fum" lgr $ do
+        fumMap <- liftIO $ cachedIO lgr cache 3600 () getFumMap
+        case fumMap ^? ix login of
+            Nothing -> return fallback
+            Just u  -> do
+                case u ^. FUM.userImageUrl . lazy of
+                    Nothing -> return fallback
+                    Just url -> processOriginal ctx url
+
+    Square size -> liftIO $ runLogT "avatar-fum" lgr $ do
+        fumMap <- liftIO $ cachedIO lgr cache 3600 () getFumMap
+        case fumMap ^? ix login of
+            Nothing -> return fallback
+            Just u  -> do
+                case u ^. FUM.userImageUrl . lazy of
+                    Nothing -> return fallback
+                    Just url -> cachedAvatar ctx $
+                        AvatarProcess url size grey
   where
     fallback = addHeader "pubic, max-age=3600" $ unsafeMkCached $ LBS.fromStrict futulogoBS
 
@@ -103,17 +150,23 @@ mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = liftIO $ runLogT "avatar-
         return $ Map.fromList $ map (\x -> (x ^. FUM.userName, x)) $ toList xs
 
 server :: Ctx -> Server AvatarAPI
-server ctx = pure "Hello from avatar app"
-    :<|> mkAvatar ctx
-    :<|> mkFum ctx
+server ctx = genericServer $ Record
+    { recGeneric = mkAvatar ctx
+    , recFum     = mkFum ctx
+    }
+
+-------------------------------------------------------------------------------
+-- Main
+-------------------------------------------------------------------------------
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
-    & serverService       .~ AvatarService
-    & serverDescription   .~ "Serve smaller versions of your favourite images"
-    & serverColour        .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
-    & serverApp avatarApi .~ server
-    & serverEnvPfx        .~ "AVATAR"
+    & serverService         .~ AvatarService
+    & serverDescription     .~ "Serve smaller versions of your favourite images"
+    & serverColour          .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
+    & serverHtmlApp htmlApi .~ htmlServer
+    & serverApp avatarApi   .~ server
+    & serverEnvPfx          .~ "AVATAR"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg lgr mgr cache _mq = do

@@ -42,6 +42,7 @@ library
     , fum-client
     , fum-types
     , futurice-integrations
+    , futurice-foundation
     , futurice-prelude
     , futurice-servant
     , http-client
@@ -50,6 +51,7 @@ library
     , lens
     , servant
     , servant-JuicyPixels
+    , servant-lucid
     , servant-server
     , stm
     , text
