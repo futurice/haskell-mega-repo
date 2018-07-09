@@ -134,7 +134,7 @@ serveMissingHoursReport allContracts ctx = do
     insertQuery = fromString $ unwords
         [ "INSERT INTO reports.missing_hours as c (day, hours)"
         , "VALUES (?, ?) ON CONFLICT (day) DO UPDATE"
-        , "SET hours = greatest(c.hours, EXCLUDED.hours)"
+        , "SET hours = LEAST(c.hours, EXCLUDED.hours)"
         , ";"
         ]
 
