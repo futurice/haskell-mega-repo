@@ -43,6 +43,7 @@ indexPage = page_ "Reports" $ do
         li_ $ a_ [ href_ "/charts/career-length-relative" ] "Distribution of career length over time, relative"
 
         li_ $ a_ [ href_ "/charts/missing-hours" ] "Missing hours by tribe per employee per week"
+        li_ $ a_ [ href_ "/charts/missing-hours-daily" ] "Missing hours total per day"
         li_ $ a_ [ href_ "/charts/utz" ] "Company UTZ"
 
     fullRow_ $ h2_ "Graphs"
