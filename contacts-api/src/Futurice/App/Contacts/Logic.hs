@@ -14,17 +14,17 @@ module Futurice.App.Contacts.Logic (
     contacts,
     ) where
 
-import Data.RFC5051            (compareUnicode)
-import Futurice.App.Avatar.API
-import Futurice.Constants      (avatarPublicUrl)
-import Futurice.Email          (emailToText)
+import Data.RFC5051          (compareUnicode)
+import Futurice.Constants    (avatarPublicUrl)
+import Futurice.Email        (emailToText)
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 import Servant
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Text           as T
+import qualified Data.HashMap.Strict     as HM
+import qualified Data.Text               as T
+import qualified Futurice.App.Avatar.API as Avatar
 
 -- Data definition
 import qualified Chat.Flowdock.REST as FD
@@ -77,8 +77,8 @@ employeeToContact e = Contact
     , contactEmail      = maybe "" emailToText $ e ^. Personio.employeeEmail
     , contactPhones     = catMaybes [e ^. Personio.employeeWorkPhone, e ^. Personio.employeeHomePhone]
     , contactTitle      = e ^. Personio.employeePosition
-    , contactThumb      = avatarPublicUrl <> linkToText (safeLink avatarApi fumAvatarEndpoint fumLogin thumbSize False)
-    , contactImage      = avatarPublicUrl <> linkToText (safeLink avatarApi fumAvatarEndpoint fumLogin imageSize False)
+    , contactThumb      = avatarPublicUrl <> fieldLink' linkToText Avatar.recFum fumLogin Nothing False
+    , contactImage      = avatarPublicUrl <> fieldLink' linkToText Avatar.recFum fumLogin (Just Avatar.Original) False
     , contactFlowdock   = mcase (e ^. Personio.employeeFlowdock) Nothing $
         Just . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage)
     , contactGithub     = mcase (e ^. Personio.employeeGithub) Nothing $
@@ -92,8 +92,6 @@ employeeToContact e = Contact
     , contactHrnumber   = e ^. Personio.employeeHRNumber
     }
   where
-    thumbSize = Nothing
-    imageSize = Nothing
     fumLogin = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
 
 githubDetailedMembers

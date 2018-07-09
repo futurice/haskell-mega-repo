@@ -9,7 +9,6 @@
 module Futurice.App.HoursApi (defaultMain) where
 
 import Control.Concurrent.STM     (atomically, newTVarIO, readTVarIO, writeTVar)
-import Futurice.App.Avatar.API
 import Futurice.Constants         (avatarPublicUrl, avatarPublicUrlStr)
 import Futurice.Integrations
 import Futurice.Metrics.RateMeter (mark)
@@ -28,9 +27,10 @@ import Futurice.App.HoursApi.Logic
        entryEndpoint, hoursEndpoint, projectEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
 
-import qualified Data.HashMap.Strict as HM
-import qualified FUM.Types.Login     as FUM
-import qualified PlanMill.Worker     as PM
+import qualified Data.HashMap.Strict     as HM
+import qualified FUM.Types.Login         as FUM
+import qualified Futurice.App.Avatar.API as Avatar
+import qualified PlanMill.Worker         as PM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
@@ -59,8 +59,8 @@ authorisedUser
     -> Handler a
 authorisedUser ctx mfum meterName action =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
-        let thumbSize = Just 40 -- pixels per side
-        let userThumbUrl = avatarPublicUrl <> linkToText (safeLink avatarApi fumAvatarEndpoint fumUsername thumbSize False)
+        let thumbSize = Just (Avatar.Square 40) -- pixels per side
+        let userThumbUrl = avatarPublicUrl <> fieldLink' linkToText Avatar.recFum fumUsername thumbSize False
         pmData <- liftIO $ readTVarIO $ ctxPersonioPlanmillMap ctx
         (pemUser, pmUser) <- maybe (unauthorised fumUsername) pure $ pmData ^. at fumUsername
         liftIO $ mark $ "Request " <> meterName
