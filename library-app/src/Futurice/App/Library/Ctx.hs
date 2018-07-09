@@ -4,6 +4,7 @@ module Futurice.App.Library.Ctx (
 
 import Futurice.Postgres
 import Futurice.Prelude
+import Futurice.Servant  (Cache)
 import Prelude ()
 
 import Futurice.App.Library.Config
@@ -13,6 +14,7 @@ data Ctx = Ctx
     , ctxPostgres :: !(Pool Connection)
     , ctxLogger   :: !Logger
     , ctxManager  :: !Manager
+    , ctxCache    :: !Cache
     }
 
 instance HasPostgresPool Ctx where

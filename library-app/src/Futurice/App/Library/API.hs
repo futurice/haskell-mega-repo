@@ -19,9 +19,12 @@ type LibraryAPI = IndexPageEndpoint
 type IndexPageEndpoint =
     SSOUser :> Get '[HTML] (HtmlPage "indexpage")
     :<|> "book" :> Get '[JSON] [BookInformationResponse]
-    :<|> "book" :> Capture "id" LoanableId :> Get '[JSON] [BookInformationResponse]
+    :<|> "book" :> Capture "id" BookId :> Get '[JSON] BookInformationResponse
     :<|> "book" :> "cover" :> Capture "picture" Text :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
+    :<|> SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
+    :<|> SSOUser :> "book" :> "snatch" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
     :<|> "loan" :> Get '[JSON] [Loan]
+    :<|> "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
 
 libraryApi :: Proxy LibraryAPI
 libraryApi = Proxy

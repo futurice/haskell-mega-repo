@@ -10,6 +10,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import qualified FUM.Types.Login as FUM
+import qualified Personio
 
 data Config = Config
     { cfgMockUser         :: !(Maybe FUM.Login)
