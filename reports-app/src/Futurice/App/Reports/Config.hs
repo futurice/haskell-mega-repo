@@ -3,17 +3,19 @@ module Futurice.App.Reports.Config (
     Config(..),
     ) where
 
+import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
-import Servant.Client        (BaseUrl)
+import Servant.Client             (BaseUrl)
 
 data Config = Config
     { cfgIntegrationsCfg       :: !(IntegrationsConfig '[I, I, Proxy, I, I, I])
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgSmsProxyBaseurl       :: !BaseUrl
     , cfgPreferencesAppBaseurl :: !BaseUrl
+    , cfgPostgresConnInfo  :: !ConnectInfo
     }
 
 instance Configure Config where
@@ -22,3 +24,4 @@ instance Configure Config where
         <*> envVar "EMAILPROXY_BASEURL"
         <*> envVar "SMSPROXY_BASEURL"
         <*> envVar "PREFERENCES_BASEURL"
+        <*> envConnectInfo

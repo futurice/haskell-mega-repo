@@ -9,8 +9,6 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.Reports (defaultMain) where
 
-import Control.Lens                (_4, _5)
-import Dashdo.Servant              (DashdoAPI)
 import Data.Aeson                  (object, (.=))
 import Data.Time                   (addDays, defaultTimeLocale, formatTime)
 import Data.Time.Calendar.WeekDate (toWeekDate)
@@ -19,9 +17,11 @@ import Futurice.Integrations
        runIntegrations)
 import Futurice.Metrics.RateMeter  (mark)
 import Futurice.Periocron
+import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Report.Columns     (Report (..))
+import Futurice.Report.Columns     (Report (..), reportParams)
 import Futurice.Servant
+import Futurice.Time               (unNDT)
 import Generics.SOP                (All, hcmap, hcollapse)
 import GHC.TypeLits                (KnownSymbol, symbolVal)
 import Numeric.Interval.NonEmpty   (Interval, (...))
@@ -37,22 +37,27 @@ import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
-import Futurice.App.Reports.Dashdo            (makeDashdoServer)
+import Futurice.App.Reports.Ctx
+import Futurice.App.Reports.Dashdo                 (makeDashdoServer)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
-       (MissingHoursReport, missingHourDay, missingHoursReport)
+       (MissingHoursReport, mhpTotalHours, missingHourDay, missingHoursReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
+import Futurice.App.Reports.MissingHoursDailyChart
+       (missingHoursDailyChartData, missingHoursDailyChartRender)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
-import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
-import Futurice.App.Reports.SupervisorsGraph  (supervisorsGraph)
+import Futurice.App.Reports.PowerUser
+       (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.SupervisorsGraph       (supervisorsGraph)
 import Futurice.App.Reports.Templates
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
-import Futurice.App.Reports.UtzChart          (utzChartData, utzChartRender)
+import Futurice.App.Reports.UtzChart
+       (utzChartData, utzChartRender)
 
 import qualified Futurice.App.EmailProxy.Client as E
 import qualified Futurice.App.EmailProxy.Types  as E
@@ -62,9 +67,6 @@ import qualified Futurice.App.SmsProxy.Types    as S
 import qualified Data.HashMap.Strict as HM
 import qualified Personio            as P
 
--- /TODO/ Make proper type
-type Ctx = (Cache, Manager, Logger, Config, Server DashdoAPI)
-
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
 -------------------------------------------------------------------------------
@@ -72,11 +74,15 @@ newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 -------------------------------------------------------------------------------
 
 runIntegrations' :: Ctx -> Integrations '[I, I, Proxy, I, I, I] a -> IO a
-runIntegrations' (_, mgr, lgr, cfg, _) m = do
+runIntegrations' ctx m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
 
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Missing hours predicates
 -------------------------------------------------------------------------------
 
@@ -106,14 +112,31 @@ serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
 serveMissingHoursReport allContracts ctx = do
-    cachedIO' ctx allContracts $ do
+    (report, today) <- cachedIO' ctx allContracts $ do
         day <- currentDay
         let interval = beginningOfPrev2Month day ... previousFriday day
-        runIntegrations' ctx (missingHoursReport predicate interval)
+        r <- runIntegrations' ctx (missingHoursReport predicate interval)
+        return (r, day)
+
+    unless allContracts $ liftIO $ runLogT "missing-hours-series" lgr $ do
+        let total :: Double
+            total = realToFrac $ unNDT $ report ^. reportParams . mhpTotalHours
+        void $ safePoolExecute ctx insertQuery (today, total)
+
+    return report
   where
+    lgr = ctxLogger ctx
+
     predicate
         | allContracts = missingHoursEmployeePredicate
         | otherwise    = missingHoursEmployeePredicate'
+
+    insertQuery = fromString $ unwords
+        [ "INSERT INTO reports.missing_hours as c (day, hours)"
+        , "VALUES (?, ?) ON CONFLICT (day) DO UPDATE"
+        , "SET hours = greatest(c.hours, EXCLUDED.hours)"
+        , ";"
+        ]
 
 previousFriday :: Day -> Day
 previousFriday d
@@ -139,7 +162,10 @@ serveTimereportsByTaskReport ctx = cachedIO' ctx () $
     runIntegrations' ctx timereportsByTaskReport
 
 cachedIO' :: (Eq k, Hashable k, Typeable k, NFData v, Typeable v) => Ctx -> k -> IO v -> IO v
-cachedIO' (cache, _, logger, _, _) = cachedIO logger cache 600
+cachedIO' ctx = cachedIO logger cache 600
+  where
+    cache  = ctxCache ctx
+    logger = ctxLogger ctx
 
 -- All report endpoints
 -- this is used for api 'server' and pericron
@@ -158,6 +184,16 @@ serveChart
     -> IO (Chart key)
 serveChart f g ctx = do
     v <- cachedIO' ctx () $ runIntegrations' ctx f
+    pure (g v)
+
+serveChartIO
+    :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
+    => LogT IO v
+    -> (v -> Chart key)
+    -> Ctx
+    -> IO (Chart key)
+serveChartIO f g ctx = do
+    v <- cachedIO' ctx () $ runLogT "chart" (ctxLogger ctx) f
     pure (g v)
 
 serveGraph
@@ -227,9 +263,9 @@ missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
 
     return "OK"
   where
-    mgr = ctx ^. _2
-    lgr = ctx ^. _3
-    cfg = ctx ^. _4
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
 
     preferencesBurl = cfgPreferencesAppBaseurl cfg
     emailProxyBurl  = cfgEmailProxyBaseurl cfg
@@ -257,6 +293,7 @@ server ctx = makeServer ctx reports
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
+    :<|> liftIO (serveChartIO (missingHoursDailyChartData ctx) missingHoursDailyChartRender ctx)
     :<|> liftIO (serveChart careerLengthData careerLengthRender ctx)
     :<|> liftIO (serveChart careerLengthData careerLengthRelativeRender ctx)
     -- graphs
@@ -268,7 +305,7 @@ server ctx = makeServer ctx reports
     -- missing hours notifications
     :<|> liftIO (missingHoursNotifications ctx)
     -- dashdo
-    :<|> view _5 ctx
+    :<|> ctxDashdo ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -280,9 +317,11 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg lgr manager cache mq = do
+        pp <- createPostgresPool $ cfgPostgresConnInfo cfg
+
         let ctx' = (cache, manager, lgr, cfg)
         dashDoApp <- makeDashdoServer ctx'
-        let ctx = (cache, manager, lgr, cfg, dashDoApp)
+        let ctx = Ctx cache manager lgr cfg dashDoApp pp
 
         let jobs = hcollapse $
                 hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports

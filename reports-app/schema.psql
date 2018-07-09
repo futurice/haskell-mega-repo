@@ -1,0 +1,6 @@
+-- CREATE SCHEMA reports;
+
+CREATE TABLE reports.missing_hours (
+  day date PRIMARY KEY,
+  hours real NOT NULL
+);

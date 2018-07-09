@@ -25,8 +25,10 @@ module Futurice.App.Reports.MissingHours (
     mhpGenerated,
     mhpFromDay,
     mhpToDay,
+    mhpTotalHours,
     ) where
 
+import Control.Lens (sumOf)
 import Data.Fixed                (Centi)
 import Futurice.Generics
 import Futurice.Integrations
@@ -83,6 +85,7 @@ data MissingHoursParams = MissingHoursParams
     { _mhpGenerated    :: !UTCTime
     , _mhpFromDay      :: !Day
     , _mhpToDay        :: !Day
+    , _mhpTotalHours   :: !(NDT 'Hours Centi)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -98,8 +101,11 @@ instance ToHtml MissingHoursParams where
     toHtml MissingHoursParams {..} = dl_ $ do
         dd_ $ do
             "Generated at "
-            i_ "(Note: data is pulled from caches, so it is few hours old at worst)"
+            i_ "(Note: PlanMill data is updated nightly)"
         dt_ $ toHtml $ formatHumanHelsinkiTime _mhpGenerated
+
+        dd_ "Total hours missing"
+        dt_ $ toHtml $ show $ unNDT _mhpTotalHours
 
         dd_ "Interval"
         dt_ $ toHtmlRaw $ show _mhpFromDay <> " &mdash; " <> show _mhpToDay
@@ -170,8 +176,9 @@ missingHoursReport predicate interval = do
     let fpm1 = HM.filter (predicate interval . fst) fpm0
 
     fpm2 <- traverse (uncurry perUser) fpm1
+    let total = sumOf (folded . folded . folded . missingHourCapacity) fpm2
 
-    pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm2
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval) total) fpm2
   where
     perUser :: P.Employee -> PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pEmployee pmUser = (S.:!:)

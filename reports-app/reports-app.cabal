@@ -66,6 +66,7 @@ library
     , futurice-foundation
     , futurice-integrations
     , futurice-metrics
+    , futurice-postgres
     , futurice-prelude
     , futurice-reports
     , futurice-servant
@@ -100,8 +101,8 @@ library
     , servant-client
     , servant-dashdo
     , servant-lucid
-    , SHA
     , servant-server
+    , SHA
     , sms-proxy-client
     , stm
     , strict-base-types
@@ -122,11 +123,13 @@ library
       Futurice.App.Reports.API
       Futurice.App.Reports.CareerLengthChart
       Futurice.App.Reports.Config
+      Futurice.App.Reports.Ctx
       Futurice.App.Reports.Dashdo
       Futurice.App.Reports.GithubReposDashdo
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
       Futurice.App.Reports.MissingHoursChart
+      Futurice.App.Reports.MissingHoursDailyChart
       Futurice.App.Reports.MissingHoursDashdo
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerProjects

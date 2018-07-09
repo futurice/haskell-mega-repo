@@ -63,6 +63,7 @@ type ReportsAPI = FoldReportsAPI Reports
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
+    :<|> "charts" :> "missing-hours-daily" :> Get '[SVG] (Chart "missing-hours-daily")
     :<|> "charts" :> "career-length" :> Get '[SVG] (Chart "career-length")
     :<|> "charts" :> "career-length-relative" :> Get '[SVG] (Chart "career-length-relative")
     -- Graphs
