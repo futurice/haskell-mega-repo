@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -39,7 +40,7 @@ instance TextEnum Library where
          ]
 
 instance FromField Library where
-    fromField f mdata = return library
+    fromField _ mdata = return library
         where library = case mdata of
                 Just "Helsinki" -> Helsinki
                 Just "Berlin" -> Berlin

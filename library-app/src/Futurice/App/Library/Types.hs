@@ -1,13 +1,15 @@
 {-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE InstanceSigs    #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
 {-# LANGUAGE TypeOperators   #-}
 module Futurice.App.Library.Types (
     LoanableId,
-    BookId,
+    BookId (..),
     BookInformation (..),
     BookInformationId,
     BookInformationResponse (..),
+    Books (..),
     BorrowRequest (..),
     Loan (..),
     Loanable (..),

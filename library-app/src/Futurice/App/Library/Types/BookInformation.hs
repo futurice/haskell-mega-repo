@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -13,7 +14,7 @@ import Futurice.Prelude
 import Prelude ()
 
 newtype BookId   = BookId Integer deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, FromHttpApiData, FromField, ToField)
-newtype BookInformationId   = BookInformationId Integer deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, FromHttpApiData, FromField, ToField)
+newtype BookInformationId   = BookInformationId Integer deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
 data BookInformation = BookInformation
     { _bookInformationId          :: !BookInformationId

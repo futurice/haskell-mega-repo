@@ -52,9 +52,11 @@ library
   exposed-modules:
       Futurice.App.Library
       Futurice.App.Library.API
+      Futurice.App.Library.BookInformationPage
       Futurice.App.Library.Ctx
       Futurice.App.Library.Config
       Futurice.App.Library.IndexPage
+      Futurice.App.Library.Markup
       Futurice.App.Library.Logic
       Futurice.App.Library.Types
       Futurice.App.Library.Types.BookInformation
