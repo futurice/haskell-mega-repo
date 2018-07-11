@@ -22,8 +22,8 @@ indexPage books = page_ "Library" pageParams $ do
             th_ "Published"
             th_ "ISBN"
         tbody_ $ for_ (take 20 books) $ \(BookInformationResponse binfoid title isbn author _publisher published cover _amazonLink _books) -> tr_ $ do
-            td_ $ img_ [src_ $ toUrlPiece $ safeLink libraryApi bookCoverEndpoint cover ]
-            td_ $ a_ [href_ $ linkToText $ safeLink libraryApi bookInformationPageEndpoint binfoid] $ toHtml title
+            td_ $ img_ [src_ $ toUrlPiece $ fieldLink bookCoverGet cover ]
+            td_ $ a_ [href_ $ linkToText $ fieldLink bookPageGet binfoid] $ toHtml title
             td_ $ toHtml $ author
             td_ $ toHtml $ show published
             td_ $ toHtml $ isbn

@@ -28,15 +28,17 @@ import qualified Data.Map as Map
 import qualified Personio as P
 
 server :: Ctx -> Server LibraryAPI
-server ctx = indexPageImpl ctx
-    :<|> getBooksImpl ctx
-    :<|> getBookImpl ctx
-    :<|> bookInformationPageImpl ctx
-    :<|> getBookCoverImpl ctx
-    :<|> borrowBookImpl ctx
-    :<|> snatchBookImpl ctx
-    :<|> getLoansImpl ctx
-    :<|> getLoanImpl ctx
+server ctx = genericServer $ Record
+    { indexPageGet = indexPageImpl ctx
+    , booksGet     = getBooksImpl ctx
+    , bookGet      = getBookImpl ctx
+    , bookPageGet  = bookInformationPageImpl ctx
+    , bookCoverGet = getBookCoverImpl ctx
+    , borrowPost   = borrowBookImpl ctx
+    , snatchPost   = snatchBookImpl ctx
+    , loansGet     = getLoansImpl ctx
+    , loanGet      = getLoanImpl ctx
+    }
 
 -------------------------------------------------------------------------------
 -- Main

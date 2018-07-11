@@ -15,7 +15,7 @@ bookInformationPage :: BookInformationResponse -> HtmlPage ("bookinformation")
 bookInformationPage (BookInformationResponse _id title isbn author _publisher published cover _amazonLink _books) = page_ "Book details " pageParams $ do
     navigation_ Nothing
     div_ [] $ do
-        img_ [src_ $ linkToText $ safeLink libraryApi bookCoverEndpoint cover ]
+        img_ [src_ $ linkToText $ fieldLink bookCoverGet cover ]
     div_ [] $ do
         table_ $ do
             tr_ $ do
