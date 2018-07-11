@@ -32,6 +32,7 @@ library
     ScopedTypeVariables
   build-depends:
       base >= 4.7 && <4.12
+      , bytestring
       , containers
       , env-config
       , fum-types
@@ -40,6 +41,7 @@ library
       , futurice-postgres
       , futurice-prelude
       , futurice-servant
+      , futurice-tribes
       , JuicyPixels
       , personio-client
       , postgresql-simple
@@ -47,7 +49,7 @@ library
       , servant-JuicyPixels
       , servant-lucid
       , servant-server
-      , stm
+      , swagger2
       , text
   exposed-modules:
       Futurice.App.Library

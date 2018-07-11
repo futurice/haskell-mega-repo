@@ -6,53 +6,36 @@
 {-# LANGUAGE TypeOperators     #-}
 module Futurice.App.Library.Types.Library where
 
-import Database.PostgreSQL.Simple.FromField as Postgres
+import Data.Swagger
+       (defaultSchemaOptions, genericDeclareNamedSchemaUnrestricted)
+import Database.PostgreSQL.Simple.FromField
+
+import qualified Data.ByteString.Char8 as C
+import qualified Data.Text             as T
 
 import Futurice.Generics
+import Futurice.Office
 import Futurice.Prelude
 import Prelude ()
 
 data Library
-    = Helsinki
-    | Berlin
-    | Munich
-    | Stockholm
-    | Tampere
-    | Oslo
-    | London
-    | ELibrary
-    | Unknown
-    deriving (Eq, Show, Ord, Bounded, Enum, Typeable, Generic, Read)
+    = OfficeLibrary Office
+    | Elibrary
+    | UnknownLibrary
+    deriving (Eq, Show, Ord, Typeable, Generic)
 
 deriveGeneric ''Library
 
-instance TextEnum Library where
-    type TextEnumNames Library =
-        '["Helsinki"
-         ,"Berlin"
-         ,"Munich"
-         ,"Stockholm"
-         ,"Tampere"
-         ,"Oslo"
-         ,"London"
-         ,"Elibrary"
-         ,"Unknown"
-         ]
-
 instance FromField Library where
     fromField _ mdata = return library
-        where library = case mdata of
-                Just "Helsinki" -> Helsinki
-                Just "Berlin" -> Berlin
-                Just "Munich" -> Munich
-                Just "Stockholm" -> Stockholm
-                Just "Tampere" -> Tampere
-                Just "Oslo" -> Oslo
-                Just "London" -> London
-                Just "Elibrary" -> ELibrary
-                _ -> Unknown
+        where library =
+                  let officeText = T.pack <$> C.unpack <$> mdata >>= officeFromText
+                  in case officeText of
+                    Just office -> OfficeLibrary office
+                    Nothing -> case mdata of
+                      Just "Elibrary" -> Elibrary
+                      _ -> UnknownLibrary
 
-instance ToSchema Library where declareNamedSchema = enumDeclareNamedSchema
-
-deriveVia [t| ToJSON Library `Via` Enumica Library |]
-deriveVia [t| FromJSON Library `Via` Enumica Library |]
+instance ToSchema Library where declareNamedSchema = genericDeclareNamedSchemaUnrestricted defaultSchemaOptions
+instance ToJSON Library
+instance FromJSON Library

@@ -19,16 +19,6 @@ import qualified Data.Map  as Map
 import qualified Data.Text as T
 import qualified Personio  as P
 
-textToLibrary :: Text -> Library
-textToLibrary "Helsinki" = Helsinki
-textToLibrary "Berlin" = Berlin
-textToLibrary "Munich" = Munich
-textToLibrary "Stockholm" = Stockholm
-textToLibrary "Tampere" = Tampere
-textToLibrary "Oslo" = Oslo
-textToLibrary "London" = London
-textToLibrary _ = ELibrary
-
 data BookData = BookData BookId BookInformationId Library deriving (Generic, FromRow)
 data LoanData = LoanData LoanId Day BookId Integer deriving (Generic, FromRow)
 
@@ -151,14 +141,14 @@ fetchLoans ctx es = do
     fs <- fetchBooksInformation ctx
     pure $ loans' l es (bookArrayToMap bs) $ bookMap fs
   where
-      bookMap = (Map.fromList . fmap (\x -> (_bookInformationId x, x)))
+      bookMap = Map.fromList . fmap (\x -> (_bookInformationId x, x))
       bookLibrary bid bmap =
           case bmap ^. at bid of
             Just (_, lib) -> lib
-            Nothing -> Unknown
+            Nothing -> UnknownLibrary
       bookIdToLoanable bs bmap bid = case bookIdToInformation bid bs bmap of
         Just info -> (bookInformationToLoanable bid info $ bookLibrary bid bs)
-        Nothing -> Loanable (NotFound "Couldn't find information for book") Unknown
+        Nothing -> Loanable (NotFound "Couldn't find information for book") UnknownLibrary
       loans' ::  [LoanData] -> IdMap P.Employee -> Map BookId (BookInformationId, Library) -> Map BookInformationId BookInformation -> [Loan]
       loans' ls emap bs bmap = fmap (\(LoanData loanId date bid personio_id) ->
         Loan loanId (T.pack $ show date) (bookIdToLoanable bs bmap bid) (idToName emap $ P.EmployeeId (fromIntegral personio_id))) ls
