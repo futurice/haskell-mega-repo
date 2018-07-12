@@ -13,7 +13,7 @@ import Codec.Picture.Png         (encodeDynamicPng)
 import Data.Aeson.Compat         (encode)
 import Data.Conduit.Binary       (sinkLbs)
 import Futurice.Integrations
-import Futurice.Lucid.Foundation
+import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
@@ -38,6 +38,7 @@ import qualified Network.HTTP.Client          as HTTP
 import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config
 import Futurice.App.Avatar.Ctx
+import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Embedded
 import Futurice.App.Avatar.Types
 
@@ -45,14 +46,8 @@ import Futurice.App.Avatar.Types
 -- HTML
 -------------------------------------------------------------------------------
 
-type HtmlAPI = SSOUser :> Get '[HTML] (HtmlPage "index")
-
-htmlApi :: Proxy HtmlAPI
-htmlApi = Proxy
-
 htmlServer :: a -> Server HtmlAPI
-htmlServer _ mfu = return $ page_ "Avatar" $ fullRow_ $ do
-    h1_ "Avatar"
+htmlServer _ mfu = return $ page_ "Avatar" (Just NavHome) $ do
     for_ mfu $ \login -> do
         p_ $ "AVatars of  " <> toHtml login
         p_ $ do
