@@ -32,6 +32,7 @@ library
     ScopedTypeVariables
   build-depends:
       base >= 4.7 && <4.12
+      , aeson
       , bytestring
       , containers
       , env-config

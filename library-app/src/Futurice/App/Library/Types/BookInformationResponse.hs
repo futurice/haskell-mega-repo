@@ -12,7 +12,11 @@ import Prelude ()
 import Futurice.App.Library.Types.BookInformation
 import Futurice.App.Library.Types.Library
 
-data Books = Books BookId Library deriving (Eq, Ord, Show, Generic, ToJSON, ToSchema)
+data Books = Books
+    { _booksBookId  :: !BookId
+    , _booksLibrary :: !Library
+    }
+    deriving (Eq, Ord, Show, Generic, ToJSON, ToSchema)
 
 data BookInformationResponse = BookInformationResponse
     { _id          :: !BookInformationId

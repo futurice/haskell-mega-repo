@@ -15,6 +15,7 @@ import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
+import Servant.Server.Generic
 
 import Futurice.App.Library.API
 import Futurice.App.Library.BookInformationPage
@@ -29,15 +30,17 @@ import qualified Personio as P
 
 server :: Ctx -> Server LibraryAPI
 server ctx = genericServer $ Record
-    { indexPageGet = indexPageImpl ctx
-    , booksGet     = getBooksImpl ctx
-    , bookGet      = getBookImpl ctx
-    , bookPageGet  = bookInformationPageImpl ctx
-    , bookCoverGet = getBookCoverImpl ctx
-    , borrowPost   = borrowBookImpl ctx
-    , snatchPost   = snatchBookImpl ctx
-    , loansGet     = getLoansImpl ctx
-    , loanGet      = getLoanImpl ctx
+    { indexPageGet     = indexPageImpl ctx
+    , booksGet         = getBooksImpl ctx
+    , bookGet          = getBookImpl ctx
+    , bookPageGet      = bookInformationPageImpl ctx
+    , bookCoverGet     = getBookCoverImpl ctx
+    , borrowPost       = borrowBookImpl ctx
+    , snatchPost       = snatchBookImpl ctx
+    , loansGet         = getLoansImpl ctx
+    , loanGet          = getLoanImpl ctx
+    , returnPost       = returnLoanImpl ctx
+    , personalLoansGet = personalLoansImpl ctx
     }
 
 -------------------------------------------------------------------------------
@@ -103,7 +106,9 @@ indexPageImpl ctx = do
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
     book <- getBookImpl ctx binfoid
-    pure $ bookInformationPage book
+    es <- liftIO $ getPersonioData ctx
+    ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithBookIds ctx (_booksBookId <$> _books book)
+    pure $ bookInformationPage book ls es
 
 
 borrowBookImpl :: Ctx -> Maybe Login -> BorrowRequest -> Handler Loan
@@ -117,9 +122,19 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
             Nothing -> throwError $ err404 { errBody = "Loan data is not available" }
             Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
 
+snatchBookImpl :: Ctx -> Maybe Login -> BookId -> Handler Loan
+snatchBookImpl ctx login bid = withAuthUser ctx login $ (\l -> do
+    emap <- liftIO $ getPersonioDataMap ctx
+    case emap ^.at l of
+      Nothing -> throwError err403
+      Just es -> do
+          loanData <- runLogT "library" (ctxLogger ctx) $ snatchBook ctx (es ^. P.employeeId) bid
+          case loanData of
+            Nothing -> throwError $ err404 { errBody = "Couln't loan book" }
+            Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
 
-snatchBookImpl :: Ctx -> Maybe Login -> BorrowRequest -> Handler Loan
-snatchBookImpl _ctx _login _req = throwError $ err404 { errBody = "Loan is not possible" }
+returnLoanImpl :: Ctx -> LoanId -> Handler Bool
+returnLoanImpl ctx lid = runLogT "library" (ctxLogger ctx) (executeReturnBook ctx lid)
 
 getBooksImpl :: Ctx -> Handler [BookInformationResponse]
 getBooksImpl ctx = runLogT "library" (ctxLogger ctx) $ fetchBooksResponse ctx
@@ -145,6 +160,14 @@ getLoanImpl ctx lid = do
     case loanInfo of
       Just loan' -> pure loan'
       Nothing -> throwError $ err404 { errBody = "No loan information found"}
+
+personalLoansImpl :: Ctx -> Maybe Login -> Handler [Loan]
+personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
+    emap <- liftIO $ getPersonioDataMap ctx
+    eidmap <- liftIO $ getPersonioData ctx
+    case emap ^.at l of
+      Nothing -> throwError err403
+      Just es -> runLogT "library" (ctxLogger ctx) $ fetchPersonalLoans ctx eidmap (es ^. P.employeeId))
 
 withAuthUser :: Ctx -> Maybe Login -> (Login -> Handler a) -> Handler a
 withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of
