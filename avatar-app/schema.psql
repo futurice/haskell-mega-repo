@@ -1,0 +1,6 @@
+-- CREATE SCHEMA avatar
+
+CREATE TABLE avatar.employees (
+  login text PRIMARY KEY,
+  imagehash varchar(128) NOT NULL
+);
