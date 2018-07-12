@@ -6,13 +6,9 @@ module Futurice.App.Sisosota.IndexPage (
  ) where
 
 import Futurice.Prelude
-import Futurice.Servant  (HTML)
-import Lucid.Base        (Attribute (..))
-import Lucid.Servant     (linkAbsHref_)
 import Prelude ()
 import Servant
 import Servant.Multipart
-import Servant.API.Generic
 import Servant.Server.Generic
 
 import qualified Network.AWS.S3.Types as AWS
@@ -25,19 +21,8 @@ import Futurice.App.Sisosota.Markup
 import Futurice.App.Sisosota.Types
 
 -------------------------------------------------------------------------------
--- API
+-- Server
 -------------------------------------------------------------------------------
-
-data HtmlRecord route = HtmlRecord
-    { recIndex  :: route :- Get '[HTML] (HtmlPage "index")
-    , recUpload :: route :- MultipartForm Mem (MultipartData Mem) :> Post '[HTML] (HtmlPage "index")
-    }
-  deriving Generic
-
-type HtmlAPI = ToServantApi HtmlRecord
-
-htmlApi :: Proxy HtmlAPI
-htmlApi = genericApi (Proxy :: Proxy HtmlRecord)
 
 htmlServer :: Ctx -> Server HtmlAPI
 htmlServer ctx = genericServer (htmlRecord ctx)
@@ -60,15 +45,6 @@ htmlRecord ctx = HtmlRecord
 
     indexPageHandler = return . indexPage
 
-recordHref_
-    :: (HasLink endpoint, IsElem endpoint HtmlAPI)
-    => (HtmlRecord AsApi -> endpoint)
-    -> MkLink endpoint Attribute
-recordHref_ = fieldLink' linkAbsHref_
-
-toAction_ :: Attribute -> Attribute
-toAction_ (Attribute _ v) = Attribute "action" v
-
 -------------------------------------------------------------------------------
 -- Index page
 -------------------------------------------------------------------------------
@@ -78,8 +54,8 @@ indexPage hashes = page_ mempty (Just NavIndex) $ do
     unless (null hashes) $ do
         h2_ "Uploaded"
         ul_ $ for_ hashes $ \h ->
-            li_ $ a_ [ fieldLink' linkAbsHref_ recGet h ] $ toHtml h
-        
+            li_ $ a_ [ recordHref_ recGet h ] $ toHtml h
+
     h2_ "Statistics"
     p_ "There aren't any yet"
 
