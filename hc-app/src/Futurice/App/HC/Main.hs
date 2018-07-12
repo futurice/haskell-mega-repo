@@ -23,6 +23,7 @@ import Futurice.Servant
 import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
 import Servant
+import Servant.Server.Generic
 import System.Entropy                 (getEntropy)
 
 import qualified Data.Set         as Set
@@ -31,25 +32,27 @@ import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
-import Futurice.App.HC.API
 import Futurice.App.HC.Anniversaries
+import Futurice.App.HC.API
 import Futurice.App.HC.Config
 import Futurice.App.HC.Ctx
 import Futurice.App.HC.EarlyCaring.Page
 import Futurice.App.HC.EarlyCaring.Types
-import Futurice.App.HC.IndexPage
 import Futurice.App.HC.HRNumbers
+import Futurice.App.HC.IndexPage
 import Futurice.App.HC.PersonioValidation
 import Futurice.App.HC.PrivateContacts
 
 server :: Ctx -> Server HCAPI
-server ctx = indexPageAction ctx
-    :<|> personioValidationAction ctx
-    :<|> personioPrivateContactsAction ctx
-    :<|> anniversariesAction ctx
-    :<|> hrnumbersAction ctx
-    :<|> earlyCaringAction ctx
-    :<|> earlyCaringSubmitAction ctx
+server ctx = genericServer $ Record
+    { recIndex               = indexPageAction ctx
+    , recPersonioValidations = personioValidationAction ctx
+    , recPrivateContacts     = personioPrivateContactsAction ctx
+    , recAnniversaries       = anniversariesAction ctx
+    , recHrNumbers           = hrnumbersAction ctx
+    , recEarlyCaring         = earlyCaringAction ctx
+    , recEarlyCaringSubmit   = earlyCaringSubmitAction ctx
+    }
 
 withAuthUser
     :: (MonadIO m, MonadTime m)
@@ -160,7 +163,7 @@ earlyCaringSubmitAction ctx mfu sb = do
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
 
-    impl = runLogT "early-caring-submit" lgr $ 
+    impl = runLogT "early-caring-submit" lgr $
         case verifySignedBlob (ctxSecret ctx) sb of
             Left err     -> do
                 logAttention "Cannot verify data" err

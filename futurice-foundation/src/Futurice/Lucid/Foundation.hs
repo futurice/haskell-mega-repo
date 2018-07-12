@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
@@ -26,6 +27,8 @@ module Futurice.Lucid.Foundation (
     -- * Form
     optionSelected_,
     checkbox_,
+    -- * Links
+    recordHref_,
     -- * Special types
     day_,
     day'_,
@@ -64,10 +67,14 @@ import GHC.TypeLits                   (KnownSymbol, Symbol, symbolVal)
 import LambdaCSS
        (Stylesheet, hashes, parseLambdaCSS, printLambdaCSS)
 import Lucid                          hiding (for_, table_)
+import Lucid.Servant                  (linkAbsHref_)
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
 import Servant
-       ((:<|>) (..), (:>), Accept (..), Get, MimeRender (..), Raw, Server)
+       ((:<|>) (..), (:>), Accept (..), Get, IsElem, MimeRender (..), Raw,
+       Server)
+import Servant.API.Generic            (AsApi, GenericServant, ToServantApi)
+import Servant.Links                  (HasLink, MkLink, fieldLink')
 
 import qualified Lucid      as L
 import qualified Lucid.Base as L
@@ -86,6 +93,18 @@ forWith_ sep xs f = go (toList xs)
     go []       = pure ()
     go [y]      = void (f y)
     go (y : ys) = f y *> sep *> go ys
+
+-------------------------------------------------------------------------------
+-- Lucid + servant-generic
+-------------------------------------------------------------------------------
+
+recordHref_
+    :: ( HasLink endpoint, IsElem endpoint (ToServantApi routes)
+       , GenericServant routes AsApi
+       )
+    => (routes AsApi -> endpoint)
+    -> MkLink endpoint Attribute
+recordHref_ = fieldLink' linkAbsHref_
 
 -------------------------------------------------------------------------------
 -- Grid

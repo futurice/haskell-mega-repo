@@ -11,7 +11,7 @@ import qualified Personio as P
 import Futurice.App.HC.Markup
 
 hrnumbers :: [P.Employee] -> Day -> HtmlPage "hr-numbers"
-hrnumbers es' today = page_ "HR Numbers" Nothing $ do
+hrnumbers es' today = page_ "HR Numbers" (Just NavHrNumbers) $ do
     -- active internals
     let predicate x = and 
             [ P.employeeIsActive today x
