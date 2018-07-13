@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Library.IndexPage where
 
-import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 import Servant
@@ -12,8 +11,7 @@ import Futurice.App.Library.Markup
 import Futurice.App.Library.Types
 
 indexPage :: [BookInformationResponse] -> HtmlPage "indexpage"
-indexPage books = page_ "Library" pageParams $ do
-    navigation_ $ Just NavHome
+indexPage books = page_ "Library" (Just NavHome) $ do
     fullRow_ $ sortableTable_ $ do
         thead_ $ tr_ $ do
             th_ "Cover"

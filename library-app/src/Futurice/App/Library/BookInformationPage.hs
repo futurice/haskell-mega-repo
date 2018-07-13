@@ -2,10 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Library.BookInformationPage where
 
-import Data.List                 (partition)
-import Data.Maybe                (isJust)
-import Futurice.IdMap            (IdMap)
-import Futurice.Lucid.Foundation
+import Data.List        (partition)
+import Data.Maybe       (isJust)
+import Futurice.IdMap   (IdMap)
 import Futurice.Prelude
 import Prelude ()
 import Servant
@@ -20,8 +19,7 @@ import qualified Data.Text as T
 import qualified Personio  as P
 
 bookInformationPage :: BookInformationResponse -> [LoanData] -> IdMap P.Employee -> HtmlPage ("bookinformation")
-bookInformationPage (BookInformationResponse _binfoid title isbn author publisher published cover _amazonLink books) ls es = page_ "Book details " pageParams $ do
-    navigation_ Nothing
+bookInformationPage (BookInformationResponse _binfoid title isbn author publisher published cover _amazonLink books) ls es = page_ "Book details " (Nothing :: Maybe Nav) $ do
     fullRow_ $ do
         div_ [] $ do
             img_ [src_ $ linkToText $ fieldLink bookCoverGet cover ]
