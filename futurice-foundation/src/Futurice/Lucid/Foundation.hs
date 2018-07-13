@@ -29,6 +29,7 @@ module Futurice.Lucid.Foundation (
     checkbox_,
     -- * Links
     recordHref_,
+    recordAction_,
     -- * Special types
     day_,
     day'_,
@@ -67,6 +68,7 @@ import GHC.TypeLits                   (KnownSymbol, Symbol, symbolVal)
 import LambdaCSS
        (Stylesheet, hashes, parseLambdaCSS, printLambdaCSS)
 import Lucid                          hiding (for_, table_)
+import Lucid.Base                (Attribute (..))
 import Lucid.Servant                  (linkAbsHref_)
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
@@ -105,6 +107,17 @@ recordHref_
     => (routes AsApi -> endpoint)
     -> MkLink endpoint Attribute
 recordHref_ = fieldLink' linkAbsHref_
+
+-- | Like 'recordHref_' but produces @action@ attribute (for forms).
+recordAction_
+    :: ( HasLink endpoint, IsElem endpoint (ToServantApi routes)
+       , GenericServant routes AsApi
+       )
+    => (routes AsApi -> endpoint)
+    -> MkLink endpoint Attribute
+recordAction_ = fieldLink' (toAction_ . linkAbsHref_) where
+    toAction_ :: Attribute -> Attribute
+    toAction_ (Attribute _ v) = Attribute "action" v
 
 -------------------------------------------------------------------------------
 -- Grid

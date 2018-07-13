@@ -10,20 +10,15 @@ module Futurice.App.Sisosota.Markup (
     HtmlRecord (..),
     HtmlAPI,
     htmlApi,
-    recordHref_,
-    toAction_,
     ) where
 
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), page_)
 import Futurice.Prelude
 import Futurice.Servant          (HTML)
-import Lucid.Base                (Attribute (..))
-import Lucid.Servant             (linkAbsHref_)
 import Prelude ()
 import Servant.API
 import Servant.API.Generic
-import Servant.Links
 import Servant.Multipart
 
 -------------------------------------------------------------------------------
@@ -40,9 +35,6 @@ type HtmlAPI = ToServantApi HtmlRecord
 
 htmlApi :: Proxy HtmlAPI
 htmlApi = genericApi (Proxy :: Proxy HtmlRecord)
-
-toAction_ :: Attribute -> Attribute
-toAction_ (Attribute _ v) = Attribute "action" v
 
 -------------------------------------------------------------------------------
 -- Navigation

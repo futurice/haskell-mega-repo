@@ -10,14 +10,12 @@ module Futurice.App.Avatar.Markup (
     HtmlRecord (..),
     HtmlAPI,
     htmlApi,
-    toAction_,
     ) where
 
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), page_)
 import Futurice.Prelude
 import Futurice.Servant          (HTML, SSOUser)
-import Lucid.Base                (Attribute (..))
 import Prelude ()
 import Servant.API
 import Servant.API.Generic
@@ -38,10 +36,6 @@ type HtmlAPI = ToServantApi HtmlRecord
 
 htmlApi :: Proxy HtmlAPI
 htmlApi = genericApi (Proxy :: Proxy HtmlRecord)
-
--- TODO: make recordAction_ and move to futurice-foundation
-toAction_ :: Attribute -> Attribute
-toAction_ (Attribute _ v) = Attribute "action" v
 
 -------------------------------------------------------------------------------
 -- Navigation
