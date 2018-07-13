@@ -1,7 +1,12 @@
 {-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Sisosota.Types (
     sisosotaMaxUploadSize,
     ContentHash,
@@ -25,11 +30,13 @@ import Servant.API
        (FromHttpApiData (..), MimeRender (..), MimeUnrender (..), OctetStream,
        ToHttpApiData (..))
 
-import qualified Crypto.Hash.SHA512         as SHA512
-import qualified Data.ByteString            as BS
-import qualified Data.ByteString.Base64.URL as Base64
-import qualified Data.ByteString.Lazy       as LBS
-import qualified Data.Swagger               as Swagger
+import qualified Crypto.Hash.SHA512                   as SHA512
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Base64.URL           as Base64
+import qualified Data.ByteString.Lazy                 as LBS
+import qualified Data.Swagger                         as Swagger
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -53,6 +60,21 @@ contentHashToText (ContentHash bs) = decodeUtf8Lenient $ Base64.encode bs
 
 contentHashFromText :: Text -> Either String ContentHash
 contentHashFromText = fmap ContentHash . Base64.decode . encodeUtf8
+
+instance Textual ContentHash where
+    textualToText   = contentHashToText
+    textualFromText = contentHashFromText
+
+deriveVia [t| ToJSON ContentHash             `Via` Textica ContentHash |]
+deriveVia [t| FromJSON ContentHash           `Via` Textica ContentHash |]
+deriveVia [t| ToHttpApiData ContentHash      `Via` Textica ContentHash |]
+deriveVia [t| FromHttpApiData ContentHash    `Via` Textica ContentHash |]
+deriveVia [t| Postgres.ToField ContentHash   `Via` Textica ContentHash |]
+deriveVia [t| Postgres.FromField ContentHash `Via` Textica ContentHash |]
+deriveVia [t| ToHtml ContentHash             `Via` Textica ContentHash |]
+
+instance ToParamSchema ContentHash where toParamSchema = textualToParamSchema
+instance ToSchema ContentHash where declareNamedSchema = textualDeclareNamedSchema
 
 contentHashData :: ContentData -> ContentHash
 contentHashData (ContentData lbs) = contentHashLBS lbs
