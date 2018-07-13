@@ -65,6 +65,7 @@ library
     , futurice-constants
     , futurice-foundation
     , futurice-integrations
+    , futurice-logo
     , futurice-metrics
     , futurice-postgres
     , futurice-prelude

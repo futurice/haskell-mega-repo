@@ -4,3 +4,7 @@ CREATE TABLE reports.missing_hours (
   day date PRIMARY KEY,
   hours real NOT NULL
 );
+
+Alter table reports.missing_hours rename column hours to last_friday;
+alter table reports.missing_hours add column yesterday real not null default 1000;
+alter table reports.missing_hours alter column yesterday drop default;
