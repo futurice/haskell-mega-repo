@@ -111,30 +111,44 @@ missingHoursEmployeePredicate' interval p = and
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
-serveMissingHoursReport allContracts ctx = do
-    (report, today) <- cachedIO' ctx allContracts $ do
-        day <- currentDay
-        let interval = beginningOfPrev2Month day ... previousFriday day
-        r <- runIntegrations' ctx (missingHoursReport predicate interval)
-        return (r, day)
-
-    unless allContracts $ liftIO $ runLogT "missing-hours-series" lgr $ do
-        let total :: Double
-            total = realToFrac $ unNDT $ report ^. reportParams . mhpTotalHours
-        void $ safePoolExecute ctx insertQuery (today, total)
-
-    return report
+serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
+    day <- currentDay
+    let interval = beginningOfPrev2Month day ... previousFriday day
+    runIntegrations' ctx (missingHoursReport predicate interval)
   where
-    lgr = ctxLogger ctx
-
     predicate
         | allContracts = missingHoursEmployeePredicate
         | otherwise    = missingHoursEmployeePredicate'
 
+missingHoursStats :: Ctx -> IO ()
+missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
+    (fridayR, yesterdayR, today) <- liftIO $ runIntegrations' ctx $ do
+        today <- currentDay
+        let fridayI    = beginningOfPrev2Month today ... previousFriday today
+        let yesterdayI = beginningOfPrev2Month today ... pred today
+
+        (fridayR, yesterdayR) <- liftA2 (,)
+            (missingHoursReport predicate fridayI)
+            (missingHoursReport predicate yesterdayI)
+
+        return (fridayR, yesterdayR, today)
+
+    let fridayTotal :: Double
+        fridayTotal = realToFrac $ unNDT $ fridayR ^. reportParams . mhpTotalHours
+
+    let yesterdayTotal :: Double
+        yesterdayTotal = realToFrac $ unNDT $ yesterdayR ^. reportParams . mhpTotalHours
+
+    void $ safePoolExecute ctx insertQuery (today, fridayTotal, yesterdayTotal)
+  where
+    lgr = ctxLogger ctx
+    predicate = missingHoursEmployeePredicate'
+
     insertQuery = fromString $ unwords
-        [ "INSERT INTO reports.missing_hours as c (day, hours)"
-        , "VALUES (?, ?) ON CONFLICT (day) DO UPDATE"
-        , "SET hours = LEAST(c.hours, EXCLUDED.hours)"
+        [ "INSERT INTO reports.missing_hours as c (day, last_friday, yesterday)"
+        , "VALUES (?, ?, ?) ON CONFLICT (day) DO UPDATE"
+        , "SET last_friday = LEAST(c.last_friday, EXCLUDED.last_friday),"
+        , "    yesterday = LEAST(c.yesterday, EXCLUDED.yesterday)"
         , ";"
         ]
 
@@ -323,8 +337,11 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         dashDoApp <- makeDashdoServer ctx'
         let ctx = Ctx cache manager lgr cfg dashDoApp pp
 
-        let jobs = hcollapse $
-                hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
+        let missingHoursStatsJob =
+                mkJob "missing-hours-stats" (missingHoursStats ctx) $ every (60 * 60)
+
+        let jobs = missingHoursStatsJob : hcollapse
+                (hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports)
 
         -- listen to MQ, especially for missing hours ping
         void $ forEachMessage mq $ \msg -> case msg of
