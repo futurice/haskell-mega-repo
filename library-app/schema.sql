@@ -1,15 +1,29 @@
 CREATE SCHEMA library;
 
-CREATE TABLE library.loan_status (
-    loan_id serial primary key,
-    currently_loaned boolean NOT NULL,
-    date_loaned date NOT NULL,
-    personio_id integer NOT NULL
-);
-
 CREATE TABLE library.library (
     library_id serial primary key,
     name text NOT NULL
+);
+
+CREATE TABLE library.item (
+    item_id serial primary key,
+    item_type text NOT NULL,
+    library_id integer references library.library(library_id)
+);
+
+CREATE TABLE library.old_loan (
+    oldloan_id serial primary key,
+    date_loaned date NOT NULL,
+    date_returned date NOT NULL,
+    personio_id integer NOT NULL,
+    item_id integer references library.item(item_id)
+);
+
+CREATE TABLE library.loan (
+    loan_id serial primary key,
+    date_loaned date NOT NULL,
+    personio_id integer NOT NULL,
+    item_id serial references library.item(item_id)
 );
 
 CREATE TABLE library.bookinformation (
@@ -28,16 +42,14 @@ CREATE TABLE library.otherinformation (
     name text NOT NULL
 );
 
-CREATE TABLE library.book (
-    book_id serial primary key,
+CREATE TABLE library.item_to_bookinformation (
+    item_id serial references library.item(item_id),
     bookinfo_id serial references library.bookinformation(bookinfo_id),
-    library_id serial references library.library(library_id),
-    loan_id serial references library.loan_status(loan_id)
+    UNIQUE(item_id, bookinfo_id)
 );
 
-CREATE TABLE library.other (
-    object_id serial primary key,
+CREATE TABLE library.item_to_otherinformation (
+    item_id serial references library.item(item_id),
     otherinfo_id serial references library.otherinformation(otherinfo_id),
-    library_id serial references library.library(library_id),
-    loan_id serial references library.loan_status(loan_id)
+    UNIQUE(item_id, otherinfo_id)
 );
