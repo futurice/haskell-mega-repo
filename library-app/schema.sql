@@ -1,31 +1,43 @@
 CREATE SCHEMA library;
 
-CREATE TABLE library.library_book (
-    id bigint NOT NULL,
-    information_id bigint NOT NULL,
-    library_id bigint NOT NULL
-);
-
-CREATE TABLE library.library_bookinformation (
-    id bigint NOT NULL,
-    title character varying(255) NOT NULL,
-    isbn character varying(255) NOT NULL,
-    author character varying(255) NOT NULL,
-    publisher character varying(255) NOT NULL,
-    published bigint NOT NULL,
-    cover character varying(100),
-    amazon_link character varying(1024)
-);
-
-CREATE TABLE library.library_library (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL
-);
-
-CREATE TABLE library.library_loan (
-    id bigint NOT NULL,
+CREATE TABLE library.loan_status (
+    loan_id serial primary key,
+    currently_loaned boolean NOT NULL,
     date_loaned date NOT NULL,
-    book_id bigint NOT NULL,
-    person_id bigint NOT NULL,
-    personio_id bigint
+    personio_id integer NOT NULL
+);
+
+CREATE TABLE library.library (
+    library_id serial primary key,
+    name text NOT NULL
+);
+
+CREATE TABLE library.bookinformation (
+    bookinfo_id serial primary key,
+    title text NOT NULL,
+    isbn text NOT NULL,
+    author text NOT NULL,
+    publisher text NOT NULL,
+    publishedYear smallint NOT NULL,
+    cover text,
+    amazon_link text
+);
+
+CREATE TABLE library.otherinformation (
+    otherinfo_id serial primary key,
+    name text NOT NULL
+);
+
+CREATE TABLE library.book (
+    book_id serial primary key,
+    bookinfo_id serial references library.bookinformation(bookinfo_id),
+    library_id serial references library.library(library_id),
+    loan_id serial references library.loan_status(loan_id)
+);
+
+CREATE TABLE library.other (
+    object_id serial primary key,
+    otherinfo_id serial references library.otherinformation(otherinfo_id),
+    library_id serial references library.library(library_id),
+    loan_id serial references library.loan_status(loan_id)
 );
