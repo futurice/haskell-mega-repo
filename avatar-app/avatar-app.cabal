@@ -48,8 +48,9 @@ library
     , file-embed
     , fum-client
     , fum-types
-    , futurice-integrations
     , futurice-foundation
+    , futurice-integrations
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , http-client
@@ -59,10 +60,12 @@ library
     , lucid
     , servant
     , servant-cached
+    , servant-client
     , servant-JuicyPixels
     , servant-lucid
     , servant-multipart
     , servant-server
+    , sisosota-client
     , stm
     , text
     , time
@@ -75,6 +78,7 @@ library
       Futurice.App.Avatar.Config
       Futurice.App.Avatar.Ctx
       Futurice.App.Avatar.Embedded
+      Futurice.App.Avatar.IndexPage
       Futurice.App.Avatar.Markup
   default-language: Haskell2010
 

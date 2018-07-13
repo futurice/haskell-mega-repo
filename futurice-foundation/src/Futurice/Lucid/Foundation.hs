@@ -134,9 +134,9 @@ recordSrc_
        )
     => (routes AsApi -> endpoint)
     -> MkLink endpoint Attribute
-recordSrc_ = fieldLink' (toAction_ . linkAbsHref_) where
-    toAction_ :: Attribute -> Attribute
-    toAction_ (Attribute _ v) = Attribute "src" v
+recordSrc_ = fieldLink' (toSrc_ . linkAbsHref_) where
+    toSrc_ :: Attribute -> Attribute
+    toSrc_ (Attribute _ v) = Attribute "src" v
 
 -------------------------------------------------------------------------------
 -- Grid

@@ -9,17 +9,17 @@ module Futurice.App.Avatar (defaultMain) where
 
 import Codec.Picture
        (DynamicImage (ImageRGBA8), convertRGBA8, decodeImage)
-import Codec.Picture.Png         (encodeDynamicPng)
-import Data.Aeson.Compat         (encode)
-import Data.Conduit.Binary       (sinkLbs)
+import Codec.Picture.Png      (encodeDynamicPng)
+import Data.Aeson.Compat      (encode)
+import Data.Conduit.Binary    (sinkLbs)
 import Futurice.Integrations
-import Futurice.Lucid.Foundation hiding (page_)
+import Futurice.Postgres      (createPostgresPool)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
 import Servant.Cached
-import Servant.JuicyPixels       (PNG)
+import Servant.JuicyPixels    (PNG)
 import Servant.Server.Generic
 
 import qualified Control.Monad.Trans.AWS      as AWS
@@ -34,26 +34,23 @@ import qualified Network.AWS.S3.ListObjectsV2 as AWS
 import qualified Network.AWS.S3.Types         as AWS
 import qualified Network.HTTP.Client          as HTTP
 
--- Avatar modules
 import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config
 import Futurice.App.Avatar.Ctx
-import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Embedded
+import Futurice.App.Avatar.IndexPage
+import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Types
 
 -------------------------------------------------------------------------------
 -- HTML
 -------------------------------------------------------------------------------
 
-htmlServer :: a -> Server HtmlAPI
-htmlServer _ mfu = return $ page_ "Avatar" (Just NavHome) $ do
-    for_ mfu $ \login -> do
-        p_ $ "AVatars of  " <> toHtml login
-        p_ $ do
-            img_ [ src_ $ fieldLink' toUrlPiece recFum login (Just (Square 128)) False ]
-            img_ [ src_ $ fieldLink' toUrlPiece recFum login (Just (Square 64)) False ]
-            img_ [ src_ $ fieldLink' toUrlPiece recFum login (Just (Square 32)) False ]
+htmlServer :: Ctx -> Server HtmlAPI
+htmlServer ctx = genericServer $ HtmlRecord
+    { recIndex  = return . indexPage
+    , recUpload = uploadPageHandler ctx
+    }
 
 -------------------------------------------------------------------------------
 -- API
@@ -62,7 +59,7 @@ htmlServer _ mfu = return $ page_ "Avatar" (Just NavHome) $ do
 type DynamicImage' = Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage)
 
 cachedAvatar :: Ctx -> AvatarProcess -> LogT IO DynamicImage'
-cachedAvatar (Ctx _ _ _ cfg env) ap =
+cachedAvatar (Ctx _ _ _ cfg env _) ap =
     AWS.runResourceT $ AWS.runAWST env $ do
         -- logTrace "listObjectsV" digest
         r <- AWS.send $ AWS.listObjectsV2 bucketName
@@ -116,7 +113,7 @@ mkFum
     -> Maybe Size  -- ^ size, minimum size is 16
     -> Bool        -- ^ greyscale
     -> Handler DynamicImage'
-mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = case fromMaybeSize msize of
+mkFum ctx@(Ctx cache lgr mgr cfg _ _) login msize grey = case fromMaybeSize msize of
     Original -> liftIO $ runLogT "original-fum" lgr $ do
         fumMap <- liftIO $ cachedIO lgr cache 3600 () getFumMap
         case fumMap ^? ix login of
@@ -165,6 +162,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg lgr mgr cache _mq = do
+        pp <- createPostgresPool $ cfgPostgresConnInfo cfg
         env' <- AWS.newEnvWith (cfgAwsCredentials cfg) Nothing mgr
         let env = env' & AWS.envRegion .~ AWS.Frankfurt
-        return (Ctx cache lgr mgr cfg env, [])
+        return (Ctx cache lgr mgr cfg env pp, [])

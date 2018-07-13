@@ -27,8 +27,10 @@ import Servant.Multipart
 
 data HtmlRecord route = HtmlRecord
     { recIndex  :: route :- SSOUser :> Get '[HTML] (HtmlPage "index")
-    -- TODO: upload
-    -- , recUpload :: route :- SSOUser :> MultipartForm Mem (MultipartData Mem) :> Post '[HTML] (HtmlPage "index")
+    , recUpload :: route :- "upload"
+        :> SSOUser
+        :> MultipartForm Mem (MultipartData Mem)
+        :> Post '[HTML] (HtmlPage "index")
     }
   deriving Generic
 
@@ -48,4 +50,4 @@ data Nav
 instance Navigation Nav where
     serviceTitle _ = "Avatar"
 
-    navLink NavHome = (recordHref_ recIndex, "")
+    navLink NavHome = (recordHref_ recIndex, "Avatar")
