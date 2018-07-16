@@ -32,7 +32,7 @@ anniversaries es' today = page_ "Anniveraries" (Just NavAnniversaries) $ do
             " and "
             a_ [ href_ "#birthday" ] "Birthdays"
 
-    fullRow_ $ a_ [ name_ "work", href_ "#work"] $ h2_ "Work"
+    fullRow_ $ h2_ "Work"
     fullRow_ $ sortableTable_ $ do
         thead_ $ do
             th_ "Personio"
@@ -47,7 +47,7 @@ anniversaries es' today = page_ "Anniveraries" (Just NavAnniversaries) $ do
                     td_ $ toHtml $ e ^. P.employeeFullname
                     td_ $ toHtml $ show hday
 
-    fullRow_ $ a_ [ name_ "birthday", href_ "#birthday"] $ h2_ "Birthdays"
+    fullRow_ $ h2_ "Birthdays"
     fullRow_ $ sortableTable_ $ do
         thead_ $ do
             th_ "Personio"

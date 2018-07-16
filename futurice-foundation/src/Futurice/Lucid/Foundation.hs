@@ -24,6 +24,12 @@ module Futurice.Lucid.Foundation (
     condensedTable_,
     sortableTable_,
     vertRow_,
+    -- * Headers
+    h1_,
+    h2_,
+    h3_,
+    -- * Anchors
+    anchor_,
     -- * Form
     optionSelected_,
     checkbox_,
@@ -67,8 +73,8 @@ import Futurice.Prelude
 import GHC.TypeLits                   (KnownSymbol, Symbol, symbolVal)
 import LambdaCSS
        (Stylesheet, hashes, parseLambdaCSS, printLambdaCSS)
-import Lucid                          hiding (for_, table_)
-import Lucid.Base                (Attribute (..))
+import Lucid                          hiding (for_, h1_, h2_, h3_, table_)
+import Lucid.Base                     (Attribute (..))
 import Lucid.Servant                  (linkAbsHref_)
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
@@ -78,6 +84,7 @@ import Servant
 import Servant.API.Generic            (AsApi, GenericServant, ToServantApi)
 import Servant.Links                  (HasLink, MkLink, fieldLink')
 
+import qualified Data.Text  as T
 import qualified Lucid      as L
 import qualified Lucid.Base as L
 
@@ -136,6 +143,31 @@ largemed_ n = div_
 
 fullRow_ :: Monad m => HtmlT m () -> HtmlT m ()
 fullRow_ = row_ . large_ 12
+
+-------------------------------------------------------------------------------
+-- Headers
+-------------------------------------------------------------------------------
+
+-- | /Note/ takes 'Text', not arbitrary HTML
+h1_ :: Monad m => Text -> HtmlT m ()
+h1_ = L.h1_ . toHtml
+
+-- | /Note/ takes 'Text', not arbitrary HTML
+h2_ :: Monad m => Text -> HtmlT m ()
+h2_ = L.h2_ . anchorise
+
+-- | /Note/ takes 'Text', not arbitrary HTML
+h3_ :: Monad m => Text -> HtmlT m ()
+h3_ = L.h3_ . anchorise
+
+anchor_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
+anchor_ n = a_ [ name_ n, href_ $ "#" <> n ]
+
+anchorise :: Monad m => Text -> HtmlT m ()
+anchorise t = anchor_ anchor $ toHtml t where
+    anchor = "h:" <> T.map f (T.toLower t)
+    f ' ' = '-'
+    f c   = c
 
 -------------------------------------------------------------------------------
 -- Table

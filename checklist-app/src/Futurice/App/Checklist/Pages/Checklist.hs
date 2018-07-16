@@ -48,19 +48,21 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
 
     -- Tasks
-    subheader_ $ "Tasks (" <> textShow (length tasks) <> ")"
+    subheader_ "Tasks"
+    p_ $ toHtml $ "There are " <> textShow (length tasks) <> " tasks"
+
     -- TODO: move to Markup: tasksList
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [ title_ "Task" ]                       "Task"
             th_ [ title_ "Info", style_ "max-width: 20em;" ] "Info"
             th_ [ title_ "Role" ]                       "Role"
-            th_ [ title_ "Offset" ]                     "Day offset"
+            th_ [ title_ "Offset" ]                     $ toHtmlRaw ("Day&nbsp;offset" :: Text)
             th_ [ title_ "To whom this task applies" ]  "Applicability"
             th_ [ title_ "Direct prerequisites" ]       "Prerequisites"
             th_ [ title_ "Tags added to task" ]         "Tags"
             th_ [ title_ "Active employees todo/done" ] "Employees"
-            th_ [ title_ "Other checklists with the task" ] "Other checklists"
+            th_ [ title_ "Other checklists with the task" ] "Checklists"
             th_ [ title_ "Remove task from the checklist" ] "Remove"
 
         tbody_ $ for_ tasks $ \task -> tr_ $ do

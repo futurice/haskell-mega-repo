@@ -49,13 +49,13 @@ module Futurice.App.Checklist.Markup (
     defaultShowAll,
     ) where
 
-import Control.Lens        (has, re, _Wrapped)
-import FUM.Types.Login     (Login, loginToText)
+import Control.Lens     (has, re, _Wrapped)
+import FUM.Types.Login  (Login, loginToText)
 import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
-import Servant.Utils.Links (Link, safeLink)
-import Web.HttpApiData     (toUrlPiece)
+import Servant.Links    (Link, safeLink)
+import Web.HttpApiData  (toUrlPiece)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Clay  (pageParams)
@@ -130,7 +130,7 @@ header
     => Text          -- ^ default title
     -> [Maybe Text]  -- ^ title parts
     -> HtmlT m ()
-header title titleParts' = row_ $ large_ 12 $ header_ $ h1_ $ toHtml $
+header title titleParts' = row_ $ large_ 12 $ header_ $ h1_ $
     if null titleParts
         then title
         else T.intercalate " - " titleParts
@@ -141,7 +141,7 @@ subheader_
     :: Monad m
     => Text
     -> HtmlT m ()
-subheader_ title = row_ $ large_ 12 $ h2_ $ toHtml title
+subheader_ title = row_ $ large_ 12 $ h2_ title
 
 -------------------------------------------------------------------------------
 -- Futu id

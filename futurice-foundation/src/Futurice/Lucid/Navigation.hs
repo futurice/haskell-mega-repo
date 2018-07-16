@@ -46,7 +46,7 @@ page_
 page_ title nav body = do
     Lucid.page_ (title <+> serviceTitle nav) (pageParams nav) $ do
         navigation_ nav
-        fullRow_ $ header_ $ h1_ $ toHtml title
+        fullRow_ $ header_ $ h1_ title
         row_ $ large_ 12 [ class_ "futu-block" ] body
 
 pageParamsWithJS :: JS -> proxy nav -> PageParams
