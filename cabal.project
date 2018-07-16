@@ -94,6 +94,7 @@ packages:
   preferences-client/
   proxy-app/
   proxy-mgmt-app/
+  proxy-types/
   reports-app/
   servant-algebraic-graphs/
   servant-binary-tagged/

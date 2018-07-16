@@ -37,7 +37,8 @@ library
     , containers
     , env-config
     , fum-api
-    , fum-client
+    , futurice-constants
+    , futurice-foundation
     , futurice-github
     , futurice-metrics
     , futurice-postgres
@@ -50,6 +51,7 @@ library
     , personio-client
     , planmill-client
     , postgresql-simple
+    , proxy-types
     , reflection
     , regex-applicative
     , regex-applicative-text
@@ -78,8 +80,8 @@ library
       Futurice.App.Proxy
       Futurice.App.Proxy.Config
       Futurice.App.Proxy.Ctx
+      Futurice.App.Proxy.Markup
       Servant.Excel
-      Servant.Proxy
   default-language: Haskell2010
 
 executable proxy-app-server
