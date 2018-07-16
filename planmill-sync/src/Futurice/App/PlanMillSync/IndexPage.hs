@@ -52,7 +52,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             b_ "Personio ≠ PlanMill"
             "."
 
-    anchor_ "planmill" $ h2_ "People Active in PlanMIll but not in Personio"
+    h2_ "People Active in PlanMIll but not in Personio"
     table_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
@@ -75,7 +75,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                     let pmEnd = PM.uDepartDate pmu
                     noWrapSpan_ $ toHtml $ formatDateSpan pmStart pmEnd
 
-    anchor_ "personio" $ h2_ "People Active in Personio but not in PlanMill"
+    h2_ "People Active in Personio but not in PlanMill"
     table_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
@@ -106,24 +106,21 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
 
     h2_ "Cross-check of people in PlanMill and Personio"
 
-    anchor_ "cross-employees" $ h3_ "Employees"
+    h3_ "Employees"
     summaryTable employees $ \pm p ->
         p ^. P.employeeEmploymentType /= Just P.External &&
         (pmPassive pm == "Active" || P.employeeIsActive today p)
 
-    anchor_ "cross-subcontractors" $ h3_ "Subcontractors"
+    h3_ "Subcontractors"
     summaryTable employees $ \pm p ->
         p ^. P.employeeEmploymentType == Just P.External &&
         (pmPassive pm == "Active" || P.employeeIsActive today p)
 
-    anchor_ "cross-inactive" $ h3_ "Inactive"
+    h3_ "Inactive"
     summaryTable employees $ \pm p ->
         not (pmPassive pm == "Active" || P.employeeIsActive today p)
 
   where
-    anchor_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
-    anchor_ n = a_ [ name_ n, href_ $ "/#" <> n ]
-
     summaryTable
         :: Monad m
         => Map Login (These PMUser P.Employee)

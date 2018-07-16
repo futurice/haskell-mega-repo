@@ -66,10 +66,10 @@ fumHeader_
     => Text          -- ^ default title
     -> [Maybe Text]  -- ^ title parts
     -> HtmlT m ()
-fumHeader_ title titleParts' = fullRow_ $ header_ $ h1_ $ toHtml $
+fumHeader_ title titleParts' = fullRow_ $ header_ $ h1_ $
     if null titleParts
-        then title
-        else T.intercalate " - " titleParts
+    then title
+    else title <> " - " <> T.intercalate " - " titleParts
   where
     titleParts = catMaybes titleParts'
 
@@ -77,12 +77,12 @@ subheader_
     :: Monad m
     => Text
     -> HtmlT m ()
-subheader_ title = fullRow_ $ h3_ $ toHtml title
+subheader_ title = fullRow_ $ h3_ title
 
 block_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
 block_ title contents = do
     div_ [ class_ "futu-block" ] $  do
-        fullRow_ $ h2_ $ toHtml title
+        fullRow_ $ h2_ title
         contents
 
 todos_ :: Monad m => [HtmlT m ()] -> HtmlT m ()

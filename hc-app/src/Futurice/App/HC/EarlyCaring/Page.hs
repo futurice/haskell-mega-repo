@@ -9,6 +9,7 @@ import Futurice.Integrations     (Employee (..))
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Time.Month
+import Futurice.Tribe            (tribeToText)
 import Numeric.Interval.NonEmpty (Interval, inf, (...))
 import Prelude ()
 import Web.HttpApiData           (toUrlPiece)
@@ -25,12 +26,12 @@ import Futurice.App.HC.Markup
 
 -- | PlanMill data needed to make early caring report
 data EarlyCaringPlanMill = EarlyCaringPlanMill
-    { ecpmLogin         :: !Login
-    , ecpmPMUid         :: !PM.UserId
-    , ecpmEmployee      :: !Employee
-    , ecpmCapacities    :: !PM.UserCapacities
-    , ecpmTimereports   :: !PM.Timereports
-    , ecpmBalance       :: !PM.TimeBalance
+    { ecpmLogin       :: !Login
+    , ecpmPMUid       :: !PM.UserId
+    , ecpmEmployee    :: !Employee
+    , ecpmCapacities  :: !PM.UserCapacities
+    , ecpmTimereports :: !PM.Timereports
+    , ecpmBalance     :: !PM.TimeBalance
     }
   deriving Show
 
@@ -62,11 +63,12 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
 
     for_ balances $ \bs -> do
         let ms = balanceSupervisor $ NE.head bs
-        let supervisorHeader e = do
-                toHtml $ e ^. P.employeeFullname
-                " ("
-                toHtml $ e ^. P.employeeTribe
-                ")"
+        let supervisorHeader e = mconcat
+                [ e ^. P.employeeFullname
+                , " ("
+                , tribeToText (e ^. P.employeeTribe)
+                , ")"
+                ]
 
         fullRow_ $ h2_ $ maybe "No supervisor" supervisorHeader ms
         fullRow_ $ table_ $ do
