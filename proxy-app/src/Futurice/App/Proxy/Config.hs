@@ -8,8 +8,6 @@ import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
 import Servant.Client             (BaseUrl)
 
-import qualified FUM
-
 data Config = Config
     { cfgPostgresConnInfo     :: !ConnectInfo
     , cfgReportsAppBaseurl    :: !BaseUrl
@@ -17,8 +15,6 @@ data Config = Config
     , cfgPlanmillProxyBaseurl :: !BaseUrl
     , cfgGithubProxyBaseurl   :: !BaseUrl
     , cfgPersonioProxyBaseurl :: !BaseUrl
-    , cfgFumBaseurl           :: !BaseUrl
-    , cfgFumAuthToken         :: !FUM.AuthToken
     , cfgPowerBaseurl         :: !BaseUrl
     , cfgContactsApiBaseurl   :: !BaseUrl
     }
@@ -31,7 +27,5 @@ instance Configure Config where
         <*> envVar "PLANMILLPROXY_BASEURL"
         <*> envVar "GITHUBPROXY_BASEURL"
         <*> envVar "PERSONIOPROXY_BASEURL"
-        <*> envVar "FUM_BASEURL"
-        <*> envVar "FUM_TOKEN"
         <*> envVar "POWER_BASEURL"
         <*> envVar "CONTACTSAPI_BASEURL"
