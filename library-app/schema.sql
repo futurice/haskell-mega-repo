@@ -1,5 +1,6 @@
 CREATE SCHEMA library;
 
+
 -- See library.item description
 CREATE SEQUENCE library.information_seq;
 
