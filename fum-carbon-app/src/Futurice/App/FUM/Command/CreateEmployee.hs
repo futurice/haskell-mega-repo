@@ -74,7 +74,7 @@ instance Command CreateEmployee where
         worldNextUID %= nextUnixID
 
         -- Redirect to the employee page
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 validate :: (MonadReader World m, MonadError String m) => CreateEmployee phase -> m ()
 validate  cmd = do

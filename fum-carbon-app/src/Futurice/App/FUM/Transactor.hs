@@ -24,7 +24,7 @@ transact
     -> UTCTime       -- ^ now
     -> Login         -- ^ submitted of the command
     -> SomeCommand   -- ^ command
-    -> LogT IO (Either String LomakeResponse)
+    -> LogT IO (Either String (CommandResponse ()))
 transact ctx now login scmd =
     withSomeCommand scmd $ \_cmdTag cmd ->
     withMVar (ctxTransactorMVar ctx) $ \_  -> do

@@ -51,7 +51,7 @@ instance Command ResetPassword where
         let employee = rpLogin cmd
         worldEmployees . ix employee . employeePassword .= Just (rpPassword cmd)
 
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 validate
     :: (MonadReader World m, MonadError String m)

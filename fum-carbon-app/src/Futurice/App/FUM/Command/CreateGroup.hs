@@ -69,7 +69,7 @@ instance Command CreateGroup where
         worldNextGID %= nextUnixID
 
         -- Redirect to the group page
-        pure $ LomakeResponseRedirect $ viewGroupHrefText name
+        pure $ CommandResponseRedirect $ viewGroupHrefText name
 
 validate :: (MonadReader World m, MonadError String m) => CreateGroup phase -> m ()
 validate cmd = do

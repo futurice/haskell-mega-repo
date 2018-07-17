@@ -99,7 +99,7 @@ instance Command Bootstrap where
         worldNextUID %= nextUnixID
         worldNextGID %= nextUnixID
 
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 -- In validation check that world is pristine, null.
 validate :: (MonadReader World m, MonadError String m) => m ()

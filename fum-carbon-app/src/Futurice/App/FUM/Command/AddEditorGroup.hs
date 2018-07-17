@@ -49,7 +49,7 @@ instance Command AddEditorGroup where
         let editor = aegEditor cmd
         worldGroups . ix name . groupEditor . contains editor .= True
 
-        pure $ LomakeResponseRedirect $ viewGroupHrefText name
+        pure $ CommandResponseRedirect $ viewGroupHrefText name
 
 validate
     :: (MonadReader World m, MonadError String m)

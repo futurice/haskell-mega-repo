@@ -32,12 +32,12 @@ cmdServer ctx mlogin (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx
         cmdInternal' <- hoist liftIO $ runExceptT $
             runReaderT (internalizeCommand now login rights cmdInput) world
         case cmdInternal' of
-            Left err -> pure (LomakeResponseError err)
+            Left err -> pure (CommandResponseError err)
             Right cmdInternal -> do
                 res <- hoist liftIO $ transact ctx now login (someCommand cmdInternal)
                 case res of
                     Right res' -> pure res'
-                    Left err   -> pure (LomakeResponseError err)
+                    Left err   -> pure (CommandResponseError err)
 
 commandServer :: Ctx -> Server FumCarbonCommandApi
 commandServer ctx = cmdServers (Proxy :: Proxy Commands)
