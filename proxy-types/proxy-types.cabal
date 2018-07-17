@@ -23,17 +23,28 @@ library
   hs-source-dirs:
       src
   default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
     DerivingStrategies
     GeneralizedNewtypeDeriving
+    ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       base                  >=4.10   && <4.12
+    , containers
     , futurice-constants
     , futurice-prelude
+    , postgresql-simple
     , servant
     , servant-cassava
     , servant-client
     , servant-server
+    , swagger2
+    , text
   -- Integrations
   build-depends:
       contacts-api

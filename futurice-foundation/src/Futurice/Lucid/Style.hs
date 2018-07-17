@@ -50,6 +50,10 @@ css = do
         paddingTop $ rem 0.1
         paddingBottom $ rem 0.1
 
+    -- without margin
+    ".futu-button-no-margin" ** button ?
+        marginBottom (em 0)
+
     -- table
     table # ".transparent" ? tbody ? do
         backgroundColor transparent
