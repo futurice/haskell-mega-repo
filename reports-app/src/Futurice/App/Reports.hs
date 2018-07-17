@@ -9,12 +9,13 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.Reports (defaultMain) where
 
+import Control.Lens                (each)
 import Data.Aeson                  (object, (.=))
 import Data.Time                   (addDays, defaultTimeLocale, formatTime)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
-       (Integrations, beginningOfPrev2Month, personioPlanmillMap,
-       runIntegrations)
+       (Integrations, beginningOfCurrMonth, beginningOfPrev2Month,
+       personioPlanmillMap, runIntegrations)
 import Futurice.Metrics.RateMeter  (mark)
 import Futurice.Periocron
 import Futurice.Postgres
@@ -122,33 +123,32 @@ serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
 
 missingHoursStats :: Ctx -> IO ()
 missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
-    (fridayR, yesterdayR, today) <- liftIO $ runIntegrations' ctx $ do
+    (results, today) <- liftIO $ runIntegrations' ctx $ do
         today <- currentDay
+        let monthsI    = beginningOfPrev2Month today ... pred (beginningOfCurrMonth today)
         let fridayI    = beginningOfPrev2Month today ... previousFriday today
         let yesterdayI = beginningOfPrev2Month today ... pred today
 
-        (fridayR, yesterdayR) <- liftA2 (,)
-            (missingHoursReport predicate fridayI)
-            (missingHoursReport predicate yesterdayI)
+        results <- each (missingHoursReport predicate)
+            (monthsI, fridayI, yesterdayI)
 
-        return (fridayR, yesterdayR, today)
+        return (results, today)
 
-    let fridayTotal :: Double
-        fridayTotal = realToFrac $ unNDT $ fridayR ^. reportParams . mhpTotalHours
+    let totals = over each
+            (\r -> realToFrac $ unNDT $ r ^. reportParams . mhpTotalHours :: Double)
+            results
 
-    let yesterdayTotal :: Double
-        yesterdayTotal = realToFrac $ unNDT $ yesterdayR ^. reportParams . mhpTotalHours
-
-    void $ safePoolExecute ctx insertQuery (today, fridayTotal, yesterdayTotal)
+    void $ safePoolExecute ctx insertQuery (today, totals ^. _1, totals ^._2, totals ^. _3)
   where
     lgr = ctxLogger ctx
     predicate = missingHoursEmployeePredicate'
 
     insertQuery = fromString $ unwords
-        [ "INSERT INTO reports.missing_hours as c (day, last_friday, yesterday)"
-        , "VALUES (?, ?, ?) ON CONFLICT (day) DO UPDATE"
+        [ "INSERT INTO reports.missing_hours as c (day, full_months, last_friday, yesterday)"
+        , "VALUES (?, ?, ?, ?) ON CONFLICT (day) DO UPDATE"
         , "SET last_friday = LEAST(c.last_friday, EXCLUDED.last_friday),"
-        , "    yesterday = LEAST(c.yesterday, EXCLUDED.yesterday)"
+        , "    yesterday = LEAST(c.yesterday, EXCLUDED.yesterday),"
+        , "    full_months = LEAST(c.full_months, EXCLUDED.full_months)"
         , ";"
         ]
 
