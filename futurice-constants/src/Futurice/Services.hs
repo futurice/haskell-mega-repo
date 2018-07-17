@@ -37,6 +37,7 @@ data Service
     | HoursService
     | HoursApiService
     | HCService
+    | LibraryService
     | PersonioProxyService
     | PersonioService
     | PlanmillProxyService
@@ -71,6 +72,7 @@ instance TextEnum Service where
         , "hours"
         , "hours-api"
         , "hc"
+        , "library"
         , "personio-proxy"
         , "personio"
         , "planmill-proxy"
@@ -129,6 +131,7 @@ data PerService a = PerService
     , perHours         :: a
     , perHoursApi      :: a
     , perHC            :: a
+    , perLibrary       :: a
     , perPersonio      :: a
     , perPersonioProxy :: a
     , perPlanmill      :: a
@@ -165,6 +168,7 @@ instance Representable PerService where
     index p HoursService         = perHours p
     index p HoursApiService      = perHoursApi p
     index p HCService            = perHC p
+    index p LibraryService       = perLibrary p
     index p PersonioProxyService = perPersonioProxy p
     index p PersonioService      = perPersonio p
     index p PlanmillProxyService = perPlanmillProxy p
@@ -193,6 +197,7 @@ instance Representable PerService where
         , perHours         = f HoursService
         , perHoursApi      = f HoursApiService
         , perHC            = f HCService
+        , perLibrary       = f LibraryService
         , perPersonio      = f PersonioService
         , perPersonioProxy = f PersonioProxyService
         , perPlanmill      = f PlanmillService
