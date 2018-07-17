@@ -50,7 +50,7 @@ instance Command ChangeGroupMatch where
 
         worldGroups . ix name . groupMatch .= gm
 
-        pure $ LomakeResponseRedirect $ viewGroupHrefText name
+        pure $ CommandResponseRedirect $ viewGroupHrefText name
 
 validate
     :: (MonadReader World m, MonadError String m)

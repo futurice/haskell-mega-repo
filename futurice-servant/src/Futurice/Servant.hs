@@ -77,7 +77,7 @@ import Control.Exception                    (IOException)
 import Control.Lens                         (each)
 import Control.Monad.Catch
        (displayException, fromException, handleAll)
-import Data.Aeson                           (FromJSON, ToJSON, object, (.=))
+import Data.Aeson                           (object, (.=))
 import Data.Char                            (isAscii, isControl)
 import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
@@ -88,6 +88,7 @@ import Futurice.Cache
        genCachedIO, newCache)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
+import Futurice.CommandResponse
 import Futurice.EnvConfig
        (Configure, configure, envAwsCredentials, envVar, envVarWithDefault,
        getConfig', optionalAlt)
@@ -636,19 +637,3 @@ makeAscii :: Char -> Char
 makeAscii c
     | isAscii c && not (isControl c) = c
     | otherwise                      = '?'
-
--------------------------------------------------------------------------------
--- CommandResponse
--------------------------------------------------------------------------------
-
-data CommandResponse a
-    = CommandResponseOk a            -- ^ Do nothing
-    | CommandResponseError String    -- ^ an error
-    | CommandResponseReload          -- ^ reload current page
-    | CommandResponseRedirect !Text  -- ^ redirect to the url
-  deriving (Eq, Ord, Show, Typeable, Generic, Functor, Foldable, Traversable)
-
-instance ToJSON a => ToJSON (CommandResponse a)
-instance FromJSON a => FromJSON (CommandResponse a)
-instance ToSchema a => ToSchema (CommandResponse a) where
-    declareNamedSchema = Data.Swagger.genericDeclareNamedSchemaUnrestricted Data.Swagger.defaultSchemaOptions

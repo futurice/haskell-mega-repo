@@ -52,7 +52,7 @@ instance Command RemoveSSHKeyFromEmployee where
 
         worldEmployees . ix login . employeeSshKeys %= Set.filter predicate
 
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 validate
     :: (MonadReader World m, MonadError String m)

@@ -48,7 +48,7 @@ instance Command AddSSHKeyToEmployee where
 
         worldEmployees . ix login . employeeSshKeys . contains (askeSshKey cmd) .= True
 
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 validate
     :: (MonadReader World m, MonadError String m)

@@ -76,7 +76,7 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
         endpoint = decodeLatin1 $ rawPathInfo req
-    case match isSwaggerReg endpoint of
+    case match isDocumentationRegexp endpoint of
         Nothing -> regularCheck conn u' p' endpoint
         Just _  -> swaggerCheck conn u' p' endpoint
   where
@@ -108,18 +108,19 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     -- | Logs user, and requested endpoint if endpoint is not swagger-related.
     logAccess :: Postgres.Connection -> Text -> Text -> IO ()
     logAccess conn user endpoint =
-        when (isNothing $ match isSwaggerReg endpoint) $ void $ do
+        when (isNothing $ match isDocumentationRegexp endpoint) $ void $ do
             mark $ "endpoint " <> endpoint
             Postgres.execute conn
                 "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
                 (user, endpoint)
 
-    isSwaggerReg :: RE' Text
-    isSwaggerReg = choice
+    isDocumentationRegexp :: RE' Text
+    isDocumentationRegexp = choice
         [ string "/"
         , string "/favicon.ico"
         , string "/swagger.json"
         , string "/swagger-ui" *> (T.pack <$> many anySym)
+        , string "/vendor/" *> (T.pack <$> many anySym)
         ]
 
     choice = foldr (<|>) empty
