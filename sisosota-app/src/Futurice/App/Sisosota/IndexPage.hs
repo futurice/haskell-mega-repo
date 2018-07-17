@@ -61,6 +61,6 @@ indexPage hashes = page_ mempty (Just NavIndex) $ do
 
     h2_ "Upload file"
 
-    form_ [ toAction_ $ recordHref_ recUpload, method_ "POST", enctype_ "multipart/form-data" ]$ do
+    form_ [ recordAction_ recUpload, method_ "POST", enctype_ "multipart/form-data" ]$ do
         input_ [ name_ "upload-file", type_ "file" ]
         button_ [ class_ "button" ] "Submit"

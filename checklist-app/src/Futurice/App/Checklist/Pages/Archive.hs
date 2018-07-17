@@ -6,7 +6,7 @@ module Futurice.App.Checklist.Pages.Archive (archivePage) where
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
-import Servant.Utils.Links       (safeLink)
+import Servant.Links             (safeLink)
 
 import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup

@@ -49,7 +49,7 @@ instance Command RemoveEmployeeFromGroup where
 
         worldGroups . ix name . groupEmployees . contains login .= False
 
-        pure LomakeResponseReload
+        pure CommandResponseReload
 
 validate
     :: (MonadReader World m, MonadError String m)

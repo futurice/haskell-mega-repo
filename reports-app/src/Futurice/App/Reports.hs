@@ -9,12 +9,13 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.Reports (defaultMain) where
 
+import Control.Lens                (each)
 import Data.Aeson                  (object, (.=))
 import Data.Time                   (addDays, defaultTimeLocale, formatTime)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
-       (Integrations, beginningOfPrev2Month, personioPlanmillMap,
-       runIntegrations)
+       (Integrations, beginningOfCurrMonth, beginningOfPrev2Month,
+       personioPlanmillMap, runIntegrations)
 import Futurice.Metrics.RateMeter  (mark)
 import Futurice.Periocron
 import Futurice.Postgres
@@ -111,30 +112,43 @@ missingHoursEmployeePredicate' interval p = and
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
-serveMissingHoursReport allContracts ctx = do
-    (report, today) <- cachedIO' ctx allContracts $ do
-        day <- currentDay
-        let interval = beginningOfPrev2Month day ... previousFriday day
-        r <- runIntegrations' ctx (missingHoursReport predicate interval)
-        return (r, day)
-
-    unless allContracts $ liftIO $ runLogT "missing-hours-series" lgr $ do
-        let total :: Double
-            total = realToFrac $ unNDT $ report ^. reportParams . mhpTotalHours
-        void $ safePoolExecute ctx insertQuery (today, total)
-
-    return report
+serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
+    day <- currentDay
+    let interval = beginningOfPrev2Month day ... previousFriday day
+    runIntegrations' ctx (missingHoursReport predicate interval)
   where
-    lgr = ctxLogger ctx
-
     predicate
         | allContracts = missingHoursEmployeePredicate
         | otherwise    = missingHoursEmployeePredicate'
 
+missingHoursStats :: Ctx -> IO ()
+missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
+    (results, today) <- liftIO $ runIntegrations' ctx $ do
+        today <- currentDay
+        let monthsI    = beginningOfPrev2Month today ... pred (beginningOfCurrMonth today)
+        let fridayI    = beginningOfPrev2Month today ... previousFriday today
+        let yesterdayI = beginningOfPrev2Month today ... pred today
+
+        results <- each (missingHoursReport predicate)
+            (monthsI, fridayI, yesterdayI)
+
+        return (results, today)
+
+    let totals = over each
+            (\r -> realToFrac $ unNDT $ r ^. reportParams . mhpTotalHours :: Double)
+            results
+
+    void $ safePoolExecute ctx insertQuery (today, totals ^. _1, totals ^._2, totals ^. _3)
+  where
+    lgr = ctxLogger ctx
+    predicate = missingHoursEmployeePredicate'
+
     insertQuery = fromString $ unwords
-        [ "INSERT INTO reports.missing_hours as c (day, hours)"
-        , "VALUES (?, ?) ON CONFLICT (day) DO UPDATE"
-        , "SET hours = LEAST(c.hours, EXCLUDED.hours)"
+        [ "INSERT INTO reports.missing_hours as c (day, full_months, last_friday, yesterday)"
+        , "VALUES (?, ?, ?, ?) ON CONFLICT (day) DO UPDATE"
+        , "SET last_friday = LEAST(c.last_friday, EXCLUDED.last_friday),"
+        , "    yesterday = LEAST(c.yesterday, EXCLUDED.yesterday),"
+        , "    full_months = LEAST(c.full_months, EXCLUDED.full_months)"
         , ";"
         ]
 
@@ -323,8 +337,11 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         dashDoApp <- makeDashdoServer ctx'
         let ctx = Ctx cache manager lgr cfg dashDoApp pp
 
-        let jobs = hcollapse $
-                hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports
+        let missingHoursStatsJob =
+                mkJob "missing-hours-stats" (missingHoursStats ctx) $ every (60 * 60)
+
+        let jobs = missingHoursStatsJob : hcollapse
+                (hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports)
 
         -- listen to MQ, especially for missing hours ping
         void $ forEachMessage mq $ \msg -> case msg of

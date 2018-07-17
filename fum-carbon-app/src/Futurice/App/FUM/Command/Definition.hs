@@ -77,12 +77,12 @@ class
         :: UTCTime        -- ^ now
         -> Login          -- ^ submitter of the command
         -> cmd 'Internal  -- ^ command
-        -> StricterT World (Either String) LomakeResponse
+        -> StricterT World (Either String) (CommandResponse ())
 
 type CommandEndpoint (cmd :: Phase -> *) = CommandTag cmd
     :> SSOUser
     :> ReqBody '[JSON] (LomakeRequest (cmd 'Input))
-    :> Post '[JSON] LomakeResponse
+    :> Post '[JSON] (CommandResponse ())
 
 requireRights
     :: MonadError String m

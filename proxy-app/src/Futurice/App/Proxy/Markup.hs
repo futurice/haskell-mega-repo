@@ -1,33 +1,20 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.Sisosota.Markup (
-    module Futurice.Lucid.Foundation,
-    -- * Navigation
-    page_,
-    Nav (..),
-    -- * HTML API
-    HtmlRecord (..),
-    HtmlAPI,
-    htmlApi,
-    ) where
+module Futurice.App.Proxy.Markup where
 
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), page_)
 import Futurice.Prelude
 import Futurice.Servant          (HTML)
 import Prelude ()
-import Servant.API
+import Servant
 import Servant.API.Generic
-import Servant.Multipart
+import Servant.Server.Generic
 
--------------------------------------------------------------------------------
--- API
--------------------------------------------------------------------------------
-
-data HtmlRecord route = HtmlRecord
+newtype HtmlRecord route = HtmlRecord
     { recIndex  :: route :- Get '[HTML] (HtmlPage "index")
-    , recUpload :: route :- MultipartForm Mem (MultipartData Mem) :> Post '[HTML] (HtmlPage "index")
     }
   deriving Generic
 
@@ -36,15 +23,26 @@ type HtmlAPI = ToServantApi HtmlRecord
 htmlApi :: Proxy HtmlAPI
 htmlApi = genericApi (Proxy :: Proxy HtmlRecord)
 
+htmlServer :: a -> Server HtmlAPI
+htmlServer _ = genericServer $ HtmlRecord
+    { recIndex = return indexPage
+    }
+
 -------------------------------------------------------------------------------
 -- Navigation
 -------------------------------------------------------------------------------
 
-data Nav
-    = NavIndex
+data Nav = NavIndex
   deriving (Eq, Ord, Enum, Bounded)
 
 instance Navigation Nav where
-    serviceTitle _ = "sisosota"
+    serviceTitle _ = "Prox"
+    navLink NavIndex = (recordHref_ recIndex, "Proxy")
 
-    navLink NavIndex = (recordHref_ recIndex, "sisosota")
+-------------------------------------------------------------------------------
+-- Markup
+-------------------------------------------------------------------------------
+
+indexPage ::  HtmlPage "index"
+indexPage = page_ mempty (Just NavIndex) $ do
+    a_ [ href_ "/swagger-ui/" ] "Swagger UI"

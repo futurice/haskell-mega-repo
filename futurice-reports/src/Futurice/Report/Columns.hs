@@ -138,7 +138,7 @@ columnControl
     => ColumnData a
     -> ReaderHtml env ()
 columnControl (ColumnData colname xs) = largemed_ 6 $ div_ [ class_ "futu-report-control" ] $ do
-    h3_ $ toHtml colname
+    h3_ colname
     -- sort
     {- -- TODO: think how to present sorting controls
     div_ $ do

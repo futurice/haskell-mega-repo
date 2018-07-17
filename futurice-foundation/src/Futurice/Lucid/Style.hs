@@ -2,7 +2,7 @@
 module Futurice.Lucid.Style where
 
 import Clay
-import Prelude hiding (div, rem, span)
+import Prelude hiding (div, rem, span, (**))
 import Data.Foldable (for_)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), colourClay)
@@ -17,16 +17,21 @@ css = do
     for_ [pre, code] $ \el -> el ? do
         fontFamily ["Futurice Mono"] [monospace]
     star ? fontSize (pt 11)
+
+    -- headers
     h1 ? do
         fontSize (pt 20)
         marginTop (rem 0.5)
-    h2 ? do
+    for_ [ h2, h2 ** a ] $ \el -> el ? do
         fontSize (pt 15)
         marginTop (rem 0.4)
-    h3 ? do
+        color black
+    for_ [ h3, h3 ** a] $ \el -> el ? do
         fontSize (pt 13)
         marginTop (rem 0.3)
+        color black
 
+    -- identifiers
     ".login" ? do
         color $ colourClay $ FutuAccent AF2 AC2
         textDecoration underline

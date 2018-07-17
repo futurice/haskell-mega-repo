@@ -1,0 +1,49 @@
+name:           proxy-types
+version:        0
+synopsis:       Prox types
+description:    Prox types.
+category:       Web
+homepage:       https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-mega-repo
+
+library
+  hs-source-dirs:
+      src
+  default-extensions:
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+  ghc-options: -Wall
+  build-depends:
+      base                  >=4.10   && <4.12
+    , futurice-constants
+    , futurice-prelude
+    , servant
+    , servant-cassava
+    , servant-client
+    , servant-server
+  -- Integrations
+  build-depends:
+      contacts-api
+    , fum-api
+    , futurice-github
+    , personio-client
+    , planmill-client
+    , reports-app
+    , servant-binary-tagged
+  exposed-modules:
+      Futurice.App.Proxy.API
+      Futurice.App.Proxy.Endpoint
+  default-language: Haskell2010
