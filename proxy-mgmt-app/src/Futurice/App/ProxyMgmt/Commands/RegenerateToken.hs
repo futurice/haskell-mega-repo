@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-module Futurice.App.ProxyMgmt.RegenerateToken (regenerateTokenHandler) where
+module Futurice.App.ProxyMgmt.Commands.RegenerateToken (regenerateTokenHandler) where
 
 import Data.Aeson                 (object, (.=))
 import Database.PostgreSQL.Simple (Only (..))
@@ -16,8 +16,8 @@ import qualified Data.Text                  as T
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Types
 
-regenerateTokenHandler :: Ctx f -> ReaderT Login IO Text
-regenerateTokenHandler Ctx {..} = ReaderT $ \login -> do
+regenerateTokenHandler :: ReaderT (Login, Ctx f) IO Text
+regenerateTokenHandler= ReaderT $ \(login, Ctx {..}) -> do
     bytes <- getEntropy 30
     now <- currentTime
     let base64 =  Base64.encode bytes

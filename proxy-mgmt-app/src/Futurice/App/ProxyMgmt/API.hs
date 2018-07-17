@@ -5,13 +5,39 @@ module Futurice.App.ProxyMgmt.API where
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
+import Futurice.Lomake
 import Prelude ()
 import Servant
+import Servant.API.Generic
 
-type ProxyMgmtAPI =
-    SSOUser :> Get '[HTML] (HtmlPage "index")
-    :<|> SSOUser :> "regenerate-own-token" :> Post '[JSON] Text
-    :<|> SSOUser :> "admin" :> Get '[HTML] (HtmlPage "admin")
+import Futurice.App.ProxyMgmt.Commands.AddEndpoint
+import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
+
+data ProxyMgmtRoutes route = ProxyMgmtRoutes
+    { routeIndexPage :: route :-
+        SSOUser :> Get '[HTML] (HtmlPage "index")
+    , routeRegenerateOwnToken :: route :-
+        SSOUser :> "regenerate-own-token" :> Post '[JSON] Text
+    -- Admin
+    , routeTokensPage :: route :-
+        SSOUser :> "tokens" :> Get '[HTML] (HtmlPage "tokens")
+    , routePoliciesPage :: route :-
+        SSOUser :> "policies" :> Get '[HTML] (HtmlPage "policies")
+    , routeAuditPage :: route :-
+        SSOUser :> "audit" :> Get '[HTML] (HtmlPage "audit")
+    -- Commands
+    , routeRemoveEndpoint :: route :-
+        SSOUser :> "command" :> "remove-endpoint"
+        :> ReqBody '[JSON] (LomakeRequest RemoveEndpoint)
+        :> Post '[JSON] (CommandResponse ())
+    , routeAddEndpoint :: route :-
+        SSOUser :> "command" :> "add-endpoint"
+        :> ReqBody '[JSON] (LomakeRequest AddEndpoint)
+        :> Post '[JSON] (CommandResponse ())
+    }
+  deriving Generic
+
+type ProxyMgmtAPI = ToServantApi ProxyMgmtRoutes
 
 proxyMgmtApi :: Proxy ProxyMgmtAPI
-proxyMgmtApi = Proxy
+proxyMgmtApi = genericApi (Proxy :: Proxy ProxyMgmtRoutes)

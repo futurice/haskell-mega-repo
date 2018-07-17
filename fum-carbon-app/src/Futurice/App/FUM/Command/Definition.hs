@@ -14,7 +14,6 @@ module Futurice.App.FUM.Command.Definition (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.SOP     (strippedFieldNames)
 import Futurice.Lomake
 import Futurice.Lucid.Foundation (HtmlT)
 import Futurice.Prelude
@@ -115,12 +114,9 @@ commandHtmlSubmit
     -> NP V (LomakeCode (cmd 'Input))
     -> HtmlT m ()
 commandHtmlSubmit p submitName submitStyle = lomakeHtml
+    (Proxy :: Proxy (cmd 'Input))
     commandFormOptions
-    (lomake cmdp)
-    (strippedFieldNames cmdp)
   where
-    cmdp = Proxy :: Proxy (cmd 'Input)
-
     commandFormOptions :: FormOptions
     commandFormOptions = FormOptions
         { foName        = commandTag p <> "-form"

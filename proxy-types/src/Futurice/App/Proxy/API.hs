@@ -1,11 +1,21 @@
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE DeriveGeneric  #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE TypeFamilies   #-}
-{-# LANGUAGE TypeOperators  #-}
-module Futurice.App.Proxy.API where
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DeriveGeneric   #-}
+{-# LANGUAGE InstanceSigs    #-}
+{-# LANGUAGE KindSignatures  #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE TypeOperators   #-}
+module Futurice.App.Proxy.API (
+    Routes (..),
+    ProxyAPI,
+    proxyAPI,
+    proxyEndpoints,
+    Endpoint,
+    LenientEndpoint (..),
+    ) where
 
 import Futurice.App.Proxy.Endpoint
+import Futurice.Generics
 import Futurice.Prelude
 import Futurice.Services
 import Prelude ()
@@ -13,16 +23,23 @@ import Servant.API
 import Servant.CSV.Cassava         (CSV)
 
 -- Integrations
-import Servant.Binary.Tagged                (BINARYTAGGED)
+import Servant.Binary.Tagged (BINARYTAGGED)
 
-import qualified Futurice.App.Contacts.Types as Contact
+import qualified Futurice.App.Contacts.Types            as Contact
+import           Futurice.App.Reports.MissingHours
+                 (MissingHoursReport, MissingHoursTitle)
+import           Futurice.App.Reports.TimereportsByTask
+                 (TimereportsByTaskReport)
+import qualified Futurice.FUM.MachineAPI                as FUM6
+import qualified Futurice.GitHub                        as GH
+                 (SomeRequest, SomeResponse)
 import qualified Personio
-import qualified Futurice.GitHub             as GH (SomeRequest, SomeResponse)
-import qualified Futurice.FUM.MachineAPI     as FUM6
-import qualified PlanMill.Types.Query        as PM (SomeQuery, SomeResponse)
-import Futurice.App.Reports.MissingHours
-       (MissingHoursReport, MissingHoursTitle)
-import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
+import qualified PlanMill.Types.Query                   as PM
+                 (SomeQuery, SomeResponse)
+
+import qualified Data.Set                             as Set
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 data Routes = Routes
     -- contacts
@@ -39,7 +56,7 @@ data Routes = Routes
     , routeHoursByTask :: ProxiedEndpoint 'ReportsService
         ("hours-by-task" :> Get '[JSON] TimereportsByTaskReport)
         ("reports" :> "hours-by-task" :> Get '[CSV, JSON] TimereportsByTaskReport)
-    
+
     -- Power
     , routePowerBi :: ProxiedEndpoint 'PowerService
         ("api" :> "v2" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int:> QueryParam "tribe" Text :> Get '[JSON] Value)
@@ -91,3 +108,71 @@ type ProxyAPI  = ProxyServer Routes
 
 proxyAPI :: Proxy ProxyAPI
 proxyAPI = Proxy
+
+-------------------------------------------------------------------------------
+-- Endpoint type
+-------------------------------------------------------------------------------
+
+-- | Endpoints in @prox@.
+proxyEndpoints :: Set Endpoint
+proxyEndpoints = Set.map coerce $ proxyEndpoints' (Proxy :: Proxy Routes)
+
+newtype Endpoint = Endpoint Text
+  deriving stock (Eq, Ord)
+  deriving newtype (Show, NFData)
+
+instance Enum Endpoint where
+    fromEnum e = case Set.lookupIndex e proxyEndpoints of
+        Nothing -> error $ "fromEnum @Endpoint: no such endpoint" ++ show e
+        Just i  -> i
+
+    toEnum i = Set.elemAt i proxyEndpoints
+
+instance Bounded Endpoint where
+    minBound = Set.findMin proxyEndpoints
+    maxBound = Set.findMax proxyEndpoints
+
+-- | No verification.
+instance Textual Endpoint where
+    textualToText   = coerce
+    textualFromText t
+        | t `Set.member` raws = Right (Endpoint t)
+        | otherwise           = Left "Unknown endpoint"
+      where
+        raws = proxyEndpoints' (Proxy :: Proxy Routes)
+
+deriveVia [t| ToJSON Endpoint             `Via` Textica Endpoint |]
+deriveVia [t| FromJSON Endpoint           `Via` Textica Endpoint |]
+deriveVia [t| ToHttpApiData Endpoint      `Via` Textica Endpoint |]
+deriveVia [t| FromHttpApiData Endpoint    `Via` Textica Endpoint |]
+deriveVia [t| Postgres.ToField Endpoint   `Via` Textica Endpoint |]
+deriveVia [t| Postgres.FromField Endpoint `Via` Textica Endpoint |]
+deriveVia [t| ToHtml Endpoint             `Via` Textica Endpoint |]
+
+instance ToParamSchema Endpoint where toParamSchema = textualToParamSchema
+instance ToSchema Endpoint where declareNamedSchema = textualDeclareNamedSchema
+
+-------------------------------------------------------------------------------
+-- Endpoint type
+-------------------------------------------------------------------------------
+
+-- | Parsing this always succeeds.
+newtype LenientEndpoint = LenientEndpoint Text
+  deriving stock (Eq, Ord)
+  deriving newtype (Show, NFData)
+
+-- | No verification.
+instance Textual LenientEndpoint where
+    textualToText   = coerce
+    textualFromText = Right . coerce
+
+deriveVia [t| ToJSON LenientEndpoint             `Via` Textica LenientEndpoint |]
+deriveVia [t| FromJSON LenientEndpoint           `Via` Textica LenientEndpoint |]
+deriveVia [t| ToHttpApiData LenientEndpoint      `Via` Textica LenientEndpoint |]
+deriveVia [t| FromHttpApiData LenientEndpoint    `Via` Textica LenientEndpoint |]
+deriveVia [t| Postgres.ToField LenientEndpoint   `Via` Textica LenientEndpoint |]
+deriveVia [t| Postgres.FromField LenientEndpoint `Via` Textica LenientEndpoint |]
+deriveVia [t| ToHtml LenientEndpoint             `Via` Textica LenientEndpoint |]
+
+instance ToParamSchema LenientEndpoint where toParamSchema = textualToParamSchema
+instance ToSchema LenientEndpoint where declareNamedSchema = textualDeclareNamedSchema
