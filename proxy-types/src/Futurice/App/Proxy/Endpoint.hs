@@ -1,12 +1,25 @@
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts , FlexibleInstances      #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-module Futurice.App.Proxy.Endpoint where
+module Futurice.App.Proxy.Endpoint (
+    -- * Definition
+    ProxiedEndpoint,
+    -- * Server
+    proxyServer,
+    ProxyServer,
+    HasHttpManager (..),
+    HasClientBaseurl (..),
+    -- * Endpoints
+    proxyEndpoints',
+    )where
 
 import Data.Kind         (Type)
 import Futurice.Prelude
@@ -15,6 +28,8 @@ import GHC.Generics
 import Prelude ()
 import Servant
 import Servant.Client
+
+import qualified Data.Set as Set
 
 -------------------------------------------------------------------------------
 -- Proxy
@@ -81,8 +96,7 @@ instance (HasProxy ctx f, HasProxy ctx g) => HasProxy ctx (f :*: g) where
     proxyServerRep ctx _ =
         proxyServerRep ctx (Proxy :: Proxy f) :<|> proxyServerRep ctx (Proxy :: Proxy g)
 
-instance HasProxyK ctx c => HasProxy ctx (K1 r c)
-  where
+instance HasProxyK ctx c => HasProxy ctx (K1 r c) where
     type ProxyServerRep (K1 r c) = ProxyServerRepK c
     proxyServerRep ctx _ = proxyServerRepK ctx (Proxy :: Proxy c)
 
@@ -91,9 +105,9 @@ class HasProxyK ctx c where
     proxyServerRepK :: ctx -> Proxy c -> Server (ProxyServerRepK c)
 
 instance
-   ( HasClient ClientM private
-   , Convertible (Client ClientM private) (ServerT public Handler)
-   , HasHttpManager ctx, HasClientBaseurl ctx service
+    ( HasClient ClientM private
+    , Convertible (Client ClientM private) (ServerT public Handler)
+    , HasHttpManager ctx, HasClientBaseurl ctx service
     ) => HasProxyK ctx (ProxiedEndpoint service private public)
   where
     type ProxyServerRepK (ProxiedEndpoint service private public) = public
@@ -105,3 +119,55 @@ instance
 
         proxyPrivate = Proxy :: Proxy private
         proxyService = Proxy :: Proxy service
+
+-------------------------------------------------------------------------------
+-- Endpoints
+-------------------------------------------------------------------------------
+
+-- | Available endpoints.
+proxyEndpoints'
+    :: forall routes. (Generic routes, HasEndpoints (Rep routes))
+    => Proxy routes -> Set Text
+proxyEndpoints' _ = proxyEndpointsRep (Proxy :: Proxy (Rep routes))
+
+class HasEndpoints (rep :: Type -> Type) where
+    proxyEndpointsRep :: Proxy rep -> Set Text
+
+instance HasEndpoints f => HasEndpoints (M1 c i f) where
+    proxyEndpointsRep _ = proxyEndpointsRep (Proxy :: Proxy f)
+
+instance (HasEndpoints f, HasEndpoints g) => HasEndpoints (f :*: g) where
+    proxyEndpointsRep _ =
+        proxyEndpointsRep (Proxy :: Proxy f) <>
+        proxyEndpointsRep (Proxy :: Proxy g)
+
+instance HasEndpointsK c => HasEndpoints (K1 r c) where
+    proxyEndpointsRep _ = proxyEndpointsRepK (Proxy :: Proxy c)
+
+class HasEndpointsK c where
+    proxyEndpointsRepK :: Proxy c -> Set Text
+
+instance (HasPrefix public) => HasEndpointsK (ProxiedEndpoint service private public) where
+    proxyEndpointsRepK _
+        = Set.singleton
+        $ foldMap ("/" <>)
+        $ endpointPrefix (Proxy :: Proxy public)
+
+-- | Helper class
+class HasPrefix api where
+    endpointPrefix :: Proxy api -> [Text]
+
+instance (KnownSymbol sym, HasPrefix api) => HasPrefix (sym :> api) where
+    endpointPrefix _ = textVal (Proxy :: Proxy sym) : endpointPrefix (Proxy :: Proxy api)
+
+instance HasPrefix (Verb m s ct a) where
+    endpointPrefix _ = []
+
+instance HasPrefix api => HasPrefix (Summary d :> api) where
+    endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
+
+instance HasPrefix api => HasPrefix (QueryParam' mods n a :> api) where
+    endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
+
+instance HasPrefix api => HasPrefix (ReqBody' mods ct a :> api) where
+    endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)

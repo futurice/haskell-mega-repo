@@ -60,3 +60,5 @@ ALTER TABLE proxyapp.credentials ADD CONSTRAINT fk_policy_policyname FOREIGN KEY
 
 UPDATE proxyapp.credentials SET policyname = 'all' WHERE endpoint = '/';
 UPDATE proxyapp.credentials SET policyname = 'missing-hours' WHERE endpoint = '/futuhours/reports/missinghours';
+
+alter table proxyapp.policy_endpoint add constraint policy_endpoint_unique unique (policyname, endpoint);

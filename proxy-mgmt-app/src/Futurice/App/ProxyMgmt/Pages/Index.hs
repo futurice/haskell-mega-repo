@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-module Futurice.App.ProxyMgmt.IndexPage (indexPageHandler) where
+module Futurice.App.ProxyMgmt.Pages.Index (indexPageHandler) where
 
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
@@ -15,8 +15,8 @@ import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
 
-indexPageHandler :: Ctx f -> ReaderT Login IO (HtmlPage "index")
-indexPageHandler ctx = ReaderT $ \login -> do
+indexPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "index")
+indexPageHandler = ReaderT $ \(login, ctx) -> do
     mtoken <- fetchToken login ctx
     entries <- fetchAccessEntries login ctx
     return $ indexPage login mtoken entries
