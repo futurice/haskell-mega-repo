@@ -5,6 +5,9 @@ CREATE TABLE reports.missing_hours (
   hours real NOT NULL
 );
 
-Alter table reports.missing_hours rename column hours to last_friday;
+alter table reports.missing_hours rename column hours to last_friday;
 alter table reports.missing_hours add column yesterday real not null default 1000;
 alter table reports.missing_hours alter column yesterday drop default;
+
+alter table reports.missing_hours add column full_months real not null default 125;
+alter table reports.missing_hours alter column full_months drop default;
