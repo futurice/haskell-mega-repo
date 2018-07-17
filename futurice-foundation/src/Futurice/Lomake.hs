@@ -177,26 +177,38 @@ vMaybe :: b -> (a -> b) -> V a -> b
 vMaybe  def f (V x _)     = maybe def f x
 vMaybe _def f (VHidden x) = f x
 
--- | Render lomake HTML form.
 lomakeHtml
+    :: (HasLomake lomake, Monad m, LomakeCode lomake ~ xs)
+    => Proxy lomake
+    -> FormOptions
+    -> NP V xs
+    -> HtmlT m ()
+lomakeHtml p opts = lomakeHtml'
+    opts
+    (lomake p)
+    (strippedFieldNames p)
+
+-- | Render lomake HTML form.
+lomakeHtml'
     :: forall xs m. Monad m
     => FormOptions      -- ^ form options
     -> NP Field xs      -- ^ field descriptions
     -> NP (K Text) xs   -- ^ field names
     -> NP V xs          -- ^ values
     -> HtmlT m ()
-lomakeHtml formOpts fields names values =
+lomakeHtml' formOpts fields names values = do
+    let (elementHtml, Sum nonHiddenCount) =
+            runWriter $ commuteHtmlT $ go fields names values
+    let onlyHidden = nonHiddenCount == 0
+
     row_ formAttributes $ large_ 12 $ do
         -- inputs
-        let (elementHtml, Sum nonHiddenCount) =
-                runWriter $ commuteHtmlT $ go fields names values
 
         elementHtml
         -- if there are only hidden elements, we don't output reset button.
-        if nonHiddenCount >= 1
-        then row_ $ large_ 12 [ class_ "button-group" ] buttons_
-        else submitButton_
-
+        if onlyHidden
+        then submitButton_
+        else row_ $ large_ 12 [ class_ "button-group" ] buttons_
   where
     submitButton_ = button_
         [ classes_ [ "button", submitClass ]
@@ -204,6 +216,7 @@ lomakeHtml formOpts fields names values =
         , disabled_ "disabled"
         ]
         (toHtml submitValue)
+
     buttons_ = do
         submitButton_
         button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"

@@ -11,16 +11,22 @@ import Futurice.Lucid.Navigation
 import Futurice.Prelude
 import Prelude ()
 
+import Futurice.App.ProxyMgmt.API
+
 data Nav
     = NavIndex
-    | NavAdmin
+    | NavTokens
+    | NavPolicies
+    | NavAudit
   deriving (Eq, Ord, Enum, Bounded)
 
 instance Navigation Nav where
     serviceTitle _ = "Prox management"
 
-    navLink NavIndex = (href_ "/", "Prox management")
-    navLink NavAdmin = (href_ "/admin", "Admin")
+    navLink NavIndex    = (recordHref_ routeIndexPage,    "Prox management")
+    navLink NavTokens   = (recordHref_ routeTokensPage,   "Tokens")
+    navLink NavPolicies = (recordHref_ routePoliciesPage, "Policies")
+    navLink NavAudit    = (recordHref_ routeAuditPage,    "Audit log")
 
     pageParams = pageParamsWithJS
         $(makeRelativeToProject "proxy-mgmt.js" >>= embedJS)

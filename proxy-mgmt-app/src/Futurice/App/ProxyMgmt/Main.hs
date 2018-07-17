@@ -18,27 +18,39 @@ import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
+import Servant.Server.Generic
 
 import qualified Data.Set                   as Set
 import qualified Database.PostgreSQL.Simple as Postgres
 
 -- ProxyMgmt modules
-import Futurice.App.ProxyMgmt.AdminPage
 import Futurice.App.ProxyMgmt.API
-import Futurice.App.ProxyMgmt.Config    (Config (..))
+import Futurice.App.ProxyMgmt.Config          (Config (..))
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Dashdo
-import Futurice.App.ProxyMgmt.IndexPage
-import Futurice.App.ProxyMgmt.RegenerateToken
+import Futurice.App.ProxyMgmt.Pages.Audit
+import Futurice.App.ProxyMgmt.Pages.Index
+import Futurice.App.ProxyMgmt.Pages.Policies
+import Futurice.App.ProxyMgmt.Pages.Tokens
+import Futurice.App.ProxyMgmt.Commands.RegenerateToken
+import Futurice.App.ProxyMgmt.Commands.AddEndpoint
+import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 
 server :: Ctx Identity -> Server ProxyMgmtAPI
-server ctx =
-    (\mfu -> nt False ctx mfu $ indexPageHandler ctx)
-    :<|> (\mfu -> nt False ctx mfu $ regenerateTokenHandler ctx)
-    :<|> (\mfu -> nt True ctx mfu $ adminPageHandler ctx)
+server ctx = genericServer $ ProxyMgmtRoutes
+    { routeIndexPage          = \mfu -> nt False ctx mfu indexPageHandler
+    , routeRegenerateOwnToken = \mfu -> nt False ctx mfu regenerateTokenHandler
+    -- admin
+    , routeTokensPage         = \mfu -> nt True  ctx mfu tokensPageHandler
+    , routePoliciesPage       = \mfu -> nt True  ctx mfu policiesPageHandler
+    , routeAuditPage          = \mfu -> nt True  ctx mfu auditPageHandler
+    -- commands
+    , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
+    , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
+    }
 
 -- Access control adding transformation
-nt :: Bool -> Ctx f -> Maybe Login -> ReaderT Login IO a -> Handler a
+nt :: Bool -> Ctx f -> Maybe Login -> ReaderT (Login, Ctx f) IO a -> Handler a
 nt requireAdmin ctx mfu handler = do
     now <- currentTime
 
@@ -49,7 +61,7 @@ nt requireAdmin ctx mfu handler = do
 
     case mfu <|> cfgMockUser cfg of
         Just fu | requireAdmin `implication` Set.member fu fus
-             -> liftIO $ runReaderT handler fu
+             -> liftIO $ runReaderT handler (fu, ctx)
         _    -> throwError err403
   where
     cch = ctxCache ctx
