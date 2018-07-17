@@ -48,7 +48,7 @@ instance Command RemoveEmailFromEmployee where
 
         worldEmployees . ix login . employeeEmailAliases . contains (reeEmail cmd) .= False
 
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 validate
     :: (MonadReader World m, MonadError String m)

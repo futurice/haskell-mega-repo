@@ -49,7 +49,7 @@ instance Command AddEmployeeToGroup where
 
         worldGroups . ix name . groupEmployees . contains addLogin .= True
 
-        pure LomakeResponseReload
+        pure CommandResponseReload
 
 validate
     :: (MonadReader World m, MonadError String m)

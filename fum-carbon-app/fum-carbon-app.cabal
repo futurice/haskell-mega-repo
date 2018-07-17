@@ -155,7 +155,6 @@ library
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.UnixID
       Futurice.App.FUM.Types.World
-      Futurice.Lomake
   default-language: Haskell2010
 
 executable fum-carbon-server
