@@ -80,6 +80,7 @@ packages:
   hc-app/
   hours-api/
   lambdacss/
+  library-app/
   log-cloudwatch/
   mega-repo-tool/
   monad-http/
