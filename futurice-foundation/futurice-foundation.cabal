@@ -24,9 +24,17 @@ library
   hs-source-dirs:
       src
   ghc-options: -Wall
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
       base                  >=4.7   && <4.12
     , aeson
+    , aeson-compat
     , clay
     , colour
     , file-embed-lzma
@@ -36,6 +44,7 @@ library
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , kleene
     , lambdacss
     , language-javascript >= 0.6.0.8 && <0.7
     , lens
@@ -47,8 +56,12 @@ library
     , template-haskell
     , text
     , time
+    , unordered-containers
     , wai-app-static
+    , writer-cps-mtl
   exposed-modules:
+      Futurice.CommandResponse
+      Futurice.Lomake
       Futurice.JavaScript
       Futurice.JavaScript.TH
       Futurice.Lucid.Foundation

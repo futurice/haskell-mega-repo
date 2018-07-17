@@ -7,11 +7,10 @@
 {-# LANGUAGE UndecidableInstances    #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 -- | Simple but awesome form library.
---
--- /TODO:/ mode to @futurice-prelude@ after stabilised.
 module Futurice.Lomake (
     module Futurice.Lomake,
     -- * Re-exports
+    CommandResponse (..),
     SOP.IsProductType,
     ) where
 
@@ -20,6 +19,7 @@ import Control.Monad.Writer.CPS  (Writer, runWriter)
 import Data.Maybe                (isNothing)
 import Data.Monoid               (Sum (..))
 import Data.Swagger              (NamedSchema (..))
+import Futurice.CommandResponse
 import Futurice.Generics
 import Futurice.Generics.SOP     (strippedFieldNames)
 import Futurice.List             (UnSingleton)
@@ -30,12 +30,11 @@ import Servant.API               (Link)
 
 -- import Generics.SOP              hiding (FieldName)
 
-import qualified Data.Aeson.Compat   as Aeson
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Swagger        as S
-import qualified Generics.SOP        as SOP
-import qualified Kleene.Functor      as K
-import qualified Kleene.Internal.Pretty      as K
+import qualified Data.Aeson.Compat      as Aeson
+import qualified Data.HashMap.Strict    as HM
+import qualified Generics.SOP           as SOP
+import qualified Kleene.Functor         as K
+import qualified Kleene.Internal.Pretty as K
 
 -------------------------------------------------------------------------------
 -- FieldName
@@ -199,7 +198,12 @@ lomakeHtml formOpts fields names values =
         else submitButton_
 
   where
-    submitButton_ = button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit" ] (toHtml submitValue)
+    submitButton_ = button_
+        [ classes_ [ "button", submitClass ]
+        , data_ "lomake-action" "submit"
+        , disabled_ "disabled"
+        ]
+        (toHtml submitValue)
     buttons_ = do
         submitButton_
         button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"
@@ -336,19 +340,3 @@ instance HasLomake a => FromJSON (LomakeRequest a) where
 -- | TODO: HasLomake should require something?
 instance ToSchema (LomakeRequest a) where
     declareNamedSchema _ = pure $ NamedSchema (Just "Lomake") mempty
-
--------------------------------------------------------------------------------
--- Lomake Response
--------------------------------------------------------------------------------
-
-data LomakeResponse
-    = LomakeResponseNoop            -- ^ Do nothing
-    | LomakeResponseError String    -- ^ an error
-    | LomakeResponseReload          -- ^ reload current page
-    | LomakeResponseRedirect !Text  -- ^ redirect to the url
-  deriving (Eq, Ord, Show, Typeable, Generic)
-
-instance ToJSON LomakeResponse
-instance FromJSON LomakeResponse
-instance ToSchema LomakeResponse where
-    declareNamedSchema = S.genericDeclareNamedSchemaUnrestricted S.defaultSchemaOptions

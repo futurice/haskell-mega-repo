@@ -49,7 +49,7 @@ instance Command RemoveEditorGroup where
         let editor = regEditor cmd
         worldGroups . ix name . groupEditor . contains editor .= False
 
-        pure $ LomakeResponseRedirect $ viewGroupHrefText name
+        pure $ CommandResponseRedirect $ viewGroupHrefText name
 
 validate
     :: (MonadReader World m, MonadError String m)

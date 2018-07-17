@@ -48,7 +48,7 @@ instance Command AddEmailToEmployee where
 
         worldEmployees . ix login . employeeEmailAliases . contains (aeeEmail cmd) .= True
 
-        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+        pure $ CommandResponseRedirect $ viewEmployeeHrefText login
 
 validate
     :: (MonadReader World m, MonadError String m)
