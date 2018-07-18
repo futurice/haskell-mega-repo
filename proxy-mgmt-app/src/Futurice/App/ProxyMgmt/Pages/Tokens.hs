@@ -8,6 +8,7 @@ import Data.Coerce                (Coercible, coerce)
 import Data.Semigroup             (Max (..), Option (..))
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
+import Futurice.Generics          (textualToText)
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant           (cachedIO)
@@ -58,11 +59,11 @@ tokensPage tokens aes = page_ "Audit log" (Just NavTokens) $ do
             th_ "Policy"
             th_ "Accessed endpoints"
         tbody_ $ for_ tokens $ \t -> tr_ $ do
-            let ae = aes' ^. ix (tUsername t)
-            td_ $ fromMaybe (toHtml $ tUsername t) $ do
+            let ae = aes' ^. ix (tUserName t)
+            td_ $ fromMaybe (toHtml $ tUserName t) $ do
                 -- TODO: fetch personio data
                 guard $ tUsertype t == "user"
-                login <- parseLogin (tUsername t)
+                login <- parseLogin $ textualToText $ tUserName t
                 pure $ toHtml login
             td_ $ if tActive t then "Active" else "Disabled"
             td_ $ traverse_ (toHtml . formatHumanHelsinkiTime) $ calaf (fmap Max . Option) foldMap (Just . aeStamp) ae
@@ -74,7 +75,7 @@ tokensPage tokens aes = page_ "Audit log" (Just NavTokens) $ do
                 toHtml (formatHumanHelsinkiTime t)
   where
     -- uses inlined DList
-    aes' :: Map Text [AccessEntry]
+    aes' :: Map UserName [AccessEntry]
     aes' = Map.map ($[]) $ Map.fromListWith (.) $ map (\ae -> (aeUser ae, (ae :))) $ aes
 
 -------------------------------------------------------------------------------
