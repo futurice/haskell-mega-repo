@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TypeApplications  #-}
 module Futurice.App.ProxyMgmt.Pages.Tokens (tokensPageHandler) where
 
 import Control.Lens               (auf, coerced)
@@ -9,47 +9,45 @@ import Data.Semigroup             (Max (..), Option (..))
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
 import Futurice.Generics          (textualToText)
+import Futurice.Lomake
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant           (cachedIO)
 import Prelude ()
+import Servant.Links              (fieldLink)
 
 import qualified Data.Map.Strict as Map
 
+import Futurice.App.ProxyMgmt.API
+import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
+import Futurice.App.ProxyMgmt.Utils
 
 tokensPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "tokens")
 tokensPageHandler = do
     (_, ctx) <- ask
     liftIO $ do
+        policies <- fetchPolicies ctx
         tokens <- fetchTokens ctx
         accessEntries <- fetchAccessEntries ctx
-        pure $ tokensPage tokens accessEntries
-
--------------------------------------------------------------------------------
--- Data
--------------------------------------------------------------------------------
-
-fetchTokens :: Ctx f -> IO [Token]
-fetchTokens Ctx {..} =
-    runLogT "fetchTokens" ctxLogger $ do
-        safePoolQuery_ ctxPostgresPool
-            "SELECT username, passtext is not null, usertype, policyname FROM proxyapp.credentials ORDER BY username ASC;"
-
-fetchAccessEntries :: Ctx f -> IO [AccessEntry]
-fetchAccessEntries Ctx {..} =
-    cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchAccessEntries" ctxLogger $ do
-        safePoolQuery_ ctxPostgresPool
-            "SELECT username, updated, endpoint FROM proxyapp.accesslog WHERE current_timestamp - updated < '6 months' :: interval ORDER BY updated DESC;"
+        pure $ tokensPage policies tokens accessEntries
 
 -------------------------------------------------------------------------------
 -- Html
 -------------------------------------------------------------------------------
 
-tokensPage :: [Token] -> [AccessEntry] -> HtmlPage "tokens"
-tokensPage tokens aes = page_ "Audit log" (Just NavTokens) $ do
+tokensPage :: [PolicyName] -> [Token] -> [AccessEntry] -> HtmlPage "tokens"
+tokensPage policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
+    h2_ "New token"
+    let fopts = FormOptions "add-token-form" (fieldLink routeAddToken) ("Add", "success")
+    let policies' = fmap (\x -> (x, textualToText x)) policies
+    lomakeHtml (Proxy @AddToken) fopts $
+        vNothing :*
+        vDynamic policies' :*
+        Nil
+
     h2_ "Users + Tokens"
     sortableTable_ $ do
         thead_ $ tr_ $ do

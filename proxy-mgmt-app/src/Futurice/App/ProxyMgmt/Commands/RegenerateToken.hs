@@ -8,21 +8,18 @@ import FUM.Types.Login
 import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
-import System.Entropy             (getEntropy)
 
-import qualified Data.ByteString.Base64.URL as Base64
 import qualified Data.Text                  as T
 
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Types
+import Futurice.App.ProxyMgmt.Utils
 
 regenerateTokenHandler :: ReaderT (Login, Ctx f) IO Text
 regenerateTokenHandler= ReaderT $ \(login, Ctx {..}) -> do
-    bytes <- getEntropy 30
     now <- currentTime
-    let base64 =  Base64.encode bytes
-        base64T = decodeUtf8Lenient base64
-        maskedT = T.take 6 base64T <> T.replicate 34 "*"
+    base64T <- generateToken
+    let maskedT = T.take 6 base64T <> T.replicate 34 "*"
 
     runLogT "regenerateTokenHandler" ctxLogger $ do
         logInfo "regenerateToken" $ object

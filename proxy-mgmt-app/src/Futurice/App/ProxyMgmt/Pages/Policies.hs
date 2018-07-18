@@ -11,9 +11,8 @@ import Futurice.Generics          (textualToText)
 import Futurice.Lomake
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Servant           (cachedIO)
 import Prelude ()
-import Servant.Links
+import Servant.Links              (fieldLink)
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -25,24 +24,14 @@ import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
+import Futurice.App.ProxyMgmt.Utils
 
 policiesPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "policies")
 policiesPageHandler = do
     (_, ctx) <- ask
     liftIO $ do
-        policies <- fetchPolicies ctx
+        policies <- fetchPolicyEndpoints ctx
         pure $ policiesPage policies
-
--------------------------------------------------------------------------------
--- Data
--------------------------------------------------------------------------------
-
-fetchPolicies :: Ctx f -> IO (Map PolicyName (Set LenientEndpoint))
-fetchPolicies Ctx {..} = runLogT "fetchPolicies" ctxLogger $ do
-    mk <$> safePoolQuery_ ctxPostgresPool
-        "SELECT policyname, endpoint FROM proxyapp.policy_endpoint;"
-  where
-    mk = Map.fromListWith (<>) . map (second Set.singleton)
 
 -------------------------------------------------------------------------------
 -- Html
