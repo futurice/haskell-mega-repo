@@ -30,10 +30,10 @@ instance FromField Library where
         where library =
                   let officeText = T.pack <$> C.unpack <$> mdata >>= officeFromText
                   in case officeText of
-                    Just office -> OfficeLibrary office
-                    Nothing -> case mdata of
-                      Just "Elibrary" -> Elibrary
-                      _ -> UnknownLibrary
+                      Just office -> OfficeLibrary office
+                      Nothing -> case mdata of
+                          Just "Elibrary" -> Elibrary
+                          _ -> UnknownLibrary
 
 instance ToSchema Library where
     declareNamedSchema _ = do
@@ -50,5 +50,5 @@ instance FromJSON Library where
     parseJSON = withObject "Library" $ \l -> do
         office <- l .: "office"
         case officeFromText office of
-          Just o -> pure $ OfficeLibrary o
-          Nothing -> if office == "Elibrary" then pure Elibrary else pure UnknownLibrary
+            Just o -> pure $ OfficeLibrary o
+            Nothing -> if office == "Elibrary" then pure Elibrary else pure UnknownLibrary

@@ -57,5 +57,5 @@ bookInformationPage (BookInformationResponse _binfoid title isbn author publishe
       idT :: Text -> Text
       idT = id
       officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_booksLibrary x, [x])) <$> books
-      loanMap = M.fromList $ (\(LoanData lid day bid person) -> (bid, (lid, day, person))) <$> ls
+      loanMap = M.fromList $ (\(LoanData lid day person iid) -> (iid, (lid, day, person))) <$> ls
       partitionByLoan = partition (\x -> isJust (loanMap ^.at (_booksBookId x)))

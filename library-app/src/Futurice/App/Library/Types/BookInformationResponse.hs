@@ -10,10 +10,11 @@ import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.Library.Types.BookInformation
+import Futurice.App.Library.Types.Item
 import Futurice.App.Library.Types.Library
 
 data Books = Books
-    { _booksBookId  :: !BookId
+    { _booksBookId  :: !ItemId
     , _booksLibrary :: !Library
     }
     deriving (Eq, Ord, Show, Generic, ToJSON, ToSchema)

@@ -6,7 +6,6 @@ module Futurice.App.Library.Logic where
 import Data.List
 import Database.PostgreSQL.Simple         (In (..))
 import Database.PostgreSQL.Simple.FromRow
-import FUM.Types.Login
 import Futurice.IdMap
 import Futurice.Postgres
 import Futurice.Prelude
@@ -19,152 +18,150 @@ import qualified Data.Map  as Map
 import qualified Data.Text as T
 import qualified Personio  as P
 
-data BookData = BookData BookId BookInformationId Library deriving (Generic, FromRow)
-data LoanData = LoanData LoanId Day BookId Integer deriving (Generic, FromRow)
+data ItemData = ItemData
+    { idItemId                 :: !ItemId
+    , idLibrary                :: !Library
+    , idBookInformationId      :: !(Maybe BookInformationId)
+    , idBoardGameInformationId :: !(Maybe BoardGameInformationId)
+    } deriving (Generic, FromRow)
+
+data LoanData = LoanData
+    { ldLoanId        :: !LoanId
+    , ldDateLoaned    :: !Day
+    , ldPersonioId    :: !Int32
+    , ldItemId        :: !ItemId
+    } deriving (Generic, FromRow)
 
 idToName :: IdMap P.Employee -> P.EmployeeId -> Text
 idToName emap pid = case emap ^.at pid of
   Just employee -> (employee ^. P.employeeFirst) <> " " <> (employee ^. P.employeeLast)
   Nothing -> "Unknown"
 
-migrateToPersonioNumber :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Map Login P.Employee -> m ()
-migrateToPersonioNumber ctx emap = do
-    let getAuthUsers :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => m [(Integer, Text)]
-        getAuthUsers = safePoolQuery ctx "select id, username from auth_user" ()
-        textToLoginToEmployeeid login = case parseLogin' login of
-                                          Right l -> (emap ^.at l) >>= (\x -> Just $ (x ^. P.employeeId))
-                                          Left _ -> Nothing
-        userNameToPersonio :: (Integer, Text) -> (Integer, Maybe P.EmployeeId)
-        userNameToPersonio (authId, eid) = (authId, textToLoginToEmployeeid eid)
-        updateLoan :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => (Integer, Maybe P.EmployeeId) -> m Int64
-        updateLoan (lid, Just (P.EmployeeId eid)) = safePoolExecute ctx "UPDATE library_loan SET personio_id = ? where person_id = ?" (eid, lid)
-        updateLoan (_, Nothing) = pure 0
-        --loanToloan (loanid,_,_,authid) = (,loanid)
-    authUsers <- getAuthUsers
-    mapM_ updateLoan $ map userNameToPersonio authUsers
+fetchLoanByItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> ItemId -> m (Maybe LoanData)
+fetchLoanByItemId ctx iid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only iid)
 
-fetchLoanByBookId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookId -> m (Maybe LoanData)
-fetchLoanByBookId ctx bid = listToMaybe <$> safePoolQuery ctx "select id, date_loaned, book_id, personio_id from library_loan where book_id = ?" (Only bid)
-
-makeLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Day -> BookId -> P.EmployeeId -> m (Maybe LoanData)
-makeLoan ctx date bid (P.EmployeeId eid) = do
-    let tempNumber = 9999 :: Integer
-    _ <- safePoolExecute ctx "INSERT INTO library_loan (date_loaned, book_id, person_id, personio_id) VALUES (?,?,?,?)" (date, bid, tempNumber, toInteger eid)
-    listToMaybe <$> safePoolQuery ctx "SELECT id, date_loaned, book_id, personio_id FROM library_loan where book_id = ?" (Only bid)
+makeLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Day -> ItemId -> P.EmployeeId -> m (Maybe LoanData)
+makeLoan ctx date iid (P.EmployeeId eid) = do
+    _ <- safePoolExecute ctx "INSERT INTO library.loan (date_loaned, personio_id, item_id) VALUES (?,?,?)" (date, toInteger eid, iid)
+    listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only iid)
 
 makeForcedLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Day -> LoanId -> P.EmployeeId -> m (Maybe LoanData)
 makeForcedLoan ctx date lid (P.EmployeeId eid) = do
-    result <- safePoolExecute ctx "UPDATE library_loan SET date_loaned = ?, personio_id = ? WHERE id = ?" (date, toInteger eid, lid)
+    result <- safePoolExecute ctx "UPDATE library.loan SET date_loaned = ?, personio_id = ? WHERE loan_id = ?" (date, toInteger eid, lid)
     if result == 1 then
-      listToMaybe <$> safePoolQuery ctx "SELECT id, date_loaned, book_id, personio_id FROM library_loan where id = ?" (Only lid)
+      listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
     else
       pure Nothing
 
-fetchBooksByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m [BookData]
-fetchBooksByBookInformation ctx binfoid = safePoolQuery ctx "select library_book.id, information_id, name from library_book inner join library_library on library_book.library_id = library_library.id where library_book.information_id = ?" (Only binfoid)
+fetchBooksByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m [ItemData]
+fetchBooksByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where bookinfo_id = ?" (Only binfoid)
 
-fetchLoansWithBookIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [BookId] -> m [LoanData]
-fetchLoansWithBookIds ctx bookids = safePoolQuery ctx "SELECT id, date_loaned, book_id, personio_id FROM library_loan where book_id in ?;" (Only (In bookids))
+fetchLoansWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [ItemId] -> m [LoanData]
+fetchLoansWithItemIds ctx iids = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id in ?;" (Only (In iids))
 
-fetchBookWithoutLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [BookData] -> m (Maybe BookId)
-fetchBookWithoutLoans ctx books = do
-    ls <- fetchLoansWithBookIds ctx bookids
-    pure $ listToMaybe $ bookids \\ ((\(LoanData _ _ bid _) -> bid) <$> ls)
+fetchItemsWithoutLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [ItemData] -> m (Maybe ItemId)
+fetchItemsWithoutLoans ctx items = do
+    ls <- fetchLoansWithItemIds ctx iids
+    pure $ listToMaybe $ iids \\ (ldItemId <$> ls)
   where
-      bookids = (\(BookData bid _ _ ) -> bid) <$> books
+    iids = idItemId <$> items
 
 borrowBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> P.EmployeeId -> BorrowRequest -> m (Maybe LoanData)
 borrowBook ctx eid (BorrowRequest binfoid _) = do
     now <- currentDay
     books <- fetchBooksByBookInformation ctx binfoid
     runMaybeT $ do
-        freeBook <- MaybeT $ fetchBookWithoutLoans ctx books
+        freeBook <- MaybeT $ fetchItemsWithoutLoans ctx books
         MaybeT $ makeLoan ctx now freeBook eid
 
-snatchBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> P.EmployeeId -> BookId -> m (Maybe LoanData)
-snatchBook ctx eid bid = do
+snatchBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> P.EmployeeId -> ItemId -> m (Maybe LoanData)
+snatchBook ctx eid iid = do
     now <- currentDay
     runMaybeT $ do
-        (LoanData lid _ _ _) <- MaybeT $ fetchLoanByBookId ctx bid
+        (LoanData lid _ _ _) <- MaybeT $ fetchLoanByItemId ctx iid
         MaybeT $ makeForcedLoan ctx now lid eid
 
-fetchBooksInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformation]
-fetchBooksInformation ctx = safePoolQuery ctx "SELECT id, title, isbn, author, publisher, published, cover, amazon_link FROM library_bookinformation" ()
+fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformation]
+fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
 
 fetchBookInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m (Maybe BookInformation)
-fetchBookInformation ctx bid = fmap listToMaybe $ safePoolQuery ctx "SELECT id, title, isbn, author, publisher, published, cover, amazon_link FROM library_bookinformation WHERE id = ?" (Only bid)
+fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE bookinfo_id = ?" (Only binfoid)
 
 fetchBookResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m [BookInformationResponse]
 fetchBookResponse ctx binfoid = do
     books <- fetchBooksByBookInformation ctx binfoid
-    binfo <- safePoolQuery ctx "SELECT id, title, isbn, author, publisher, published, cover, amazon_link FROM library_bookinformation WHERE id = ?" $ Only binfoid
-    case listToMaybe binfo of
+    binfo <- fetchBookInformation ctx binfoid
+    case binfo of
       Nothing -> pure $ []
       Just info -> pure $ [toBookInformationResponse (fold (toBooks <$> books)) info]
   where
-      toBooks (BookData bid _ lib) = [Books bid lib]
-      toBookInformationResponse books (infoid, title, isbn, author, publisher, published, cover, amazonLink) =
+      toBooks item = [Books (idItemId item) (idLibrary item)]
+      toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse infoid title isbn author publisher published cover amazonLink books
 
 fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformationResponse]
 fetchBooksResponse ctx = do
-    books <- fetchBooks ctx
-    bookInfos <- safePoolQuery ctx "SELECT id, title, isbn, author, publisher, published, cover, amazon_link FROM library_bookinformation" ()
-    pure $ fmap (toBookInformationResponse (Map.fromListWith (++) (toBooks <$> books) )) bookInfos
+    books <- fetchItems ctx
+    bookInfos <- fetchBookInformations ctx
+    pure $ (toBookInformationResponse (bookInformationMap books)) <$> bookInfos
   where
-      toBooks (BookData bid binfoid lib) = (binfoid, [Books bid lib])
-      toBookInformationResponse books (binfoid, title, isbn, author, publisher, published, cover, amazonLink) =
+      bookInformationMap books = Map.fromListWith (++) $ catMaybes (toBooks <$> books)
+      toBooks (ItemData iid lib bookinfoid _) =
+          case bookinfoid of
+              Just binfoid -> Just (binfoid, [Books iid lib])
+              Nothing      -> Nothing
+      toBookInformationResponse books (BookInformation binfoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse binfoid title isbn author publisher published cover amazonLink (fromMaybe [] (books ^.at binfoid))
 
-fetchBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookId -> m (Maybe BookData)
-fetchBook ctx bid = listToMaybe <$> ((fmap . fmap) (\(bookid, binfo, lib) -> BookData bookid binfo lib) $ (safePoolQuery ctx "SELECT library_book.id, information_id, name FROM library_book INNER JOIN library_library ON library_book.library_id = library_library.id WHERE library_book.id = ?" $ Only bid))
+fetchItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> ItemId -> m (Maybe ItemData)
+fetchItem ctx iid = listToMaybe <$> (safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE item_id = ?" $ Only iid)
 
-fetchBooks :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookData]
-fetchBooks ctx = (fmap . fmap) (\(bid, binfo, lib) -> BookData bid binfo lib) $ safePoolQuery ctx "select library_book.id, information_id, name from library_book inner join library_library on library_book.library_id = library_library.id" ()
+fetchItems :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [ItemData]
+fetchItems ctx = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item " ()
 
 loans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [LoanData]
-loans ctx = safePoolQuery ctx "select id, date_loaned, book_id, personio_id from library_loan" ()
+loans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
 
 loan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> LoanId -> m (Maybe LoanData)
-loan ctx lid = fmap listToMaybe $ safePoolQuery ctx "select id, date_loaned, book_id, personio_id from library_loan where id = ?" (Only lid)
-
-bookInformationToLoanable :: BookId -> BookInformation -> Library -> Loanable
-bookInformationToLoanable bid book = Loanable (Book bid book)
+loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
 
 fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> LoanId -> IdMap P.Employee -> m (Maybe Loan)
 fetchLoan ctx lid es = do
     runMaybeT $ do
         l <- MaybeT $ loan ctx lid
-        b <- MaybeT $ fetchBook ctx $ bookid l
-        binfo <- MaybeT $ fetchBookInformation ctx $ (\(BookData _ binfoid _) -> binfoid) b
-        pure $ loan' l es binfo $ bookLibrary b
+        b <- MaybeT $ fetchItem ctx $ ldItemId l
+        binfoid <- MaybeT $ pure $ idBookInformationId b
+        binfo <- MaybeT $ fetchBookInformation ctx binfoid
+        pure $ loan' l es binfo $ idLibrary b
   where
-      bookid (LoanData _ _ bid _) = bid
-      bookLibrary (BookData _ _ blib) = blib
-      loan' (LoanData loanId date bookId personio_id) emap bookInfo lib = Loan loanId (T.pack $ show date) (Loanable (Book bookId bookInfo) lib) (idToName emap $ P.EmployeeId (fromIntegral personio_id))
+      loan' (LoanData loanId date personio_id itemId) emap bookInfo lib =
+          Loan loanId (T.pack $ show date) (Item itemId lib $ ItemBook bookInfo) (emap ^.at (P.EmployeeId (fromIntegral personio_id)))
 
-bookArrayToMap :: [BookData] -> Map BookId (BookInformationId, Library)
-bookArrayToMap = Map.fromList . fmap (\(BookData bid binfoid lib) -> (bid, (binfoid, lib)))
+bookArrayToMap :: [ItemData] -> Map ItemId (Maybe BookInformationId, Library)
+bookArrayToMap = Map.fromList . fmap (\(ItemData iid lib binfoid _) -> (iid, (binfoid, lib)))
 
-bookIdToInformation :: BookId -> Map BookId (BookInformationId, Library) -> Map BookInformationId BookInformation -> Maybe BookInformation
-bookIdToInformation bid bookidmap bookinfomap = bookidmap ^.at bid >>= (\(infoid, _) -> bookinfomap ^.at infoid)
+bookIdToInformation :: ItemId -> Map ItemId (Maybe BookInformationId, Library) -> Map BookInformationId BookInformation -> Maybe BookInformation
+bookIdToInformation iid bookidmap bookinfomap = do
+    bookinfoid <- fst <$> (bookidmap ^.at iid)
+    binfoid <- bookinfoid
+    bookinfomap ^.at binfoid
 
 loanDataToLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> [LoanData] -> m [Loan]
 loanDataToLoan ctx es ldatas = do
-    bs <- fetchBooks ctx
-    fs <- fetchBooksInformation ctx
+    bs <- fetchItems ctx
+    fs <- fetchBookInformations ctx
     pure $ loans' ldatas es (bookArrayToMap bs) $ bookMap fs
   where
-      bookMap = Map.fromList . fmap (\x -> (_bookInformationId x, x))
-      bookLibrary bid bmap =
-          case bmap ^. at bid of
-            Just (_, lib) -> lib
-            Nothing -> UnknownLibrary
-      bookIdToLoanable bs bmap bid = case bookIdToInformation bid bs bmap of
-        Just info -> (bookInformationToLoanable bid info $ bookLibrary bid bs)
-        Nothing -> Loanable (NotFound "Couldn't find information for book") UnknownLibrary
-      loans' ls emap bs bmap = fmap (\(LoanData loanId date bid personio_id) ->
-        Loan loanId (T.pack $ show date) (bookIdToLoanable bs bmap bid) (idToName emap $ P.EmployeeId (fromIntegral personio_id))) ls
+   bookMap = Map.fromList . fmap (\x -> (_bookInformationId x, x))
+   bookLibrary iid bmap =
+       case bmap ^. at iid of
+           Just (_, lib) -> lib
+           Nothing -> UnknownLibrary
+   bookIdToItem bs bmap iid = case bookIdToInformation iid bs bmap of
+       Just info -> Item iid (bookLibrary iid bs) (ItemBook info)
+       Nothing -> Item iid UnknownLibrary (ItemUnknown "Couldn't find information for book")
+   loans' ls emap bs bmap = fmap (\(LoanData loanId date personio_id iid) ->
+       Loan loanId (T.pack $ show date) (bookIdToItem bs bmap iid) (emap ^.at (P.EmployeeId (fromIntegral personio_id)))) ls
 
 fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> m [Loan]
 fetchLoans ctx es = do
@@ -178,5 +175,5 @@ executeReturnBook ctx lid = do
 
 fetchPersonalLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> P.EmployeeId -> m [Loan]
 fetchPersonalLoans ctx es (P.EmployeeId eid) = do
-    ldatas <- safePoolQuery ctx "select id, date_loaned, book_id, personio_id from library_loan where personio_id = ?" (Only eid)
+    ldatas <- safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan WHERE personio_id = ?" (Only eid)
     loanDataToLoan ctx es ldatas
