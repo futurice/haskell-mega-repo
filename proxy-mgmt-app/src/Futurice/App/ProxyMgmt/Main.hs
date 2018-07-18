@@ -34,6 +34,7 @@ import Futurice.App.ProxyMgmt.Pages.Policies
 import Futurice.App.ProxyMgmt.Pages.Tokens
 import Futurice.App.ProxyMgmt.Commands.RegenerateToken
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
+import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 
 server :: Ctx Identity -> Server ProxyMgmtAPI
@@ -47,6 +48,7 @@ server ctx = genericServer $ ProxyMgmtRoutes
     -- commands
     , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
     , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
+    , routeAddToken           = \mfu -> nt True ctx mfu . addTokenHandler
     }
 
 -- Access control adding transformation
