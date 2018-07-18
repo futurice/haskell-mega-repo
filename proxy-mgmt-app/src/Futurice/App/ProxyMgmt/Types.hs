@@ -48,11 +48,36 @@ instance ToParamSchema PolicyName where toParamSchema = textualToParamSchema
 instance ToSchema PolicyName where declareNamedSchema = textualDeclareNamedSchema
 
 -------------------------------------------------------------------------------
+-- UserName
+-------------------------------------------------------------------------------
+
+newtype UserName = UserName Text
+  deriving stock (Eq, Ord)
+  deriving newtype (Show, NFData)
+
+instance Textual UserName where
+    textualToText   = coerce
+    textualFromText t
+        | T.all (isLower \/ (== '-')) t = Right (UserName t)
+        | otherwise = Left "User name should consist only from lower case letter and dash (-)"
+
+deriveVia [t| ToJSON UserName             `Via` Textica UserName |]
+deriveVia [t| FromJSON UserName           `Via` Textica UserName |]
+deriveVia [t| ToHttpApiData UserName      `Via` Textica UserName |]
+deriveVia [t| FromHttpApiData UserName    `Via` Textica UserName |]
+deriveVia [t| Postgres.ToField UserName   `Via` Textica UserName |]
+deriveVia [t| Postgres.FromField UserName `Via` Textica UserName |]
+deriveVia [t| ToHtml UserName             `Via` Textica UserName |]
+
+instance ToParamSchema UserName where toParamSchema = textualToParamSchema
+instance ToSchema UserName where declareNamedSchema = textualDeclareNamedSchema
+
+-------------------------------------------------------------------------------
 -- Token
 -------------------------------------------------------------------------------
 
 data Token = Token
-    { tUsername   :: !Text
+    { tUserName   :: !UserName
     , tActive     :: !Bool
     , tUsertype   :: !Text
     , tPolicyName :: !PolicyName
@@ -68,7 +93,7 @@ instance FromRow Token where
 -------------------------------------------------------------------------------
 
 data AccessEntry = AccessEntry
-    { aeUser     :: !Text
+    { aeUser     :: !UserName
     , aeStamp    :: !UTCTime
     , aeEndpoint :: !LenientEndpoint
     }
