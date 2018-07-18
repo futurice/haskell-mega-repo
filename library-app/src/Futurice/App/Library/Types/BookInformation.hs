@@ -13,8 +13,7 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-newtype BookId   = BookId Integer deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, FromHttpApiData, FromField, ToField)
-newtype BookInformationId   = BookInformationId Integer deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
+newtype BookInformationId   = BookInformationId Int32 deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
 data BookInformation = BookInformation
     { _bookInformationId          :: !BookInformationId
@@ -28,7 +27,6 @@ data BookInformation = BookInformation
     }
   deriving (Eq, Ord, Show, Typeable, Generic, FromRow)
 
-deriveGeneric ''BookId
 deriveGeneric ''BookInformationId
 deriveGeneric ''BookInformation
 
@@ -36,8 +34,6 @@ makeLenses ''BookInformation
 
 deriveVia [t| ToJSON BookInformation `Via` Sopica BookInformation |]
 
-instance ToParamSchema BookId where toParamSchema = newtypeToParamSchema
-instance ToSchema BookId where declareNamedSchema = newtypeDeclareNamedSchema
 instance ToParamSchema BookInformationId where toParamSchema = newtypeToParamSchema
 instance ToSchema BookInformationId where declareNamedSchema = newtypeDeclareNamedSchema
 instance ToSchema BookInformation where declareNamedSchema = sopDeclareNamedSchema
