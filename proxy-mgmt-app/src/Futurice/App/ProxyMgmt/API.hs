@@ -11,6 +11,7 @@ import Servant
 import Servant.API.Generic
 
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
+import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 
 data ProxyMgmtRoutes route = ProxyMgmtRoutes
@@ -33,6 +34,10 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
     , routeAddEndpoint :: route :-
         SSOUser :> "command" :> "add-endpoint"
         :> ReqBody '[JSON] (LomakeRequest AddEndpoint)
+        :> Post '[JSON] (CommandResponse ())
+    , routeAddToken :: route :-
+        SSOUser :> "command" :> "add-token"
+        :> ReqBody '[JSON] (LomakeRequest AddToken)
         :> Post '[JSON] (CommandResponse ())
     }
   deriving Generic

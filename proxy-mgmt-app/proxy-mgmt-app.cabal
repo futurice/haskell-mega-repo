@@ -74,6 +74,7 @@ library
       Futurice.App.ProxyMgmt.Config
       Futurice.App.ProxyMgmt.Ctx
       Futurice.App.ProxyMgmt.Commands.AddEndpoint
+      Futurice.App.ProxyMgmt.Commands.AddToken
       Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
       Futurice.App.ProxyMgmt.Commands.RegenerateToken
       Futurice.App.ProxyMgmt.Dashdo
@@ -84,6 +85,7 @@ library
       Futurice.App.ProxyMgmt.Pages.Policies
       Futurice.App.ProxyMgmt.Pages.Tokens
       Futurice.App.ProxyMgmt.Types
+      Futurice.App.ProxyMgmt.Utils
   default-language: Haskell2010
 
 executable proxy-mgmt-app-server
