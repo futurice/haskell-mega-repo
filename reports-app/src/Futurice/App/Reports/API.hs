@@ -19,7 +19,7 @@ import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
 import Futurice.App.Reports.MissingHours
-       (MissingHoursReport, MissingHoursTitle, MissingHoursTitleFilt)
+       (MissingHoursReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerProjects     (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
@@ -31,8 +31,7 @@ type ReportTypes = '[HTML, CSV, JSON]
 data R (path :: Symbol) (report :: *)
 
 type Reports =
-    '[R "missing-hours"       (MissingHoursReport MissingHoursTitle)
-    , R "missing-hours-filt"  (MissingHoursReport MissingHoursTitleFilt)
+    '[R "missing-hours"       MissingHoursReport
     , R "hours-by-task"       TimereportsByTaskReport
     ]
 

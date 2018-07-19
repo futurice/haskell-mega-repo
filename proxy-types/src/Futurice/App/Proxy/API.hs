@@ -26,8 +26,7 @@ import Servant.CSV.Cassava         (CSV)
 import Servant.Binary.Tagged (BINARYTAGGED)
 
 import qualified Futurice.App.Contacts.Types            as Contact
-import           Futurice.App.Reports.MissingHours
-                 (MissingHoursReport, MissingHoursTitle)
+import           Futurice.App.Reports.MissingHours      (MissingHoursReport)
 import           Futurice.App.Reports.TimereportsByTask
                  (TimereportsByTaskReport)
 import qualified Futurice.FUM.MachineAPI                as FUM6
@@ -51,8 +50,8 @@ data Routes = Routes
 
     -- Reports
     , routeMissingHours :: ProxiedEndpoint 'ReportsService
-        ("missing-hours" :> Get '[JSON] (MissingHoursReport MissingHoursTitle))
-        ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] (MissingHoursReport MissingHoursTitle))
+        ("missing-hours" :> Get '[JSON] MissingHoursReport)
+        ("futuhours" :> "reports" :> "missinghours" :> Get '[CSV, JSON] MissingHoursReport)
     , routeHoursByTask :: ProxiedEndpoint 'ReportsService
         ("hours-by-task" :> Get '[JSON] TimereportsByTaskReport)
         ("reports" :> "hours-by-task" :> Get '[CSV, JSON] TimereportsByTaskReport)
