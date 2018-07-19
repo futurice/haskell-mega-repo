@@ -87,16 +87,8 @@ runIntegrations' ctx m = do
 -- Missing hours predicates
 -------------------------------------------------------------------------------
 
--- Basic predicate, include all internal people
 missingHoursEmployeePredicate :: Interval Day -> P.Employee -> Bool
 missingHoursEmployeePredicate interval p = and
-    [ p ^. P.employeeEmploymentType == Just P.Internal
-    , P.employeeIsActiveInterval interval p
-    ]
-
--- Stricter predicate
-missingHoursEmployeePredicate' :: Interval Day -> P.Employee -> Bool
-missingHoursEmployeePredicate' interval p = and
     [ p ^. P.employeeEmploymentType == Just P.Internal
     , p ^. P.employeeSalaryType == Just P.Monthly
     , P.employeeIsActiveInterval interval p
@@ -109,17 +101,11 @@ missingHoursEmployeePredicate' interval p = and
 -- Note: we cachedIO with () :: () as a key. It's ok as 'Cache'
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
-serveMissingHoursReport
-    :: (KnownSymbol title, Typeable title)
-    => Bool -> Ctx -> IO (MissingHoursReport title)
-serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
+serveMissingHoursReport :: Ctx -> IO MissingHoursReport
+serveMissingHoursReport ctx = cachedIO' ctx () $ do
     day <- currentDay
     let interval = beginningOfPrev2Month day ... previousFriday day
-    runIntegrations' ctx (missingHoursReport predicate interval)
-  where
-    predicate
-        | allContracts = missingHoursEmployeePredicate
-        | otherwise    = missingHoursEmployeePredicate'
+    runIntegrations' ctx (missingHoursReport missingHoursEmployeePredicate interval)
 
 missingHoursStats :: Ctx -> IO ()
 missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
@@ -141,7 +127,7 @@ missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
     void $ safePoolExecute ctx insertQuery (today, totals ^. _1, totals ^._2, totals ^. _3)
   where
     lgr = ctxLogger ctx
-    predicate = missingHoursEmployeePredicate'
+    predicate = missingHoursEmployeePredicate
 
     insertQuery = fromString $ unwords
         [ "INSERT INTO reports.missing_hours as c (day, full_months, last_friday, yesterday)"
@@ -185,8 +171,7 @@ cachedIO' ctx = cachedIO logger cache 600
 -- this is used for api 'server' and pericron
 reports :: NP ReportEndpoint Reports
 reports =
-    ReportEndpoint (serveMissingHoursReport True) :*
-    ReportEndpoint (serveMissingHoursReport False) :*
+    ReportEndpoint serveMissingHoursReport :*
     ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 
@@ -221,7 +206,7 @@ missingHoursChartData'
     :: Ctx
     -> Integrations '[I, I, Proxy, I, I, I] MissingHoursChartData
 missingHoursChartData' _ctx =
-    missingHoursChartData missingHoursEmployeePredicate'
+    missingHoursChartData missingHoursEmployeePredicate
 
 missingHoursNotifications :: Ctx -> IO Text
 missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
@@ -231,7 +216,7 @@ missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
 
     (ppm, Report _ report) <- liftIO $ runIntegrations' ctx $ (,)
         <$> personioPlanmillMap
-        <*> missingHoursReport missingHoursEmployeePredicate' interval
+        <*> missingHoursReport missingHoursEmployeePredicate interval
 
     let logins = HM.keys report
     prefs <- liftIO $ getPreferences mgr preferencesBurl logins
