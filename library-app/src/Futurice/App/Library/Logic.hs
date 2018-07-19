@@ -138,9 +138,7 @@ fetchBookResponse ctx binfoid = do
 
 fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformationResponse]
 fetchBooksResponse ctx = do
-    _ <- logInfo_ "Fetching items"
     books <- fetchItems ctx
-    _ <- logInfo_ "Fetching books"
     bookInfos <- fetchBookInformations ctx
     pure $ (toBookInformationResponse (bookInformationMap books)) <$> bookInfos
   where
@@ -199,10 +197,10 @@ loanDataToLoan ctx es ldatas = do
             Just item -> Just $ Loan (ldLoanId l) (T.pack $ show $ ldDateLoaned l) item (es ^.at (ldPersonioId l))
             Nothing   -> Nothing) <$> ldatas
   where
-    toItem binfos boainfos item =
+    toItem binfos boainfos item = Item (idItemId item) (idLibrary item) <$>
         case idInfoId item of
-          BookInfoId i      -> binfos ^.at i >>= (Just . Item (idItemId item) (idLibrary item) . ItemBook)
-          BoardGameInfoId i -> boainfos ^.at i >>= (Just . Item (idItemId item) (idLibrary item) . ItemBoardGame)
+          BookInfoId i      -> ItemBook      <$> binfos ^.at i
+          BoardGameInfoId i -> ItemBoardGame <$> boainfos ^.at i
 
 fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> m [Loan]
 fetchLoans ctx es = do
