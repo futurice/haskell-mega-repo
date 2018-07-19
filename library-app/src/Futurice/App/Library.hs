@@ -18,11 +18,11 @@ import Servant
 import Servant.Server.Generic
 
 import Futurice.App.Library.API
-import Futurice.App.Library.BookInformationPage
 import Futurice.App.Library.Config
 import Futurice.App.Library.Ctx
-import Futurice.App.Library.IndexPage
 import Futurice.App.Library.Logic
+import Futurice.App.Library.Pages.BookInformationPage
+import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Types
 
 import qualified Data.Map as Map
