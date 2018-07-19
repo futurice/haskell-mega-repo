@@ -51,7 +51,7 @@ bookInformationPage (BookInformationResponse _binfoid title isbn author publishe
                   row_ $ do
                       span_ $ toHtml $ idT $ "Copies on loan "
                       for_ (fst $ partitionByLoan bs) $ \b ->
-                        for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> span_ $ toHtml $ (idToName es $ (P.EmployeeId . fromIntegral) person) <> " " <> (T.pack $ show day)
+                        for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> span_ $ toHtml $ (idToName es $ person) <> " " <> (T.pack $ show day)
               _ -> pure ()
     where
       idT :: Text -> Text

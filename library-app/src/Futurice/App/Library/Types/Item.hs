@@ -8,6 +8,7 @@ module Futurice.App.Library.Types.Item where
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
 import Futurice.Generics
+import Futurice.IdMap                       (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
@@ -26,13 +27,17 @@ data Item = Item
 
 data ItemInfo = ItemBook BookInformation
               | ItemBoardGame BoardGameInformation
-              | ItemUnknown Text
               deriving (Show, Typeable, Generic)
+
+makeLenses ''Item
 
 deriveGeneric ''ItemId
 deriveGeneric ''ItemInfo
 deriveGeneric ''Item
 
+instance HasKey Item where
+    type Key Item = ItemId
+    key = itemId
 instance ToJSON ItemInfo
 instance ToJSON Item
 instance ToParamSchema ItemId where toParamSchema = newtypeToParamSchema

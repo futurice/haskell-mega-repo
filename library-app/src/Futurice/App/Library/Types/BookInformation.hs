@@ -10,6 +10,7 @@ import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToField
 import Futurice.Generics
+import Futurice.IdMap                       (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
@@ -33,6 +34,10 @@ deriveGeneric ''BookInformation
 makeLenses ''BookInformation
 
 deriveVia [t| ToJSON BookInformation `Via` Sopica BookInformation |]
+
+instance HasKey BookInformation where
+    type Key BookInformation = BookInformationId
+    key = bookInformationId
 
 instance ToParamSchema BookInformationId where toParamSchema = newtypeToParamSchema
 instance ToSchema BookInformationId where declareNamedSchema = newtypeDeclareNamedSchema
