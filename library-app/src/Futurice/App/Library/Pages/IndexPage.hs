@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Library.IndexPage where
+module Futurice.App.Library.Pages.IndexPage where
 
 import Futurice.Prelude
 import Prelude ()

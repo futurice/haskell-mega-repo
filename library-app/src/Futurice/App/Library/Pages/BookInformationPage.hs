@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Library.BookInformationPage where
+module Futurice.App.Library.Pages.BookInformationPage where
 
 import Data.List        (partition)
 import Data.Maybe       (isJust)
