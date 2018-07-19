@@ -48,6 +48,7 @@ library
     , lucid
     , monad-http
     , mtl
+    , postgresql-simple
     , regex-applicative
     , regex-applicative-text
     , scientific
