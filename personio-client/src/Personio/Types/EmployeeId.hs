@@ -11,7 +11,9 @@ import Futurice.Prelude
 import Lucid              (ToHtml (..), a_, class_, href_)
 import Prelude ()
 
-import qualified Data.Csv as Csv
+import qualified Data.Csv                             as Csv
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 -- | Personio employee id.
 newtype EmployeeId = EmployeeId Word
@@ -27,6 +29,15 @@ deriveGeneric ''EmployeeId
 -- deriving via
 instance ToParamSchema EmployeeId where toParamSchema = newtypeToParamSchema
 instance ToSchema EmployeeId where declareNamedSchema = newtypeDeclareNamedSchema
+
+-- | There are now FromField Word instance
+--
+-- We use 'Integer' underlying instance, which may over and underflow.
+instance Postgres.FromField EmployeeId where
+    fromField f mbs = EmployeeId . fromInteger <$> Postgres.fromField f mbs
+
+instance Postgres.ToField EmployeeId where
+    toField = Postgres.toField . toInteger . (coerce :: EmployeeId -> Word)
 
 instance ToHtml EmployeeId where
     toHtmlRaw = toHtml
