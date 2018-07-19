@@ -42,7 +42,6 @@ instance ToJSON Loan where
                , case _itemInfo item of
                    ItemBook bookinfo            -> "book"      .= bookinfo
                    ItemBoardGame boardgameinfo  -> "boardgame" .= boardgameinfo
-                   ItemUnknown errortext        -> "unknown"   .= errortext
                , "loaner"  .= case person of
                                  Just p -> (p ^. P.employeeFirst) <> " " <> (p ^. P.employeeLast)
                                  Nothing -> ""
