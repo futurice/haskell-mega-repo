@@ -24,6 +24,7 @@ import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
 import Servant.Graph             (Graph (..))
+import Servant.Server.Generic    (genericServer)
 
 import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
@@ -65,24 +66,26 @@ import qualified PlanMill.Queries           as PMQ
 -------------------------------------------------------------------------------
 
 server :: Ctx -> Server ChecklistAPI
-server ctx = indexPageImpl ctx
-    :<|> tasksPageImpl ctx
-    :<|> checklistsPageImpl ctx
-    :<|> createTaskPageImpl ctx
-    :<|> createEmployeePageImpl ctx
-    :<|> checklistPageImpl ctx
-    :<|> checklistGraphImpl ctx
-    :<|> taskPageImpl ctx
-    :<|> employeePageImpl ctx
-    :<|> employeeAuditPageImpl ctx
-    :<|> archivePageImpl ctx
-    :<|> personioPageImpl ctx
-    :<|> reportPageImpl ctx
-    :<|> doneChartImpl ctx
-    :<|> applianceHelpImpl ctx
-    :<|> servicesHelpImpl ctx
-    :<|> commandImpl ctx
-    :<|> statsPageImpl ctx
+server ctx = genericServer $ ChecklistRoutes
+    { routeIndex          = indexPageImpl ctx
+    , routeTasks          = tasksPageImpl ctx
+    , routeChecklists     = checklistsPageImpl ctx
+    , routeCreateTask     = createTaskPageImpl ctx
+    , routeCreateEmployee = createEmployeePageImpl ctx
+    , routeChecklist      = checklistPageImpl ctx
+    , routeChecklistGraph = checklistGraphImpl ctx
+    , routeTask           = taskPageImpl ctx
+    , routeEmployee       = employeePageImpl ctx
+    , routeEmployeeAudit  = employeeAuditPageImpl ctx
+    , routeArchive        = archivePageImpl ctx
+    , routePersonio       = personioPageImpl ctx
+    , routeReport         = reportPageImpl ctx
+    , routeStats          = statsPageImpl ctx
+    , routeDoneChart      = doneChartImpl ctx
+    , routeHelpAppliance  = applianceHelpImpl ctx
+    , routeHelpServices   = servicesHelpImpl ctx
+    , routeCommand        = commandImpl ctx
+    }
 
 -------------------------------------------------------------------------------
 -- Endpoint wrappers
