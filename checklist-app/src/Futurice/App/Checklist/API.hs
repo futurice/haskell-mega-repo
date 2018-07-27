@@ -13,41 +13,47 @@ import Futurice.App.Checklist.Types
 import Futurice.Lucid.Foundation      (HtmlPage)
 import Futurice.Servant               (SSOUser)
 import Servant.API
+import Servant.API.Generic
 import Servant.Chart                  (Chart, SVG)
 import Servant.Graph                  (ALGAPNG, Graph)
 import Servant.HTML.Lucid             (HTML)
 
 import qualified Personio
 
-type ChecklistAPI = IndexPageEndpoint
+data ChecklistRoutes route = ChecklistRoutes
+    { routeIndex          :: route :- IndexPageEndpoint
     -- Collections
-    :<|> TasksPageEndpoint
-    :<|> ChecklistsPageEndpoint
+    , routeTasks          :: route :- TasksPageEndpoint
+    , routeChecklists     :: route :- ChecklistsPageEndpoint
     -- New
-    :<|> CreateTaskPageEndpoint
-    :<|> CreateEmployeePageEndpoint
+    , routeCreateTask     :: route :- CreateTaskPageEndpoint
+    , routeCreateEmployee :: route :- CreateEmployeePageEndpoint
     -- Items
-    :<|> ChecklistPageEndpoint
-    :<|> ChecklistGraphEndpoint
-    :<|> TaskPageEndpoint
-    :<|> EmployeePageEndpoint
-    :<|> EmployeeAuditPageEndpoint
+    , routeChecklist      :: route :- ChecklistPageEndpoint
+    , routeChecklistGraph :: route :- ChecklistGraphEndpoint
+    , routeTask           :: route :- TaskPageEndpoint
+    , routeEmployee       :: route :- EmployeePageEndpoint
+    , routeEmployeeAudit  :: route :- EmployeeAuditPageEndpoint
     -- Archive
-    :<|> ArchivePageEndpoint
+    , routeArchive        :: route :- ArchivePageEndpoint
     -- Personio
-    :<|> PersonioPageEndpoint
-    -- Report(s)
-    :<|> ReportPageEndpoint
-    :<|> "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
+    , routePersonio       :: route :- PersonioPageEndpoint
+    -- Reports
+    , routeReport         :: route :- ReportPageEndpoint
+    , routeStats          :: route :- StatsPageEndpoint
+    , routeDoneChart      :: route :- "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
     -- Help
-    :<|> ApplianceHelpEndpoint
-    :<|> ServicesHelpEndpoint
+    , routeHelpAppliance  :: route :- ApplianceHelpEndpoint
+    , routeHelpServices   :: route :- ServicesHelpEndpoint
     -- Command
-    :<|> "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
-    :<|> StatsPageEndpoint
+    , routeCommand        :: route :- "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
+    }
+  deriving Generic
+
+type ChecklistAPI = ToServantApi ChecklistRoutes
 
 checklistApi :: Proxy ChecklistAPI
-checklistApi = Proxy
+checklistApi = genericApi (Proxy :: Proxy ChecklistRoutes)
 
 -------------------------------------------------------------------------------
 -- Collections
