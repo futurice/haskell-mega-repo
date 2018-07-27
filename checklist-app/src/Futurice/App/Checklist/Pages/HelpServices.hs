@@ -18,7 +18,7 @@ helpServicesPage
     :: World       -- ^ the world
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "services-help"
-helpServicesPage _world authUser = checklistPage_ "Help - Services" [] authUser (Just NavHelp) $ do
+helpServicesPage _world authUser = checklistPage_ "Help - Services" [] authUser (Just NavMore) $ do
     table_ $ do
         thead_ $ tr_ $ do
             th_ mempty

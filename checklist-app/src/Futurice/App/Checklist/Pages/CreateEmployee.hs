@@ -90,7 +90,7 @@ createEmployeePage
     -> Maybe Personio.Employee
     -> Map Personio.EmployeeId Personio.Employee
     -> HtmlPage "create-employee"
-createEmployeePage world authUser mcid memployee pemployee pes = checklistPage_ "Create employee" [mname] authUser (Just NavCreateEmployee) $ do
+createEmployeePage world authUser mcid memployee pemployee pes = checklistPage_ "Create employee" [mname] authUser (Just nav) $ do
     for_ (tmplPersonioId =<< tmpl) $ \eid -> row_ $ large_ 12 $ do
         "Using personio employee #"
         toHtml eid
@@ -203,6 +203,9 @@ createEmployeePage world authUser mcid memployee pemployee pes = checklistPage_ 
             button_ [ class_ "button success", data_ "futu-action" "submit" ] "Create"
             button_ [ class_ "button", data_ "futu-action" "reset" ] "Reset"
   where
+    nav :: Nav
+    nav = maybe NavMore (const NavPersonio) pemployee
+
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
