@@ -33,6 +33,8 @@ import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Ctx
 import Futurice.App.Checklist.Logic
+import Futurice.App.Checklist.Pages.AgentAudit
+import Futurice.App.Checklist.Pages.Agents
 import Futurice.App.Checklist.Pages.Archive
 import Futurice.App.Checklist.Pages.Checklist
 import Futurice.App.Checklist.Pages.Checklists
@@ -79,6 +81,8 @@ server ctx = genericServer $ ChecklistRoutes
     , routeEmployee       = employeePageImpl ctx
     , routeEmployeeAudit  = employeeAuditPageImpl ctx
     , routeMore           = morePageImpl ctx
+    , routeAgents         = agentsPageImpl ctx
+    , routeAgentAudit     = agentAuditPageImpl ctx
     , routeArchive        = archivePageImpl ctx
     , routePersonio       = personioPageImpl ctx
     , routeReport         = reportPageImpl ctx
@@ -353,6 +357,23 @@ employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
                 cmds <- fetchEmployeeCommands ctx employee
                 pure $ employeeAuditPage world userInfo employee cmds
 
+agentsPageImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "agents")
+agentsPageImpl ctx fu = withAuthUser ctx fu $ \world userInfo -> do
+    agents <- fetchAgents ctx
+    pure $ agentsPage world userInfo agents
+
+agentAuditPageImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> FUM.Login
+    -> Handler (HtmlPage "agent-audit")
+agentAuditPageImpl ctx fu agent = withAuthUser ctx fu $ \world userInfo -> do
+    cmds <- fetchAgentCommands ctx agent
+    pure $ agentAuditPage world userInfo agent cmds
+
 -------------------------------------------------------------------------------
 -- Command implementation
 -------------------------------------------------------------------------------
@@ -404,6 +425,30 @@ fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
         , "ORDER BY cid ASC"
         , ";"
         ]
+
+fetchAgentCommands
+    :: MonadBaseControl IO m
+    => Ctx
+    -> FUM.Login 
+    -> m [(Command Identity, UTCTime)]
+fetchAgentCommands ctx agent = withResource (ctxPostgres ctx) $ \conn ->
+    liftBase $ Postgres.query conn query (Postgres.Only agent)
+  where
+    query = fromString $ unwords
+        [ "SELECT cmddata, updated FROM checklist2.commands"
+        , "WHERE username = ?"
+        , "ORDER BY cid DESC"
+        , "LIMIT 200"
+        , ";"
+        ]
+
+fetchAgents
+    :: MonadBaseControl IO m
+    => Ctx
+    -> m [(FUM.Login, UTCTime)]
+fetchAgents ctx = withResource (ctxPostgres ctx) $ \conn ->
+    liftBase $ Postgres.query_ conn
+        "select username, max(updated) from checklist2.commands group by username;"
 
 -------------------------------------------------------------------------------
 -- Auth

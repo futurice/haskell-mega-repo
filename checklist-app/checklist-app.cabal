@@ -102,6 +102,8 @@ library
       Futurice.App.Checklist.Ctx
       Futurice.App.Checklist.Logic
       Futurice.App.Checklist.Markup
+      Futurice.App.Checklist.Pages.Agents
+      Futurice.App.Checklist.Pages.AgentAudit
       Futurice.App.Checklist.Pages.Archive
       Futurice.App.Checklist.Pages.Checklist
       Futurice.App.Checklist.Pages.Checklists
