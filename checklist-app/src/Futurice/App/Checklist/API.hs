@@ -18,6 +18,7 @@ import Servant.Chart                  (Chart, SVG)
 import Servant.Graph                  (ALGAPNG, Graph)
 import Servant.HTML.Lucid             (HTML)
 
+import qualified FUM.Types.Login as FUM
 import qualified Personio
 
 data ChecklistRoutes route = ChecklistRoutes
@@ -37,12 +38,16 @@ data ChecklistRoutes route = ChecklistRoutes
     -- Other stuff
     , routeMore           :: route :- SSOUser :> "more"
         :> Get '[HTML] (HtmlPage "more")
-
+    , routeAgents         :: route :- SSOUser :> "agents"
+        :> Get '[HTML] (HtmlPage "agents")
+    , routeAgentAudit     :: route :- SSOUser :> "agents"
+        :> Capture "agent" FUM.Login
+        :> "audit"
+        :> Get '[HTML] (HtmlPage "agent-audit")
     , routeArchive        :: route :- ArchivePageEndpoint
     , routeHelpAppliance  :: route :- ApplianceHelpEndpoint
     , routeHelpServices   :: route :- ServicesHelpEndpoint
     , routeStats          :: route :- StatsPageEndpoint
-
     -- Personio
     , routePersonio       :: route :- PersonioPageEndpoint
     -- Reports
