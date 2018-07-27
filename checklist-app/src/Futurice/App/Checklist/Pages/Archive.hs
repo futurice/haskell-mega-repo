@@ -16,7 +16,7 @@ archivePage
     :: World       -- ^ the world
     -> AuthUser    -- ^ logged in user
     -> HtmlPage "archive"
-archivePage world authUser@(_, viewerRole) = checklistPage_ "Archive" [] authUser Nothing $ do
+archivePage world authUser@(_, viewerRole) = checklistPage_ "Archive" [] authUser (Just NavMore) $ do
     let employees = sortOn (view $ archiveEmployee . employeeStartingDay) $ world ^.. worldArchive . folded
 
     -- The table

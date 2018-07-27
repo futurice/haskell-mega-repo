@@ -113,6 +113,7 @@ library
       Futurice.App.Checklist.Pages.HelpAppliance
       Futurice.App.Checklist.Pages.HelpServices
       Futurice.App.Checklist.Pages.Index
+      Futurice.App.Checklist.Pages.More
       Futurice.App.Checklist.Pages.Personio
       Futurice.App.Checklist.Pages.Report
       Futurice.App.Checklist.Pages.Stats

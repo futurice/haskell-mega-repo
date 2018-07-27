@@ -44,6 +44,7 @@ import Futurice.App.Checklist.Pages.Error          (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.HelpServices
 import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.More
 import Futurice.App.Checklist.Pages.Personio
 import Futurice.App.Checklist.Pages.Report
 import Futurice.App.Checklist.Pages.Stats
@@ -77,6 +78,7 @@ server ctx = genericServer $ ChecklistRoutes
     , routeTask           = taskPageImpl ctx
     , routeEmployee       = employeePageImpl ctx
     , routeEmployeeAudit  = employeeAuditPageImpl ctx
+    , routeMore           = morePageImpl ctx
     , routeArchive        = archivePageImpl ctx
     , routePersonio       = personioPageImpl ctx
     , routeReport         = reportPageImpl ctx
@@ -253,6 +255,13 @@ doneChartImpl
 doneChartImpl ctx fu = withAuthUserChart ctx fu $ \world userInfo -> do
     today <- currentDay
     pure $ doneChart world today userInfo
+
+morePageImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "more")
+morePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
+    pure $ morePage world userInfo
 
 applianceHelpImpl
     :: Ctx

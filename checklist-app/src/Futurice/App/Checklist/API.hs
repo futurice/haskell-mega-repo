@@ -34,17 +34,20 @@ data ChecklistRoutes route = ChecklistRoutes
     , routeTask           :: route :- TaskPageEndpoint
     , routeEmployee       :: route :- EmployeePageEndpoint
     , routeEmployeeAudit  :: route :- EmployeeAuditPageEndpoint
-    -- Archive
+    -- Other stuff
+    , routeMore           :: route :- SSOUser :> "more"
+        :> Get '[HTML] (HtmlPage "more")
+
     , routeArchive        :: route :- ArchivePageEndpoint
+    , routeHelpAppliance  :: route :- ApplianceHelpEndpoint
+    , routeHelpServices   :: route :- ServicesHelpEndpoint
+    , routeStats          :: route :- StatsPageEndpoint
+
     -- Personio
     , routePersonio       :: route :- PersonioPageEndpoint
     -- Reports
     , routeReport         :: route :- ReportPageEndpoint
-    , routeStats          :: route :- StatsPageEndpoint
     , routeDoneChart      :: route :- "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
-    -- Help
-    , routeHelpAppliance  :: route :- ApplianceHelpEndpoint
-    , routeHelpServices   :: route :- ServicesHelpEndpoint
     -- Command
     , routeCommand        :: route :- "command" :> SSOUser :> ReqBody '[JSON] (Command Proxy) :> Post '[JSON] Ack
     }

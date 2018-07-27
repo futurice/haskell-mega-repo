@@ -78,10 +78,7 @@ data Nav
     | NavTasks
     | NavCreateTask
     | NavPersonio
-    | NavArchive
-    | NavStats
-    | NavHelp
-    | NavCreateEmployee
+    | NavMore
   deriving (Eq, Enum, Bounded)
 
 navLink :: Nav -> (Attribute, Text)
@@ -90,10 +87,7 @@ navLink NavChecklists      = (checklistsPageHref , "Checklists")
 navLink NavTasks           = (tasksPageHref Nothing Nothing, "Tasks")
 navLink NavCreateTask      = (createTaskPageHref , "Create Task")
 navLink NavPersonio        = (personioPageHref , "Create from Personio")
-navLink NavArchive         = (archivePageHref , "Archive")
-navLink NavStats           = (statsPageHref, "Stats")
-navLink NavHelp            = (servicesHelpHref, "Services")
-navLink NavCreateEmployee  = (createEmployeePageHref Nothing, "Create raw")
+navLink NavMore            = (recordHref_ routeMore, "More...")
 
 checklistPage_ :: Text -> [Maybe Text] -> AuthUser -> Maybe Nav -> Html () -> HtmlPage sym
 checklistPage_ title titleParts authUser nav body =
@@ -226,14 +220,8 @@ applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndp
 servicesHelpHref :: Attribute
 servicesHelpHref = href_ $ linkToText $ safeLink checklistApi servicesHelpEndpoint
 
-archivePageHref :: Attribute
-archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint
-
 personioPageHref :: Attribute
 personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint
-
-statsPageHref :: Attribute
-statsPageHref = href_ $ linkToText $ safeLink checklistApi statsPageEndpoint SortByActiveFuture False False
 
 -------------------------------------------------------------------------------
 -- Links

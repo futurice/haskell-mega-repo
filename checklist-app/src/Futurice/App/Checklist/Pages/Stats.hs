@@ -26,7 +26,7 @@ statsPage
     -> Bool -- ^ sort in desc order
     -> Bool -- ^ show tasks without checklist
     -> HtmlPage "stats"
-statsPage world today authUser sortCriteria sortDescEmpl showTaskWithoutChecklists = checklistPage_ "Stats" [] authUser (Just NavStats) $ do
+statsPage world today authUser sortCriteria sortDescEmpl showTaskWithoutChecklists = checklistPage_ "Stats" [] authUser (Just NavMore) $ do
     let tasks' = world ^.. worldTasksSortedByName . folded
         archivedEmployees = world ^. worldArchive
         tasksWithArchivedEmployees = swapMapMap $ DM.map (\(ArchivedEmployee _ tm) -> tm) archivedEmployees
