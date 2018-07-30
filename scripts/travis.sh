@@ -65,7 +65,7 @@ install)
 
     cabal)
         # Install doctest
-        cabal new-install doctest --symlink-bindir="$HOME/.local/bin"
+		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --symlink-bindir="$HOME/.local/bin")
         doctest --version
 
         # Install some stuff already in install phase
