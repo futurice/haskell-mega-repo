@@ -529,15 +529,14 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
                 & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
 
         -- Put.
-        let datums' = datum1 : datum2 : datum3
+        let datums0 = datum1 : datum2 : datum3
                    : cacheDatum : meterDatums
         -- metric names can be only ASCII
-        let datums = datums'
-                & traverse . AWS.mdMetricName . each %~ makeAscii
-        let pmd = AWS.putMetricData (awsGroup <> "/RTS")
-                & AWS.pmdMetricData .~ datums
+        let datums1 = datums0 & traverse . AWS.mdMetricName . each %~ makeAscii
 
-        AWS.send pmd
+        for_ (chunksOf 20 datums1) $ \datums ->
+            AWS.send $ AWS.putMetricData (awsGroup <> "/RTS")
+                & AWS.pmdMetricData .~ datums
 
     logInfo_ $ "cloudwatch response " <> textShow rs
 
