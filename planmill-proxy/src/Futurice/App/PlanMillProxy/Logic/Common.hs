@@ -27,22 +27,6 @@ import PlanMill.Worker      (submitPlanMill)
 import Futurice.App.PlanMillProxy.Types (Ctx (..))
 
 -------------------------------------------------------------------------------
--- Intervals
--------------------------------------------------------------------------------
-
--- | Get previous @03:30@ (in @Europe/Helsinki@ timezone) from the given
--- timestamp.
-previousThreeThirty :: UTCTime -> UTCTime
-previousThreeThirty x
-    | y < x     = y
-    | otherwise = z
-  where
-    LocalTime d _ = utcToHelsinkiTime x
-    tod = TimeOfDay 3 30 0
-    y = helsinkiTimeToUtc (LocalTime d tod)
-    z = helsinkiTimeToUtc (LocalTime (pred d) tod)
-
--------------------------------------------------------------------------------
 -- LIO
 -------------------------------------------------------------------------------
 
