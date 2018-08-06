@@ -36,17 +36,17 @@ deriveGeneric ''LoanId
 deriveGeneric ''Loan
 
 instance ToJSON Loan where
-    toJSON (Loan lid date item person) =
-        object ["id"       .= lid
-               , "loaned"  .= date
-               , case _itemInfo item of
-                   ItemBook bookinfo            -> "book"      .= bookinfo
-                   ItemBoardGame boardgameinfo  -> "boardgame" .= boardgameinfo
-               , "loaner"  .= case person of
-                                 Just p -> (p ^. P.employeeFirst) <> " " <> (p ^. P.employeeLast)
-                                 Nothing -> ""
-               , "library" .= _itemLibrary item
-               ]
+    toJSON (Loan lid date item person) = object
+        ["id"       .= lid
+        , "loaned"  .= date
+        , case _itemInfo item of
+            ItemBook bookinfo            -> "book"      .= bookinfo
+            ItemBoardGame boardgameinfo  -> "boardgame" .= boardgameinfo
+        , "loaner"  .= case person of
+            Just p -> (p ^. P.employeeFirst) <> " " <> (p ^. P.employeeLast)
+            Nothing -> ""
+        , "library" .= _itemLibrary item
+        ]
 
 instance ToParamSchema LoanId where toParamSchema = newtypeToParamSchema
 instance ToSchema LoanId where declareNamedSchema = newtypeDeclareNamedSchema

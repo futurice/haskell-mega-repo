@@ -16,7 +16,8 @@ import Futurice.App.Library.Types.BoardGameInformation
 import Futurice.App.Library.Types.BookInformation
 import Futurice.App.Library.Types.Library
 
-newtype ItemId   = ItemId Int32 deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
+newtype ItemId = ItemId Int32
+    deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
 data Item = Item
     { _itemId      :: !ItemId
