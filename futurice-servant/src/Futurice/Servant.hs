@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -328,12 +327,7 @@ futuriceServerMain makeCtx (SC (I service) d htmlServer server middleware1 (I en
                        :<|> htmlServer ctx
                        :: Server (FuturiceAPI api colour :<|> htmlApi)
 
-        statsEnabled <-
-#if MIN_VERSION_base(4,10,0)
-            Stats.getRTSStatsEnabled
-#else
-            Stats.getGCStatsEnabled
-#endif
+        statsEnabled <- Stats.getRTSStatsEnabled
         mutgcTVar <- newTVarIO (MutGC 0 0 0 0)
 
         let mcloudwatchJob = do
@@ -464,7 +458,6 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
             & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
 
     -- gcm
-#if MIN_VERSION_base(4,10,0)
     stats <- liftIO Stats.getRTSStats
 
     let liveBytes =  Stats.gcdetails_live_bytes (Stats.gc stats)
@@ -474,17 +467,6 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
 
     let currWMut = Stats.mutator_elapsed_ns stats
     let currWTot = Stats.elapsed_ns stats
-#else
-    stats <- liftIO Stats.getGCStats
-
-    let liveBytes = Stats.currentBytesUsed stats
-
-    let currMut = Stats.mutatorCpuSeconds stats
-    let currTot = Stats.cpuSeconds stats
-
-    let currWMut = Stats.mutatorWallSeconds stats
-    let currWTot = Stats.wallSeconds stats
-#endif
 
     MutGC prevMut prevTot prevWMut prevWTot <- liftIO $ atomically $
         swapTVar mutgcTVar (MutGC currMut currTot currWMut currWTot)
@@ -544,11 +526,7 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
 -- MutGC
 -------------------------------------------------------------------------------
 
-#if MIN_VERSION_base(4,10,0)
 data MutGC = MutGC !Stats.RtsTime !Stats.RtsTime !Stats.RtsTime !Stats.RtsTime
-#else
-data MutGC = MutGC !Double !Double !Double !Double
-#endif
 
 -------------------------------------------------------------------------------
 -- SSO User
