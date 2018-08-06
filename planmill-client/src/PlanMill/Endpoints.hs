@@ -286,7 +286,7 @@ projectAssignments i = planMillGet $ t "projects" // i // t "assignments"
 --
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users__id__reportableassignments_get>
 reportableAssignments :: UserId -> PlanMill ReportableAssignments
-reportableAssignments i = planMillGet $ t "users" // i // t "reportableassignments"
+reportableAssignments i = planMillPagedGet $ t "users" // i // t "reportableassignments"
 
 -- | Get a list of actions
 --
