@@ -6,14 +6,10 @@
 module Futurice.App.PlanMillProxy.Logic (
     -- * Endpoint
     haxlEndpoint,
-    -- * Timereports
-    updateAllTimereports,
-    updateWithoutTimereports,
     -- * Stats
     statsEndpoint,
     ) where
 
-import Data.Aeson.Compat     (object, (.=))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint

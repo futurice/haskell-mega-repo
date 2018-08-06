@@ -23,9 +23,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.PlanMillProxy.API
 import Futurice.App.PlanMillProxy.Charts
 import Futurice.App.PlanMillProxy.Config (Config (..))
-import Futurice.App.PlanMillProxy.Logic
-       (haxlEndpoint, statsEndpoint, updateAllTimereports,
-       updateWithoutTimereports)
+import Futurice.App.PlanMillProxy.Logic  (haxlEndpoint, statsEndpoint)
 import Futurice.App.PlanMillProxy.Types  (Ctx (..))
 
 import qualified PlanMill.Queries as PMQ
@@ -60,18 +58,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
                 , ctxWorkers      = ws
                 }
         let jobs =
-                [
-                -- Update timereports
-                -- we update 67 employee at time, 3 times in hour, i.e. 200 in one hour.
-                -- to update ~1000 people it will take 5 hours.
-                -- as we start at around 2:00 AM, we should be done by 7:00 AM.
-                  mkJob "update timereports" (updateAllTimereports ctx)
-                  $ shifted (3 * 60) $ every $ 10 * 60
-
-                , mkJob "update without timereports" (updateWithoutTimereports ctx)
-                  $ shifted (10 * 60) $ every $ 2 * 60 * 60
-
-                , mkJob "have to be warm" (updateWarmRequests ctx)
+                [ mkJob "have to be warm" (updateWarmRequests ctx)
                   $ shifted (2 * 60) $ every $ 30 * 60
                 ]
 
