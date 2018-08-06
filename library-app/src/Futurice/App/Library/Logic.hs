@@ -162,20 +162,20 @@ loans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id
 loan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> LoanId -> m (Maybe LoanData)
 loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
 
-fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> LoanId -> IdMap P.Employee -> m (Maybe Loan)
-fetchLoan ctx lid es = do
+fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
+fetchLoan ctx emap lid = do
     runMaybeT $ do
         l <- MaybeT $ loan ctx lid
         b <- MaybeT $ fetchItem ctx $ ldItemId l
         binfoid <- MaybeT $ pure $ bookInformation b
         binfo <- MaybeT $ fetchBookInformation ctx binfoid
-        pure $ loan' l es binfo $ idLibrary b
+        pure $ loan' l binfo $ idLibrary b
   where
       bookInformation item =
           case idInfoId item of
               BookInfoId info -> Just info
               _               -> Nothing
-      loan' (LoanData loanId date personio_id itemId) emap bookInfo lib =
+      loan' (LoanData loanId date personio_id itemId) bookInfo lib =
           Loan loanId (T.pack $ show date) (Item itemId lib $ ItemBook bookInfo) (emap ^.at personio_id)
 
 itemArrayToMap :: [ItemData] -> Map ItemId (InfoId, Library)

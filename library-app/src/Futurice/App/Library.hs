@@ -156,7 +156,7 @@ getLoanImpl :: Ctx -> LoanId -> Handler Loan
 getLoanImpl ctx lid = do
     loanInfo <- runLogT "library" (ctxLogger ctx) $ do
         es <- liftIO $ getPersonioData ctx
-        fetchLoan ctx lid es
+        fetchLoan ctx es lid
     case loanInfo of
       Just loan' -> pure loan'
       Nothing -> throwError $ err404 { errBody = "No loan information found"}
