@@ -33,14 +33,49 @@ utzChartData = do
 utzChartRender :: Map (Integer, Int) Double -> Chart "utz"
 utzChartRender utzs = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
-    C.plot $ C.line "2018"
-        [[(w, fromMaybe 0 $ utzs ^? ix (2018, w)) | w <- [1..53]]]
-    C.plot $ C.line "2017"
-        [[(w, fromMaybe 0 $ utzs ^? ix (2017, w)) | w <- [1..53]]]
-    C.plot $ C.line "2016"
-        [[(w, fromMaybe 0 $ utzs ^? ix (2016, w)) | w <- [1..53]]]
-    C.plot $ C.line "2015"
-        [[(w, fromMaybe 0 $ utzs ^? ix (2015, w)) | w <- [1..53]]]
+
+    C.plot $ C.line "2018" [yearData 2018]
+    C.plot $ C.line "2017" [yearData 2017]
+    C.plot $ C.line "2016" [yearData 2016]
+    C.plot $ C.line "2015" [yearData 2015]
+  where
+    yearData y = takeWhileMaybe
+        (\w -> fmap ((,) $ WeekNumber w) $ utzs ^? ix (y, w))
+        [1..53]
+
+    takeWhileMaybe :: (a -> Maybe b) -> [a] -> [b]
+    takeWhileMaybe f = go where
+        go []     = []
+        go (a:as) = case f a of
+            Nothing -> []
+            Just b  -> b : go as
+
+-------------------------------------------------------------------------------
+-- WeekNumber
+-------------------------------------------------------------------------------
+
+newtype WeekNumber = WeekNumber Int deriving (Eq, Ord)
+
+instance C.PlotValue WeekNumber where
+    toValue (WeekNumber i) = fromIntegral i
+    fromValue = WeekNumber . clamp 1 53 . truncate
+      where
+        clamp mi ma x
+            | x < mi    = mi
+            | x > ma    = ma
+            | otherwise = x
+
+    autoAxis _ = C.makeAxis
+        (map (\(WeekNumber i) -> show i))
+        (labels, numbers [1..53], grids)
+      where
+        labels = numbers [1,5,9,    14,18,22,    27,31,35,    40,44,48,    53]
+        grids  = numbers [1,5,9,13, 14,18,22,26, 27,31,35,39, 40,44,48,52, 53]
+        numbers = map WeekNumber
+
+-------------------------------------------------------------------------------
+-- Extras
+-------------------------------------------------------------------------------
 
 -- bindForM and chopInterval used to cut the parallelism, as we ask "for everything"
 -- TODO: move to integrations
