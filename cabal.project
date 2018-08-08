@@ -6,9 +6,10 @@ constraints:
   aeson              ^>= 1.4.0.0,
   amazonka-core      ^>= 1.6.0,
   cabal-plan         ^>= 0.3.0.0,
-  Chart              ^>= 1.8.3,
+  Chart              ^>= 1.9,
   clay               ^>= 0.13.1,
   conduit            ^>= 1.3.0.2,
+  diagrams-lib       ^>=1.4.2.3,
   github             ^>= 0.19,
   haxl               ^>= 2.0.0.0,
   http-types         ^>= 0.12,
@@ -16,11 +17,12 @@ constraints:
   log-base           ^>= 0.7.4.0,
   semigroupoids      ^>= 5.3.1,
   servant            ^>= 0.14.1,
-  servant-lucid      ^>= 0.8,
   servant-client     ^>= 0.14,
   servant-client-core^>= 0.14.1,
+  servant-lucid      ^>= 0.8,
   servant-server     ^>= 0.14.1,
   servant-swagger-ui ^>= 0.3.0.3.13.2,
+  SVGFonts           ^>=1.7,
   unix-time          ^>= 0.3.8,
   tdigest            ^>= 0.2
 
@@ -32,10 +34,12 @@ allow-newer:
   active:lens,
   active:semigroupoids,
   Chart-diagrams:lens,
+  Chart-diagrams:SVGFonts,
   Chart:lens,
   diagrams-core:lens,
   diagrams-lib:lens,
   diagrams-postscript:lens,
+  diagrams-rasterific:lens,
   monoid-extras:semigroupoids,
   diagrams-svg:lens
 
@@ -49,6 +53,7 @@ packages:
   avatar-app/
   avatar-client/
   aws-lambda-kleisli/package-aws-lambda/
+  badge-app/
   checklist-app/
   contacts-api/
   dynmap-cache/
