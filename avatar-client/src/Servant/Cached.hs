@@ -1,23 +1,28 @@
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 -- | Not really Cached, but PreRendered
 module Servant.Cached (
     Cached,
     mkCached,
+    getCached,
     -- * Unsafe
     unsafeMkCached,
     ) where
 
+import Data.Swagger
 import Futurice.Prelude
 import Prelude ()
 import Servant.API
-import Data.Swagger
 
 import qualified Data.ByteString.Lazy as LBS
 
 newtype Cached ct a = Cached LBS.ByteString
   deriving (Typeable)
+
+getCached :: Cached ct a -> LBS.ByteString
+getCached = coerce
 
 instance NFData (Cached st a) where
     rnf (Cached lbs) = rnf lbs
@@ -32,5 +37,8 @@ mkCached = Cached . mimeRender (Proxy :: Proxy ct)
 unsafeMkCached :: LBS.ByteString -> Cached ct a
 unsafeMkCached = Cached
 
-instance MimeRender ct a => MimeRender ct (Cached ct a) where
-    mimeRender _ (Cached lbs) = lbs
+instance (ct ~ ct', MimeRender ct a) => MimeRender ct' (Cached ct a) where
+    mimeRender _ = getCached
+
+instance (ct ~ ct', Accept ct) => MimeUnrender ct' (Cached ct a) where
+    mimeUnrender _ = Right . Cached
