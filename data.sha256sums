@@ -6,3 +6,5 @@
 b74297acc4efe3d94790328ff471aebfcb8972119a96bed0704d82b4c53058b3  hc-app/early-caring.template
 27ae3e3511bd59a2e6ff25f6d59ecc0765a6dbcc6c40acb7c89669d0f7b7ea72  reports-app/missing-hours-email.template
 1094e9409d23680b45d29d02002c831e9e4c85c6077e3bfc5fa3cc0130ca8cba  reports-app/missing-hours-sms.template
+b61ca853ec3f0595849f8a62eb3323fe0966a9d9d89fea7a4d4330b3520e1090  badge-app/data.tar
+4e61b0763daaa22462f7b5e9c540f0086923d8d6b0042e6fe0fad7e91b7ae37c  badge-app/src/Futurice/App/Badge/Templates.hs
