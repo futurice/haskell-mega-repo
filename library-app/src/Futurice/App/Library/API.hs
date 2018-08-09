@@ -22,7 +22,7 @@ data Record route = Record
     , bookPageGet      :: route :- BookInformationPageEndpoint
     , bookCoverGet     :: route :- BookCoverEndpoint
     , borrowPost       :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
-    , snatchPost       :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" BookId :> Post '[JSON] Loan
+    , snatchPost       :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan
     , loansGet         :: route :- "loan" :> Get '[JSON] [Loan]
     , loanGet          :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
     , returnPost       :: route :- "return" :> Capture "id" LoanId :> Post '[JSON] Bool

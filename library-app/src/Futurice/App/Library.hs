@@ -107,7 +107,7 @@ bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookin
 bookInformationPageImpl ctx binfoid = do
     book <- getBookImpl ctx binfoid
     es <- liftIO $ getPersonioData ctx
-    ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithBookIds ctx (_booksBookId <$> _books book)
+    ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_booksBookId <$> _books book)
     pure $ bookInformationPage book ls es
 
 
@@ -122,13 +122,13 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
             Nothing -> throwError $ err404 { errBody = "Loan data is not available" }
             Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
 
-snatchBookImpl :: Ctx -> Maybe Login -> BookId -> Handler Loan
-snatchBookImpl ctx login bid = withAuthUser ctx login $ (\l -> do
+snatchBookImpl :: Ctx -> Maybe Login -> ItemId -> Handler Loan
+snatchBookImpl ctx login iid = withAuthUser ctx login $ (\l -> do
     emap <- liftIO $ getPersonioDataMap ctx
     case emap ^.at l of
       Nothing -> throwError err403
       Just es -> do
-          loanData <- runLogT "library" (ctxLogger ctx) $ snatchBook ctx (es ^. P.employeeId) bid
+          loanData <- runLogT "library" (ctxLogger ctx) $ snatchBook ctx (es ^. P.employeeId) iid
           case loanData of
             Nothing -> throwError $ err404 { errBody = "Couln't loan book" }
             Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
@@ -156,7 +156,7 @@ getLoanImpl :: Ctx -> LoanId -> Handler Loan
 getLoanImpl ctx lid = do
     loanInfo <- runLogT "library" (ctxLogger ctx) $ do
         es <- liftIO $ getPersonioData ctx
-        fetchLoan ctx lid es
+        fetchLoan ctx es lid
     case loanInfo of
       Just loan' -> pure loan'
       Nothing -> throwError $ err404 { errBody = "No loan information found"}

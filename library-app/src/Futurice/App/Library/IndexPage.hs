@@ -19,7 +19,7 @@ indexPage books = page_ "Library" (Just NavHome) $ do
             th_ "Author"
             th_ "Published"
             th_ "ISBN"
-        tbody_ $ for_ (take 20 books) $ \(BookInformationResponse binfoid title isbn author _publisher published cover _amazonLink _books) -> tr_ $ do
+        tbody_ $ for_ (take 40 books) $ \(BookInformationResponse binfoid title isbn author _publisher published cover _amazonLink _books) -> tr_ $ do
             td_ $ img_ [src_ $ toUrlPiece $ fieldLink bookCoverGet cover ]
             td_ $ a_ [href_ $ linkToText $ fieldLink bookPageGet binfoid] $ toHtml title
             td_ $ toHtml $ author
