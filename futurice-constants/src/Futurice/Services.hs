@@ -26,6 +26,7 @@ import Prelude ()
 
 data Service
     = AvatarService
+    | BadgeService
     | ChecklistService
     | ContactsService
     | ContactsApiService
@@ -61,6 +62,7 @@ deriveGeneric ''Service
 instance TextEnum Service where
     type TextEnumNames Service =
         '["avatar"
+        , "badge"
         , "checklist"
         , "contacts"
         , "contacts-api"
@@ -120,6 +122,7 @@ instance ToSchema Service where declareNamedSchema = enumDeclareNamedSchema
 
 data PerService a = PerService
     { perAvatar        :: a
+    , perBadge         :: a
     , perChecklist     :: a
     , perContacts      :: a
     , perContactsApi   :: a
@@ -157,6 +160,7 @@ instance Representable PerService where
     type Rep PerService = Service
 
     index p AvatarService        = perAvatar p
+    index p BadgeService         = perBadge p
     index p ChecklistService     = perChecklist p
     index p ContactsService      = perContacts p
     index p ContactsApiService   = perContactsApi p
@@ -186,6 +190,7 @@ instance Representable PerService where
 
     tabulate f = PerService
         { perAvatar        = f AvatarService
+        , perBadge         = f BadgeService
         , perChecklist     = f ChecklistService
         , perContacts      = f ContactsService
         , perContactsApi   = f ContactsApiService
