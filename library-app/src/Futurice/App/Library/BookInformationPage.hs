@@ -51,11 +51,11 @@ bookInformationPage (BookInformationResponse _binfoid title isbn author publishe
                   row_ $ do
                       span_ $ toHtml $ idT $ "Copies on loan "
                       for_ (fst $ partitionByLoan bs) $ \b ->
-                        for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> span_ $ toHtml $ (idToName es $ (P.EmployeeId . fromIntegral) person) <> " " <> (T.pack $ show day)
+                        for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> span_ $ toHtml $ (idToName es $ person) <> " " <> (T.pack $ show day)
               _ -> pure ()
     where
       idT :: Text -> Text
       idT = id
       officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_booksLibrary x, [x])) <$> books
-      loanMap = M.fromList $ (\(LoanData lid day bid person) -> (bid, (lid, day, person))) <$> ls
+      loanMap = M.fromList $ (\(LoanData lid day person iid) -> (iid, (lid, day, person))) <$> ls
       partitionByLoan = partition (\x -> isJust (loanMap ^.at (_booksBookId x)))
