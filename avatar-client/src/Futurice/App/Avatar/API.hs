@@ -26,13 +26,15 @@ data Record route = Record
         :> QueryParam "size" Size
         :> QueryFlag "grey"
         :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage))
-    , recFum :: route :- "fum"
-        :> Capture "login" Login
-        :> QueryParam "size" Size
-        :> QueryFlag "grey"
-        :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage))
+    , recFum :: route :- AvatarFumEndpoint
     }
   deriving Generic
+
+type AvatarFumEndpoint = "fum"
+    :> Capture "login" Login
+    :> QueryParam "size" Size
+    :> QueryFlag "grey"
+    :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (Cached PNG DynamicImage))
 
 type AvatarAPI = ToServantApi Record
 

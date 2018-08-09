@@ -166,7 +166,13 @@ instance HasPrefix (Verb m s ct a) where
 instance HasPrefix api => HasPrefix (Summary d :> api) where
     endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
 
+instance HasPrefix api => HasPrefix (Capture' mods n a :> api) where
+    endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
+
 instance HasPrefix api => HasPrefix (QueryParam' mods n a :> api) where
+    endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
+
+instance HasPrefix api => HasPrefix (QueryFlag n :> api) where
     endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
 
 instance HasPrefix api => HasPrefix (ReqBody' mods ct a :> api) where

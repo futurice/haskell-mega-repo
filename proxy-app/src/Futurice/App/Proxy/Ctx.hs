@@ -1,4 +1,6 @@
-{-# LANGUAGE TemplateHaskell, DataKinds, MultiParamTypeClasses #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
 module Futurice.App.Proxy.Ctx where
 
 import Data.Pool                  (Pool)
@@ -10,43 +12,26 @@ import Servant.Client             (BaseUrl)
 
 import Futurice.App.Proxy.Endpoint (HasClientBaseurl (..), HasHttpManager (..))
 
+import Futurice.App.Proxy.Config
 -- | Context type, holds http manager and baseurl configurations
 data Ctx = Ctx
-    { ctxManager              :: !Manager
+    { _ctxManager              :: !Manager
     , ctxPostgresPool         :: !(Pool Connection)
     , ctxLogger               :: !Logger
     -- Base URLS
-    , _ctxReportsAppBaseurl    :: !BaseUrl
-    , _ctxFumCarbonBaseurl     :: !BaseUrl
-    , _ctxPlanmillProxyBaseurl :: !BaseUrl
-    , _ctxGithubProxyBaseurl   :: !BaseUrl
-    , _ctxPersonioProxyBaseurl :: !BaseUrl
-    , _ctxPowerBaseurl         :: !BaseUrl
-    , _ctxContactsApiBaseurl   :: !BaseUrl
+    , _ctxConfig              :: !Config
     }
 
 makeLenses ''Ctx
 
 instance HasHttpManager Ctx where
-    httpManager = lens ctxManager $ \ctx x -> ctx { ctxManager = x }
+    httpManager = ctxManager
 
-instance HasClientBaseurl Ctx 'ReportsService where
-    clientBaseurl _ = ctxReportsAppBaseurl
-
-instance HasClientBaseurl Ctx 'FumCarbonService where
-    clientBaseurl _ = ctxFumCarbonBaseurl
-
-instance HasClientBaseurl Ctx 'PlanmillProxyService where
-    clientBaseurl _ = ctxPlanmillProxyBaseurl
-
-instance HasClientBaseurl Ctx 'GithubProxyService where
-    clientBaseurl _ = ctxGithubProxyBaseurl
-
-instance HasClientBaseurl Ctx 'PowerService where
-    clientBaseurl _ = ctxPowerBaseurl
-
-instance HasClientBaseurl Ctx 'PersonioProxyService where
-    clientBaseurl _ = ctxPersonioProxyBaseurl
-
-instance HasClientBaseurl Ctx 'ContactsApiService where
-    clientBaseurl _ = ctxContactsApiBaseurl
+instance HasClientBaseurl Ctx 'AvatarService        where clientBaseurl _ = ctxConfig . cfgAvatarBaseurl
+instance HasClientBaseurl Ctx 'ReportsService       where clientBaseurl _ = ctxConfig . cfgReportsAppBaseurl
+instance HasClientBaseurl Ctx 'FumCarbonService     where clientBaseurl _ = ctxConfig . cfgFumCarbonBaseurl
+instance HasClientBaseurl Ctx 'PlanmillProxyService where clientBaseurl _ = ctxConfig . cfgPlanmillProxyBaseurl
+instance HasClientBaseurl Ctx 'GithubProxyService   where clientBaseurl _ = ctxConfig . cfgGithubProxyBaseurl
+instance HasClientBaseurl Ctx 'PowerService         where clientBaseurl _ = ctxConfig . cfgPowerBaseurl
+instance HasClientBaseurl Ctx 'PersonioProxyService where clientBaseurl _ = ctxConfig . cfgPersonioProxyBaseurl
+instance HasClientBaseurl Ctx 'ContactsApiService   where clientBaseurl _ = ctxConfig . cfgContactsApiBaseurl
