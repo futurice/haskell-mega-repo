@@ -36,6 +36,7 @@ module Futurice.Lucid.Foundation (
     -- * Links
     recordHref_,
     recordAction_,
+    recordSrc_,
     -- * Special types
     day_,
     day'_,
@@ -125,6 +126,17 @@ recordAction_
 recordAction_ = fieldLink' (toAction_ . linkAbsHref_) where
     toAction_ :: Attribute -> Attribute
     toAction_ (Attribute _ v) = Attribute "action" v
+
+-- | Like 'recordHref_' but produces @src@ attribute (for forms).
+recordSrc_
+    :: ( HasLink endpoint, IsElem endpoint (ToServantApi routes)
+       , GenericServant routes AsApi
+       )
+    => (routes AsApi -> endpoint)
+    -> MkLink endpoint Attribute
+recordSrc_ = fieldLink' (toAction_ . linkAbsHref_) where
+    toAction_ :: Attribute -> Attribute
+    toAction_ (Attribute _ v) = Attribute "src" v
 
 -------------------------------------------------------------------------------
 -- Grid

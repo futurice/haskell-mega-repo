@@ -4,6 +4,7 @@
   },
   "publicUrls": {
     "avatar": "https://avatar.example.com",
+    "badge": "https://badge.example.com",
     "checklist": "https://checklist.example.com",
     "contacts": "https://contacts.example.com",
     "contacts-api": "https://contacts-api.example.com",
