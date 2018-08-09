@@ -55,20 +55,14 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx          .~ "PROX"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx Config {..} logger _mgr _cache _mq = do
+    makeCtx cfg@Config {..} lgr _mgr _cache _mq = do
         mgr                  <- newManager tlsManagerSettings
         postgresPool         <- createPostgresPool cfgPostgresConnInfo
         pure $ flip (,) [] Ctx
-            { ctxManager              = mgr
-            , ctxPostgresPool         = postgresPool
-            , ctxLogger               = logger
-            , _ctxReportsAppBaseurl    = cfgReportsAppBaseurl
-            , _ctxFumCarbonBaseurl     = cfgFumCarbonBaseurl
-            , _ctxPlanmillProxyBaseurl = cfgPlanmillProxyBaseurl
-            , _ctxGithubProxyBaseurl   = cfgGithubProxyBaseurl
-            , _ctxPersonioProxyBaseurl = cfgPersonioProxyBaseurl
-            , _ctxPowerBaseurl         = cfgPowerBaseurl
-            , _ctxContactsApiBaseurl   = cfgContactsApiBaseurl
+            { _ctxManager     = mgr
+            , ctxPostgresPool = postgresPool
+            , ctxLogger       = lgr
+            , _ctxConfig      = cfg
             }
 
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool

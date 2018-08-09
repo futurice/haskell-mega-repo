@@ -25,6 +25,7 @@ import Servant.CSV.Cassava         (CSV)
 -- Integrations
 import Servant.Binary.Tagged (BINARYTAGGED)
 
+import           Futurice.App.Avatar.API                (AvatarFumEndpoint)
 import qualified Futurice.App.Contacts.Types            as Contact
 import           Futurice.App.Reports.MissingHours      (MissingHoursReport)
 import           Futurice.App.Reports.TimereportsByTask
@@ -47,6 +48,11 @@ data Routes = Routes
             Summary "Employee data, so called contacts"
             :> "contacts" :> "contacts.json"
             :> Get '[JSON] [Contact.Contact Text]
+
+    -- avatar
+    , routeFumAvatar :: ProxiedEndpoint 'AvatarService AvatarFumEndpoint :$
+          Summary "Employee avatars by FUM handle"
+          :> "avatar" :> AvatarFumEndpoint
 
     -- Reports
     , routeMissingHours :: ProxiedEndpoint 'ReportsService

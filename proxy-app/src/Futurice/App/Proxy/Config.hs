@@ -1,27 +1,30 @@
-module Futurice.App.Proxy.Config (
-    Config(..),
-    ) where
+{-# LANGUAGE TemplateHaskell #-}
+module Futurice.App.Proxy.Config where
 
-import Prelude ()
-import Futurice.Prelude
 import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
+import Futurice.Prelude
+import Prelude ()
 import Servant.Client             (BaseUrl)
 
 data Config = Config
     { cfgPostgresConnInfo     :: !ConnectInfo
-    , cfgReportsAppBaseurl    :: !BaseUrl
-    , cfgFumCarbonBaseurl     :: !BaseUrl
-    , cfgPlanmillProxyBaseurl :: !BaseUrl
-    , cfgGithubProxyBaseurl   :: !BaseUrl
-    , cfgPersonioProxyBaseurl :: !BaseUrl
-    , cfgPowerBaseurl         :: !BaseUrl
-    , cfgContactsApiBaseurl   :: !BaseUrl
+    , _cfgAvatarBaseurl        :: !BaseUrl
+    , _cfgReportsAppBaseurl    :: !BaseUrl
+    , _cfgFumCarbonBaseurl     :: !BaseUrl
+    , _cfgPlanmillProxyBaseurl :: !BaseUrl
+    , _cfgGithubProxyBaseurl   :: !BaseUrl
+    , _cfgPersonioProxyBaseurl :: !BaseUrl
+    , _cfgPowerBaseurl         :: !BaseUrl
+    , _cfgContactsApiBaseurl   :: !BaseUrl
     }
+
+makeLenses ''Config
 
 instance Configure Config where
     configure = Config
         <$> envConnectInfo
+        <*> envVar "AVATAR_BASEURL"
         <*> envVar "REPORTSAPP_BASEURL"
         <*> envVar "FUMCARBON_BASEURL"
         <*> envVar "PLANMILLPROXY_BASEURL"
