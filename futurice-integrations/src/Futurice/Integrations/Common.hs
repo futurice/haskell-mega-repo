@@ -15,7 +15,6 @@ module Futurice.Integrations.Common (
     flowdockOrganisation,
     githubOrganisationMembers,
     -- * PlanMill
-    fumPlanmillMap,
     personioPlanmillMap,
     personioPlanmillMap',
     planmillEmployee,
@@ -29,7 +28,6 @@ import Data.List                     (find)
 import Data.Time
        (addDays, addGregorianMonthsClip, fromGregorian, toGregorian)
 import Data.Time.Calendar.WeekDate   (toWeekDate)
-import Futurice.IdMap                (IdMap, idMapOf)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
 import Futurice.Prelude
@@ -163,42 +161,6 @@ personioPlanmillMap' = flip combine <$> users
       where
         ps' = HM.fromList $ flip mapMaybe ps $ \e -> (,e) <$> e ^. P.employeeLogin
         pms' = HM.fromList $ flip mapMaybe pms $ \u -> (,u) <$> PM.userLogin u
-
--- | Get a mapping fum username to planmill user
---
--- Silently drops FUM users, which we cannot find planmill user for.
---
--- TODO: deprecate, use personioPlanmillMap
-fumPlanmillMap
-    :: ( MonadFUM m, MonadPlanMillQuery m
-       , MonadReader env m, HasFUMEmployeeListName env
-       )
-    => m (HashMap FUM.Login (FUM.User, PM.User))
-fumPlanmillMap =
-    combine <$> fumEmployeeList <*> users
-  where
-    users = do
-        us <- PMQ.users
-        traverse (\u -> (u,) <$> PMQ.user (view PM.identifier u)) us
-
-    combine :: Vector FUM.User -> Vector (PM.User, PM.User) -> HashMap FUM.Login (FUM.User, PM.User)
-    combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
-      where
-        fumNames :: IdMap FUM.User
-        fumNames = idMapOf folded fum
-
-        extract :: (PM.User, PM.User) -> Maybe (FUM.Login, (FUM.User, PM.User))
-        extract (pmUser', pmUser) = do
-            name <- PM.userLogin pmUser
-            fumUser <- fumNames ^. at name
-            pure (name, (fumUser, update pmUser' pmUser))
-
-    -- workaround for https://github.com/planmill/api/issues/11
-    -- some data is present in users output but not in per-user
-    update :: PM.User -> PM.User -> PM.User
-    update u' u = u
-        { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
-        }
 
 -- | Get information about employee from planmill
 planmillEmployee
