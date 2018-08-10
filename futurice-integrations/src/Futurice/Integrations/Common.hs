@@ -1,6 +1,5 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TupleSections     #-}
 -- | Common integrations requests.
 module Futurice.Integrations.Common (

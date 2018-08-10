@@ -132,6 +132,7 @@ library
       Futurice.App.Reports.MissingHoursChart
       Futurice.App.Reports.MissingHoursDailyChart
       Futurice.App.Reports.MissingHoursDashdo
+      Futurice.App.Reports.MissingHoursNotifications
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerProjects
       Futurice.App.Reports.PowerUser
