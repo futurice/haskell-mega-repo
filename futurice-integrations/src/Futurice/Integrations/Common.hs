@@ -1,19 +1,19 @@
 {-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TupleSections     #-}
 -- | Common integrations requests.
 module Futurice.Integrations.Common (
     -- * Date
     beginningOfCurrMonth,
     beginningOfPrevMonth,
+    endOfPrevMonth,
     beginningOfPrev2Month,
+    previousFriday,
     -- * FUM
     fumEmployeeList,
     flowdockOrganisation,
     githubOrganisationMembers,
     -- * PlanMill
-    fumPlanmillMap,
     personioPlanmillMap,
     personioPlanmillMap',
     planmillEmployee,
@@ -25,8 +25,8 @@ module Futurice.Integrations.Common (
 
 import Data.List                     (find)
 import Data.Time
-       (addGregorianMonthsClip, fromGregorian, toGregorian)
-import Futurice.IdMap                (IdMap, idMapOf)
+       (addDays, addGregorianMonthsClip, fromGregorian, toGregorian)
+import Data.Time.Calendar.WeekDate   (toWeekDate)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
 import Futurice.Prelude
@@ -72,10 +72,37 @@ beginningOfPrevMonth = addGregorianMonthsClip (-1) . beginningOfCurrMonth
 
 -- |
 --
+-- >>> endOfPrevMonth $(mkDay "2016-11-12")
+-- 2016-10-31
+endOfPrevMonth :: Day -> Day
+endOfPrevMonth = pred . beginningOfCurrMonth
+
+-- |
+--
 -- >>> beginningOfPrev2Month $(mkDay "2016-11-12")
 -- 2016-09-01
 beginningOfPrev2Month :: Day -> Day
 beginningOfPrev2Month = addGregorianMonthsClip (-2) . beginningOfCurrMonth
+
+-- |
+--
+-- @2018-08-10@ is Friday:
+--
+-- >>> map previousFriday [ $(mkDay "2018-08-09") .. $(mkDay "2018-08-12") ]
+-- [2018-08-03,2018-08-03,2018-08-10,2018-08-10]
+--
+-- >>> previousFriday $(mkDay "2018-08-10")
+-- 2018-08-03
+--
+-- >>> previousFriday $(mkDay "2018-08-11")
+-- 2018-08-10
+--
+previousFriday :: Day -> Day
+previousFriday d
+    | wd >= 6   = addDays (fromIntegral $ 5 - wd) d
+    | otherwise = addDays (fromIntegral $ -2 - wd) d
+  where
+    (_, _, wd) = toWeekDate d
 
 -- | Get list of active employees from FUM.
 fumEmployeeList
@@ -134,42 +161,6 @@ personioPlanmillMap' = flip combine <$> users
         ps' = HM.fromList $ flip mapMaybe ps $ \e -> (,e) <$> e ^. P.employeeLogin
         pms' = HM.fromList $ flip mapMaybe pms $ \u -> (,u) <$> PM.userLogin u
 
--- | Get a mapping fum username to planmill user
---
--- Silently drops FUM users, which we cannot find planmill user for.
---
--- TODO: deprecate, use personioPlanmillMap
-fumPlanmillMap
-    :: ( MonadFUM m, MonadPlanMillQuery m
-       , MonadReader env m, HasFUMEmployeeListName env
-       )
-    => m (HashMap FUM.Login (FUM.User, PM.User))
-fumPlanmillMap =
-    combine <$> fumEmployeeList <*> users
-  where
-    users = do
-        us <- PMQ.users
-        traverse (\u -> (u,) <$> PMQ.user (view PM.identifier u)) us
-
-    combine :: Vector FUM.User -> Vector (PM.User, PM.User) -> HashMap FUM.Login (FUM.User, PM.User)
-    combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
-      where
-        fumNames :: IdMap FUM.User
-        fumNames = idMapOf folded fum
-
-        extract :: (PM.User, PM.User) -> Maybe (FUM.Login, (FUM.User, PM.User))
-        extract (pmUser', pmUser) = do
-            name <- PM.userLogin pmUser
-            fumUser <- fumNames ^. at name
-            pure (name, (fumUser, update pmUser' pmUser))
-
-    -- workaround for https://github.com/planmill/api/issues/11
-    -- some data is present in users output but not in per-user
-    update :: PM.User -> PM.User -> PM.User
-    update u' u = u
-        { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
-        }
-
 -- | Get information about employee from planmill
 planmillEmployee
     :: (MonadPlanMillQuery m, MonadPersonio m)
@@ -194,3 +185,6 @@ planmillEmployee uid = do
         , employeeTribe    = t
         , employeeContract = c
         }
+
+-- $setup
+-- >>> :set -XTemplateHaskell

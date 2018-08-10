@@ -49,10 +49,28 @@ generate-checksums :
 copy-samples :
 	if [ -e data/ ]; then echo "exists!"; else ln -s data.sample data; fi
 
+DOCTEST_OPTIONS:= --fast \
+-XDeriveAnyClass \
+-XDeriveFoldable \
+-XDeriveFunctor \
+-XDeriveGeneric \
+-XDeriveTraversable \
+-XDerivingStrategies \
+-XGeneralizedNewtypeDeriving \
+-XScopedTypeVariables \
+-XStandaloneDeriving
+
 # Doctest - ~works
-doctest :
-	doctest --fast fum-types/src
-	doctest --fast futurice-logo/src
+doctest : doctest-fum-types doctest-futurice-logo doctest-futurice-integrations
+
+doctest-fum-types :
+	doctest $(DOCTEST_OPTIONS) fum-types/src
+
+doctest-futurice-logo:
+	doctest $(DOCTEST_OPTIONS) futurice-logo/src
+
+doctest-futurice-integrations : 
+	doctest $(DOCTEST_OPTIONS) futurice-integrations/src
 
 # Linux
 install-ubuntu-dependencies :
