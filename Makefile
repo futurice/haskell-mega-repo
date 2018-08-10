@@ -10,8 +10,6 @@ CONCURRENCY?=2
 HC:=ghc-8.2.2
 LOCALBIN:=${HOME}/.local/bin
 
-SECRETJSONS:=futurice-constants/constants.json futurice-tribes/tribes.json futurice-tribes/cost-centers.json futurice-tribes/offices.json futurice-tribes/companies.json hc-app/early-caring.template reports-app/missing-hours-email.template reports-app/missing-hours-sms.template badge-app/data.tar badge-app/src/Futurice/App/Badge/Templates.hs
-
 # Build everything
 all :
 	time nice cabal new-build -w $(HC) -j$(CONCURRENCY) --enable-tests all
@@ -46,10 +44,10 @@ check-checksums : data.sha256sums
 	sha256sum -c data.sha256sums
 
 generate-checksums :
-	sha256sum $(SECRETJSONS) > data.sha256sums
+	sha256sum $$(find -L data -type f | sort) > data.sha256sums
 
 copy-samples :
-	for datafile in ${SECRETJSONS}; do echo $${datafile}; if [ -f $${datafile} ]; then echo "exists!"; else cp $$(echo $${datafile} | sed -E 's/.(json|template|tar|hs)/.sample.\1/') $${datafile}; fi; done
+	if [ -e data/ ]; then echo "exists!"; else ln -s data.sample data; fi
 
 # Doctest - ~works
 doctest :
