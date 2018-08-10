@@ -7,7 +7,9 @@ module Futurice.Integrations.Common (
     -- * Date
     beginningOfCurrMonth,
     beginningOfPrevMonth,
+    endOfPrevMonth,
     beginningOfPrev2Month,
+    previousFriday,
     -- * FUM
     fumEmployeeList,
     flowdockOrganisation,
@@ -25,7 +27,8 @@ module Futurice.Integrations.Common (
 
 import Data.List                     (find)
 import Data.Time
-       (addGregorianMonthsClip, fromGregorian, toGregorian)
+       (addDays, addGregorianMonthsClip, fromGregorian, toGregorian)
+import Data.Time.Calendar.WeekDate   (toWeekDate)
 import Futurice.IdMap                (IdMap, idMapOf)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
@@ -72,10 +75,37 @@ beginningOfPrevMonth = addGregorianMonthsClip (-1) . beginningOfCurrMonth
 
 -- |
 --
+-- >>> endOfPrevMonth $(mkDay "2016-11-12")
+-- 2016-10-31
+endOfPrevMonth :: Day -> Day
+endOfPrevMonth = pred . beginningOfCurrMonth
+
+-- |
+--
 -- >>> beginningOfPrev2Month $(mkDay "2016-11-12")
 -- 2016-09-01
 beginningOfPrev2Month :: Day -> Day
 beginningOfPrev2Month = addGregorianMonthsClip (-2) . beginningOfCurrMonth
+
+-- |
+--
+-- @2018-08-10@ is Friday:
+--
+-- >>> map previousFriday [ $(mkDay "2018-08-09") .. $(mkDay "2018-08-12") ]
+-- [2018-08-03,2018-08-03,2018-08-10,2018-08-10]
+--
+-- >>> previousFriday $(mkDay "2018-08-10")
+-- 2018-08-03
+--
+-- >>> previousFriday $(mkDay "2018-08-11")
+-- 2018-08-10
+--
+previousFriday :: Day -> Day
+previousFriday d
+    | wd >= 6   = addDays (fromIntegral $ 5 - wd) d
+    | otherwise = addDays (fromIntegral $ -2 - wd) d
+  where
+    (_, _, wd) = toWeekDate d
 
 -- | Get list of active employees from FUM.
 fumEmployeeList
@@ -194,3 +224,6 @@ planmillEmployee uid = do
         , employeeTribe    = t
         , employeeContract = c
         }
+
+-- $setup
+-- >>> :set -XTemplateHaskell
