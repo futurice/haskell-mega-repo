@@ -12,6 +12,8 @@ module Futurice.App.Reports.MissingHours (
     -- * Report
     MissingHoursReport,
     missingHoursReport,
+    -- * Predicate
+    missingHoursEmployeePredicate,
     -- * Data
     MissingHour (..),
     -- * Logic
@@ -34,7 +36,7 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns
 import Futurice.Time
-import Numeric.Interval.NonEmpty (inf, sup)
+import Numeric.Interval.NonEmpty (Interval, inf, sup)
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
@@ -45,6 +47,17 @@ import qualified FUM
 import qualified Personio            as P
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
+
+-------------------------------------------------------------------------------
+-- Predicate
+-------------------------------------------------------------------------------
+
+missingHoursEmployeePredicate :: Interval Day -> P.Employee -> Bool
+missingHoursEmployeePredicate interval p = and
+    [ p ^. P.employeeEmploymentType == Just P.Internal
+    , p ^. P.employeeSalaryType == Just P.Monthly
+    , P.employeeIsActiveInterval interval p
+    ]
 
 -------------------------------------------------------------------------------
 -- Data
