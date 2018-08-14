@@ -10,6 +10,8 @@ import Futurice.App.Library.API
 import Futurice.App.Library.Markup
 import Futurice.App.Library.Types
 
+import qualified Data.Text as T
+
 personalLoansPage :: [Loan] -> HtmlPage ("personalinformation")
 personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
     fullRow_ $ do
@@ -32,7 +34,7 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
                             td_ $ toHtml $ book ^. bookPublisher
                             td_ $ toHtml $ show $ book ^. bookPublished
                             td_ $ toHtml $ book ^. bookISBN
-                            td_ $ a_ [href_ $ linkToText $ fieldLink returnPost lid] $ toHtml ("Return" :: Text)
+                            td_ $ button_ [class_ "button", data_ "futu-id" "return-loan", data_ "loan-id" (T.pack $ show lid)] $ toHtml ("Return" :: Text)
         for_ (listToMaybe $ snd $ loanSorter loans) $ \_ -> do
             h1_ $ "Boardgames"
 

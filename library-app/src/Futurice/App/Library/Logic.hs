@@ -164,7 +164,7 @@ executeReturnBook ctx lid = do
       Nothing -> pure False
       Just (LoanData _ date (P.EmployeeId pid) iid) -> do
           _ <- safePoolExecute ctx "INSERT INTO library.old_loan (oldloan_id, date_loaned, date_returned, personio_id, item_id) VALUES (?,?,NOW(),?,?)" (lid, date, pid, iid)
-          result <- safePoolExecute ctx "DELETE FROM library_loan WHERE id = ?" (Only lid)
+          result <- safePoolExecute ctx "DELETE FROM library.loan WHERE loan_id = ?" (Only lid)
           if result == 1 then pure True else pure False
 
 fetchPersonalLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> P.EmployeeId -> m [Loan]
