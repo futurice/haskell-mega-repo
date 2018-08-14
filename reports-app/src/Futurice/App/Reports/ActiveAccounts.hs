@@ -64,14 +64,22 @@ activeAccountsRender :: DataSet -> HtmlPage "active-accounts"
 activeAccountsRender xs = page_ "Active accounts" $ table_ $ do
     thead_ $ tr_ $ do
         th_ "Account"
-        th_ "Employees"
+        th_ "Employee name"
+        th_ [ title_ "Latest active day" ] "Day"
+        th_ "PlanMill"
+        th_ "Email"
 
-    tbody_ $ for_ xs $ \(acc, employees) -> tr_ $ do
-        td_ $ toHtml $ PM.saName acc
-        td_ $ ul_ $ ifor_ employees $ \_login (day, e, pmu) -> li_ $ do
-            toHtml $ e ^. P.employeeFullname
-            " - "
-            toHtml $ show day
-            " - PM:"
-            toHtml $ pmu ^. PM.identifier
-            
+    tbody_ $ for_ xs $ \(acc, employees) -> rows
+        (toHtml $ PM.saName acc)
+        $ flip Map.mapWithKey employees $ \_login (day, e, pmu) -> do
+            td_ $ toHtml $ e ^. P.employeeFullname
+            td_ $ traverse_ toHtml $ e ^. P.employeeEmail
+            td_ $ toHtml $ show day
+            td_ $ toHtml $ pmu ^. PM.identifier
+
+rows :: (Monad m, Foldable f) => HtmlT m () -> f (HtmlT m ()) -> HtmlT m ()
+rows x ys = case toList ys of
+    []      -> tr_ $ td_ x >> td_ mempty
+    (y:ys') -> do
+        tr_ $ td_ [ rowspan_ $ textShow $ succ $ length ys' ] x >> y
+        for_ ys' $ \y' -> tr_ y'
