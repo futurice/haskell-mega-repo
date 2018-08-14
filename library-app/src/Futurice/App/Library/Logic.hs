@@ -4,8 +4,12 @@
 module Futurice.App.Library.Logic where
 
 import Data.List
-import Database.PostgreSQL.Simple         (In (..))
+import Database.PostgreSQL.Simple           (In (..))
+import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.FromRow
+import Database.PostgreSQL.Simple.ToField
+import Database.PostgreSQL.Simple.ToRow
+import Database.PostgreSQL.Simple.Types
 import Futurice.IdMap
 import Futurice.Postgres
 import Futurice.Prelude
@@ -145,8 +149,8 @@ fetchLoan ctx emap lid = do
           case idInfoId item of
               BookInfoId info -> Just info
               _               -> Nothing
-      loan' (LoanData loanId date personio_id itemId) bookInfo lib =
-          Loan loanId (T.pack $ show date) (Item itemId lib $ ItemBook bookInfo) (emap ^.at personio_id)
+      loan' (LoanData _ date personio_id itemId) bookInfo lib =
+          Loan lid (T.pack $ show date) (Item itemId lib $ ItemBook bookInfo) (emap ^.at personio_id)
 
 fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> m [Loan]
 fetchLoans ctx es = do
@@ -155,8 +159,13 @@ fetchLoans ctx es = do
 
 executeReturnBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> LoanId -> m Bool
 executeReturnBook ctx lid = do
-    result <- safePoolExecute ctx "DELETE FROM library_loan WHERE id = ?" (Only lid)
-    if result == 1 then pure True else pure False
+    l <- loan ctx lid
+    case l of
+      Nothing -> pure False
+      Just (LoanData _ date (P.EmployeeId pid) iid) -> do
+          _ <- safePoolExecute ctx "INSERT INTO library.old_loan (oldloan_id, date_loaned, date_returned, personio_id, item_id) VALUES (?,?,NOW(),?,?)" (lid, date, pid, iid)
+          result <- safePoolExecute ctx "DELETE FROM library_loan WHERE id = ?" (Only lid)
+          if result == 1 then pure True else pure False
 
 fetchPersonalLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee -> P.EmployeeId -> m [Loan]
 fetchPersonalLoans ctx es (P.EmployeeId eid) = do
@@ -188,6 +197,48 @@ fetchBooksByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, lib
 fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformation]
 fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
 
+fetchBookInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m)
+                                  => Ctx
+                                  -> SortCriteria
+                                  -> SortDirection
+                                  -> Int
+                                  -> Maybe BookInformationId
+                                  -> Maybe Text
+                                  -> m [BookInformation]
+fetchBookInformationsWithCriteria ctx criteria direction limit start search = do
+    bookInfo <- case start of
+      Just s -> fetchBookInformation ctx s
+      Nothing -> pure Nothing
+    case (bookInfo, search) of
+      (Just info, Nothing) -> safePoolQuery
+                              ctx
+                              (("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> startPos criteria direction <> sortCriteria criteria direction) <> " LIMIT ?")
+                              $ (startInfo criteria info, info ^. bookInformationId, limit)
+      (Just info, Just s) -> safePoolQuery
+                             ctx
+                             (("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> startPos criteria direction <> " AND " <> searchSqlString <> sortCriteria criteria direction) <> " LIMIT ?")
+                             $ (startInfo criteria info, info ^. bookInformationId, s, limit)
+      (Nothing, Nothing)  -> safePoolQuery ctx ("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> sortCriteria criteria direction <> " LIMIT ?") (Only limit)
+      (Nothing, Just s)   -> safePoolQuery ctx ("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE" <> searchSqlString <> sortCriteria criteria direction <> " LIMIT ?") (s, limit)
+    where
+      searchSqlString = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ to_tsquery(?)) "
+      sortDirection SortDesc = "DESC"
+      sortDirection SortAsc  = "ASC"
+      sortCriteria SortTitle dir     = " ORDER BY title " <> sortDirection dir <> ", bookinfo_id "
+      sortCriteria SortAuthor dir    = " ORDER BY author " <> sortDirection dir <> ", bookinfo_id "
+      sortCriteria SortISBN dir      = " ORDER BY isbn " <> sortDirection dir <> ", bookinfo_id "
+      sortCriteria SortPublished dir = " ORDER BY publishedYear " <> sortDirection dir <> ", bookinfo_id "
+      startDirection SortDesc = " < "
+      startDirection SortAsc  = " > "
+      startPos SortTitle dir     = " WHERE (title, bookinfo_id)" <> startDirection dir <> "(?,?) "
+      startPos SortAuthor dir    = " WHERE (author, bookinfo_id)" <> startDirection dir <> "(?,?) "
+      startPos SortISBN dir      = " WHERE (isbn, bookinfo_id)" <> startDirection dir <> "(?,?) "
+      startPos SortPublished dir = " WHERE (publishedYear, bookinfo_id)" <> startDirection dir <> "(?,?) "
+      startInfo SortTitle info = info ^. bookTitle
+      startInfo SortAuthor info = info ^. bookAuthor
+      startInfo SortISBN info = info ^. bookISBN
+      startInfo SortPublished info = T.pack $ show $ info ^. bookPublished -- bookPublished
+
 fetchBookInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m (Maybe BookInformation)
 fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE bookinfo_id = ?" (Only binfoid)
 
@@ -203,10 +254,9 @@ fetchBookResponse ctx binfoid = do
       toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse infoid title isbn author publisher published cover amazonLink books
 
-fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformationResponse]
-fetchBooksResponse ctx = do
+fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [BookInformation] -> m [BookInformationResponse]
+fetchBooksResponse ctx bookInfos = do
     books <- fetchItems ctx
-    bookInfos <- fetchBookInformations ctx
     pure $ (toBookInformationResponse (bookInformationMap books)) <$> bookInfos
   where
       bookInformationMap books = Map.fromListWith (++) $ catMaybes (toBooks <$> books)

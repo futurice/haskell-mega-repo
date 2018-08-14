@@ -23,6 +23,7 @@ import Futurice.App.Library.Ctx
 import Futurice.App.Library.Logic
 import Futurice.App.Library.Pages.BookInformationPage
 import Futurice.App.Library.Pages.IndexPage
+import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Types
 
 import qualified Data.Map as Map
@@ -30,17 +31,18 @@ import qualified Personio as P
 
 server :: Ctx -> Server LibraryAPI
 server ctx = genericServer $ Record
-    { indexPageGet     = indexPageImpl ctx
-    , booksGet         = getBooksImpl ctx
-    , bookGet          = getBookImpl ctx
-    , bookPageGet      = bookInformationPageImpl ctx
-    , bookCoverGet     = getBookCoverImpl ctx
-    , borrowPost       = borrowBookImpl ctx
-    , snatchPost       = snatchBookImpl ctx
-    , loansGet         = getLoansImpl ctx
-    , loanGet          = getLoanImpl ctx
-    , returnPost       = returnLoanImpl ctx
-    , personalLoansGet = personalLoansImpl ctx
+    { indexPageGet         = indexPageImpl ctx
+    , booksGet             = getBooksImpl ctx
+    , bookGet              = getBookImpl ctx
+    , bookPageGet          = bookInformationPageImpl ctx
+    , bookCoverGet         = getBookCoverImpl ctx
+    , borrowPost           = borrowBookImpl ctx
+    , snatchPost           = snatchBookImpl ctx
+    , loansGet             = getLoansImpl ctx
+    , loanGet              = getLoanImpl ctx
+    , returnPost           = returnLoanImpl ctx
+    , personalLoansGet     = personalLoansImpl ctx
+    , personalLoansPageGet = personalLoansPageImpl ctx
     }
 
 -------------------------------------------------------------------------------
@@ -93,15 +95,25 @@ getPersonioDataMap ctx = do
 
 getBookCoverImpl :: Ctx -> Text -> Handler (Headers '[Header "Cache-Control" Text] (DynamicImage))
 getBookCoverImpl _ctx picture = do
-    pictData <- liftIO $ readImage (unpack $ "ADD LOCAL DIR" <> picture)
+    pictData <- liftIO $ readImage (unpack $ "/Users/toku/hmr/library-app/media/" <> picture)
     case pictData of
       Left _ -> throwError $ err404 { errBody = "Cover not found" }
       Right pict -> pure $ addHeader "public, max-age=3600" pict
 
-indexPageImpl :: Ctx -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx = do
-    books <- getBooksImpl ctx
-    pure $ indexPage books
+indexPageImpl :: Ctx
+              -> Maybe SortCriteria
+              -> Maybe SortDirection
+              -> Maybe Int
+              -> Maybe BookInformationId
+              -> Maybe Text
+              -> Handler (HtmlPage "indexpage")
+indexPageImpl ctx criteria direction limit startId search = do
+    crit <- pure $ fromMaybe SortTitle criteria
+    dir <- pure $ fromMaybe SortAsc direction
+    lim <- pure $ fromMaybe 10 limit
+    bookInfos <- runLogT "library" (ctxLogger ctx) $ fetchBookInformationsWithCriteria ctx crit dir lim startId search
+    books <- runLogT "library" (ctxLogger ctx) $ fetchBooksResponse ctx bookInfos
+    pure $ indexPage books crit dir lim startId search
 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
@@ -110,6 +122,10 @@ bookInformationPageImpl ctx binfoid = do
     ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_booksBookId <$> _books book)
     pure $ bookInformationPage book ls es
 
+personalLoansPageImpl :: Ctx -> Maybe Login -> Handler (HtmlPage "personalinformation")
+personalLoansPageImpl ctx login = do
+    ls <- personalLoansImpl ctx login
+    pure $ personalLoansPage ls
 
 borrowBookImpl :: Ctx -> Maybe Login -> BorrowRequest -> Handler Loan
 borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
@@ -137,7 +153,9 @@ returnLoanImpl :: Ctx -> LoanId -> Handler Bool
 returnLoanImpl ctx lid = runLogT "library" (ctxLogger ctx) (executeReturnBook ctx lid)
 
 getBooksImpl :: Ctx -> Handler [BookInformationResponse]
-getBooksImpl ctx = runLogT "library" (ctxLogger ctx) $ fetchBooksResponse ctx
+getBooksImpl ctx = do
+    bookInfos <- runLogT "library" (ctxLogger ctx) $ fetchBookInformations ctx
+    runLogT "library" (ctxLogger ctx) $ fetchBooksResponse ctx bookInfos
 
 getBookImpl :: Ctx -> BookInformationId -> Handler BookInformationResponse
 getBookImpl ctx lid = do

@@ -61,6 +61,7 @@ library
       Futurice.App.Library.Markup
       Futurice.App.Library.Pages.BookInformationPage
       Futurice.App.Library.Pages.IndexPage
+      Futurice.App.Library.Pages.PersonalLoansPage
       Futurice.App.Library.Types
       Futurice.App.Library.Types.BoardGameInformation
       Futurice.App.Library.Types.BookInformation
@@ -69,6 +70,7 @@ library
       Futurice.App.Library.Types.Item
       Futurice.App.Library.Types.Library
       Futurice.App.Library.Types.Loan
+      Futurice.App.Library.Types.Search
 
 executable library-app-server
   main-is: Main.hs
