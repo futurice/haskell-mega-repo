@@ -12,6 +12,7 @@ module Futurice.App.Reports (defaultMain) where
 import Control.Lens               (each)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
+import Futurice.Lucid.Foundation  (HtmlPage)
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Postgres
@@ -27,6 +28,7 @@ import Servant
 import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
 
+import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
@@ -130,6 +132,16 @@ reports =
     ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 
+serveTable
+    :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
+    => Integrations '[I, I, Proxy, I, I, I] v
+    -> (v -> HtmlPage key)
+    -> Ctx
+    -> IO (HtmlPage key)
+serveTable f g ctx = do
+    v <- cachedIO' ctx () $ runIntegrations' ctx f
+    pure (g v)
+
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
     => Integrations '[I, I, Proxy, I, I, I] v
@@ -182,6 +194,8 @@ makeServer ctx (r :* rs) =
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
+    -- tables
+    :<|> liftIO (serveTable activeAccountsData activeAccountsRender ctx)
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)

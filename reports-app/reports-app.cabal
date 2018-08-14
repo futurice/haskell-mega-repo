@@ -121,6 +121,7 @@ library
     , wai
   exposed-modules:
       Futurice.App.Reports
+      Futurice.App.Reports.ActiveAccounts
       Futurice.App.Reports.API
       Futurice.App.Reports.CareerLengthChart
       Futurice.App.Reports.Config
