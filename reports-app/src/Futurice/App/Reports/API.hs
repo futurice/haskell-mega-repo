@@ -59,6 +59,8 @@ type family FoldReportsAPI rs :: * where
         FoldReportsAPI rs
 
 type ReportsAPI = FoldReportsAPI Reports
+    -- Tables
+    :<|> "tables" :> "active-accounts" :> Get '[HTML] (HtmlPage "active-accounts")
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
