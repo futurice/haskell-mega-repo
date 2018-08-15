@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Library.Pages.PersonalLoansPage where
 
+import Data.Either      (partitionEithers)
 import Futurice.Prelude
 import Prelude ()
 import Servant
@@ -42,9 +43,6 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
 
   where
     loanSorter :: [Loan] -> ([(LoanId, BookInformation)], [(LoanId, BoardGameInformation)])
-    loanSorter [] = ([],[])
-    loanSorter (l : ls) = case l ^. loanInformation ^. itemInfo of
-        ItemBook book -> let nextValue = loanSorter ls
-                         in ([(l ^. loanId, book)] ++ (fst nextValue), snd nextValue)
-        ItemBoardGame boardgame -> let nextValue = loanSorter ls
-                                   in (fst nextValue, [(l ^. loanId, boardgame)] ++ (snd nextValue))
+    loanSorter ls = let sortLoan (lid, ItemBook book) = Left (lid, book)
+                        sortLoan (lid, ItemBoardGame boardgame) = Right (lid, boardgame)
+                    in partitionEithers $ sortLoan <$> (\l -> (l ^. loanId, l ^. loanInformation ^. itemInfo)) <$> ls
