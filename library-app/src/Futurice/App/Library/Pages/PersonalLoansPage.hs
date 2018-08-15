@@ -14,9 +14,10 @@ import qualified Data.Text as T
 
 personalLoansPage :: [Loan] -> HtmlPage ("personalinformation")
 personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
+    let (bookLoans, boardgameLoans) = loanSorter loans
     fullRow_ $ do
-        for_ (listToMaybe $ fst $ loanSorter loans) $ \_ -> do
-            h1_ $ "Books"
+        unless (null $ bookLoans) $ do
+            h2_ $ "Books"
             table_ $ do
                 thead_ $ do
                     tr_ $ do
@@ -27,7 +28,7 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
                         th_ "ISBN"
                         th_ ""
                 tbody_ $ do
-                    for_ (fst $ loanSorter loans) $ \(lid, book) -> do
+                    for_ bookLoans $ \(lid, book) -> do
                         tr_ $ do
                             td_ $ toHtml $ book ^. bookTitle
                             td_ $ toHtml $ book ^. bookAuthor
@@ -35,9 +36,9 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
                             td_ $ toHtml $ show $ book ^. bookPublished
                             td_ $ toHtml $ book ^. bookISBN
                             td_ $ button_ [class_ "button", data_ "futu-id" "return-loan", data_ "loan-id" (T.pack $ show lid)] $ toHtml ("Return" :: Text)
-        for_ (listToMaybe $ snd $ loanSorter loans) $ \_ -> do
-            h1_ $ "Boardgames"
-
+-- TODO: Write the boardgame portion of display
+        unless (null $ boardgameLoans) $ do
+            h2_ $ "Boardgames"
 
   where
     loanSorter :: [Loan] -> ([(LoanId, BookInformation)], [(LoanId, BoardGameInformation)])
