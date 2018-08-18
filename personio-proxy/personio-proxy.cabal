@@ -34,9 +34,11 @@ library
     , distributive
     , dynmap-cache
     , env-config
+    , futurice-logo
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , lens
     , periocron
     , personio-client
