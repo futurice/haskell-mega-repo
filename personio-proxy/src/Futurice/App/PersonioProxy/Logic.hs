@@ -136,7 +136,7 @@ tribeEmployeesChart ctx = do
         Right es' -> foldl' go (pureRep 0) es
           where
             es :: [P.Employee]
-            es = filter (P.employeeIsActive today) es'
+            es = filter (\e -> P.employeeIsActive today e && e ^. P.employeeEmploymentType == Just P.Internal) es'
 
             go :: PerTribe Int -> P.Employee -> PerTribe Int
             go (PerTribe m) e = PerTribe $ m
