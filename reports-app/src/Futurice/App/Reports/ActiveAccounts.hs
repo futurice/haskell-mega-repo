@@ -65,7 +65,7 @@ activeAccountsRender xs = page_ "Active accounts" $ table_ $ do
     thead_ $ tr_ $ do
         th_ "Account"
         th_ "Employee name"
-        th_ [ title_ "Latest active day" ] "Day"
+        th_ [ title_ "Most recent active day" ] "Day"
         th_ "PlanMill"
         th_ "Email"
 
