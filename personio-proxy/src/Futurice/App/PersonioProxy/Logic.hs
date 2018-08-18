@@ -54,19 +54,21 @@ employeesChart :: Ctx -> Handler (Chart "employees")
 employeesChart ctx = do
     values <- liftIO $ runLogT "chart-employees" (ctxLogger ctx) $
         cached (ctxCache ctx) 600 () $ do
-            res <- Postgres.safePoolQuery_ ctx "SELECT timestamp, contents FROM \"personio-proxy\".log;"
+            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
             return $ res <&> \(t, c) ->
                 let d = utctDay t
                 in (d, employeesCounts d c)
 
     return $ Chart . C.toRenderable $ do
         C.layout_title .= "Active employees"
-        C.layout_x_axis . C.laxis_title .= "day"
-        C.layout_y_axis . C.laxis_title .= "Employees"
 
         C.plot $ fmap C.stackedToPlot $ C.stacked
             (PerEmploymentType "Internal" "External")
             values
+
+        C.layout_x_axis . C.laxis_title .= "day"
+        C.layout_y_axis . C.laxis_title .= "Employees"
+        C.layout_y_axis . C.laxis_override .= overrideY
   where
     employeesCounts :: Day -> Value -> PerEmploymentType Int
     employeesCounts today v = case parseEither parseJSON v of
@@ -76,6 +78,9 @@ employeesChart ctx = do
           where
             es = filter (P.employeeIsActive today) es'
             (int, ext) = partition (\p -> p ^. P.employeeEmploymentType /= Just P.External) es
+
+    overrideY :: C.AxisData Int -> C.AxisData Int
+    overrideY ax = ax & C.axis_grid .~ (ax ^.. C.axis_ticks . folded . _1)
 
 data PerEmploymentType a = PerEmploymentType a a
   deriving (Functor, Foldable, Traversable, Generic)
