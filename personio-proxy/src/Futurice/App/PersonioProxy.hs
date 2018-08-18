@@ -29,6 +29,7 @@ server ctx = pure "Try /swagger-ui/"
     :<|> rawEmployees ctx
     :<|> scheduleEmployees ctx
     :<|> employeesChart ctx
+    :<|> tribeEmployeesChart ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

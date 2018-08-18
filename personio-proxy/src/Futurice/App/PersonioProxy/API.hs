@@ -16,6 +16,7 @@ type PersonioProxyAPI =
     :<|> "employees" :> Get '[JSON] [Personio.Employee]
     :<|> Summary "Tailor made for schedule.app" :> "schedule-info" :> Get '[JSON] [Personio.ScheduleEmployee]
     :<|> "charts" :> "employees.svg" :> Get '[SVG] (Chart "employees")
+    :<|> "charts" :> "tribe-employees.svg" :> Get '[SVG] (Chart "tribe-employees")
 
 personioProxyApi :: Proxy PersonioProxyAPI
 personioProxyApi = Proxy
