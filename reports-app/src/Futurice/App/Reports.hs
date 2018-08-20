@@ -12,7 +12,6 @@ module Futurice.App.Reports (defaultMain) where
 import Control.Lens               (each)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
-import Futurice.Lucid.Foundation  (HtmlPage)
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Postgres
@@ -132,6 +131,7 @@ reports =
     ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 
+{-
 serveTable
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
     => Integrations '[I, I, Proxy, I, I, I] v
@@ -141,6 +141,14 @@ serveTable
 serveTable f g ctx = do
     v <- cachedIO' ctx () $ runIntegrations' ctx f
     pure (g v)
+-}
+
+serveData
+    :: (Typeable v, NFData v)
+    => Integrations '[I, I, Proxy, I, I, I] v
+    -> Ctx
+    -> IO v
+serveData f ctx = cachedIO' ctx () $ runIntegrations' ctx f
 
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
@@ -195,7 +203,8 @@ makeServer ctx (r :* rs) =
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
     -- tables
-    :<|> liftIO (serveTable activeAccountsData activeAccountsRender ctx)
+    :<|> liftIO (serveData activeAccountsData ctx)
+    :<|> liftIO (serveData activeAccountsData ctx)
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
