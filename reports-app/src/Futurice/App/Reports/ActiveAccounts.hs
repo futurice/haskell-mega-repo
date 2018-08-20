@@ -21,7 +21,7 @@ import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Numeric.Interval.NonEmpty (Interval, (...))
+import Numeric.Interval.NonEmpty (Interval, (...), inf, sup)
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
@@ -65,15 +65,17 @@ instance ToSchema ActiveAccount where declareNamedSchema = sopDeclareNamedSchema
 deriveVia [t| ToJSON ActiveAccount   `Via` Sopica ActiveAccount |]
 deriveVia [t| FromJSON ActiveAccount `Via` Sopica ActiveAccount |]
 
-newtype ActiveAccounts = ActiveAccounts
-    (Map PM.AccountId ActiveAccount)
-  deriving stock (Show)
-  deriving newtype (ToJSON, FromJSON)
-
-instance NFData ActiveAccounts where rnf (ActiveAccounts x) = rnf x
+data ActiveAccounts = ActiveAccounts
+    { aaInterval :: Interval Day
+    , aaData     :: Map PM.AccountId ActiveAccount
+    }
+  deriving stock (Show, Generic)
+  deriving anyclass (NFData)
 
 deriveGeneric ''ActiveAccounts
-instance ToSchema ActiveAccounts where declareNamedSchema = newtypeDeclareNamedSchema
+instance ToSchema ActiveAccounts where declareNamedSchema = sopDeclareNamedSchema
+deriveVia [t| ToJSON ActiveAccounts   `Via` Sopica ActiveAccounts |]
+deriveVia [t| FromJSON ActiveAccounts `Via` Sopica ActiveAccounts |]
 
 activeAccountsData
     :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m)
@@ -82,7 +84,8 @@ activeAccountsData = do
     today <- currentDay
     let interval = beginningOfPrev2Month today ... pred today
     fpm <- personioPlanmillMap
-    ActiveAccounts . mangle <$> (traverse . traverse) (perEmployee interval) fpm
+    ActiveAccounts interval . mangle <$>
+        (traverse . traverse) (perEmployee interval) fpm
   where
     mangle
         :: HashMap FUM.Login (P.Employee, (PM.User, Map PM.AccountId (Day, PM.Account)))
@@ -94,7 +97,7 @@ activeAccountsData = do
         ]
       where
         app (ActiveAccount a b) (ActiveAccount _ b') =
-            (ActiveAccount a $ Map.union b b')
+            ActiveAccount a $ Map.union b b'
 
     perEmployee :: Interval Day -> PM.User -> m (PM.User, Map PM.AccountId (Day, PM.Account))
     perEmployee interval pmu = do
@@ -119,7 +122,14 @@ instance ToHtml ActiveAccounts where
     toHtml = toHtml . activeAccountsRender
 
 activeAccountsRender :: ActiveAccounts -> HtmlPage "active-accounts"
-activeAccountsRender (ActiveAccounts xs) = page_ "Active accounts" $ table_ $ do
+activeAccountsRender (ActiveAccounts i xs) = page_ "Active accounts" $ do
+    h1_ "Active accounts"
+    p_ $ do
+        "generated from marked hours on "
+        toHtml $ show $ inf i
+        " ... "
+        toHtml $ show $ sup i
+    table_ $ do
         thead_ $ tr_ $ do
             th_ "Account"
             th_ "Employee name"
