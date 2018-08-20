@@ -119,6 +119,8 @@ notMachine e = case e ^. P.employeeId of
     P.EmployeeId 386126 -> False
     P.EmployeeId 590516 -> False
     P.EmployeeId 656474 -> False
+    P.EmployeeId 768834 -> False
+    P.EmployeeId 768842 -> False
     _      -> True
 
 comparePersonio
