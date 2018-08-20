@@ -27,6 +27,7 @@ import Servant.Binary.Tagged (BINARYTAGGED)
 
 import           Futurice.App.Avatar.API                (AvatarFumEndpoint)
 import qualified Futurice.App.Contacts.Types            as Contact
+import           Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
 import           Futurice.App.Reports.MissingHours      (MissingHoursReport)
 import           Futurice.App.Reports.TimereportsByTask
                  (TimereportsByTaskReport)
@@ -61,6 +62,9 @@ data Routes = Routes
     , routeHoursByTask :: ProxiedEndpoint 'ReportsService
         ("hours-by-task" :> Get '[JSON] TimereportsByTaskReport)
         ("reports" :> "hours-by-task" :> Get '[CSV, JSON] TimereportsByTaskReport)
+    , routeActiveAccounts :: ProxiedEndpoint 'ReportsService
+        ("tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts)
+        ("reports" :> "active-accounts" :> Get '[JSON] ActiveAccounts)
 
     -- Power
     , routePowerBi :: ProxiedEndpoint 'PowerService
