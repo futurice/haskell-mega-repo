@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Futurice.Chart.Stacked where
 
@@ -19,11 +20,10 @@ data PlotStacked f x y = PlotStacked
     }
 
 stacked
-    :: (Representable f, Traversable f)
+    :: Traversable f
     => f String -> [(x, f y)] -> EC l (PlotStacked f x y)
 stacked titles values = do
-    let units = pureRep ()
-    styles <- for units $ \_ -> do
+    styles <- for titles $ \_ -> do
         c <- takeColor
         pure (solidFillStyle $ dissolve 0.3 c, solidLine 1.5 c)
     pure $ PlotStacked
@@ -43,8 +43,15 @@ emptyPlot = Plot
 stackedToPlot
     :: forall f x y. (Traversable f, Representable f, Num y)
     => PlotStacked f x y -> Plot x y
-stackedToPlot ps =
-    foldr joinPlot emptyPlot (fmap mk (tabulate id :: f (Rep f)))
+stackedToPlot = stackedToPlot' (tabulate id) index
+
+stackedToPlot'
+    :: forall f i x y. (Traversable f, Num y)
+    => f i                        -- ^ @'tabulate' 'id'@ i.e. @positions@
+    -> (forall a. f a -> i -> a)  -- ^ @'index'@
+    -> PlotStacked f x y -> Plot x y
+stackedToPlot' positions index' ps =
+    foldr joinPlot emptyPlot (fmap mk positions)
   where
     mk idx = joinPlot (fillPlot idx) (linePlot idx)
 
@@ -53,19 +60,19 @@ stackedToPlot ps =
     lineStyles = _plot_stacked_line_styles ps
     fillStyles = _plot_stacked_fill_styles ps
 
-    linePlot :: Rep f -> Plot x y
+    linePlot :: i -> Plot x y
     linePlot idx = toPlot $ PlotLines
-        { _plot_lines_title  = index titles idx
-        , _plot_lines_style  = index lineStyles idx
-        , _plot_lines_values = [fmap2 (snd . flip index idx) values]
+        { _plot_lines_title  = index' titles idx
+        , _plot_lines_style  = index' lineStyles idx
+        , _plot_lines_values = [fmap2 (snd . flip index' idx) values]
         , _plot_lines_limit_values = []
         }
 
-    fillPlot :: Rep f -> Plot x y
+    fillPlot :: i -> Plot x y
     fillPlot idx = toPlot $ PlotFillBetween
-        { _plot_fillbetween_title  = index titles idx
-        , _plot_fillbetween_style  = index fillStyles idx
-        , _plot_fillbetween_values = fmap2 (flip index idx) values
+        { _plot_fillbetween_title  = index' titles idx
+        , _plot_fillbetween_style  = index' fillStyles idx
+        , _plot_fillbetween_values = fmap2 (flip index' idx) values
         }
 
 fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)

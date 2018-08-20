@@ -27,6 +27,7 @@ import Servant
 import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
 
+import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
@@ -130,6 +131,25 @@ reports =
     ReportEndpoint serveTimereportsByTaskReport :*
     Nil
 
+{-
+serveTable
+    :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
+    => Integrations '[I, I, Proxy, I, I, I] v
+    -> (v -> HtmlPage key)
+    -> Ctx
+    -> IO (HtmlPage key)
+serveTable f g ctx = do
+    v <- cachedIO' ctx () $ runIntegrations' ctx f
+    pure (g v)
+-}
+
+serveData
+    :: (Typeable v, NFData v)
+    => Integrations '[I, I, Proxy, I, I, I] v
+    -> Ctx
+    -> IO v
+serveData f ctx = cachedIO' ctx () $ runIntegrations' ctx f
+
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
     => Integrations '[I, I, Proxy, I, I, I] v
@@ -182,6 +202,9 @@ makeServer ctx (r :* rs) =
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
+    -- tables
+    :<|> liftIO (serveData activeAccountsData ctx)
+    :<|> liftIO (serveData activeAccountsData ctx)
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)

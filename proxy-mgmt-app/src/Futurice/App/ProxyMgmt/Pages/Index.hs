@@ -5,21 +5,24 @@ module Futurice.App.ProxyMgmt.Pages.Index (indexPageHandler) where
 
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
-import Futurice.Constants         (supportEmailHtml)
+import Futurice.Constants         (servicePublicUrl, supportEmailHtml)
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Servant           (cachedIO)
+import Futurice.Servant           (Service (ProxService), cachedIO)
 import Prelude ()
 
+import Futurice.App.Proxy.API        (LenientEndpoint (..))
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
+import Futurice.App.ProxyMgmt.Utils  (fetchPolicyEndpoints)
 
 indexPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "index")
 indexPageHandler = ReaderT $ \(login, ctx) -> do
     mtoken <- fetchToken login ctx
     entries <- fetchAccessEntries login ctx
-    return $ indexPage login mtoken entries
+    policyEndpoints <- fetchPolicyEndpoints ctx
+    return $ indexPage login mtoken entries policyEndpoints
 
 -------------------------------------------------------------------------------
 -- Data
@@ -43,9 +46,9 @@ fetchAccessEntries login Ctx {..} =
 -- Html
 -------------------------------------------------------------------------------
 
-indexPage :: Login -> Maybe Token -> [AccessEntry] -> HtmlPage "index"
-indexPage login mtoken entries =
-    maybe (noTokenPage login) (tokenPage login entries) mtoken
+indexPage :: Login -> Maybe Token -> [AccessEntry] -> Map PolicyName (Set LenientEndpoint) -> HtmlPage "index"
+indexPage login mtoken entries policyEndpoints =
+    maybe (noTokenPage login) (tokenPage login entries policyEndpoints) mtoken
 
 noTokenPage :: Login -> HtmlPage "index"
 noTokenPage login =
@@ -59,12 +62,14 @@ noTokenPage login =
         p_ $
             "What is prox? TBW"
 
-tokenPage :: Login -> [AccessEntry] -> Token -> HtmlPage "index"
-tokenPage login entries Token {..} = page_ ("Prox management - " <> loginToText login) (Just NavIndex) $ do
+tokenPage :: Login -> [AccessEntry] ->  Map PolicyName (Set LenientEndpoint) -> Token -> HtmlPage "index"
+tokenPage login entries policyEndpoints Token {..} = page_ ("Prox management - " <> loginToText login) (Just NavIndex) $ do
     h2_ "Token"
     condensedTable_ $ tbody_ $ do
         vertRow_ "Active" $ if tActive then "Active" else "Passive"
         vertRow_ "Policy" $ toHtml tPolicyName
+        vertRow_ "Endpoint (prefixes)" $ ul_ $ for_ (policyEndpoints ^.. ix tPolicyName . folded) $ \(LenientEndpoint endpoint) ->
+            li_ $ a_ [ href_ $ servicePublicUrl ProxService <> endpoint ] $ toHtml endpoint
 
     h2_ "Regenerate token"
     p_ "If you’ve lost or forgotten the token, you can regenerate it, but be aware that any scripts or applications using this token will need to be updated."
