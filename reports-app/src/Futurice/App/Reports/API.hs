@@ -18,6 +18,7 @@ import Servant
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
+import Futurice.App.Reports.ActiveAccounts (ActiveAccounts)
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
@@ -59,6 +60,9 @@ type family FoldReportsAPI rs :: * where
         FoldReportsAPI rs
 
 type ReportsAPI = FoldReportsAPI Reports
+    -- Tables
+    :<|> "tables" :> "active-accounts"      :> Get '[HTML] ActiveAccounts
+    :<|> "tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
