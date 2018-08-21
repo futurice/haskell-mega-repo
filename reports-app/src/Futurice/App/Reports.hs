@@ -28,6 +28,7 @@ import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
 
 import Futurice.App.Reports.ActiveAccounts
+import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
@@ -205,12 +206,14 @@ server ctx = makeServer ctx reports
     -- tables
     :<|> liftIO (serveData activeAccountsData ctx)
     :<|> liftIO (serveData activeAccountsData ctx)
+    :<|> liftIO serveInventory
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
     :<|> liftIO (serveChartIO (missingHoursDailyChartData ctx) missingHoursDailyChartRender ctx)
     :<|> liftIO (serveChart careerLengthData careerLengthRender ctx)
     :<|> liftIO (serveChart careerLengthData careerLengthRelativeRender ctx)
+    :<|> liftIO (serveInventoryChart inventoryBalanceQuantiles)
     -- graphs
     :<|> liftIO (serveGraph supervisorsGraph ctx)
     -- power
@@ -221,6 +224,19 @@ server ctx = makeServer ctx reports
     :<|> liftIO (missingHoursNotifications ctx)
     -- dashdo
     :<|> ctxDashdo ctx
+  where
+    serveInventory = do
+        let lgr = ctxLogger ctx
+        let cfg = ctxConfig ctx 
+        pp <- createPostgresPool $ cfgPostgresConnInfoInv cfg
+        xs <- runLogT "inventory-data" lgr $ inventorySummaryQuery pp
+
+        serveData (inventorySummaryData xs) ctx
+
+    serveInventoryChart g = do
+        v <- serveInventory
+        pure (g v)
+
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

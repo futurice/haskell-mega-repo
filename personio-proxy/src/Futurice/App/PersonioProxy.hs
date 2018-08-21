@@ -4,7 +4,7 @@
 module Futurice.App.PersonioProxy (defaultMain) where
 
 import Control.Concurrent.STM (atomically, newTVarIO, readTVar, writeTVar)
-import Data.Aeson.Types       (parseEither, parseJSON, toJSON)
+import Data.Aeson.Types       (object, parseEither, parseJSON, toJSON, (.=))
 import Futurice.IdMap         (IdMap)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -49,8 +49,16 @@ newCtx
     -> IO Ctx
 newCtx lgr cache pool es vs = do
     today <- currentDay
+<<<<<<< HEAD
     let active = Map.singleton today $ P.internSimpleEmployees traverse $
             es ^.. folded . P.simpleEmployee
+=======
+    let active = Map.singleton today $ Set.fromList
+            [ e ^. P.employeeId
+            | e <- toList es
+            , P.employeeIsActive today e
+            ]
+>>>>>>> 483826c1... WIP
     Ctx lgr cache pool
         <$> newTVarIO es
         <*> newTVarIO vs
@@ -114,6 +122,10 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         runLogT "simple-employees" (ctxLogger ctx) $ do
             res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
             let ses = P.internSimpleEmployees (traverse . traverse) $ Map.fromList
+            logInfoI "Updating active list: count $n" $ object
+                [ "n" .= length ses
+                ]
+            let active = Map.fromList
                   [ (d, ids)
                   | (t, v) <- res
                   , let d = utctDay t

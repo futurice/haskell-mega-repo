@@ -81,7 +81,8 @@ instance HasSimpleEmployee SimpleEmployee where
 --
 employeeIsActive :: HasSimpleEmployee e => Day -> e -> Bool
 employeeIsActive today e =
-    maybe True (today <=) (e ^. employeeEndDate)
+    maybe False (today >=) (e ^. employeeHireDate)
+    && maybe True (today <=) (e ^. employeeEndDate)
     && (status == Active || status == Leave)
   where
     status = e ^. employeeStatus
