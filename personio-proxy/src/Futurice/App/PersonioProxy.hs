@@ -114,6 +114,23 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             writeTVar (ctxPersonioValidations ctx) validations
             return (comparePersonio oldMap newMap)
 
+        -- Update active
+        runLogT "update-active" (ctxLogger ctx) $ do
+            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
+            let active = Map.fromList
+                  [ (d, ids)
+                  | (t, v) <- res
+                  , let d = utctDay t
+                  , let ids = case parseEither parseJSON v of
+                          Left _   -> mempty
+                          Right es -> Set.fromList
+                              [ e ^. P.employeeId
+                              | e <- es
+                              , P.employeeIsActive d e
+                              ]
+                  ]
+            liftIO $ atomically $ writeTVar (ctxActive ctx) active
+
         unless (null changed) $ do
             runLogT "update" (ctxLogger ctx) $ do
                 logInfo "Personio updated, data changed" changed
@@ -121,21 +138,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
                 _ <- Postgres.safePoolExecute ctx insertQuery (Postgres.Only $ toJSON employees)
                 -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
-                -- Update active
-                res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
-                let active = Map.fromList
-                      [ (d, ids)
-                      | (t, v) <- res
-                      , let d = utctDay t
-                      , let ids = case parseEither parseJSON v of
-                              Left _   -> mempty
-                              Right es -> Set.fromList
-                                  [ e ^. P.employeeId
-                                  | e <- es
-                                  , P.employeeIsActive d e
-                                  ]
-                      ]
-                liftIO $ atomically $ writeTVar (ctxActive ctx) active
+ 
 
 notMachine :: P.Employee -> Bool
 notMachine e = case e ^. P.employeeId of

@@ -16,11 +16,11 @@ module Personio.Haxl (
 import Futurice.Prelude
 import Haxl.Core
 
-import qualified Data.Aeson.Compat as Aeson
-import qualified Personio
-import qualified Network.HTTP.Client    as HTTP
+import qualified Data.Aeson.Compat   as Aeson
+import qualified Network.HTTP.Client as HTTP
+import qualified Personio            as P
 
-newtype PersonioRequest a = PR (Personio.PersonioReq a)
+newtype PersonioRequest a = PR (P.PersonioReq a)
   deriving (Eq, Show)
 
 instance Hashable (PersonioRequest a) where
@@ -28,7 +28,7 @@ instance Hashable (PersonioRequest a) where
 
 instance Haxl.Core.ShowP PersonioRequest where showp = show
 
-request :: (Show a, Typeable a) => Personio.PersonioReq a -> GenHaxl u a
+request :: (Show a, Typeable a) => P.PersonioReq a -> GenHaxl u a
 request = dataFetch . PR
 
 instance StateKey PersonioRequest where
@@ -45,41 +45,31 @@ instance DataSourceName PersonioRequest where
     dataSourceName _ = "PersonioDataSource"
 
 instance DataSource u PersonioRequest where
-    fetch (PersonioState _lgr mgr baseReq) _f _u = SyncFetch $ \blockedFetches -> do
-        res <- HTTP.httpLbs req mgr
-        Personio.SomePersonioRes pReq pRes <- Aeson.decode (HTTP.responseBody res)
-        case pReq of
-            Personio.PersonioAll -> uncurry complete pRes blockedFetches 
-            _                    -> failure blockedFetches
+    fetch (PersonioState _lgr mgr baseReq) _f _u = SyncFetch $
+        traverse_ single
       where
-        req = baseReq
-           { HTTP.requestHeaders
-                = ("Content-Type", "application/json")
-                : ("Accept", "application/json")
-                : HTTP.requestHeaders baseReq
-            , HTTP.method
-                = "POST"
-            , HTTP.requestBody
-                = HTTP.RequestBodyLBS $ Aeson.encode $
-                    Personio.SomePersonioReq Personio.PersonioAll
-            }
-
-        failure :: [BlockedFetch PersonioRequest] -> IO ()
-        failure = traverse_ $ \(BlockedFetch _ v) ->
-            putFailure v (PersonioBatchError "inconsistent response from proxy")
-
-        complete
-            :: [Personio.Employee]
-            -> [Personio.EmployeeValidation]
-            -> [BlockedFetch PersonioRequest]
-            -> IO ()
-        complete es vs = traverse_ $ \(BlockedFetch (PR r) v) -> k v r
+        single (BlockedFetch (PR r) v) = do
+            res <- HTTP.httpLbs req mgr
+            P.SomePersonioRes pReq pRes <- Aeson.decode (HTTP.responseBody res)
+            -- TODO: PersonioReq should have geq instance
+            case (r, pReq) of
+                (P.PersonioAll,         P.PersonioAll)         -> putSuccess v pRes
+                (P.PersonioEmployees,   P.PersonioEmployees)   -> putSuccess v pRes
+                (P.PersonioActive,      P.PersonioActive)      -> putSuccess v pRes
+                (P.PersonioValidations, P.PersonioValidations) -> putSuccess v pRes
+                _ -> putFailure v $ PersonioBatchError "non matching req and res"
           where
-            k :: ResultVar a -> Personio.PersonioReq a -> IO ()
-            k v Personio.PersonioAll         = putSuccess v (es, vs)
-            k v Personio.PersonioEmployees   = putSuccess v es
-            k v Personio.PersonioValidations = putSuccess v vs
-
+            req = baseReq
+               { HTTP.requestHeaders
+                    = ("Content-Type", "application/json")
+                    : ("Accept", "application/json")
+                    : HTTP.requestHeaders baseReq
+                , HTTP.method
+                    = "POST"
+                , HTTP.requestBody
+                    = HTTP.RequestBodyLBS $ Aeson.encode $
+                        P.SomePersonioReq r
+                }
 
 -- | Personio batch error
 newtype PersonioBatchError = PersonioBatchError Text
