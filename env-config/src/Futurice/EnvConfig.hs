@@ -14,6 +14,7 @@ module Futurice.EnvConfig (
     FromEnvVarList (..),
     -- * Helpers
     envConnectInfo,
+    envConnectInfo',
     envAwsCredentials,
     optionalAlt,
     -- * re-exports
@@ -170,15 +171,18 @@ envVarWithDefault :: FromEnvVar a => String -> a -> ConfigParser a
 envVarWithDefault name d = envVar name <!> pure d
 
 envConnectInfo :: ConfigParser ConnectInfo
-envConnectInfo = old <!> new
+envConnectInfo = envConnectInfo' ""
+
+envConnectInfo' :: String -> ConfigParser ConnectInfo
+envConnectInfo' pfx = old <!> new
   where
     f connInfo password = connInfo { connectPassword = password }
 
     old = f
-        <$> envVar "POSTGRES_URL"
-        <*> envVar "POSTGRES_PASS"
+        <$> envVar (pfx ++ "POSTGRES_URL")
+        <*> envVar (pfx ++ "POSTGRES_PASS")
 
-    new = envVar "DB_URL"
+    new = envVar (pfx ++ "DB_URL")
 
 envAwsCredentials :: String -> ConfigParser AWS.Credentials
 envAwsCredentials pfx = AWS.FromKeys
