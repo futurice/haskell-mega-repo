@@ -29,6 +29,7 @@ personioRequest :: Ctx -> P.SomePersonioReq -> Handler P.SomePersonioRes
 personioRequest ctx (P.SomePersonioReq res) = case res of
     P.PersonioEmployees   -> P.SomePersonioRes res <$> rawEmployees ctx
     P.PersonioValidations -> P.SomePersonioRes res <$> rawValidations ctx
+    P.PersonioActive      -> P.SomePersonioRes res <$> rawActive ctx
     P.PersonioAll         -> do
         es <- rawEmployees ctx
         vs <- rawValidations ctx
@@ -48,6 +49,9 @@ scheduleEmployees ctx = do
     es <- liftIO $ readTVarIO $ ctxPersonio ctx
     -- no filtering, all employees
     pure $ P.fromPersonio $ toList es
+
+rawActive :: Ctx -> Handler (Map Day (Set P.EmployeeId))
+rawActive = liftIO . readTVarIO . ctxActive
 
 -------------------------------------------------------------------------------
 -- Employees Chart
