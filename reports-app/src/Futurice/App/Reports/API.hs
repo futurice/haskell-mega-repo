@@ -18,9 +18,9 @@ import Servant
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
-import Futurice.App.Reports.ActiveAccounts (ActiveAccounts)
-import Futurice.App.Reports.MissingHours
-       (MissingHoursReport)
+import Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
+import Futurice.App.Reports.Inventory         (InventorySummary)
+import Futurice.App.Reports.MissingHours      (MissingHoursReport)
 import Futurice.App.Reports.PowerAbsences     (PowerAbsenceReport)
 import Futurice.App.Reports.PowerProjects     (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser         (PowerUserReport)
@@ -63,12 +63,14 @@ type ReportsAPI = FoldReportsAPI Reports
     -- Tables
     :<|> "tables" :> "active-accounts"      :> Get '[HTML] ActiveAccounts
     :<|> "tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts
+    :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
     :<|> "charts" :> "missing-hours-daily" :> Get '[SVG] (Chart "missing-hours-daily")
     :<|> "charts" :> "career-length" :> Get '[SVG] (Chart "career-length")
     :<|> "charts" :> "career-length-relative" :> Get '[SVG] (Chart "career-length-relative")
+    :<|> "charts" :> "inventory-quantiles" :> Get '[SVG] (Chart "inventory-quantiles")
     -- Graphs
     :<|> "graphs" :> "supervisors" :> Get '[ALGA] (Graph Emp "supervisors")
     -- Additional non-reports

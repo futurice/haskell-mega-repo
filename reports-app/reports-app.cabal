@@ -105,6 +105,7 @@ library
     , servant-server
     , SHA
     , sms-proxy-client
+    , step-function
     , stm
     , strict-base-types
     , swagger2
@@ -128,6 +129,7 @@ library
       Futurice.App.Reports.Ctx
       Futurice.App.Reports.Dashdo
       Futurice.App.Reports.GithubReposDashdo
+      Futurice.App.Reports.Inventory
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
       Futurice.App.Reports.MissingHoursChart

@@ -15,7 +15,8 @@ data Config = Config
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgSmsProxyBaseurl       :: !BaseUrl
     , cfgPreferencesAppBaseurl :: !BaseUrl
-    , cfgPostgresConnInfo  :: !ConnectInfo
+    , cfgPostgresConnInfo      :: !ConnectInfo
+    , cfgPostgresConnInfoInv   :: !ConnectInfo
     }
 
 instance Configure Config where
@@ -25,3 +26,4 @@ instance Configure Config where
         <*> envVar "SMSPROXY_BASEURL"
         <*> envVar "PREFERENCES_BASEURL"
         <*> envConnectInfo
+        <*> envConnectInfo' "INVENTORY_"
