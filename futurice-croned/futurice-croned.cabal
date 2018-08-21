@@ -1,0 +1,53 @@
+cabal-version: 2.2
+name: futurice-croned
+version: 0
+
+license:      BSD-3-Clause
+license-file: LICENSE
+
+library
+  default-language: Haskell2010
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+
+  hs-source-dirs: src
+  ghc-options: -Wall
+
+  exposed-modules:
+    Futurice.App.Croned
+
+  build-depends:
+    , async
+    , base
+    , bytestring
+    , exceptions
+    , futurice-prelude
+    , futurice-foundation
+    , futurice-servant
+    , machines
+    , process
+    , servant
+    , servant-lucid
+    , servant-server
+    , servant-swagger
+    , servant-swagger-ui
+    , stm
+    , wai
+    , warp
+
+executable croned-server
+  default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -threaded -rtsopts
+  build-depends:    base, futurice-croned
+
+
