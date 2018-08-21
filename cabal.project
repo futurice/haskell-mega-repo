@@ -67,6 +67,7 @@ packages:
   fum-client/
   fum-types/
   futurice-constants/
+  futurice-croned/
   futurice-foundation/
   futurice-github/
   futurice-integrations/
