@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -13,21 +14,20 @@ module Personio.Types.Employee where
 -- #define PERSONIO_DEBUG 1
 
 import Data.Aeson.Compat
-import Data.Fixed                (Centi)
-import Data.Semigroup            (Min (..))
-import Data.Time                 (zonedTimeToLocalTime)
-import FUM.Types.Login           (Login)
+import Data.Fixed          (Centi)
+import Data.Semigroup      (Min (..))
+import Data.Time           (zonedTimeToLocalTime)
+import FUM.Types.Login     (Login)
 import Futurice.Aeson
 import Futurice.Company
 import Futurice.CostCenter
-import Futurice.Email            (Email)
+import Futurice.Email      (Email)
 import Futurice.Generics
-import Futurice.IdMap            (HasKey (..))
+import Futurice.IdMap      (HasKey (..))
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Tribe
-import Numeric.Interval.NonEmpty (Interval, (...))
 import Prelude ()
 
 import Personio.Internal.Attribute
@@ -35,11 +35,11 @@ import Personio.Types.ContractType
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
 import Personio.Types.SalaryType
+import Personio.Types.SimpleEmployee
 import Personio.Types.Status
 
-import qualified Chat.Flowdock.REST        as FD
-import qualified GitHub                    as GH
-import qualified Numeric.Interval.NonEmpty as Interval
+import qualified Chat.Flowdock.REST as FD
+import qualified GitHub             as GH
 
 import Personio.Types.Internal
 
@@ -80,28 +80,26 @@ data Employee = Employee
     }
   deriving (Eq, Show, Generic)
 
--- | Employee is active if
---
--- * contacts end date isn't passed
---
--- * it's status is 'Acitve' or 'Leave'.
---
-employeeIsActive :: Day -> Employee -> Bool
-employeeIsActive today e =
-    maybe True (today <=) (_employeeEndDate e)
-    && (_employeeStatus e == Active || _employeeStatus e == Leave)
-
--- | /Note/: this considers only contract dates
-employeeIsActiveInterval :: Interval Day -> Employee -> Bool
-employeeIsActiveInterval interval e =
-    case (_employeeHireDate e, _employeeEndDate e) of
-        (Nothing, Nothing)    -> False
-        (Just hire, Nothing)  -> (hire ... hire) Interval.<=? interval -- exists y in interval, hire <= y
-        (Nothing, Just end)   -> (end  ... end)  Interval.>=? interval
-        (Just hire, Just end) -> (hire ... end)  Interval.==? interval
-
 makeLenses ''Employee
 deriveGeneric ''Employee
+
+instance HasSimpleEmployee Employee where
+    simpleEmployee = lens f g where
+        f Employee {..} = SimpleEmployee
+            { _simpleEmployeeId       = _employeeId
+            , _simpleEmployeeHireDate = _employeeHireDate
+            , _simpleEmployeeEndDate  = _employeeEndDate
+            , _simpleEmployeeTribe    = _employeeTribe
+            , _simpleEmployeeStatus   = _employeeStatus
+            }
+
+        g e SimpleEmployee {..} = e
+            { _employeeId       = _simpleEmployeeId
+            , _employeeHireDate = _simpleEmployeeHireDate
+            , _employeeEndDate  = _simpleEmployeeEndDate
+            , _employeeTribe    = _simpleEmployeeTribe
+            , _employeeStatus   = _simpleEmployeeStatus
+            }
 
 -- | @first last@
 employeeFullname :: Getter Employee Text
@@ -112,7 +110,7 @@ instance Hashable Employee
 
 instance HasKey Employee where
     type Key Employee = EmployeeId
-    key = employeeId
+    key = Personio.Types.SimpleEmployee.employeeId
 
 deriveVia [t| Arbitrary Employee `Via` Sopica Employee |]
 deriveVia [t| ToJSON Employee    `Via` Sopica Employee |]

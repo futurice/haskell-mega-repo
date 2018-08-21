@@ -24,32 +24,37 @@ import Prelude ()
 import qualified Data.Swagger as Swagger
 
 data PersonioReq a where
-    PersonioEmployees   :: PersonioReq [Employee]
-    PersonioValidations :: PersonioReq [EmployeeValidation]
-    PersonioAll         :: PersonioReq ([Employee], [EmployeeValidation])
+    PersonioEmployees       :: PersonioReq [Employee]
+    PersonioValidations     :: PersonioReq [EmployeeValidation]
+    PersonioAll             :: PersonioReq ([Employee], [EmployeeValidation])
+    PersonioSimpleEmployees :: PersonioReq (Map Day [SimpleEmployee])
 
 deriving instance Eq (PersonioReq a)
 deriving instance Ord (PersonioReq a)
 deriving instance Show (PersonioReq a)
 
 instance Hashable (PersonioReq a) where
-    hashWithSalt salt PersonioEmployees = salt
-        `hashWithSalt` (0 :: Int)
-    hashWithSalt salt PersonioValidations = salt
-        `hashWithSalt` (1 :: Int)
-    hashWithSalt salt PersonioAll = salt
-        `hashWithSalt` (2 :: Int)
+    hashWithSalt salt PersonioEmployees =
+        salt `hashWithSalt` (0 :: Int)
+    hashWithSalt salt PersonioValidations =
+        salt `hashWithSalt` (1 :: Int)
+    hashWithSalt salt PersonioAll =
+        salt `hashWithSalt` (2 :: Int)
+    hashWithSalt salt PersonioSimpleEmployees =
+        salt `hashWithSalt` (3 :: Int)
 
 requestDict
-    :: (c [Employee], c [EmployeeValidation]
+    :: ( c [Employee], c [EmployeeValidation]
        , c ([Employee], [EmployeeValidation])
+       , c (Map Day [SimpleEmployee])
        )
     => Proxy c
     -> PersonioReq a
     -> Dict (c a)
-requestDict _ PersonioEmployees = Dict
+requestDict _ PersonioEmployees   = Dict
 requestDict _ PersonioValidations = Dict
-requestDict _ PersonioAll = Dict
+requestDict _ PersonioAll         = Dict
+requestDict _ PersonioSimpleEmployees      = Dict
 
 -------------------------------------------------------------------------------
 -- Some
@@ -60,15 +65,17 @@ data SomePersonioReq where
     SomePersonioReq :: PersonioReq a -> SomePersonioReq
 
 instance ToJSON SomePersonioReq where
-    toJSON (SomePersonioReq PersonioEmployees)   = "employees"
-    toJSON (SomePersonioReq PersonioValidations) = "validations"
-    toJSON (SomePersonioReq PersonioAll)         = "all"
+    toJSON (SomePersonioReq PersonioEmployees)       = "employees"
+    toJSON (SomePersonioReq PersonioValidations)     = "validations"
+    toJSON (SomePersonioReq PersonioAll)             = "all"
+    toJSON (SomePersonioReq PersonioSimpleEmployees) = "simple-employees"
 
 instance FromJSON SomePersonioReq where
     parseJSON = withText "PersonioReq" $ \t -> case t of
-        "employees"   -> pure $ SomePersonioReq PersonioEmployees
-        "validations" -> pure $ SomePersonioReq PersonioValidations
-        "all"         -> pure $ SomePersonioReq PersonioAll
+        "employees"        -> pure $ SomePersonioReq PersonioEmployees
+        "validations"      -> pure $ SomePersonioReq PersonioValidations
+        "all"              -> pure $ SomePersonioReq PersonioAll
+        "simple-employees" -> pure $ SomePersonioReq PersonioSimpleEmployees
         _             -> fail $ "Invalid PersonioReq " ++ show t
 
 instance ToParamSchema SomePersonioReq where
@@ -78,6 +85,7 @@ instance ToParamSchema SomePersonioReq where
             [ toJSON $ SomePersonioReq PersonioEmployees
             , toJSON $ SomePersonioReq PersonioValidations
             , toJSON $ SomePersonioReq PersonioAll
+            , toJSON $ SomePersonioReq PersonioSimpleEmployees
             ]
 
 instance ToSchema SomePersonioReq where
