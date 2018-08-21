@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.PersonioProxy.Logic where
 
@@ -8,28 +9,32 @@ import Control.Concurrent.STM           (readTVarIO)
 import Control.Lens                     ((.=))
 import Data.Aeson.Types                 (parseEither, parseJSON)
 import Data.Distributive                (Distributive (..))
-import Data.Functor.Rep                 (Representable (..), distributeRep, pureRep, apRep)
-import Data.List                        (partition, foldl')
+import Data.Functor.Rep
+       (Representable (..), apRep, distributeRep, pureRep)
+import Data.List                        (foldl', partition)
 import Futurice.App.PersonioProxy.Types
 import Futurice.Cache                   (cached)
+import Futurice.Daily
 import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
 import Servant
 import Servant.Chart                    (Chart (..))
 
-import qualified Futurice.Colour as FC
 import qualified Data.Map.Strict               as Map
 import qualified Futurice.Chart.Stacked        as C
+import qualified Futurice.Colour               as FC
+import qualified Futurice.IdMap                as IdMap
 import qualified Futurice.Postgres             as Postgres
 import qualified Graphics.Rendering.Chart.Easy as C
 import qualified Personio                      as P
 
 personioRequest :: Ctx -> P.SomePersonioReq -> Handler P.SomePersonioRes
 personioRequest ctx (P.SomePersonioReq res) = case res of
-    P.PersonioEmployees   -> P.SomePersonioRes res <$> rawEmployees ctx
-    P.PersonioValidations -> P.SomePersonioRes res <$> rawValidations ctx
-    P.PersonioAll         -> do
+    P.PersonioEmployees       -> P.SomePersonioRes res <$> rawEmployees ctx
+    P.PersonioValidations     -> P.SomePersonioRes res <$> rawValidations ctx
+    P.PersonioSimpleEmployees -> P.SomePersonioRes res <$> rawSimpleEmployees ctx
+    P.PersonioAll             -> do
         es <- rawEmployees ctx
         vs <- rawValidations ctx
         pure (P.SomePersonioRes res (es, vs))
@@ -49,6 +54,9 @@ scheduleEmployees ctx = do
     -- no filtering, all employees
     pure $ P.fromPersonio $ toList es
 
+rawSimpleEmployees :: Ctx -> Handler (Map Day [P.SimpleEmployee])
+rawSimpleEmployees = liftIO . readTVarIO . ctxSimpleEmployees
+
 -------------------------------------------------------------------------------
 -- Employees Chart
 -------------------------------------------------------------------------------
@@ -63,7 +71,7 @@ employeesChart ctx = do
                 in (d, employeesCounts d c)
 
     return $ Chart . C.toRenderable $ do
-        C.layout_title .= "Active employees"
+        C.layout_title .= "Employees"
 
         C.plot $ fmap C.stackedToPlot $ C.stacked
             (PerEmploymentType "Internal" "External")
@@ -110,12 +118,16 @@ instance Representable PerEmploymentType where
 
 tribeEmployeesChart :: Ctx -> Handler (Chart "tribe-employees")
 tribeEmployeesChart ctx = do
+    today <- currentDay
+
     values <- liftIO $ runLogT "chart-tribe-employees" (ctxLogger ctx) $
         cached (ctxCache ctx) 600 () $ do
-            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
-            return $ res <&> \(t, c) ->
-                let d = utctDay t
-                in (d, employeesCounts d c)
+            fes <- liftIO $ readTVarIO $ ctxPersonio ctx
+            res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
+            return
+                [ pair d $ employeesCounts fes d (res ! d)
+                | d <- [ $(mkDay "2018-06-01") .. today ]
+                ]
 
     return $ Chart . C.toRenderable $ do
         C.setColors $ cycle
@@ -123,8 +135,8 @@ tribeEmployeesChart ctx = do
             | f <- [ minBound .. maxBound ]
             , a <- [ FC.AC2, FC.AC3 ]
             ]
-        
-        C.layout_title .= "Active employees per tribe"
+
+        C.layout_title .= "Employees per tribe"
 
         C.plot $ fmap C.stackedToPlot $ C.stacked
             (tabulate $ view unpacked . tribeToText)
@@ -134,20 +146,23 @@ tribeEmployeesChart ctx = do
         C.layout_y_axis . C.laxis_title .= "Employees"
         C.layout_y_axis . C.laxis_override .= overrideY
   where
-    employeesCounts :: Day -> Value -> PerTribe Int
-    employeesCounts today v = case parseEither parseJSON v of
-        Left _    -> pureRep 0
-        Right es' -> foldl' go (pureRep 0) es
+    employeesCounts :: IdMap.IdMap P.Employee -> Day -> [P.SimpleEmployee] -> PerTribe Int
+    employeesCounts fes today es' = foldl' go (pureRep 0) es
           where
-            es :: [P.Employee]
-            es = filter (\e -> P.employeeIsActive today e && e ^. P.employeeEmploymentType == Just P.Internal) es'
+            es :: [P.SimpleEmployee]
+            es = flip filter es' $ \e ->
+                P.employeeIsActive today e
+                && fes ^? ix (e ^. P.employeeId) . P.employeeEmploymentType . _Just == Just P.Internal
 
-            go :: PerTribe Int -> P.Employee -> PerTribe Int
+            go :: PerTribe Int -> P.SimpleEmployee -> PerTribe Int
             go (Per m) e = Per $ m
                 & at (e ^. P.employeeTribe) %~ Just . maybe 1 succ
 
     overrideY :: C.AxisData Int -> C.AxisData Int
     overrideY ax = ax & C.axis_grid .~ (ax ^.. C.axis_ticks . folded . _1)
+
+    pair :: a -> b -> (a, b)
+    pair = (,)
 
 -------------------------------------------------------------------------------
 -- Roles distribution
@@ -171,7 +186,7 @@ rolesDistributionChart ctx = do
             | f <- [ minBound .. maxBound ]
             , a <- [ FC.AC2, FC.AC3 ]
             ]
-        
+
         C.layout_title .= "Relative role/competence distribution over time"
 
         C.plot $ fmap (C.stackedToPlot' titles (flip indexTMap)) $ C.stacked
@@ -260,7 +275,7 @@ indexTMap k (TMap def m) = fromMaybe def (Map.lookup k m)
 instance Ord k => Applicative (TMap k) where
     pure x = TMap x mempty
 
-    TMap f fm <*> TMap x xm = TMap (f x) $ Map.unions 
+    TMap f fm <*> TMap x xm = TMap (f x) $ Map.unions
         [ Map.intersectionWith ($) fm xm
         , fmap f xm
         , fmap ($ x) fm

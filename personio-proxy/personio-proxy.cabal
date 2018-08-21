@@ -47,6 +47,10 @@ library
     , stm
     , swagger2
 
+  -- Move Futurice.Daily to futurice-prelude
+  build-depends:
+    futurice-integrations
+
   ghc-options: -freduction-depth=30
   exposed-modules:
       Futurice.App.PersonioProxy

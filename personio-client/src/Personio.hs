@@ -15,6 +15,8 @@ module Personio (
     module Control.Monad.Personio,
     module Personio.Request,
     module Personio.Types,
+    -- * Auxiliary
+    internSimpleEmployees,
     ) where
 
 import Control.Monad.Http (runHttpT)

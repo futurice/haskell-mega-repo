@@ -47,9 +47,14 @@ newCtx
     -> IdMap P.Employee
     -> [P.EmployeeValidation]
     -> IO Ctx
-newCtx lgr cache pool es vs = Ctx lgr cache pool
-    <$> newTVarIO es
-    <*> newTVarIO vs
+newCtx lgr cache pool es vs = do
+    today <- currentDay
+    let active = Map.singleton today $ P.internSimpleEmployees traverse $
+            es ^.. folded . P.simpleEmployee
+    Ctx lgr cache pool
+        <$> newTVarIO es
+        <*> newTVarIO vs
+        <*> newTVarIO active
 
 selectLastQuery :: Postgres.Query
 selectLastQuery = fromString $ unwords
@@ -104,6 +109,19 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             writeTVar (ctxPersonio ctx) newMap
             writeTVar (ctxPersonioValidations ctx) validations
             return (comparePersonio oldMap newMap)
+                
+        -- Update active
+        runLogT "simple-employees" (ctxLogger ctx) $ do
+            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
+            let ses = P.internSimpleEmployees (traverse . traverse) $ Map.fromList
+                  [ (d, ids)
+                  | (t, v) <- res
+                  , let d = utctDay t
+                  , let ids = case parseEither parseJSON v of
+                          Left _   -> mempty
+                          Right es -> (es :: [P.Employee]) ^.. folded . P.simpleEmployee
+                  ]
+            liftIO $ atomically $ writeTVar (ctxSimpleEmployees ctx) ses
 
         unless (null changed) $ do
             runLogT "update" (ctxLogger ctx) $ do
@@ -112,6 +130,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
                 _ <- Postgres.safePoolExecute ctx insertQuery (Postgres.Only $ toJSON employees)
                 -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
+
 
 notMachine :: P.Employee -> Bool
 notMachine e = case e ^. P.employeeId of

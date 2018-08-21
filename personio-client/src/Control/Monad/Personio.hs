@@ -20,6 +20,7 @@ import Personio.Types
 class
     ( Monad m
     , MonadPersonioC m [Employee]
+    , MonadPersonioC m (Map Day [SimpleEmployee])
     ) => MonadPersonio m
   where
     type MonadPersonioC m a :: Constraint

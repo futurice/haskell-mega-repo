@@ -9,7 +9,7 @@ import FUM.Types.Login           (Login)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
-import Servant.Utils.Links       (Link, safeLink)
+import Servant.Links             (Link, safeLink)
 import Web.HttpApiData           (toUrlPiece)
 
 import Futurice.App.FUM.API.Pages
@@ -24,7 +24,7 @@ indexPageHref_ :: Attribute
 indexPageHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
     indexPageEndpoint
 
-fromPersonioHrefText :: Text 
+fromPersonioHrefText :: Text
 fromPersonioHrefText = linkToText $ safeLink fumCarbonPagesApi
     fromPersonioPageEndpoint
 
