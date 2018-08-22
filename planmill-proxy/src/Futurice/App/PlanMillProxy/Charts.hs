@@ -127,14 +127,14 @@ zeroLogAxis lap ps0 = C.makeAxis' forward backward
 
     lowerBound :: Double
     lowerBound = fromInteger $  go 1 where
-        go e | e * 4 > minV  = e
-             | e * 10 > minV = e * 4
+        go e | e * 3 > minV  = e
+             | e * 10 > minV = e * 3
              | otherwise     = go (e * 10)
 
     wrapped'  = map fromInteger logTicks'
     logTicks' = 0 : go 1 where
         go e | e > maxV      = [e]
-             | 4 * e > maxV  = [e, 4 * e]
-             | 4 * e > minV  = e : 4 * e : go (10 * e)
-             | 10 * e > minV = 4 * e :  go (10 * e)
+             | 3 * e > maxV  = [e, 3 * e]
+             | 3 * e > minV  = e : 3 * e : go (10 * e)
+             | 10 * e > minV = 3 * e :  go (10 * e)
              | otherwise     = go (10 * e)
