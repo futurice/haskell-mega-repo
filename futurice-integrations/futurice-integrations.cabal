@@ -25,6 +25,7 @@ library
   hs-source-dirs: src
   ghc-options: -Wall
   default-extensions:
+    GeneralizedNewtypeDeriving
     DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
@@ -69,6 +70,8 @@ library
     , personio-client
     , planmill-client
     , regex-applicative-text
+    , step-function
+    , swagger2
     , text
     , time
     , transformers
@@ -77,6 +80,7 @@ library
     , vector
     , zlib
   exposed-modules:
+      Futurice.Daily
       Futurice.Integrations
       Futurice.Integrations.Classes
       Futurice.Integrations.Common
