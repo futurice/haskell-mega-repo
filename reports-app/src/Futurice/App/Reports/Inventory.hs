@@ -109,9 +109,9 @@ inventoryBalanceQuantiles (InventorySummary today ses balances) = Chart . C.toRe
         ]
 
     C.plot $ C.line "average"        [map (fmap (view _1)) xs]
-    C.plot $ C.line "p=25"           [map (fmap (view _3)) xs]
+    C.plot $ C.line "p=10"           [map (fmap (view _3)) xs]
     C.plot $ C.line "p=50,median"    [map (fmap (view _4)) xs]
-    C.plot $ C.line "p=75"           [map (fmap (view _5)) xs]
+    C.plot $ C.line "p=90"           [map (fmap (view _5)) xs]
     -- C.plot $ C.line "p=100, maximum" [map (fmap (view _2)) xs]
     C.plot $ C.line "n (non zero)"   [map (fmap (view _6)) xs]
   where
@@ -132,10 +132,10 @@ inventoryBalanceQuantiles (InventorySummary today ses balances) = Chart . C.toRe
             s = sum bs
             m = maximum bs
             a = if n > 0 then s / fromIntegral n else 0
-            p25 = if n > 0 then bs !! (n `div` 4) else 0
-            p50 = if n > 0 then bs !! (n `div` 2) else 0
-            p75 = if n > 0 then bs !! (3 * n `div` 4) else 0
-        in (d, (a, m, p25, p50, p75, fromIntegral n))
+            p10 = quantile 0.1 bs
+            p50 = quantile 0.5 bs
+            p90 = quantile 0.9 bs
+        in (d, (a, m, p10, p50, p90, fromIntegral n))
 
 -------------------------------------------------------------------------------
 -- Render
@@ -189,3 +189,20 @@ inventorySummaryRender (InventorySummary today _ balances) = page_ "Inventory ac
             td_ $ toHtml $ e ^. P.employeeFullname
             td_ $ toHtml $ show bal
 
+-------------------------------------------------------------------------------
+-- Quantiles from a list
+-------------------------------------------------------------------------------
+
+quantile :: Fractional a => Rational -> [a] -> a
+quantile _ [] = 0
+quantile q xs
+    | q < 0     = head xs
+    | q > 1     = last xs
+    | d == 0    = xs !! n
+    | otherwise =
+        fromRational d *       (xs !! n)
+      + fromRational (1 - d) * (xs !! (n + 1))
+  where
+    m = fromIntegral (length xs - 1) * q
+    n = truncate m :: Int
+    d = m - fromIntegral n
