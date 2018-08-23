@@ -13,11 +13,13 @@ import Personio.Request
 import Personio.Types
 import Prelude ()
 
+import qualified Data.Map.Strict     as Map
+import qualified Data.Set            as Set
 import qualified Network.HTTP.Client as H
 
 evalPersonioReq
     :: ( MonadHttp m, MonadThrow m
-       , MonadLog m, MonadClock m
+       , MonadLog m, MonadClock m, MonadTime m
        , MonadReader env m, HasPersonioCfg env
        )
     => PersonioReq a
@@ -44,13 +46,23 @@ evalPersonioReq personioReq = do
             Envelope (E employees) <- decode bs
             pure employees
         PersonioValidations -> do
-            -- We ask for employees, but parse them differently 
+            -- We ask for employees, but parse them differently
             Envelope (V validations) <- decode bs
             pure validations
         PersonioAll -> do
             Envelope (E employees) <- decode bs
             Envelope (V validations) <- decode bs
             pure (employees, validations)
+        -- Direct access doesn't know this.
+        -- TODO: maybe return current.
+        PersonioActive -> do
+            Envelope (E employees) <- decode bs
+            today <- currentDay
+            pure $ Map.singleton today $ Set.fromList
+                [ e ^. employeeId
+                | e <- employees
+                , employeeIsActive today e
+                ]
   where
     personioHttpLbs token url = do
         req <- H.parseUrlThrow url

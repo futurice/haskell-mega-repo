@@ -19,6 +19,7 @@ import Futurice.App.PersonioProxy.Logic
 import Futurice.App.PersonioProxy.Types
 
 import qualified Data.Map.Strict   as Map
+import qualified Data.Set          as Set
 import qualified Futurice.IdMap    as IdMap
 import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
@@ -47,9 +48,17 @@ newCtx
     -> IdMap P.Employee
     -> [P.EmployeeValidation]
     -> IO Ctx
-newCtx lgr cache pool es vs = Ctx lgr cache pool
-    <$> newTVarIO es
-    <*> newTVarIO vs
+newCtx lgr cache pool es vs = do
+    today <- currentDay
+    let active = Map.singleton today $ Set.fromList
+            [ e ^. P.employeeId
+            | e <- toList es 
+            , P.employeeIsActive today e
+            ]
+    Ctx lgr cache pool
+        <$> newTVarIO es
+        <*> newTVarIO vs
+        <*> newTVarIO active
 
 selectLastQuery :: Postgres.Query
 selectLastQuery = fromString $ unwords
@@ -105,6 +114,23 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             writeTVar (ctxPersonioValidations ctx) validations
             return (comparePersonio oldMap newMap)
 
+        -- Update active
+        runLogT "update-active" (ctxLogger ctx) $ do
+            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
+            let active = Map.fromList
+                  [ (d, ids)
+                  | (t, v) <- res
+                  , let d = utctDay t
+                  , let ids = case parseEither parseJSON v of
+                          Left _   -> mempty
+                          Right es -> Set.fromList
+                              [ e ^. P.employeeId
+                              | e <- es
+                              , P.employeeIsActive d e
+                              ]
+                  ]
+            liftIO $ atomically $ writeTVar (ctxActive ctx) active
+
         unless (null changed) $ do
             runLogT "update" (ctxLogger ctx) $ do
                 logInfo "Personio updated, data changed" changed
@@ -112,6 +138,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
                 _ <- Postgres.safePoolExecute ctx insertQuery (Postgres.Only $ toJSON employees)
                 -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
+ 
 
 notMachine :: P.Employee -> Bool
 notMachine e = case e ^. P.employeeId of
