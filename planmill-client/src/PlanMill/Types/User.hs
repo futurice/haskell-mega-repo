@@ -189,7 +189,7 @@ instance FromJSON Team where
         <*> obj .: "costCenter"
         <*> (getU <$$> obj .:? "created")
         <*> obj .:? "createdBy"
-        <*> obj .: "description"
+        <*> obj .:? "description"
         <*> obj .:? "latestMember"
         <*> obj .:? "manager"
         <*> obj .:? "members"
