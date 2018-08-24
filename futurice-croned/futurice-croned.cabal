@@ -25,6 +25,7 @@ library
     Futurice.App.Croned
 
   build-depends:
+    , aeson
     , async
     , base
     , bytestring
@@ -33,6 +34,8 @@ library
     , futurice-foundation
     , futurice-servant
     , machines
+    , optparse-applicative
+    , periocron
     , process
     , servant
     , servant-lucid
@@ -40,6 +43,7 @@ library
     , servant-swagger
     , servant-swagger-ui
     , stm
+    , swagger2
     , wai
     , warp
 
