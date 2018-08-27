@@ -34,6 +34,7 @@ deriveGeneric ''BookInformation
 makeLenses ''BookInformation
 
 deriveVia [t| ToJSON BookInformation `Via` Sopica BookInformation |]
+deriveVia [t| FromJSON BookInformation `Via` Sopica BookInformation |]
 
 instance HasKey BookInformation where
     type Key BookInformation = BookInformationId
@@ -42,3 +43,5 @@ instance HasKey BookInformation where
 instance ToParamSchema BookInformationId where toParamSchema = newtypeToParamSchema
 instance ToSchema BookInformationId where declareNamedSchema = newtypeDeclareNamedSchema
 instance ToSchema BookInformation where declareNamedSchema = sopDeclareNamedSchema
+
+instance FromRow BookInformationId where fromRow = field

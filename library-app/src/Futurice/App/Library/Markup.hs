@@ -17,13 +17,15 @@ import Futurice.App.Library.API
 
 data Nav = NavHome
          | NavUser
+         | NavAddItem
     deriving (Eq, Enum, Bounded, Ord)
 
 instance Navigation Nav where
     serviceTitle _ = "Library"
 
-    navLink NavHome = (recordHref_ indexPageGet Nothing Nothing Nothing Nothing Nothing, "Library Home")
-    navLink NavUser = (recordHref_ personalLoansPageGet, "My Loans")
+    navLink NavHome    = (recordHref_ indexPageGet Nothing Nothing Nothing Nothing Nothing, "Library Home")
+    navLink NavUser    = (recordHref_ personalLoansPageGet, "My Loans")
+    navLink NavAddItem = (recordHref_ addItemPageGet, "Add Item")
 
     pageParams = pageParamsWithJS
         $(makeRelativeToProject "library-app.js" >>= embedJS)

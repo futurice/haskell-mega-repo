@@ -32,6 +32,7 @@ deriveGeneric ''BoardGameInformation
 makeLenses ''BoardGameInformation
 
 deriveVia [t| ToJSON BoardGameInformation `Via` Sopica BoardGameInformation |]
+deriveVia [t| FromJSON BoardGameInformation `Via` Sopica BoardGameInformation |]
 
 instance HasKey BoardGameInformation where
     type Key BoardGameInformation = BoardGameInformationId

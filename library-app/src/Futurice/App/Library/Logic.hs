@@ -3,12 +3,10 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Library.Logic where
 
+import Control.Monad                      (replicateM_)
 import Data.List
-import Database.PostgreSQL.Simple           (In (..))
-import Database.PostgreSQL.Simple.FromField
+import Database.PostgreSQL.Simple         (In (..))
 import Database.PostgreSQL.Simple.FromRow
-import Database.PostgreSQL.Simple.ToField
-import Database.PostgreSQL.Simple.ToRow
 import Database.PostgreSQL.Simple.Types
 import Futurice.IdMap
 import Futurice.Postgres
@@ -197,6 +195,18 @@ fetchBooksByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, lib
 fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformation]
 fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
 
+-- data Args a b c d = Args a
+-- newtype Select = Select Query
+-- newtype From = From Query
+-- newtype Order = Order Text
+-- data Where a = Where Text a
+
+-- instance Semigroup (Where a) where
+--     (Where a) <> (Where b) = Where $ a <> " AND " <> b
+
+-- newtype Limit = Limit Int
+-- data SqlQuery = SqlQuery Select From Order Where Limit
+
 fetchBookInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m)
                                   => Ctx
                                   -> SortCriteria
@@ -273,6 +283,19 @@ bookIdToInformation iid bookidmap bookinfomap = do
     binfoid <- bookinfoid
     bookinfomap ^.at binfoid
 
+addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> m Bool
+addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _) = do
+    bookInfoId <- listToMaybe <$> safePoolQuery
+                  ctx
+                  -- TODO add cover link
+                  "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, amazon_link) VALUES (?,?,?,?,?,?) returning bookinfo_id"
+                  (title, isbn, author, publisher, published, amazonLink)
+    case bookInfoId of
+      Just infoId -> do
+          for_ libraryBooks $ \(lib, n) -> do
+              replicateM_ n $ safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id) VALUES (?,?)" (lib, infoId :: BookInformationId)
+          pure True
+      Nothing -> pure False
 -------------------------------------------------------------------------------
 -- Boardgame functions
 -------------------------------------------------------------------------------
@@ -282,3 +305,16 @@ fetchBoardGameInformations ctx = safePoolQuery ctx "SELECT boardgameinfo_id, nam
 
 fetchBoardGameInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BoardGameInformationId -> m (Maybe BoardGameInformation)
 fetchBoardGameInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT boardgameinfo_id, name, publisher, publishedYear, designer, artist FROM library.boardgameinformation WHERE boardgameinfo_id = ?" (Only binfoid)
+
+addNewBoardGame :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBoardGameInformation -> m Bool
+addNewBoardGame ctx (AddBoardGameInformation name publisher published designer artist libraryBoardgames) = do
+    boardgameInfoId <- listToMaybe <$> safePoolQuery
+                       ctx
+                       "INSERT INTO library.boardgameinformation (name, publisher, publishedyear, designer, artist) VALUES (?,?,?,?,?) returning boardgameinfo_id"
+                       (name, publisher, published, designer, artist)
+    case boardgameInfoId of
+      Just infoId -> do
+          for_ libraryBoardgames $ \(lib, n) -> do
+              replicateM_ n $ safePoolExecute ctx "INSERT INTO library.item (library, boardgameinfo_id) VALUES (?,?)" (lib, infoId :: BookInformationId)
+          pure True
+      Nothing -> pure False
