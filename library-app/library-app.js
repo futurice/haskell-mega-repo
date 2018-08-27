@@ -24,10 +24,21 @@ futu.onload(function () {
         btn.disabled = true;
         var bookid = btn.dataset.itemId;
         var office = btn.dataset.library;
-        var payload = { "book": parseInt(bookid), "library": { "office" : office }};
+        var payload = { "book": parseInt(bookid), "library": office };
         futu.fetchJSON("/book/borrow/", payload)
             .then(function (response) { console.log("Borrow was successful"); location=location.href; })
             .catch(function (error) { console.log("Couldn't borrow book") });
     });
   });
+
+    $$("select[data-futu-id=add-new-item-select").forEach(function (sel) {
+        sel.onchange = function () {
+            $$("form").forEach(function (s) { s.style.display = "none" });
+            if (this.value === "Book") {
+                $$("form[data-futu-id=add-new-book").forEach(function (s) { s.style.display = "block" });
+            } else if (this.value === "Boardgame") {
+                $$("form[data-futu-id=add-new-boardgame").forEach(function (s) { s.style.display = "block" });
+            }
+        };
+    });
 });

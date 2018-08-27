@@ -49,6 +49,7 @@ library
       , servant
       , servant-JuicyPixels
       , servant-lucid
+      , servant-multipart
       , servant-server
       , swagger2
       , text
@@ -61,8 +62,10 @@ library
       Futurice.App.Library.Markup
       Futurice.App.Library.Pages.BookInformationPage
       Futurice.App.Library.Pages.IndexPage
+      Futurice.App.Library.Pages.AddItemPage
       Futurice.App.Library.Pages.PersonalLoansPage
       Futurice.App.Library.Types
+      Futurice.App.Library.Types.AddItemRequest
       Futurice.App.Library.Types.BoardGameInformation
       Futurice.App.Library.Types.BookInformation
       Futurice.App.Library.Types.BookInformationResponse

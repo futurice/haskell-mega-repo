@@ -15,26 +15,28 @@ import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
+import Servant.Multipart
 import Servant.Server.Generic
 
 import Futurice.App.Library.API
 import Futurice.App.Library.Config
 import Futurice.App.Library.Ctx
 import Futurice.App.Library.Logic
+import Futurice.App.Library.Pages.AddItemPage
 import Futurice.App.Library.Pages.BookInformationPage
 import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Types
 
-import qualified Data.Map as Map
-import qualified Personio as P
+import qualified Data.ByteString      as DB
+import qualified Data.ByteString.Lazy as DBL
+import qualified Data.Map             as Map
+import qualified Personio             as P
 
-server :: Ctx -> Server LibraryAPI
-server ctx = genericServer $ Record
-    { indexPageGet         = indexPageImpl ctx
-    , booksGet             = getBooksImpl ctx
+apiServer :: Ctx -> Server LibraryAPI
+apiServer ctx = genericServer $ Record
+    { booksGet             = getBooksImpl ctx
     , bookGet              = getBookImpl ctx
-    , bookPageGet          = bookInformationPageImpl ctx
     , bookCoverGet         = getBookCoverImpl ctx
     , borrowPost           = borrowBookImpl ctx
     , snatchPost           = snatchBookImpl ctx
@@ -42,7 +44,17 @@ server ctx = genericServer $ Record
     , loanGet              = getLoanImpl ctx
     , returnPost           = returnLoanImpl ctx
     , personalLoansGet     = personalLoansImpl ctx
+    }
+
+htmlServer :: Ctx -> Server HtmlAPI
+htmlServer ctx = genericServer $ HtmlRecord
+    { addBookPost          = addBookPostImpl ctx
+    , addBoardGamePost     = addBoardGamePostImpl ctx
+    , addItemPageGet       = addItemPageGetImpl ctx
+    , bookPageGet          = bookInformationPageImpl ctx
+    , indexPageGet         = indexPageImpl ctx
     , personalLoansPageGet = personalLoansPageImpl ctx
+
     }
 
 -------------------------------------------------------------------------------
@@ -54,7 +66,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverService          .~ LibraryService
     & serverDescription      .~ "Futushelf 2.0"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
-    & serverApp libraryApi   .~ server
+    & serverHtmlApp htmlApi  .~ htmlServer
+    & serverApp libraryApi   .~ apiServer
     & serverEnvPfx           .~ "LIBRARYAPP"
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
@@ -186,6 +199,26 @@ personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
     case emap ^.at l of
       Nothing -> throwError err403
       Just es -> runLogT "library" (ctxLogger ctx) $ fetchPersonalLoans ctx eidmap (es ^. P.employeeId))
+
+addBookPostImpl :: Ctx -> AddBookInformation -> Handler (HtmlPage "additempage")
+addBookPostImpl ctx addBook@(AddBookInformation _ _ _ _ _ _ _ coverData) = do
+    liftIO $ DB.writeFile ("/Users/toku/hmr/library-app/media/" ++ unpack (fdFileName coverData)) $ DBL.toStrict $ fdPayload coverData
+    res <- runLogT "library" (ctxLogger ctx) $ addNewBook ctx addBook
+    if res then
+      addItemPageGetImpl ctx
+    else
+      throwError err400
+
+addBoardGamePostImpl :: Ctx -> AddBoardGameInformation ->  Handler (HtmlPage "additempage")
+addBoardGamePostImpl ctx addBoardGame = do
+    res <- runLogT "library" (ctxLogger ctx) $ addNewBoardGame ctx addBoardGame
+    if res then
+      addItemPageGetImpl ctx
+    else
+      throwError err400
+
+addItemPageGetImpl :: Ctx -> Handler (HtmlPage "additempage")
+addItemPageGetImpl _ = pure addItemPage
 
 withAuthUser :: Ctx -> Maybe Login -> (Login -> Handler a) -> Handler a
 withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of
