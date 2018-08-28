@@ -21,13 +21,16 @@ module PlanMill.Types.User (
     Team(..),
     TeamId,
     Teams,
+    -- * Account
+    Account (..),
+    AccountId,
+    Accounts,
     ) where
 
 import Data.Aeson.Extra.SymTag         (SymTag)
 import Futurice.Constants              (planmillPublicUrl)
 import Lucid                           (a_, class_, href_, toHtml)
 import PlanMill.Internal.Prelude
-import PlanMill.Types.Account          (AccountId)
 import PlanMill.Types.CapacityCalendar (CapacityCalendarId)
 import PlanMill.Types.Enumeration      (EnumValue)
 import PlanMill.Types.Identifier
@@ -37,6 +40,10 @@ import Text.Regex.Applicative.Text     (match)
 import qualified FUM.Types.Login as FUM
 
 import PlanMill.Types.UOffset          (UOffset (..))
+
+-------------------------------------------------------------------------------
+-- User
+-------------------------------------------------------------------------------
 
 instance IdentifierToHtml User where
     identifierToHtml (Ident i) = a_ attrs (toHtml t)
@@ -155,6 +162,10 @@ instance FromJSON User where
         emptyString :: SymTag "" -> Maybe a
         emptyString _ = Nothing
 
+-------------------------------------------------------------------------------
+-- Team
+-------------------------------------------------------------------------------
+
 data Team = Team
     { _tId            :: !TeamId
     , tName           :: !Text
@@ -200,15 +211,51 @@ instance FromJSON Team where
         <*> obj .:? "passive"
         <*> obj .:? "owner"
 
+-------------------------------------------------------------------------------
+-- Account
+-------------------------------------------------------------------------------
+
+data Account = Account
+    { _saId                 :: !AccountId
+    , saName                :: !Text
+    , saOwner               :: !(Maybe UserId)
+    }
+    deriving (Eq, Ord, Show, Read, Generic, Typeable)
+
+instance Hashable Account
+instance NFData Account
+instance AnsiPretty Account
+instance Binary Account
+instance HasStructuralInfo Account where structuralInfo = sopStructuralInfo
+instance HasSemanticVersion Account
+
+instance FromJSON Account where
+    parseJSON = withObject "Account" $ \obj ->
+        Account <$> obj .: "id"
+                <*> obj .: "name"
+                <*> obj .:? "owner"
+
+-------------------------------------------------------------------------------
+-- Identifiers
+-------------------------------------------------------------------------------
+
 type UserId = Identifier User
 type Users = Vector User
 type TeamId = Identifier Team
 type Teams = Vector Team
+type AccountId = Identifier Account
+type Accounts = Vector Account
+
+-------------------------------------------------------------------------------
+-- Lenses
+-------------------------------------------------------------------------------
 
 makeLenses ''User
 makeLenses ''Team
+makeLenses ''Account
 deriveGeneric ''User
 deriveGeneric ''Team
+deriveGeneric ''Account
 
 instance HasKey User where
     type Key User = UserId
@@ -218,8 +265,15 @@ instance HasKey Team where
     type Key Team = TeamId
     key = tId
 
+instance HasKey Account where
+    type Key Account = AccountId
+    key = saId
+
 instance HasIdentifier User User where
     identifier = uId
 
 instance HasIdentifier Team Team where
     identifier = tId
+
+instance HasIdentifier Account Account where
+    identifier = saId
