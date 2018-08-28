@@ -208,7 +208,7 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
             Nothing -> markPersonioCell "Personio employee should have contract type set"
             Just pContract -> do
                 let pEmploymentType = p ^. P.employeeEmploymentType
-                let pContract' = contractType pEmploymentType pContract (p ^. P.employeeSalaryType) (p ^. P.employeeWeeklyHours)
+                let pContract' = contractType pEmploymentType pContract (p ^. P.employeeSalaryType)
 
                 noWrapSpan_ $ toHtml pContract'
                 toHtml $ " (" <> textShow pContract <> ")"
