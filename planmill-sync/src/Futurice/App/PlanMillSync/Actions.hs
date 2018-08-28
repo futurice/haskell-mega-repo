@@ -2,13 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.PlanMillSync.Actions where
 
-import Data.Fixed                  (Centi)
 import Data.List                   (find)
 import Data.Tuple                  (swap)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Prelude
 import Futurice.Servant            (CommandResponse (..))
-import Futurice.Time               (NDT, TimeUnit (Hours))
 import Prelude ()
 import Text.Regex.Applicative.Text (match)
 
@@ -83,23 +81,23 @@ canUpdateContractType p pm = do
                 else maybe (Left "No salary type")     Right $ p ^. P.employeeSalaryType
             return (ct, st)
 
-    let pContractType = contractType' et ct st (p ^. P.employeeWeeklyHours)
+    let pContractType = contractType' et ct st
 
     if pContractType == pmContract pm
     then Left $ "Contract types match: " ++ show pContractType
     else Right pContractType
 
-contractType :: Maybe P.EmploymentType -> P.ContractType -> Maybe P.SalaryType -> NDT 'Hours Centi -> Text
+contractType :: Maybe P.EmploymentType -> P.ContractType -> Maybe P.SalaryType -> Text
 contractType et ct st = contractType'
     (fromMaybe P.Internal et)
     ct
     (fromMaybe P.Monthly st)
 
-contractType' :: P.EmploymentType -> P.ContractType -> P.SalaryType -> NDT 'Hours Centi -> Text
-contractType' P.External _                _         _ = "Subcontractor"
-contractType' P.Internal P.PermanentAllIn _         _ = "Permanent - no working time"
-contractType' P.Internal _                P.Hourly  _ = "Permanent - hourly pay"
-contractType' P.Internal _                P.Monthly _ = "Permanent - full-time"
+contractType' :: P.EmploymentType -> P.ContractType -> P.SalaryType -> Text
+contractType' P.External _                _         = "Subcontractor"
+contractType' P.Internal P.PermanentAllIn _         = "Employee all-in"
+contractType' P.Internal _                P.Hourly  = "Employee (hourly)"
+contractType' P.Internal _                P.Monthly = "Employee (monthly)"
 
 updateContractType :: Ctx -> Login -> IO (CommandResponse ())
 updateContractType ctx login = runLogT "update-contact-type" lgr $ runExceptT' $ do
