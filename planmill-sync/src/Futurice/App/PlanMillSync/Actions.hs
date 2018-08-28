@@ -98,11 +98,8 @@ contractType et ct st = contractType'
 contractType' :: P.EmploymentType -> P.ContractType -> P.SalaryType -> NDT 'Hours Centi -> Text
 contractType' P.External _                _         _ = "Subcontractor"
 contractType' P.Internal P.PermanentAllIn _         _ = "Permanent - no working time"
-contractType' P.Internal P.FixedTerm      _         _ = "Hired - temporarily"
-contractType' P.Internal P.Permanent      P.Hourly  _ = "Permanent - hourly pay"
-contractType' P.Internal P.Permanent      P.Monthly h
-    | h >= 37                                         = "Permanent - full-time"
-    | otherwise                                       = "Permanent - part-time"
+contractType' P.Internal _                P.Hourly  _ = "Permanent - hourly pay"
+contractType' P.Internal _                P.Monthly _ = "Permanent - full-time"
 
 updateContractType :: Ctx -> Login -> IO (CommandResponse ())
 updateContractType ctx login = runLogT "update-contact-type" lgr $ runExceptT' $ do
