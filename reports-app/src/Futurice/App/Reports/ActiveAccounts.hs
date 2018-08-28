@@ -32,20 +32,22 @@ import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
 data ActiveEmployee = ActiveEmployee
-    { aeName       :: !Text
-    , aeDay        :: !Day
-    , aeEmail      :: !(Maybe Email)
-    , aePlanmillId :: !PM.UserId
+    { aeName           :: !Text
+    , aeDay            :: !Day
+    , aeEmail          :: !(Maybe Email)
+    , aePlanmillId     :: !PM.UserId
+    , aeEmploymentType :: !(Maybe P.EmploymentType)
     }
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
 
 mkActiveEmployee :: Day -> P.Employee -> PM.User -> ActiveEmployee
 mkActiveEmployee d pe pmu = ActiveEmployee
-    { aeName       = pe ^. P.employeeFullname
-    , aeDay        = d
-    , aeEmail      = pe ^. P.employeeEmail
-    , aePlanmillId = pmu ^. PM.identifier
+    { aeName           = pe ^. P.employeeFullname
+    , aeDay            = d
+    , aeEmail          = pe ^. P.employeeEmail
+    , aePlanmillId     = pmu ^. PM.identifier
+    , aeEmploymentType = pe ^. P.employeeEmploymentType
     }
 
 deriveGeneric ''ActiveEmployee
