@@ -22,7 +22,7 @@ import Futurice.CostCenter
 import Futurice.Prelude
 import Prelude ()
 import Servant                     (toUrlPiece)
-import Servant.Utils.Links         (Link, safeLink)
+import Servant.Links               (Link, safeLink)
 import Text.Regex.Applicative.Text (match)
 
 import qualified Data.Text as T
