@@ -57,6 +57,7 @@ deriveVia [t| FromJSON ActiveEmployee `Via` Sopica ActiveEmployee |]
 
 data ActiveAccount = ActiveAccount
     { aaName      :: !Text
+    , aaOwner     :: !(Maybe Email)
     , aaEmployees :: !(Map FUM.Login ActiveEmployee)
     }
   deriving stock (Show, Generic)
@@ -86,20 +87,34 @@ activeAccountsData = do
     today <- currentDay
     let interval = beginningOfPrev2Month today ... pred today
     fpm <- personioPlanmillMap
-    ActiveAccounts interval . mangle <$>
+    let uidLookup = Map.fromList
+          [ (pmu ^. PM.identifier, p)
+          | (p, pmu) <- toList fpm
+          ]
+    ActiveAccounts interval . mangle uidLookup <$>
         (traverse . traverse) (perEmployee interval) fpm
   where
     mangle
-        :: HashMap FUM.Login (P.Employee, (PM.User, Map PM.AccountId (Day, PM.Account)))
+        :: Map PM.UserId P.Employee
+        -> HashMap FUM.Login (P.Employee, (PM.User, Map PM.AccountId (Day, PM.Account)))
         -> Map PM.AccountId ActiveAccount
-    mangle xs = Map.fromListWith app
-        [ (accId, ActiveAccount (PM.saName acc) $ Map.singleton login $ mkActiveEmployee d pe pmu)
+    mangle uidLookup xs = Map.fromListWith app
+        [ pair accId ActiveAccount
+              { aaName      = PM.saName acc
+              , aaOwner     = do
+                  oid   <- PM.saOwner acc
+                  owner <- uidLookup ^? ix oid
+                  owner ^. P.employeeEmail
+              , aaEmployees = Map.singleton login $ mkActiveEmployee d pe pmu
+              }
         | (login, (pe, (pmu, ys))) <- HM.toList xs
         , (accId, (d, acc)) <- Map.toList ys
         ]
       where
-        app (ActiveAccount a b) (ActiveAccount _ b') =
-            ActiveAccount a $ Map.union b b'
+        app (ActiveAccount a o b) (ActiveAccount _ _  b') =
+            ActiveAccount a o $ Map.union b b'
+
+        pair = (,)
 
     perEmployee :: Interval Day -> PM.User -> m (PM.User, Map PM.AccountId (Day, PM.Account))
     perEmployee interval pmu = do
@@ -134,22 +149,23 @@ activeAccountsRender (ActiveAccounts i xs) = page_ "Active accounts" $ do
     table_ $ do
         thead_ $ tr_ $ do
             th_ "Account"
+            th_ "Owner"
             th_ "Employee name"
             th_ [ title_ "Most recent active day" ] "Day"
             th_ "PlanMill"
             th_ "Email"
 
-        tbody_ $ for_ xs $ \(ActiveAccount acc employees) -> rows
-            (toHtml acc)
+        tbody_ $ for_ xs $ \(ActiveAccount acc owner employees) -> rows
+            [ toHtml acc, traverse_ toHtml owner ]
             $ flip Map.mapWithKey employees $ \_login ActiveEmployee {..} -> do
                 td_ $ toHtml aeName
                 td_ $ traverse_ toHtml aeEmail
                 td_ $ toHtml $ show aeDay
                 td_ $ toHtml aePlanmillId
 
-rows :: (Monad m, Foldable f) => HtmlT m () -> f (HtmlT m ()) -> HtmlT m ()
+rows :: (Monad m, Foldable f) => [HtmlT m ()] -> f (HtmlT m ()) -> HtmlT m ()
 rows x ys = case toList ys of
-    []      -> tr_ $ td_ x >> td_ mempty
+    []      -> tr_ $ traverse_ td_ x >> td_ mempty
     (y:ys') -> do
-        tr_ $ td_ [ rowspan_ $ textShow $ succ $ length ys' ] x >> y
+        tr_ $ traverse_ (td_ [ rowspan_ $ textShow $ succ $ length ys' ]) x >> y
         for_ ys' $ \y' -> tr_ y'
