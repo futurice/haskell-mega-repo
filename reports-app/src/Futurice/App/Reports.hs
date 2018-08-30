@@ -30,6 +30,7 @@ import Servant.Graph              (Graph (..))
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.API
+import Futurice.App.Reports.PlanMillAccountValidation (pmAccountValidationData)
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
@@ -206,6 +207,7 @@ server ctx = makeServer ctx reports
     -- tables
     :<|> liftIO (serveData activeAccountsData ctx)
     :<|> liftIO (serveData activeAccountsData ctx)
+    :<|> liftIO (serveData pmAccountValidationData ctx)
     :<|> liftIO serveInventory
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)

@@ -140,6 +140,7 @@ library
       Futurice.App.Reports.PowerProjects
       Futurice.App.Reports.PowerUser
       Futurice.App.Reports.SupervisorsGraph
+      Futurice.App.Reports.PlanMillAccountValidation
       Futurice.App.Reports.Templates
       Futurice.App.Reports.TimereportsByTask
       Futurice.App.Reports.UtzChart
