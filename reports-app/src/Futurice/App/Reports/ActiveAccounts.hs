@@ -91,19 +91,21 @@ activeAccountsData = do
           [ (pmu ^. PM.identifier, p)
           | (p, pmu) <- toList fpm
           ]
-    ActiveAccounts interval . mangle uidLookup <$>
+    ActiveAccounts interval . mangle today uidLookup <$>
         (traverse . traverse) (perEmployee interval) fpm
   where
     mangle
-        :: Map PM.UserId P.Employee
+        :: Day
+        -> Map PM.UserId P.Employee
         -> HashMap FUM.Login (P.Employee, (PM.User, Map PM.AccountId (Day, PM.Account)))
         -> Map PM.AccountId ActiveAccount
-    mangle uidLookup xs = Map.fromListWith app
+    mangle today uidLookup xs = Map.fromListWith app
         [ pair accId ActiveAccount
               { aaName      = PM.saName acc
               , aaOwner     = do
                   oid   <- PM.saOwner acc
                   owner <- uidLookup ^? ix oid
+                  guard $ P.employeeIsActive today owner
                   owner ^. P.employeeEmail
               , aaEmployees = Map.singleton login $ mkActiveEmployee d pe pmu
               }
@@ -149,14 +151,15 @@ activeAccountsRender (ActiveAccounts i xs) = page_ "Active accounts" $ do
     table_ $ do
         thead_ $ tr_ $ do
             th_ "Account"
+            th_ "Account PM#"
             th_ "Owner"
             th_ "Employee name"
             th_ [ title_ "Most recent active day" ] "Day"
-            th_ "PlanMill"
+            th_ "Employee PM#"
             th_ "Email"
 
-        tbody_ $ for_ xs $ \(ActiveAccount acc owner employees) -> rows
-            [ toHtml acc, traverse_ toHtml owner ]
+        tbody_ $ ifor_ xs $ \accId (ActiveAccount acc owner employees) -> rows
+            [ toHtml acc, toHtml accId, traverse_ toHtml owner ]
             $ flip Map.mapWithKey employees $ \_login ActiveEmployee {..} -> do
                 td_ $ toHtml aeName
                 td_ $ traverse_ toHtml aeEmail

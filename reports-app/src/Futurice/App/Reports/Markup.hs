@@ -54,6 +54,10 @@ indexPage = page_ "Reports" $ do
     fullRow_ $ ul_ $ do
         void $ hsequenceK $ hcmap (Proxy :: Proxy RClass) makeLink links
 
+        li_ $ a_ [ href_ "/tables/active-accounts" ] "Active accounts"
+        li_ $ a_ [ href_ "/tables/planmill-account-validation" ] "Validation of PlanMill account data"
+        li_ $ a_ [ href_ "/tables/inventory-summary" ] "Mobile budget stats"
+
     fullRow_ $ h2_ "Integrations for Power"
     fullRow_ $ ul_ $ do
         li_ $ a_ [ href_ "/power/users" ] "Users"
