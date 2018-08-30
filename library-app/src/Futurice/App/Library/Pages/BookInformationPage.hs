@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Library.BookInformationPage where
+module Futurice.App.Library.Pages.BookInformationPage where
 
 import Data.List        (partition)
 import Data.Maybe       (isJust)
@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import qualified Personio  as P
 
 bookInformationPage :: BookInformationResponse -> [LoanData] -> IdMap P.Employee -> HtmlPage ("bookinformation")
-bookInformationPage (BookInformationResponse _binfoid title isbn author publisher published cover _amazonLink books) ls es = page_ "Book details " (Nothing :: Maybe Nav) $ do
+bookInformationPage (BookInformationResponse binfoid title isbn author publisher published cover _amazonLink books) ls es = page_ "Book details " (Nothing :: Maybe Nav) $ do
     fullRow_ $ do
         div_ [] $ do
             img_ [src_ $ linkToText $ fieldLink bookCoverGet cover ]
@@ -41,17 +41,23 @@ bookInformationPage (BookInformationResponse _binfoid title isbn author publishe
                     th_ "ISBN"
                     td_ $ toHtml $ isbn
     fullRow_ $ do
-        title_ "Books"
+        h2_ "Books"
         for_ officeMap $ \(lib, bs) -> do
             case lib of
               OfficeLibrary library -> do
-                  row_ $ toHtml library
-                  row_ $ for_ (listToMaybe $ (snd . partitionByLoan) bs) $ \_ -> do
-                      toHtml $ (show . length . snd . partitionByLoan) bs <> " books available"
-                  row_ $ do
-                      span_ $ toHtml $ idT $ "Copies on loan "
-                      for_ (fst $ partitionByLoan bs) $ \b ->
-                        for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> span_ $ toHtml $ (idToName es $ person) <> " " <> (T.pack $ show day)
+                  h3_ $ T.pack $ show $ toHtml library
+                  for_ (listToMaybe $ (snd . partitionByLoan) bs) $ \_ -> do
+                      span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (show . length . snd . partitionByLoan) bs <> " books available"
+                      button_ [class_ "button tiny",
+                               data_ "futu-id" "loan-item",
+                               data_ "item-id" (T.pack $ show binfoid),
+                               data_ "library" (T.pack $ show $ toHtml library)] $ toHtml ("Borrow" :: Text)
+                  table_ $ do
+                      thead_ $ tr_ $ th_ $ toHtml $ idT $ "Copies on loan "
+                      tbody_ $ for_ (fst $ partitionByLoan bs) $ \b ->
+                        for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> tr_ $ do
+                          td_ $ toHtml $ (idToName es $ person)
+                          td_ $ toHtml $ T.pack $ show day
               _ -> pure ()
     where
       idT :: Text -> Text
