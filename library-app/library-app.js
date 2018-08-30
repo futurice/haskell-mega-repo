@@ -35,10 +35,39 @@ futu.onload(function () {
         sel.onchange = function () {
             $$("form").forEach(function (s) { s.style.display = "none" });
             if (this.value === "Book") {
-                $$("form[data-futu-id=add-new-book").forEach(function (s) { s.style.display = "block" });
+                $$("form[data-futu-id=add-new-book]").forEach(function (s) { s.style.display = "block" });
             } else if (this.value === "Boardgame") {
-                $$("form[data-futu-id=add-new-boardgame").forEach(function (s) { s.style.display = "block" });
+                $$("form[data-futu-id=add-new-boardgame]").forEach(function (s) { s.style.display = "block" });
             }
         };
+    });
+
+    $$("button[data-futu-id=find-by-isbn]").forEach(function (btn) {
+        buttonOnClick(btn, function () {
+            var isbn = $("input#isbn").value;
+            if(isbn) {
+                futu.fetchJSON("/book/isbn/" + isbn)
+                    .then(function (response) {
+                        //Fill form with the isbn values
+                        if(response.dataSourceM === 'DSDatabase') {
+                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.idM;
+                            $("form[data-futu-id=add-new-book] input[name='title']").value = response.titleM;
+                            $("form[data-futu-id=add-new-book] input[name='author']").value = response.authorM;
+                            $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisherM;
+                            $("form[data-futu-id=add-new-book] input[name='published']").value = response.publishedM;
+                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLinkM;
+                            var currentBooks = '<ul>';
+                            response.booksM.forEach(function (lib) {
+                                currentBooks = currentBooks + '<li>' + lib.library + ' ' + lib.amountOfBooks + '</li>';
+                            })
+                            currentBooks = currentBooks + '</ul>';
+                            $("div#info-box").innerHTML =
+                                '<span class="label warning">Books with this ISBN exists already in these libraries:'+currentBooks+'Add new copies by selecting a library and quantity.</span>';
+                        }})
+                    .catch(function (error) {
+                        $("div#info-box").innerHTML = '<span class="info">No books found in database with this ISBN</span>';
+                    });
+            }
+        });
     });
 });

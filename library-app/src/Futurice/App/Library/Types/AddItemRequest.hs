@@ -12,6 +12,7 @@ import Futurice.Prelude
 import Prelude ()
 import Servant.Multipart
 
+import Futurice.App.Library.Types.BookInformation
 import Futurice.App.Library.Types.Library
 
 data AddBookInformation = AddBookInformation
@@ -23,6 +24,7 @@ data AddBookInformation = AddBookInformation
     , _addBookAmazonLink             :: !Text
     , _addBookLibraries              :: ![(Library, Int)]
     , _addBookCover                  :: !(FileData Mem)
+    , _addBookInformationId          :: !(Maybe BookInformationId)
     } deriving Show
 
 data AddBoardGameInformation = AddBoardGameInformation
@@ -38,13 +40,13 @@ data AddBoardGameInformation = AddBoardGameInformation
 usedLibraries :: [Library]
 usedLibraries = (filter (/= OfficeLibrary offOther) . filter (/= UnknownLibrary)) allLibraries
 
-formtextToInt :: Text -> Maybe Int
-formtextToInt t = case decimal t of
+fromtextToInt :: Text -> Maybe Int
+fromtextToInt t = case decimal t of
     Left _ -> Nothing
     Right (num,_) -> Just num
 
 booksPerLibrary :: MultipartData a -> [(Library, Int)]
-booksPerLibrary dt = catMaybes $ map (\l -> sequence (l, lookupInput ("amount-" <> libraryToText l) dt >>= formtextToInt)) $ usedLibraries
+booksPerLibrary dt = catMaybes $ map (\l -> sequence (l, lookupInput ("amount-" <> libraryToText l) dt >>= fromtextToInt)) $ usedLibraries
 
 instance FromMultipart Mem AddBookInformation where
     fromMultipart multipartData = AddBookInformation
@@ -59,6 +61,7 @@ instance FromMultipart Mem AddBookInformation where
         <*> lookupInput "amazon-link" multipartData
         <*> pure (booksPerLibrary multipartData)
         <*> cover
+        <*> pure (BookInformationId <$> fromIntegral <$> (lookupInput "bookinformationid" multipartData >>= fromtextToInt))
       where
         cover = lookupFile "cover-file" $ multipartData
 
@@ -66,7 +69,7 @@ instance FromMultipart Mem AddBoardGameInformation where
     fromMultipart multipartData = AddBoardGameInformation
         <$> lookupInput "name" multipartData
         <*> pure (lookupInput "publisher" multipartData)
-        <*> pure (lookupInput "published" multipartData >>= formtextToInt)
+        <*> pure (lookupInput "published" multipartData >>= fromtextToInt)
         <*> pure (lookupInput "designer" multipartData)
         <*> pure (lookupInput "artist" multipartData)
         <*> pure (booksPerLibrary multipartData)

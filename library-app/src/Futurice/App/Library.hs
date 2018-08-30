@@ -37,6 +37,7 @@ apiServer :: Ctx -> Server LibraryAPI
 apiServer ctx = genericServer $ Record
     { booksGet             = getBooksImpl ctx
     , bookGet              = getBookImpl ctx
+    , bookByISBNGet        = getBookByISBNImpl ctx
     , bookCoverGet         = getBookCoverImpl ctx
     , borrowPost           = borrowBookImpl ctx
     , snatchPost           = snatchBookImpl ctx
@@ -177,6 +178,16 @@ getBookImpl ctx lid = do
       Just info -> pure info
       Nothing -> throwError $ err404 { errBody = "No bookinformation found"}
 
+getBookByISBNImpl :: Ctx -> Text -> Handler BookInformationMagicResponse
+getBookByISBNImpl ctx isbn = do
+    info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformationByISBN ctx isbn
+    case info of
+      Just (BookInformationResponse infoid title _ author publisher published cover amazonLink books) ->
+          pure $ BookInformationMagicResponse infoid title isbn author publisher published cover amazonLink (booksPerLibrary books) DSDatabase
+      Nothing -> throwError $ err404 { errBody = "No book with that ISBN found" }
+  where
+      booksPerLibrary x = uncurry BooksPerLibrary <$> (Map.toList . Map.fromListWith (+)) ((\(Books lib _) -> (lib,1)) <$> x)
+
 getLoansImpl :: Ctx -> Handler [Loan]
 getLoansImpl ctx = do
     runLogT "library" (ctxLogger ctx) $ do
@@ -201,7 +212,7 @@ personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
       Just es -> runLogT "library" (ctxLogger ctx) $ fetchPersonalLoans ctx eidmap (es ^. P.employeeId))
 
 addBookPostImpl :: Ctx -> AddBookInformation -> Handler (HtmlPage "additempage")
-addBookPostImpl ctx addBook@(AddBookInformation _ _ _ _ _ _ _ coverData) = do
+addBookPostImpl ctx addBook@(AddBookInformation _ _ _ _ _ _ _ coverData _) = do
     liftIO $ DB.writeFile ("/Users/toku/hmr/library-app/media/" ++ unpack (fdFileName coverData)) $ DBL.toStrict $ fdPayload coverData
     res <- runLogT "library" (ctxLogger ctx) $ addNewBook ctx addBook
     if res then

@@ -249,6 +249,13 @@ fetchBookInformationsWithCriteria ctx criteria direction limit start search = do
       startInfo SortISBN info = info ^. bookISBN
       startInfo SortPublished info = T.pack $ show $ info ^. bookPublished -- bookPublished
 
+fetchBookInformationByISBN :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Text -> m (Maybe BookInformationResponse)
+fetchBookInformationByISBN ctx isbn = do
+    binfoid <- safePoolQuery ctx "SELECT bookinfo_id FROM library.bookinformation WHERE isbn = ?" (Only isbn)
+    case listToMaybe binfoid of
+      Just infoid -> listToMaybe <$> fetchBookResponse ctx infoid
+      Nothing -> pure Nothing
+
 fetchBookInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m (Maybe BookInformation)
 fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE bookinfo_id = ?" (Only binfoid)
 
@@ -260,7 +267,7 @@ fetchBookResponse ctx binfoid = do
       Nothing -> pure $ []
       Just info -> pure $ [toBookInformationResponse (fold (toBooks <$> books)) info]
   where
-      toBooks item = [Books (idItemId item) (idLibrary item)]
+      toBooks item = [Books (idLibrary item) (idItemId item)]
       toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse infoid title isbn author publisher published cover amazonLink books
 
@@ -272,7 +279,7 @@ fetchBooksResponse ctx bookInfos = do
       bookInformationMap books = Map.fromListWith (++) $ catMaybes (toBooks <$> books)
       toBooks (ItemData iid lib bookinfoid) =
           case bookinfoid of
-              BookInfoId binfoid -> Just (binfoid, [Books iid lib])
+              BookInfoId binfoid -> Just (binfoid, [Books lib iid])
               _                  -> Nothing
       toBookInformationResponse books (BookInformation binfoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse binfoid title isbn author publisher published cover amazonLink (fromMaybe [] (books ^.at binfoid))
@@ -284,12 +291,18 @@ bookIdToInformation iid bookidmap bookinfomap = do
     bookinfomap ^.at binfoid
 
 addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> m Bool
-addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _) = do
-    bookInfoId <- listToMaybe <$> safePoolQuery
-                  ctx
-                  -- TODO add cover link
-                  "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, amazon_link) VALUES (?,?,?,?,?,?) returning bookinfo_id"
-                  (title, isbn, author, publisher, published, amazonLink)
+addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) = do
+    checkedInfoId <- runMaybeT $ do
+        info <- MaybeT $ pure binfoid
+        bookInformation <- MaybeT $ fetchBookInformation ctx info
+        if bookInformation ^. bookISBN == isbn then pure $ bookInformation ^. bookInformationId else MaybeT $ pure Nothing
+    bookInfoId <- case checkedInfoId of
+                    Nothing ->  listToMaybe <$> safePoolQuery
+                                ctx
+                                -- TODO add cover link
+                                "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, amazon_link) VALUES (?,?,?,?,?,?) returning bookinfo_id"
+                                (title, isbn, author, publisher, published, amazonLink)
+                    Just info -> pure $ Just info
     case bookInfoId of
       Just infoId -> do
           for_ libraryBooks $ \(lib, n) -> do
