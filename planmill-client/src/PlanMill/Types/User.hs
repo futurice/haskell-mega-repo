@@ -215,6 +215,15 @@ instance FromJSON Team where
 -- Account
 -------------------------------------------------------------------------------
 
+instance IdentifierToHtml Account where
+    identifierToHtml (Ident i) = a_ attrs (toHtml t)
+      where
+        t = textShow i
+        attrs =
+            [ class_ "planmill"
+            , href_ $ planmillPublicUrl <> "?category=Sales%20management.Accounts.Single%20account.Summary&Id=" <> t
+            ]
+
 data Account = Account
     { _saId                 :: !AccountId
     , saName                :: !Text
