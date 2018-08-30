@@ -46,6 +46,7 @@ library
     , servant-server
     , stm
     , swagger2
+    , time
 
   -- Move Futurice.Daily to futurice-prelude
   build-depends:
