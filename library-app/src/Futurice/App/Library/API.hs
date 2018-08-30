@@ -23,6 +23,7 @@ import Futurice.App.Library.Types
 data Record route = Record
     { booksGet             :: route :- "book" :> Get '[JSON] [BookInformationResponse]
     , bookGet              :: route :- "book" :> Capture "id" BookInformationId :> Get '[JSON] BookInformationResponse
+    , bookByISBNGet        :: route :- "book" :> "isbn" :> Capture "isbn" Text :> Get '[JSON] BookInformationMagicResponse
     , bookCoverGet         :: route :- BookCoverEndpoint
     , borrowPost           :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
     , snatchPost           :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan

@@ -14,10 +14,10 @@ import Futurice.App.Library.Types.Item
 import Futurice.App.Library.Types.Library
 
 data Books = Books
-    { _booksBookId  :: !ItemId
-    , _booksLibrary :: !Library
+    { _booksLibrary :: !Library
+    , _booksBookId  :: !ItemId
     }
-    deriving (Eq, Ord, Show, Generic, ToJSON, ToSchema)
+    deriving (Eq, Ord, Show, Generic, ToSchema, Typeable)
 
 data BookInformationResponse = BookInformationResponse
     { _id          :: !BookInformationId
@@ -31,8 +31,10 @@ data BookInformationResponse = BookInformationResponse
     , _books       :: ![Books]
     } deriving  (Eq, Ord, Show, Typeable, Generic)
 
+deriveGeneric ''Books
 deriveGeneric ''BookInformationResponse
 
 deriveVia [t| ToJSON BookInformationResponse `Via` Sopica BookInformationResponse |]
+deriveVia [t| ToJSON Books `Via` Sopica Books |]
 
 instance ToSchema BookInformationResponse
