@@ -17,7 +17,8 @@ import Futurice.App.Library.Types.Item
 
 import qualified Personio as P
 
-newtype LoanId   = LoanId Int32 deriving newtype (Eq, Ord, Show, ToJSON, FromHttpApiData, FromField, ToField)
+newtype LoanId   = LoanId Int32
+    deriving newtype (Eq, Ord, Show, ToJSON, FromHttpApiData, ToHttpApiData, FromField, ToField)
 
 data Loan = Loan
     { _loanId            :: !LoanId
@@ -31,6 +32,8 @@ data ReturnedLoan = ReturnedLoan
     { _returnedLoan :: !Loan
     , _returnedDate :: !Day
     }
+
+makeLenses ''Loan
 
 deriveGeneric ''LoanId
 deriveGeneric ''Loan
