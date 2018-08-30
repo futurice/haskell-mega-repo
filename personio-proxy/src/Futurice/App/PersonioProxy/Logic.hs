@@ -11,6 +11,7 @@ import Data.Aeson.Types                 (parseEither, parseJSON)
 import Data.Distributive                (Distributive (..))
 import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
+import Data.Time (addDays)
 import Data.List                        (foldl', partition)
 import Futurice.App.PersonioProxy.Types
 import Futurice.Cache                   (cached)
@@ -120,43 +121,56 @@ tribeEmployeesChart :: Ctx -> Handler (Chart "tribe-employees")
 tribeEmployeesChart ctx = do
     today <- currentDay
 
-    values <- liftIO $ runLogT "chart-tribe-employees" (ctxLogger ctx) $
+    (values, future) <- liftIO $ runLogT "chart-tribe-employees" (ctxLogger ctx) $
         cached (ctxCache ctx) 600 () $ do
             fes <- liftIO $ readTVarIO $ ctxPersonio ctx
             res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
-            return
-                [ pair d $ employeesCounts fes d (res ! d)
+            return $ pair
+                [ pair d $ employeesCounts True fes d (res ! d)
                 | d <- [ $(mkDay "2018-06-01") .. today ]
+                ]
+                [ pair d $ employeesCounts False fes d (res ! d)
+                | d <- [ today .. addDays 50 today ]
                 ]
 
     return $ Chart . C.toRenderable $ do
+        C.layout_title .= "Employees per tribe"
+
         C.setColors $ cycle
             [ C.opaque $ FC.colourToDataColour $ FC.FutuAccent f a
             | f <- [ minBound .. maxBound ]
             , a <- [ FC.AC2, FC.AC3 ]
             ]
 
-        C.layout_title .= "Employees per tribe"
-
         C.plot $ fmap C.stackedToPlot $ C.stacked
             (tabulate $ view unpacked . tribeToText)
             values
+
+        C.setColors $ cycle
+            [ flip C.withOpacity 0.5 $ FC.colourToDataColour $ FC.FutuAccent f a
+            | f <- [ minBound .. maxBound ]
+            , a <- [ FC.AC2, FC.AC3 ]
+            ]
+
+        C.plot $ fmap C.stackedToPlot $ C.stacked
+            (tabulate $ view unpacked . tribeToText)
+            future
 
         C.layout_x_axis . C.laxis_title .= "day"
         C.layout_y_axis . C.laxis_title .= "Employees"
         C.layout_y_axis . C.laxis_override .= overrideY
   where
-    employeesCounts :: IdMap.IdMap P.Employee -> Day -> [P.SimpleEmployee] -> PerTribe Int
-    employeesCounts fes today es' = foldl' go (pureRep 0) es
-          where
-            es :: [P.SimpleEmployee]
-            es = flip filter es' $ \e ->
-                P.employeeIsActive today e
-                && fes ^? ix (e ^. P.employeeId) . P.employeeEmploymentType . _Just == Just P.Internal
+    employeesCounts :: Bool -> IdMap.IdMap P.Employee -> Day -> [P.SimpleEmployee] -> PerTribe Int
+    employeesCounts status fes today es' = foldl' go (pureRep 0) es
+      where
+        es :: [P.SimpleEmployee]
+        es = flip filter es' $ \e ->
+            (if status then P.employeeIsActive else P.employeeIsActive') today e 
+            && fes ^? ix (e ^. P.employeeId) . P.employeeEmploymentType . _Just == Just P.Internal
 
-            go :: PerTribe Int -> P.SimpleEmployee -> PerTribe Int
-            go (Per m) e = Per $ m
-                & at (e ^. P.employeeTribe) %~ Just . maybe 1 succ
+        go :: PerTribe Int -> P.SimpleEmployee -> PerTribe Int
+        go (Per m) e = Per $ m
+            & at (e ^. P.employeeTribe) %~ Just . maybe 1 succ
 
     overrideY :: C.AxisData Int -> C.AxisData Int
     overrideY ax = ax & C.axis_grid .~ (ax ^.. C.axis_ticks . folded . _1)
