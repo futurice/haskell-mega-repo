@@ -7,6 +7,7 @@
 module Futurice.App.Library.Types.Library where
 
 import Data.Aeson
+import Data.Aeson.Types                     (toJSONKeyText)
 import Data.Swagger
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
@@ -34,10 +35,11 @@ libraryToText (OfficeLibrary office) = officeToText office
 libraryToText Elibrary = "Elibrary"
 libraryToText UnknownLibrary = "Unknown"
 
-libraryFromText :: Text -> Maybe Library
+libraryFromText :: Text -> Library
 libraryFromText library = case officeFromText library of
-    Just office -> pure $ OfficeLibrary office
-    Nothing -> if library == "Elibrary" then pure Elibrary else pure UnknownLibrary
+    Just office                      -> OfficeLibrary office
+    Nothing | library == "Elibrary"  -> Elibrary
+            | otherwise              -> UnknownLibrary
 
 instance FromField Library where
     fromField _ mdata = return library
@@ -63,9 +65,10 @@ instance ToJSON Library where
     toJSON Elibrary               = object ["office" .= ("Elibrary" :: Text)]
     toJSON _                      = object ["office" .= ("Unknown" :: Text)]
 
+instance ToJSONKey Library where
+    toJSONKey = toJSONKeyText libraryToText
+
 instance FromJSON Library where
     parseJSON = withObject "Library" $ \l -> do
         office <- l .: "office"
-        case officeFromText office of
-            Just o -> pure $ OfficeLibrary o
-            Nothing -> if office == "Elibrary" then pure Elibrary else pure UnknownLibrary
+        pure $ libraryFromText office

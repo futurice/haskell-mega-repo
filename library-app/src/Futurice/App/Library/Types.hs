@@ -19,8 +19,7 @@ module Futurice.App.Library.Types (
     BookInformation (..),
     BookInformationId,
     BookInformationResponse (..),
-    BookInformationMagicResponse (..),
-    BooksPerLibrary (..),
+    BookInformationByISBNResponse (..),
     DataSource (..),
     Books (..),
     BorrowRequest (..),
@@ -43,7 +42,7 @@ module Futurice.App.Library.Types (
 import Futurice.App.Library.Types.AddItemRequest
 import Futurice.App.Library.Types.BoardGameInformation
 import Futurice.App.Library.Types.BookInformation
-import Futurice.App.Library.Types.BookInformationMagicResponse
+import Futurice.App.Library.Types.BookInformationByISBNResponse
 import Futurice.App.Library.Types.BookInformationResponse
 import Futurice.App.Library.Types.BorrowRequest
 import Futurice.App.Library.Types.Item
