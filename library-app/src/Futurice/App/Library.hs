@@ -178,15 +178,24 @@ getBookImpl ctx lid = do
       Just info -> pure info
       Nothing -> throwError $ err404 { errBody = "No bookinformation found"}
 
-getBookByISBNImpl :: Ctx -> Text -> Handler BookInformationMagicResponse
+getBookByISBNImpl :: Ctx -> Text -> Handler BookInformationByISBNResponse
 getBookByISBNImpl ctx isbn = do
     info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformationByISBN ctx isbn
     case info of
-      Just (BookInformationResponse infoid title _ author publisher published cover amazonLink books) ->
-          pure $ BookInformationMagicResponse infoid title isbn author publisher published cover amazonLink (booksPerLibrary books) DSDatabase
+      Just BookInformationResponse{..} -> pure $ BookInformationByISBNResponse
+        { _byISBNId         = _id
+        , _byISBNTitle      = _title
+        , _byISBNISBN       = _ISBN
+        , _byISBNAuthor     = _author
+        , _byISBNPublisher  = _publisher
+        , _byISBNPublished  = _published
+        , _byISBNCover      = _cover
+        , _byISBNAmazonLink = _amazonLink
+        , _byISBNBooks      = booksPerLibrary _books
+        , _byISBNDataSource = DSDatabase }
       Nothing -> throwError $ err404 { errBody = "No book with that ISBN found" }
   where
-      booksPerLibrary x = uncurry BooksPerLibrary <$> (Map.toList . Map.fromListWith (+)) ((\(Books lib _) -> (lib,1)) <$> x)
+      booksPerLibrary x = Map.fromListWith (+) ((\(Books lib _) -> (lib,1)) <$> x)
 
 getLoansImpl :: Ctx -> Handler [Loan]
 getLoansImpl ctx = do

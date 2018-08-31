@@ -49,17 +49,17 @@ futu.onload(function () {
                 futu.fetchJSON("/book/isbn/" + isbn)
                     .then(function (response) {
                         //Fill form with the isbn values
-                        if(response.dataSourceM === 'DSDatabase') {
-                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.idM;
-                            $("form[data-futu-id=add-new-book] input[name='title']").value = response.titleM;
-                            $("form[data-futu-id=add-new-book] input[name='author']").value = response.authorM;
-                            $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisherM;
-                            $("form[data-futu-id=add-new-book] input[name='published']").value = response.publishedM;
-                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLinkM;
+                        if(response.dataSource === 'DSDatabase') {
+                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.id;
+                            $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
+                            $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
+                            $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
+                            $("form[data-futu-id=add-new-book] input[name='published']").value = response.published;
+                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLink;
                             var currentBooks = '<ul>';
-                            response.booksM.forEach(function (lib) {
-                                currentBooks = currentBooks + '<li>' + lib.library + ' ' + lib.amountOfBooks + '</li>';
-                            })
+                            for (var lib in response.books) {
+                                currentBooks = currentBooks + '<li>' + lib + ' ' + response.books[lib] + '</li>';
+                            }
                             currentBooks = currentBooks + '</ul>';
                             $("div#info-box").innerHTML =
                                 '<span class="label warning">Books with this ISBN exists already in these libraries:'+currentBooks+'Add new copies by selecting a library and quantity.</span>';
