@@ -5,22 +5,22 @@ module Futurice.Lambda.PlanMillProxy.Timereports (
     planMillProxyTimereportsLambda,
     ) where
 
-import Data.Aeson                (Value)
+import Data.Aeson                (Value, object, (.=))
 import Data.Binary.Tagged        (taggedEncode)
+import Data.Time                 (addDays)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
        (ConnectInfo, Connection, Pool, createPostgresPool, poolExecuteMany,
        safePoolExecute, safePoolQuery, safePoolQuery_)
 import Futurice.Prelude
-import Numeric.Interval.NonEmpty ((...))
+import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
 import PlanMill.Worker           (Workers, submitPlanMill, workers)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.Set                   as Set
-import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified PlanMill                   as PM
 import qualified PlanMill.Types.Query       as PM
@@ -53,14 +53,34 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
         else updateAllTimereports pool ws now
 
 -------------------------------------------------------------------------------
+-- Intervals
+-------------------------------------------------------------------------------
+
+-- TODO: this needs updating. Making it dependent on current day?
+intervals :: NonEmpty (PM.Interval Day)
+intervals =
+    ($(mkDay "2019-01-01") ... $(mkDay "2019-12-31")) :|
+    [ $(mkDay "2018-01-01") ... $(mkDay "2018-12-31")
+    , $(mkDay "2017-01-01") ... $(mkDay "2017-12-31")
+    , $(mkDay "2016-01-01") ... $(mkDay "2016-12-31")
+    , $(mkDay "2015-01-01") ... $(mkDay "2015-12-31")
+    ]
+
+-------------------------------------------------------------------------------
 -- Without timereports
 -------------------------------------------------------------------------------
 
 -- | Update timereports for people without any timereports
 updateWithoutTimereports
     :: Pool Connection -> Workers -> LogT IO ()
-updateWithoutTimereports pool ws = do
-    logInfo_ $ "Selecting timereports for users without any"
+updateWithoutTimereports pool ws = for_ intervals $ \interval -> do
+    let dayMin = inf interval
+    let dayMax = sup interval
+
+    logInfoI "Selecting timereports for users without any $min ... $max" $ object
+        [ "min" .= dayMin
+        , "max" .= dayMax
+        ]
 
     res <- liftIO $ tryDeep $ submitPlanMill ws $ PM.queryToRequest usersQuery
     for_ res $ \allUsers -> do
@@ -68,8 +88,11 @@ updateWithoutTimereports pool ws = do
 
         uids <- Postgres.fromOnly <$$> safePoolQuery_ pool selectUsersQuery
         let uidsSet = Set.fromList uids
+        let uidsWithout = Set.difference allUidsSet uidsSet
 
-        for_ (Set.difference allUidsSet uidsSet) (updateTimereportsForUser pool ws)
+        logInfo "Users without timereports" uidsWithout
+
+        for_ uidsWithout (updateTimereportsForUser pool ws dayMin dayMax)
   where
     selectUsersQuery :: Postgres.Query
     selectUsersQuery = fromString $ unwords $
@@ -84,34 +107,59 @@ updateWithoutTimereports pool ws = do
 updateAllTimereports
     :: Pool Connection -> Workers -> UTCTime -> LogT IO ()
 updateAllTimereports pool ws now = do
-    logInfo_ $ "Updating timereports for users"
+    logInfo_ "Updating timereports for users"
+
+    -- We want a UTC 02:00 point before `now`.
+    let UTCTime today offset = now
+    let threshold = 7200
+    let stamp
+          | offset < threshold = UTCTime (addDays (-1) today) threshold
+          | otherwise     = UTCTime today threshold
+
+    logInfoI "Selecting users with timereports updated before $stamp"
+        $ object [ "stamp" .= stamp ]
 
     -- Select uids with oldest updated time reports
-    uids <- Postgres.fromOnly <$$> safePoolQuery pool selectUsersQuery
-        (Postgres.Only $ previousThreeThirty now)
-    logInfo_ $ "Updating timereports for users: " <>
-        T.intercalate ", " (textShow . getIdent <$> uids)
+    (uids, dayMin, dayMax) <- selectUids stamp intervals
 
-    for_ uids (updateTimereportsForUser pool ws)
+    logInfoI "Updating timereports for users ($min ... $max)" $ object
+            [ "uids" .= uids
+            , "min"  .= dayMin
+            , "max"  .= dayMax
+            ]
+
+    for_ uids (updateTimereportsForUser pool ws dayMin dayMax)
   where
-    getIdent (PM.Ident a) = a
+    selectUids :: UTCTime -> NonEmpty (PM.Interval Day) -> LogT IO ([PM.UserId], Day, Day)
+    selectUids stamp (i :| is) = do
+        let dayMin = inf i
+        let dayMax = sup i
+        uids <- Postgres.fromOnly
+            <$$> safePoolQuery pool selectUsersQuery (dayMin, dayMax, stamp)
+        if null uids
+        then case is of
+            (i' : is') -> selectUids stamp (i' :| is')
+            []         -> return ([], dayMin, dayMax)
+        else return (uids, dayMin, dayMax)
 
     selectUsersQuery :: Postgres.Query
     selectUsersQuery = fromString $ unwords $
         [ "SELECT u.uid FROM "
-        , "(SELECT uid, MIN(updated) as updated FROM planmillproxy.timereports GROUP BY uid) AS u"
+        , "(SELECT uid, MIN(updated) as updated FROM planmillproxy.timereports WHERE day >= ? AND day <= ? GROUP BY uid) AS u"
         , "WHERE updated < ?"
         , "ORDER BY u.updated ASC LIMIT 67"
         , ";"
         ]
 
+
+
 -------------------------------------------------------------------------------
 -- Update timereports of user
 -------------------------------------------------------------------------------
 
-updateTimereportsForUser :: Pool Connection -> Workers -> PM.UserId -> LogT IO ()
-updateTimereportsForUser pool ws  uid = do
-    let interval = $(mkDay "2015-01-01") ... $(mkDay "2018-12-31")
+updateTimereportsForUser :: Pool Connection -> Workers -> Day -> Day -> PM.UserId -> LogT IO ()
+updateTimereportsForUser pool ws dayMin dayMax uid = do
+    let interval = dayMin ... dayMax
     let q = PM.QueryTimereports (Just interval) uid
 
     -- Fetch timereports from planmill
@@ -120,7 +168,7 @@ updateTimereportsForUser pool ws  uid = do
     for_ res $ \tr -> do
         -- Check what timereports we have stored, remove ones not in planmill anymore
         let planmillTrids = Set.fromList (tr ^.. traverse . PM.identifier)
-        postgresTrids <- toTrids <$> safePoolQuery pool selectQuery (Postgres.Only uid)
+        postgresTrids <- toTrids <$> safePoolQuery pool selectQuery (uid, dayMin, dayMax)
 
         let notInPlanmill = Set.difference postgresTrids planmillTrids
         when (not $ Set.null notInPlanmill) $ do
@@ -142,6 +190,7 @@ updateTimereportsForUser pool ws  uid = do
     selectQuery = fromString $ unwords $
         [ "SELECT trid FROM planmillproxy.timereports"
         , "WHERE uid = ?"
+        , "AND day >= ? AND day <= ?"
         , ";"
         ]
 
@@ -179,19 +228,3 @@ insertTimereports pool trs =
         , "WHERE tr.trid = EXCLUDED.trid"
         , ";"
         ]
-
--------------------------------------------------------------------------------
--- Intervals
--------------------------------------------------------------------------------
-
--- | Get previous @03:30@ (in @Europe/Helsinki@ timezone) from the given
--- timestamp.
-previousThreeThirty :: UTCTime -> UTCTime
-previousThreeThirty x
-    | y < x     = y
-    | otherwise = z
-  where
-    LocalTime d _ = utcToHelsinkiTime x
-    tod = TimeOfDay 3 30 0
-    y = helsinkiTimeToUtc (LocalTime d tod)
-    z = helsinkiTimeToUtc (LocalTime (pred d) tod)
