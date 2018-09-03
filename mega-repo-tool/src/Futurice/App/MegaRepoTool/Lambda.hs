@@ -1,22 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.Lambda (cmdLambda) where
 
-import Data.Aeson                (encode)
+import Data.Aeson         (encode)
+import Data.Machine
+       (MachineT (..), Step (..), await, repeatedly, runT_, (<~))
 import Futurice.Prelude
-import PackageAwsLambda          (compilePython, findForeignLib, mkConf')
+import PackageAwsLambda   (compilePython, findForeignLib, mkConf')
 import Prelude ()
-import System.Directory          (doesFileExist)
-import System.Environment        (getEnvironment)
-import System.Exit               (exitFailure, exitWith)
-import System.FilePath           (takeDirectory, (</>))
-import System.IO.Temp            (withTempDirectory)
-import System.Process.ByteString (readCreateProcessWithExitCode)
+import System.Directory   (doesFileExist)
+import System.Environment (getEnvironment)
+import System.Exit        (ExitCode (..), exitFailure, exitWith)
+import System.FilePath    (takeDirectory, (</>))
+import System.IO          (Handle, hFlush, hIsEOF, stdout)
+import System.IO.Temp     (withTempDirectory)
 
-import qualified Data.ByteString       as BS
-import qualified Data.ByteString.Char8 as BS8
-import qualified Data.ByteString.Lazy  as BSL
-import qualified Data.Map              as Map
-import qualified System.Process        as Process
+import qualified Control.Concurrent.Async as A
+import qualified Data.ByteString          as BS
+import qualified Data.ByteString.Char8    as BS8
+import qualified Data.ByteString.Lazy     as BSL
+import qualified Data.Map                 as Map
+import qualified System.Process           as Process
 
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
@@ -30,7 +33,12 @@ cmdLambda lambdaName mpayload = do
         return
         (cfg ^. mrtLambdas . at lambdaName)
 
-    _ <- Process.readProcess "cabal" ["new-build", lambdaDef ^. ldFlib . unpacked] ""
+    (ecBuild, ()) <- readProcessMachines "cabal" ["new-build", lambdaDef ^. ldFlib . unpacked] $ \mout merr ->
+        A.runConcurrently $
+            A.Concurrently (drain mout) *>
+            A.Concurrently (drain merr)
+
+    guard (ecBuild == ExitSuccess)
 
     flibPath <- maybe
         (putStrLn ("Cannot find shared library" ++ show (lambdaDef ^. ldFlib)) >> exitFailure)
@@ -65,10 +73,17 @@ cmdLambda lambdaName mpayload = do
               { Process.cwd = Just tmpDir
               , Process.env = Just env
               }
-        (ec, out, err) <- readCreateProcessWithExitCode proc mempty
-        BS.putStr out
-        BS.putStr err
+        (ec, ()) <- readCreateProcessMachines proc $ \mout merr ->
+            A.runConcurrently $ A.Concurrently (drain mout) *> A.Concurrently (drain merr)
         exitWith ec
+
+drain :: MachineT IO k ByteString -> IO ()
+drain m = runT_ $ sink <~ m where
+    sink = repeatedly $ do
+        bs <- await
+        lift $ do
+            BS.putStr bs
+            hFlush stdout
 
 pyModule :: Text -> Maybe Value -> ByteString
 pyModule n v = BS8.unlines
@@ -84,3 +99,47 @@ pyModule n v = BS8.unlines
   where
     v' = maybe "null" (BSL.toStrict . encode) v
     n' = encodeUtf8 n
+
+-------------------------------------------------------------------------------
+-- "machines-process"
+-------------------------------------------------------------------------------
+
+-- | Variant of 'readProcessWithExitCode'
+readProcessMachines
+    :: FilePath                                                              -- ^ Filename of the executable
+    -> [String]                                                              -- ^ any arguments
+    -> (MachineT IO k BS.ByteString -> MachineT IO k BS.ByteString -> IO c)  -- ^ continuation given stdout and stderr
+    -> IO (ExitCode, c)
+readProcessMachines cmd args = readCreateProcessMachines (Process.proc cmd args)
+
+readCreateProcessMachines
+    :: Process.CreateProcess
+    -> (MachineT IO k BS.ByteString -> MachineT IO k BS.ByteString -> IO c)  -- ^ continuation given stdout and stderr
+    -> IO (ExitCode, c)
+readCreateProcessMachines cp0 kont =
+    Process.withCreateProcess cp $ \Nothing (Just outh) (Just errh) ph -> do
+        let mstdout = sourceHandleWith (flip BS.hGetSome 4096) outh
+        let mstderr = sourceHandleWith (flip BS.hGetSome 4096) errh
+
+        A.runConcurrently $ (,)
+            <$> A.Concurrently (Process.waitForProcess ph)
+            <*> A.Concurrently (kont mstdout mstderr)
+  where
+    cp = cp0
+        { Process.std_in  = Process.NoStream
+        , Process.std_out = Process.CreatePipe
+        , Process.std_err = Process.CreatePipe
+        }
+
+    sourceHandleWith :: (Handle -> IO a) -> Handle -> MachineT IO k a
+    sourceHandleWith f h = sourceIOWith (return h) hIsEOF f
+
+    sourceIOWith :: IO r -> (r -> IO Bool) -> (r -> IO a) -> MachineT IO k a
+    sourceIOWith acquire release read' = MachineT $ do
+        r         <- acquire
+        released  <- release r
+        if released then
+            return Stop
+        else do
+            x <- read' r
+            return . Yield x $ sourceIOWith acquire release read'

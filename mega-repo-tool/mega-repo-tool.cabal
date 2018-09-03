@@ -45,6 +45,7 @@ library
     , ansi-terminal
     , ansi-wl-pprint
     , array
+    , async
     , base >=4.7   && <4.12
     , base-compat
     , base64-bytestring
@@ -114,7 +115,7 @@ executable mega-repo-tool
   hs-source-dirs:
       cli
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall
+  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -T"
   build-depends:
       base
     , mega-repo-tool
