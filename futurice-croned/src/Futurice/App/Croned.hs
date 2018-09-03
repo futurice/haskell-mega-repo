@@ -151,7 +151,7 @@ trigger ctx = runLogT "trigger" (ctxLogger ctx) $ do
                 , lrRuntime  = ts
                 , lrStarted  = now
                 }
-            
+
             out <- readText ctxStdout
             err <- readText ctxStdout
             return (out, err)
