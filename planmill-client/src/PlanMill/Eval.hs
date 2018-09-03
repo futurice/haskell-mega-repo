@@ -8,13 +8,14 @@ import PlanMill.Internal.Prelude
 
 import Control.Monad.Http         (MonadHttp (..), httpLbs)
 import Data.Aeson.Compat          (eitherDecode)
-import Data.Unique                (hashUnique, newUnique)
+import Data.IORef                 (IORef, atomicModifyIORef', newIORef)
 import Futurice.Metrics.RateMeter (mark)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
        requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
 import Network.HTTP.Types         (Header, Status (..), statusIsSuccessful)
+import System.IO.Unsafe           (unsafePerformIO)
 import Text.Printf                (printf)
 
 -- Qualified imports
@@ -30,12 +31,24 @@ import PlanMill.Auth    (Auth (..), getAuth)
 import PlanMill.Classes
 import PlanMill.Types
 
+-------------------------------------------------------------------------------
+-- Counter
+-------------------------------------------------------------------------------
+
+counter :: IORef Int
+counter = unsafePerformIO $ newIORef 0
+{-# NOINLINE counter #-}
+
+-------------------------------------------------------------------------------
+-- Evaluate
+-------------------------------------------------------------------------------
+
 evalPlanMill
     :: forall m env e a.
         ( MonadHttp m, MonadThrow m, MonadLog m -- MonadTime m implied by MonadLog
         , MonadReader env m, HasPlanMillCfg env
         , MonadCRandom e m, ContainsCryptoGenError e
-        , MonadIO m  -- newUnique, mark
+        , MonadIO m  -- counter, mark
         , MonadClock m -- clocked
         , FromJSON a
         )
@@ -74,7 +87,7 @@ evalPlanMill pm = do
         let req' = setQueryString' qs req
         let m = BS8.unpack (method req')
         let url = BS8.unpack (path req') <> BS8.unpack (queryString req')
-        uniqId <- liftIO (textShow . hashUnique <$> newUnique)
+        uniqId <- liftIO $ textShow <$> atomicModifyIORef' counter (\c -> (succ c, c))
         logLocalDomain ("req-" <> uniqId) $ do
             logTrace_ $ T.pack $ "req " <> m <> " " <> url
             -- We need to generate auth (nonce) at each req
