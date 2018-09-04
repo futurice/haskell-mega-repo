@@ -44,7 +44,7 @@ check-checksums : data.sha256sums
 	sha256sum -c data.sha256sums
 
 generate-checksums :
-	sha256sum $$(find -L data -type f | sort) > data.sha256sums
+	sha256sum $$(find -L data -type f | grep -v 'swp$$' | sort) > data.sha256sums
 
 copy-samples :
 	if [ -e data/ ]; then echo "exists!"; else ln -s data.sample data; fi
