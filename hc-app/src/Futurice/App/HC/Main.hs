@@ -5,12 +5,14 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.HC.Main (defaultMain) where
 
 import Futurice.App.EmailProxy.Client (sendEmail)
+import Data.Time (addDays)
 import Futurice.App.EmailProxy.Types
        (emptyReq, fromEmail, reqBody, reqCc, reqSubject)
 import Futurice.FUM.MachineAPI        (FUM6 (..), fum6)
@@ -23,6 +25,7 @@ import Futurice.Servant
 import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
 import Servant
+import Servant.Chart                  (Chart)
 import Servant.Server.Generic
 import System.Entropy                 (getEntropy)
 
@@ -32,6 +35,9 @@ import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
+import Futurice.App.HC.Achoo.Fetch
+import Futurice.App.HC.Achoo.Render
+import Futurice.App.HC.Achoo.Types        (AchooChart)
 import Futurice.App.HC.Anniversaries
 import Futurice.App.HC.API
 import Futurice.App.HC.Config
@@ -52,6 +58,8 @@ server ctx = genericServer $ Record
     , recHrNumbers           = hrnumbersAction ctx
     , recEarlyCaring         = earlyCaringAction ctx
     , recEarlyCaringSubmit   = earlyCaringSubmitAction ctx
+    , recAchooReport         = achooReportAction ctx
+    , recAchooChart          = achooChartAction ctx
     }
 
 withAuthUser
@@ -149,6 +157,34 @@ earlyCaringAction ctx = impl ctx
                 <*> PMQ.capacities interval uid
                 <*> PMQ.timereports interval uid
                 <*> PMQ.userTimebalance uid
+
+achooReportAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Maybe Day
+    -> Maybe Day
+    -> Maybe Bool
+    -> Handler (HtmlPage "achoo-report")
+achooReportAction ctx mfu mi' ma' all' = withAuthUser (const impl) ctx mfu where
+    impl = achooReportPage <$> achooReportFetch mi ma (fromMaybe True all')
+
+    (mi, ma) = case (mi', ma') of
+        (Just x,  Just y)  -> (x, y)
+        (Nothing, Nothing) -> ( $(mkDay "2018-01-01"), $(mkDay "2018-06-30") )
+        (Just x,  Nothing) -> (x, addDays 180 x) -- TODO: add 6 months
+        (Nothing, Just x)  -> (x, addDays (negate 180) x)
+
+achooChartAction
+    :: Ctx
+    -> Maybe FUM.Login
+    -> AchooChart
+    -> Day
+    -> Day
+    -> Bool
+    -> Handler (Chart "achoo-chart")
+achooChartAction ctx mfu ac mi ma a = withAuthUser' (error "404") impl ctx mfu where
+    impl _ = achooRenderChart ac <$> achooReportFetch mi ma a
+
 
 earlyCaringSubmitAction
     :: Ctx
