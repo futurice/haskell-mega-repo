@@ -4,6 +4,8 @@
 {-# LANGUAGE TypeFamilies    #-}
 {-# LANGUAGE TypeOperators   #-}
 module Futurice.App.Library.Types (
+    AddBookInformation (..),
+    AddBoardGameInformation (..),
     BoardGameInformation (..),
     bookInformationId,
     bookTitle,
@@ -17,6 +19,8 @@ module Futurice.App.Library.Types (
     BookInformation (..),
     BookInformationId,
     BookInformationResponse (..),
+    BookInformationByISBNResponse (..),
+    DataSource (..),
     Books (..),
     BorrowRequest (..),
     Loan (..),
@@ -28,12 +32,17 @@ module Futurice.App.Library.Types (
     ItemInfo (..),
     LoanId,
     Library (..),
+    allLibraries,
+    libraryToText,
+    usedLibraries,
     SortCriteria (..),
     SortDirection (..)
     ) where
 
+import Futurice.App.Library.Types.AddItemRequest
 import Futurice.App.Library.Types.BoardGameInformation
 import Futurice.App.Library.Types.BookInformation
+import Futurice.App.Library.Types.BookInformationByISBNResponse
 import Futurice.App.Library.Types.BookInformationResponse
 import Futurice.App.Library.Types.BorrowRequest
 import Futurice.App.Library.Types.Item

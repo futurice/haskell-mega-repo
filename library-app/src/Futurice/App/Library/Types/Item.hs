@@ -1,10 +1,12 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE InstanceSigs    #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE InstanceSigs      #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module Futurice.App.Library.Types.Item where
 
+import Data.Aeson
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
 import Futurice.Generics
@@ -45,3 +47,12 @@ instance ToParamSchema ItemId where toParamSchema = newtypeToParamSchema
 instance ToSchema ItemId where declareNamedSchema = newtypeDeclareNamedSchema
 instance ToSchema ItemInfo
 instance ToSchema Item where declareNamedSchema = sopDeclareNamedSchema
+instance FromJSON ItemInfo where
+    parseJSON = withObject "Item" $ \item -> do
+        book <- item .:? "book"
+        boardgame <- item .:? "boardgame"
+        case book of
+          Just b -> pure $ ItemBook b
+          Nothing -> case boardgame of
+            Just bo -> pure $ ItemBoardGame bo
+            Nothing -> empty

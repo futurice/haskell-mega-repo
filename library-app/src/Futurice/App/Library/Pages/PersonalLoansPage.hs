@@ -5,9 +5,7 @@ module Futurice.App.Library.Pages.PersonalLoansPage where
 import Data.Either      (partitionEithers)
 import Futurice.Prelude
 import Prelude ()
-import Servant
 
-import Futurice.App.Library.API
 import Futurice.App.Library.Markup
 import Futurice.App.Library.Types
 
