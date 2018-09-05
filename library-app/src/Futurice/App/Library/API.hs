@@ -12,14 +12,18 @@ import Servant.API
 import Servant.API.Generic
 import Servant.HTML.Lucid        (HTML)
 import Servant.JuicyPixels       (PNG)
+import Servant.Multipart
 
 import Futurice.App.Library.Types
 
+----------------------------
+-- Machine API
+----------------------------
+
 data Record route = Record
-    { indexPageGet         :: route :- IndexPageEndpoint
-    , booksGet             :: route :- "book" :> Get '[JSON] [BookInformationResponse]
+    { booksGet             :: route :- "book" :> Get '[JSON] [BookInformationResponse]
     , bookGet              :: route :- "book" :> Capture "id" BookInformationId :> Get '[JSON] BookInformationResponse
-    , bookPageGet          :: route :- BookInformationPageEndpoint
+    , bookByISBNGet        :: route :- "book" :> "isbn" :> Capture "isbn" Text :> Get '[JSON] BookInformationByISBNResponse
     , bookCoverGet         :: route :- BookCoverEndpoint
     , borrowPost           :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
     , snatchPost           :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan
@@ -27,10 +31,25 @@ data Record route = Record
     , loanGet              :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
     , returnPost           :: route :- "return" :> Capture "id" LoanId :> Post '[JSON] Bool
     , personalLoansGet     :: route :- SSOUser :> "user" :> "loan" :> Get '[JSON] [Loan]
-    , personalLoansPageGet :: route :- SSOUser :> "user" :> "page" :> Get '[HTML] (HtmlPage "personalinformation")
     } deriving (Generic)
 
 type LibraryAPI = ToServantApi Record
+
+libraryApi :: Proxy LibraryAPI
+libraryApi = genericApi (Proxy :: Proxy Record)
+
+----------------------------
+-- Page API
+----------------------------
+
+data HtmlRecord route = HtmlRecord
+    { addItemPageGet       :: route :- "item" :> "add" :> Get '[HTML] (HtmlPage "additempage")
+    , addBookPost          :: route :- "item" :> "add" :> "book" :> MultipartForm Mem AddBookInformation :> Post '[HTML] (HtmlPage "additempage")
+    , addBoardGamePost     :: route :- "item" :> "add" :> "boardgame" :> MultipartForm Mem AddBoardGameInformation :> Post '[HTML] (HtmlPage "additempage")
+    , bookPageGet          :: route :- BookInformationPageEndpoint
+    , indexPageGet         :: route :- IndexPageEndpoint
+    , personalLoansPageGet :: route :- SSOUser :> "user" :> "page" :> Get '[HTML] (HtmlPage "personalinformation")
+    } deriving (Generic)
 
 type IndexPageEndpoint = QueryParam "criteria" SortCriteria
                          :> QueryParam "direction" SortDirection
@@ -41,5 +60,7 @@ type IndexPageEndpoint = QueryParam "criteria" SortCriteria
 type BookCoverEndpoint = "book" :> "cover" :> Capture "picture" Text :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
 type BookInformationPageEndpoint = "book" :> "page" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "bookinformation")
 
-libraryApi :: Proxy LibraryAPI
-libraryApi = genericApi (Proxy :: Proxy Record)
+type HtmlAPI = ToServantApi HtmlRecord
+
+htmlApi :: Proxy HtmlAPI
+htmlApi = genericApi (Proxy :: Proxy HtmlRecord)
