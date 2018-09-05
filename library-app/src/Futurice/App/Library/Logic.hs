@@ -8,6 +8,7 @@ import Data.List
 import Database.PostgreSQL.Simple         (In (..))
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.Types
+import Futurice.App.Sisosota.Types        (ContentHash, contentHashToText)
 import Futurice.IdMap
 import Futurice.Postgres
 import Futurice.Prelude
@@ -69,6 +70,8 @@ idToName emap pid = case emap ^.at pid of
 
 itemArrayToMap :: [ItemData] -> Map ItemId (InfoId, Library)
 itemArrayToMap = Map.fromList . fmap (\(ItemData iid lib infoid) -> (iid, (infoid, lib)))
+
+
 
 -------------------------------------------------------------------------------
 -- Item functions
@@ -290,8 +293,8 @@ bookIdToInformation iid bookidmap bookinfomap = do
     binfoid <- bookinfoid
     bookinfomap ^.at binfoid
 
-addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> m Bool
-addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) = do
+addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> ContentHash -> m Bool
+addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) contentHash = do
     checkedInfoId <- runMaybeT $ do
         info <- MaybeT $ pure binfoid
         bookInformation <- MaybeT $ fetchBookInformation ctx info
@@ -299,9 +302,8 @@ addNewBook ctx (AddBookInformation title isbn author publisher published amazonL
     bookInfoId <- case checkedInfoId of
                     Nothing ->  listToMaybe <$> safePoolQuery
                                 ctx
-                                -- TODO add cover link
-                                "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, amazon_link) VALUES (?,?,?,?,?,?) returning bookinfo_id"
-                                (title, isbn, author, publisher, published, amazonLink)
+                                "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, cover, amazon_link) VALUES (?,?,?,?,?,?,?) returning bookinfo_id"
+                                (title, isbn, author, publisher, published, contentHashToText contentHash, amazonLink)
                     Just info -> pure $ Just info
     case bookInfoId of
       Just infoId -> do
@@ -309,6 +311,10 @@ addNewBook ctx (AddBookInformation title isbn author publisher published amazonL
               replicateM_ n $ safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id) VALUES (?,?)" (lib, infoId :: BookInformationId)
           pure True
       Nothing -> pure False
+
+updateBookCover :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> ContentHash -> m Int64
+updateBookCover ctx binfoid contentHash = safePoolExecute ctx "UPDATE library.bookinformation SET cover = ? where bookinfo_id = ?" (contentHashToText contentHash, binfoid)
+
 -------------------------------------------------------------------------------
 -- Boardgame functions
 -------------------------------------------------------------------------------

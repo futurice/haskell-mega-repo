@@ -37,6 +37,7 @@ library
       , containers
       , env-config
       , fum-types
+      , futurice-constants
       , futurice-foundation
       , futurice-integrations
       , futurice-postgres
@@ -47,10 +48,12 @@ library
       , personio-client
       , postgresql-simple
       , servant
+      , servant-client
       , servant-JuicyPixels
       , servant-lucid
       , servant-multipart
       , servant-server
+      , sisosota-client
       , swagger2
       , text
   exposed-modules:
