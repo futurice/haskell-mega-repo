@@ -37,13 +37,14 @@ import Lucid                       (ToHtml (..))
 import Prelude ()
 import Text.Regex.Applicative.Text (few, match, psym, sym)
 
-import qualified Data.Csv        as Csv
-import qualified Data.Map        as Map
-import qualified Data.Swagger    as Swagger
-import qualified Data.Text       as T
-import qualified Data.Vector     as V
-import qualified Futurice.Aeson  as Aeson
-import qualified Test.QuickCheck as QC
+import qualified Data.Csv            as Csv
+import qualified Data.Map            as Map
+import qualified Data.Swagger        as Swagger
+import qualified Data.Text           as T
+import qualified Data.Vector         as V
+import qualified Futurice.Aeson      as Aeson
+import qualified Futurice.Chart.Enum as C
+import qualified Test.QuickCheck     as QC
 
 -- | Company.
 newtype Company = Company Int
@@ -64,6 +65,11 @@ instance Bounded Company where
 
 instance Hashable Company where
     hashWithSalt salt (Company i) = hashWithSalt salt i
+
+instance C.PlotValue Company where
+    toValue   = C.enumToValue
+    fromValue = C.enumFromValue
+    autoAxis  = C.enumAutoAxis companyName
 
 -------------------------------------------------------------------------------
 -- Values
@@ -205,6 +211,11 @@ instance ToHttpApiData Company where
 newtype Country = Country { countryCompany :: Company }
   deriving stock (Eq, Ord, Show, Generic, Lift)
   deriving newtype (NFData, Binary, Hashable)
+
+instance C.PlotValue Country where
+    toValue   = C.enumToValue
+    fromValue = C.enumFromValue
+    autoAxis  = C.enumAutoAxis $ T.takeWhile (/= '/') . countryToText
 
 countryToText :: Country -> Text
 countryToText (Country c) = cCountry ci <> " / " <> cName ci where

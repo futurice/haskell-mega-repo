@@ -28,11 +28,12 @@ library
     , lens
     , mtl
     , vector
-  other-extensions:
-      OverloadedStrings
+  default-extensions:
       DeriveGeneric
       DeriveFunctor
+      ScopedTypeVariables
   exposed-modules:
+      Futurice.Chart.Enum
       Futurice.Chart.Stacked
       Futurice.Chart.Histogram
   ghc-options: -Wall
