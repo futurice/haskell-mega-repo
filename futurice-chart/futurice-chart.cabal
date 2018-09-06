@@ -1,0 +1,40 @@
+cabal-version:  2.2
+name:           futurice-chart
+version:        0
+
+synopsis:       Chart futurice extras
+description:    Chart futurice extras: stacked, histogram, ...
+category:       Web
+homepage:       https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-mega-repo
+
+library
+  build-depends:
+    , adjunctions
+    , base
+    , Chart
+    , colour
+    , data-default-class
+    , futurice-prelude
+    , lens
+    , mtl
+    , vector
+  other-extensions:
+      OverloadedStrings
+      DeriveGeneric
+      DeriveFunctor
+  exposed-modules:
+      Futurice.Chart.Stacked
+      Futurice.Chart.Histogram
+  ghc-options: -Wall
+  hs-source-dirs: src
+  default-language: Haskell2010

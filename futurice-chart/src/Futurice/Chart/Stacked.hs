@@ -11,11 +11,8 @@ import Graphics.Rendering.Chart.Easy hiding (index)
 
 data PlotStacked f x y = PlotStacked
     { _plot_stacked_titles      :: f String
-
     , _plot_stacked_values      :: [(x, f y)]
-
     , _plot_stacked_fill_styles :: f FillStyle
-
     , _plot_stacked_line_styles :: f LineStyle
     }
 
@@ -45,6 +42,8 @@ stackedToPlot
     => PlotStacked f x y -> Plot x y
 stackedToPlot = stackedToPlot' (tabulate id) index
 
+-- | Note: this is cheating as @f@ can be of different shapes,
+-- as it's not required to be 'Representable' here.
 stackedToPlot'
     :: forall f i x y. (Traversable f, Num y)
     => f i                        -- ^ @'tabulate' 'id'@ i.e. @positions@
