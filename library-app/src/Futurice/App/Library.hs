@@ -8,8 +8,8 @@ import Codec.Picture                (DynamicImage, decodeImage)
 import Data.Char                    (isSpace)
 import FUM.Types.Login
 import Futurice.App.Sisosota.Client
-import Futurice.App.Sisosota.Types  (ContentHash, contentHashFromText)
-import Futurice.Constants           (sisosotaPublicUrl)
+import Futurice.App.Sisosota.Types  (ContentHash)
+import Futurice.Constants           (servicePublicUrl)
 import Futurice.IdMap               (IdMap, fromFoldable)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation    (HtmlPage)
@@ -101,16 +101,14 @@ getPersonioDataMap ctx = do
                                                Just login -> Just (login, e)
                                                Nothing -> Nothing) es'
 
-fetchCover :: (Monad m, MonadIO m, MonadThrow m) => Ctx -> Text -> m (Either String DBL.ByteString)
-fetchCover ctx hashText = do
-    url <- parseBaseUrl $ T.unpack sisosotaPublicUrl
-    case contentHashFromText hashText of
-      Left a -> pure $ Left a
-      Right contenthash -> liftIO $ sisosotaGet (ctxManager ctx) url contenthash
+fetchCover :: (Monad m, MonadIO m, MonadThrow m) => Ctx -> ContentHash -> m (Either String DBL.ByteString)
+fetchCover ctx contentHash = do
+    url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
+    liftIO $ sisosotaGet (ctxManager ctx) url contentHash
 
 addNewCover :: Ctx -> DBL.ByteString -> IO ContentHash
 addNewCover ctx cover = do
-    url <- parseBaseUrl $ T.unpack sisosotaPublicUrl
+    url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
     sisosotaPut (ctxManager ctx) url cover
 
 -------------------------------------------------------------------------------
@@ -127,24 +125,24 @@ addNewCover ctx cover = do
 --Helper function to load local cover pictures to sisosota
 _updateAllBookCovers :: Ctx -> Handler ()
 _updateAllBookCovers ctx = do
-    books <-  runLogT "library" (ctxLogger ctx) $ fetchBookInformations ctx
+    books <- runLogT "library" (ctxLogger ctx) $ fetchCoverInformationsAsText ctx
     for_ books fetchAndSendCover
   where
-      fetchAndSendCover :: BookInformation -> Handler ()
-      fetchAndSendCover bookInformation = do
-          pictData <- if (all isSpace (T.unpack $ bookInformation ^. bookCover)) || not (T.isPrefixOf "cover" (bookInformation ^. bookCover)) then
+      fetchAndSendCover :: (BookInformationId, Text) -> Handler ()
+      fetchAndSendCover (binfoId, coverText) = do
+          pictData <- if all isSpace (T.unpack coverText) || not (T.isPrefixOf "cover" coverText) then
                         pure Nothing
                       else
-                        Just <$> liftIO (DBL.readFile (T.unpack $ "/Users/toku/hmr/library-app/media/" <> (bookInformation ^. bookCover)))
+                        Just <$> liftIO (DBL.readFile (T.unpack $ "ADD LOCAL MEDIA DIR" <> coverText))
           contentHash <- case pictData of
                            Nothing -> pure Nothing
                            Just pic -> Just <$> liftIO (addNewCover ctx pic)
           _ <- case contentHash of
-                 Just h -> runLogT "library" (ctxLogger ctx) $ updateBookCover ctx (bookInformation ^. bookInformationId) h
+                 Just h -> runLogT "library" (ctxLogger ctx) $ updateBookCover ctx binfoId h
                  Nothing -> pure 0
           pure ()
 
-getBookCoverImpl :: Ctx -> Text -> Handler (Headers '[Header "Cache-Control" Text] (DynamicImage))
+getBookCoverImpl :: Ctx -> ContentHash -> Handler (Headers '[Header "Cache-Control" Text] (DynamicImage))
 getBookCoverImpl ctx picture = do
     picData <- fetchCover ctx picture
     case picData of

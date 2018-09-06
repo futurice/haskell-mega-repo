@@ -7,6 +7,7 @@
 module Futurice.App.Library.Types.BookInformationByISBNResponse where
 
 import Data.Aeson
+import Futurice.App.Sisosota.Types (ContentHash)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -25,11 +26,11 @@ data BookInformationByISBNResponse = BookInformationByISBNResponse
     , _byISBNAuthor          :: !Text
     , _byISBNPublisher       :: !Text
     , _byISBNPublished       :: !Int
-    , _byISBNCover           :: !Text
+    , _byISBNCover           :: !ContentHash
     , _byISBNAmazonLink      :: !Text
     , _byISBNBooks           :: !(Map Library Int)
     , _byISBNDataSource      :: !DataSource
-    } deriving  (Eq, Ord, Show, Typeable, Generic)
+    } deriving  (Show, Typeable, Generic)
 
 deriveGeneric ''BookInformationByISBNResponse
 

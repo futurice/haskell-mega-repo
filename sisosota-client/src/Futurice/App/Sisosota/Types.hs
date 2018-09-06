@@ -13,10 +13,13 @@ module Futurice.App.Sisosota.Types (
     mkContentData,
   ) where
 
-import Data.Aeson       (FromJSON (..), ToJSON (..))
-import Data.Swagger     (NamedSchema (..), ToParamSchema (..), ToSchema (..))
+import Data.Aeson                           (FromJSON (..), ToJSON (..))
+import Data.Swagger
+       (NamedSchema (..), ToParamSchema (..), ToSchema (..))
+import Database.PostgreSQL.Simple.FromField
+import Database.PostgreSQL.Simple.ToField
 import Futurice.Prelude
-import Lucid            (ToHtml (..))
+import Lucid                                (ToHtml (..))
 import Prelude ()
 import Servant.API
        (FromHttpApiData (..), MimeRender (..), MimeUnrender (..), OctetStream,
@@ -87,6 +90,16 @@ instance FromJSON ContentHash where
 instance ToJSON ContentHash where
     toJSON     = toJSON . contentHashToText
     toEncoding = toEncoding . contentHashToText
+
+instance ToField ContentHash where
+    toField = toField . contentHashToText
+
+instance FromField ContentHash where
+    fromField a b = do
+        fieldText <- fromField a b
+        case contentHashFromText fieldText of
+          Right contentHash -> pure contentHash
+          Left _error -> empty
 
 -------------------------------------------------------------------------------
 -- ContentData
