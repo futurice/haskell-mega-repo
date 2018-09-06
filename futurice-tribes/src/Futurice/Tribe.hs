@@ -21,13 +21,14 @@ import Language.Haskell.TH     (ExpQ)
 import Lucid                   (ToHtml (..))
 import Prelude ()
 
-import qualified Data.Csv        as Csv
-import qualified Data.Map        as Map
-import qualified Data.Swagger    as Swagger
-import qualified Data.Text       as T
-import qualified Data.Vector     as V
-import qualified Futurice.Aeson  as Aeson
-import qualified Test.QuickCheck as QC
+import qualified Data.Csv            as Csv
+import qualified Data.Map            as Map
+import qualified Data.Swagger        as Swagger
+import qualified Data.Text           as T
+import qualified Data.Vector         as V
+import qualified Futurice.Aeson      as Aeson
+import qualified Futurice.Chart.Enum as C
+import qualified Test.QuickCheck     as QC
 
 -- | Tribe.
 newtype Tribe = Tribe Int
@@ -50,6 +51,11 @@ instance Bounded Tribe where
 
 instance Hashable Tribe where
     hashWithSalt salt (Tribe i) = hashWithSalt salt i
+
+instance C.PlotValue Tribe where
+    toValue   = C.enumToValue
+    fromValue = C.enumFromValue
+    autoAxis  = C.enumAutoAxis tribeName
 
 -------------------------------------------------------------------------------
 -- Magic

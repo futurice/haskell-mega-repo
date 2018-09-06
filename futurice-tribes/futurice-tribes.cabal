@@ -41,6 +41,7 @@ library
     , cassava
     , containers
     , env-config
+    , futurice-chart
     , futurice-prelude
     , http-api-data
     , kleene

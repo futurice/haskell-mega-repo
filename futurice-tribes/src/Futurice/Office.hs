@@ -21,22 +21,23 @@ module Futurice.Office (
     offOther,
     ) where
 
-import Control.Monad           ((>=>))
-import Futurice.Generics
-import Futurice.Prelude
+import Control.Monad            ((>=>))
 import Futurice.Company
+import Futurice.Generics
 import Futurice.Office.Internal
-import Language.Haskell.TH     (ExpQ)
-import Lucid                   (ToHtml (..))
+import Futurice.Prelude
+import Language.Haskell.TH      (ExpQ)
+import Lucid                    (ToHtml (..))
 import Prelude ()
 
-import qualified Data.Csv        as Csv
-import qualified Data.Map        as Map
-import qualified Data.Swagger    as Swagger
-import qualified Data.Text       as T
-import qualified Data.Vector     as V
-import qualified Futurice.Aeson  as Aeson
-import qualified Test.QuickCheck as QC
+import qualified Data.Csv            as Csv
+import qualified Data.Map            as Map
+import qualified Data.Swagger        as Swagger
+import qualified Data.Text           as T
+import qualified Data.Vector         as V
+import qualified Futurice.Aeson      as Aeson
+import qualified Futurice.Chart.Enum as C
+import qualified Test.QuickCheck     as QC
 
 -- | Office.
 newtype Office = Office Int
@@ -59,6 +60,11 @@ instance Bounded Office where
 
 instance Hashable Office where
     hashWithSalt salt (Office i) = hashWithSalt salt i
+
+instance C.PlotValue Office where
+    toValue   = C.enumToValue
+    fromValue = C.enumFromValue
+    autoAxis  = C.enumAutoAxis officeShortName
 
 -------------------------------------------------------------------------------
 -- Values
