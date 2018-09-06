@@ -210,7 +210,7 @@ instance ToHttpApiData Company where
 -- | Countries and companies are 1-to-1 at the moment.
 newtype Country = Country { countryCompany :: Company }
   deriving stock (Eq, Ord, Show, Generic, Lift)
-  deriving newtype (NFData, Binary, Hashable)
+  deriving newtype (NFData, Binary, Hashable, Enum, Bounded)
 
 instance C.PlotValue Country where
     toValue   = C.enumToValue
