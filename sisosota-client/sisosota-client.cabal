@@ -45,6 +45,7 @@ library
     , futurice-prelude
     , lucid
     , lzma
+    , postgresql-simple
     , servant
     , servant-client
     , servant-client-core

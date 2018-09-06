@@ -10,7 +10,6 @@ module Futurice.Constants (
     planmillPublicUrl,
     planmillPublicUrlStr,
     servicePublicUrl,
-    sisosotaPublicUrl,
     supportEmailHtml,
     competenceMap,
     ) where
@@ -60,9 +59,6 @@ planmillPublicUrl = servicePublicUrl PlanmillService
 
 planmillPublicUrlStr :: String
 planmillPublicUrlStr = planmillPublicUrl ^. unpacked
-
-sisosotaPublicUrl :: Text
-sisosotaPublicUrl = servicePublicUrl SisosotaService
 
 -------------------------------------------------------------------------------
 -- Other constants
