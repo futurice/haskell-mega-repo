@@ -66,6 +66,7 @@ packages:
   fum-carbon-app/
   fum-client/
   fum-types/
+  futurice-chart/
   futurice-constants/
   futurice-croned/
   futurice-foundation/
