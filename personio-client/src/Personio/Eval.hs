@@ -7,9 +7,10 @@ module Personio.Eval (
     ) where
 
 import Control.Monad.Http
-import Control.Monad.State (State, state, evalState)
-import Data.Aeson.Compat  (FromJSON (..), decode)
-import Data.Aeson.Types   (listParser)
+import Control.Monad.State  (State, evalState, state)
+import Data.Aeson.Compat    (FromJSON (..), decode)
+import Data.Aeson.Types     (listParser)
+import Futurice.CareerLevel
 import Futurice.Clock
 import Futurice.Prelude
 import Personio.Request
@@ -18,6 +19,7 @@ import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict     as Map
+import qualified Data.Text           as T
 import qualified Network.HTTP.Client as H
 
 evalPersonioReq
@@ -53,9 +55,15 @@ evalPersonioReq personioReq = do
             Envelope (V validations) <- decode bs
             pure validations
         PersonioAll -> do
-            Envelope (E employees) <- decode bs
-            Envelope (V validations) <- decode bs
-            pure (employees, validations)
+            Envelope (E employees)     <- decode bs
+            Envelope (V validations)   <- decode bs
+            Envelope (CL cl clRole) <- decode bs
+            pure PersonioAllData
+                { paEmployees        = employees
+                , paValidations      = validations
+                , paCareerLevels     = cl
+                , paCareerLevelsRole = clRole
+                }
         -- Direct access doesn't know this.
         -- TODO: maybe return current.
         PersonioSimpleEmployees -> do
@@ -76,6 +84,10 @@ evalPersonioReq personioReq = do
         -- logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
         pure (H.responseBody res)
 
+-------------------------------------------------------------------------------
+-- Newtypes
+-------------------------------------------------------------------------------
+
 -- | A wrapper around list of 'Employee's, using
 -- 'parsePersonioEmployee' in 'FromJSON' instance.
 newtype E = E [Employee]
@@ -83,13 +95,32 @@ newtype E = E [Employee]
 instance FromJSON E where
     parseJSON = fmap E . listParser parsePersonioEmployee
 
-
 newtype V = V [EmployeeValidation]
 
 instance FromJSON V where
     parseJSON
       = fmap (V . postValidatePersonioEmployees)
       . listParser validatePersonioEmployee
+
+data CL = CL (Map CareerLevel Int) (Map Text (Map CareerLevel Int))
+
+instance FromJSON CL where
+    parseJSON = fmap mk . listParser parseCareerLevel where
+        -- 50 is completely arbitrary threshold
+        mk xs = CL cl (Map.filter (\m -> sum m > 50) clRole)
+          where
+            cl = Map.fromListWith (+)
+                [ (x, 1)
+                | (active, _, x) <- xs
+                , active
+                , not $ T.null $ careerLevelToText x
+                ]
+            clRole = Map.fromListWith (Map.unionWith (+))
+                [ (r, Map.singleton x 1)
+                | (active, r, x) <- xs
+                , active
+                , not $ T.null $ careerLevelToText x
+                ]
 
 -------------------------------------------------------------------------------
 -- Intern

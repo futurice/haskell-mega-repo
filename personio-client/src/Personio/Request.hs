@@ -9,13 +9,16 @@
 module Personio.Request (
     PersonioReq(..),
     requestDict,
+    -- * All data
+    PersonioAllData (..),
     -- * Some
     SomePersonioReq (..),
     SomePersonioRes (..),
     ) where
 
-import Data.Aeson.Compat (object, withObject, withText, (.:), (.=), pairs)
-import Data.Constraint   (Dict (..))
+import Data.Aeson.Compat    (object, pairs, withObject, withText, (.:), (.=))
+import Data.Constraint      (Dict (..))
+import Futurice.CareerLevel
 import Futurice.Generics
 import Futurice.Prelude
 import Personio.Types
@@ -23,10 +26,19 @@ import Prelude ()
 
 import qualified Data.Swagger as Swagger
 
+data PersonioAllData = PersonioAllData
+    { paEmployees        :: ![Employee]
+    , paValidations      :: ![EmployeeValidation]
+    , paCareerLevels     :: !(Map CareerLevel Int)
+    , paCareerLevelsRole :: !(Map Text (Map CareerLevel Int))
+    }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
 data PersonioReq a where
     PersonioEmployees       :: PersonioReq [Employee]
     PersonioValidations     :: PersonioReq [EmployeeValidation]
-    PersonioAll             :: PersonioReq ([Employee], [EmployeeValidation])
+    PersonioAll             :: PersonioReq PersonioAllData
     PersonioSimpleEmployees :: PersonioReq (Map Day [SimpleEmployee])
 
 deriving instance Eq (PersonioReq a)
@@ -45,7 +57,7 @@ instance Hashable (PersonioReq a) where
 
 requestDict
     :: ( c [Employee], c [EmployeeValidation]
-       , c ([Employee], [EmployeeValidation])
+       , c PersonioAllData
        , c (Map Day [SimpleEmployee])
        )
     => Proxy c

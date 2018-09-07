@@ -56,22 +56,24 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
 makeCtx cfg@Config {..} lgr mgr _cache _mq = do
     -- employees
-    let fetchEmployees = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
-    (employees, validations) <- fetchEmployees
+    let fetchData = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
+    allData <- fetchData
+    let employees = Personio.paEmployees allData
 
     -- context
     ctx <- newCtx lgr mgr cfg
         (IdMap.fromFoldable employees)
-        validations
+        allData
 
     -- jobs
-    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every 300
+    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchData) $ tail $ every 300
 
     pure (ctx, [ employeesJob ])
   where
-    updateJob :: Ctx -> IO ([Personio.Employee], [Personio.EmployeeValidation]) -> IO ()
-    updateJob ctx fetchEmployees = do
-        (employees, validations) <- fetchEmployees
+    updateJob :: Ctx -> IO Personio.PersonioAllData -> IO ()
+    updateJob ctx fetchData = do
+        allData <- fetchData
+        let employees = Personio.paEmployees allData
         atomically $ do
             writeTVar (ctxPersonio ctx) (IdMap.fromFoldable employees)
-            writeTVar (ctxPersonioValidations ctx) validations
+            writeTVar (ctxPersonioData ctx) allData

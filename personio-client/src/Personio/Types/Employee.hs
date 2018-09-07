@@ -20,6 +20,7 @@ import Data.Time           (zonedTimeToLocalTime)
 import FUM.Types.Login     (Login)
 import Futurice.Aeson
 import Futurice.Company
+import Futurice.CareerLevel
 import Futurice.CostCenter
 import Futurice.Email      (Email)
 import Futurice.Generics
@@ -117,6 +118,27 @@ deriveVia [t| ToJSON Employee    `Via` Sopica Employee |]
 deriveVia [t| FromJSON Employee `Via` Sopica Employee |]
 
 instance ToSchema Employee where declareNamedSchema = sopDeclareNamedSchema
+
+parseCareerLevel :: Value -> Parser (Bool, Text, CareerLevel)
+parseCareerLevel = withObjectDump "Personio.Employee" $ \obj -> do
+    type_ <- obj .: "type"
+    if type_ == ("Employee" :: Text)
+    then obj .: "attributes" >>= parseCareerLevel'
+    else fail $ "Not Employee: " ++ type_ ^. unpacked
+  where
+    parseCareerLevel' :: HashMap Text Attribute -> Parser (Bool, Text, CareerLevel)
+    parseCareerLevel' obj' = pure (,,)
+        <*> isActive
+        <*> parseDynamicAttribute obj "Primary role"
+        <*> parseDynamicAttribute obj "Career level"
+      where
+        obj = mkAttributes obj'
+
+        isActive = pure check
+            <*> parseAttribute obj "status"
+            <*> parseAttribute obj "employment_type"
+
+        check st ty = st == Just Active && ty == Just Internal
 
 parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do

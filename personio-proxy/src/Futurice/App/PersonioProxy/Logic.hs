@@ -7,14 +7,16 @@ module Futurice.App.PersonioProxy.Logic where
 
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Lens                     ((.=))
+import Control.Monad.State.Strict       (evalState, state)
 import Data.Aeson.Types                 (parseEither, parseJSON)
 import Data.Distributive                (Distributive (..))
 import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
-import Data.Time (addDays)
 import Data.List                        (foldl', partition)
+import Data.Time                        (addDays)
 import Futurice.App.PersonioProxy.Types
 import Futurice.Cache                   (cached)
+import Futurice.CareerLevel
 import Futurice.Daily
 import Futurice.Prelude
 import Futurice.Tribe
@@ -35,19 +37,19 @@ personioRequest ctx (P.SomePersonioReq res) = case res of
     P.PersonioEmployees       -> P.SomePersonioRes res <$> rawEmployees ctx
     P.PersonioValidations     -> P.SomePersonioRes res <$> rawValidations ctx
     P.PersonioSimpleEmployees -> P.SomePersonioRes res <$> rawSimpleEmployees ctx
-    P.PersonioAll             -> do
-        es <- rawEmployees ctx
-        vs <- rawValidations ctx
-        pure (P.SomePersonioRes res (es, vs))
+    P.PersonioAll             -> P.SomePersonioRes res <$> rawAllData ctx
 
 rawValidations :: Ctx -> Handler [P.EmployeeValidation]
-rawValidations ctx = liftIO $ readTVarIO $ ctxPersonioValidations ctx
+rawValidations ctx = P.paValidations <$> liftIO (readTVarIO $ ctxPersonioData ctx)
 
 rawEmployees :: Ctx -> Handler [P.Employee]
 rawEmployees ctx = do
     es <- liftIO $ readTVarIO $ ctxPersonio ctx
     -- no filtering, all employees
     pure $ toList es
+
+rawAllData :: Ctx -> Handler P.PersonioAllData
+rawAllData ctx = liftIO $ readTVarIO $ ctxPersonioData ctx
 
 scheduleEmployees :: Ctx -> Handler [P.ScheduleEmployee]
 scheduleEmployees ctx = do
@@ -165,7 +167,7 @@ tribeEmployeesChart ctx = do
       where
         es :: [P.SimpleEmployee]
         es = flip filter es' $ \e ->
-            (if status then P.employeeIsActive else P.employeeIsActive') today e 
+            (if status then P.employeeIsActive else P.employeeIsActive') today e
             && fes ^? ix (e ^. P.employeeId) . P.employeeEmploymentType . _Just == Just P.Internal
 
         go :: PerTribe Int -> P.SimpleEmployee -> PerTribe Int
@@ -177,6 +179,64 @@ tribeEmployeesChart ctx = do
 
     pair :: a -> b -> (a, b)
     pair = (,)
+
+-------------------------------------------------------------------------------
+-- Career levels chart
+-------------------------------------------------------------------------------
+
+careerLevelsChart :: Ctx -> Handler (Chart "career-levels")
+careerLevelsChart ctx = do
+    (values, perRole) <- liftIO $ runLogT "career-levels" (ctxLogger ctx) $
+        cached (ctxCache ctx) 600 () $ do
+            xs <- liftIO $ readTVarIO $ ctxPersonioData ctx
+            return (P.paCareerLevels xs, P.paCareerLevelsRole xs)
+
+    let roles = Map.keys perRole
+
+    let transp :: Map CareerLevel [Int]
+        transp = Map.fromList
+            [ (cl, xs)
+            | cl <- [ minBound .. maxBound ]
+            , let xs = fromMaybe 0 (values ^? ix cl)
+                     : [ fromMaybe 0 $ perRole ^? ix r . ix cl | r <- roles ]
+            ]
+
+    let titles = "All" : fmap (view unpacked) roles
+    let points :: [(CareerLevel, [Int])]
+        points = Map.toList transp
+
+    return $ Chart . C.toRenderable $ do
+        C.layoutlr_title .= "Career level distribution"
+        C.layoutlr_x_axis . C.laxis_title .= "Career level"
+        C.layoutlr_left_axis . C.laxis_title .= "Employees"
+        C.layoutlr_right_axis . C.laxis_title .= "Cumulative"
+
+        colors
+        C.plotLeft $ fmap (C.plotBars . style) $ C.bars titles points
+
+        colors
+        C.plotRight $ fmap C.toPlot $ C.line "All" [Map.toList $ sumScan values]
+        ifor_ perRole $ \role xs ->
+            C.plotRight $ fmap C.toPlot $ C.line (role ^. unpacked) [Map.toList $ sumScan xs]
+
+  where
+    colors =
+        C.setColors $ cycle
+            [ C.opaque $ FC.colourToDataColour c
+            | c <-
+                [ FC.FutuGreen
+                , FC.FutuAccent FC.AF4 FC.AC3
+                , FC.FutuAccent FC.AF1 FC.AC3
+                , FC.FutuAccent FC.AF2 FC.AC3
+                , FC.FutuAccent FC.AF3 FC.AC3
+                ]
+            ]
+
+    style b = b
+        & C.plot_bars_spacing .~ C.BarsFixWidth 5
+
+    sumScan :: Traversable t => t Int -> t Int
+    sumScan t = evalState (traverse (\x -> state $ \s -> let xs = s + x in xs `seq` (xs, xs)) t) 0
 
 -------------------------------------------------------------------------------
 -- Roles distribution

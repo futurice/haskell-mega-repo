@@ -49,7 +49,7 @@ personioRequest ctx (P.SomePersonioReq res) = case res of
     P.PersonioAll             -> do
         es <- rawEmployees ctx
         vs <- rawValidations ctx
-        pure (P.SomePersonioRes res (es, vs))
+        pure (P.SomePersonioRes res (P.PersonioAllData es vs mempty mempty))
 
 rawEmployees :: Ctx -> Handler [P.Employee]
 rawEmployees ctx = do
@@ -57,8 +57,11 @@ rawEmployees ctx = do
     -- no filtering, all employees
     pure $ toList es
 
+rawPersonioData :: Ctx -> Handler P.PersonioAllData
+rawPersonioData ctx = liftIO $ readTVarIO $ ctxPersonioData ctx
+
 rawValidations :: Ctx -> Handler [P.EmployeeValidation]
-rawValidations ctx = liftIO $ readTVarIO $ ctxPersonioValidations ctx
+rawValidations ctx = P.paValidations <$> rawPersonioData ctx
 
 rawSimpleEmployees :: Ctx -> Handler (Map Day [P.SimpleEmployee])
 rawSimpleEmployees _ = fail "Not supported"
