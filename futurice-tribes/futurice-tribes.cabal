@@ -54,12 +54,14 @@ library
     , trifecta
     , vector
   exposed-modules:
+      Futurice.CareerLevel
       Futurice.Company
       Futurice.CostCenter
       Futurice.Email
       Futurice.Office
       Futurice.Tribe
   other-modules:
+      Futurice.CareerLevel.Internal
       Futurice.Company.Internal
       Futurice.CostCenter.Internal
       Futurice.Office.Internal
