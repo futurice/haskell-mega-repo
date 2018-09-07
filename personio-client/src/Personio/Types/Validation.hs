@@ -11,7 +11,7 @@ import Control.Monad.Writer        (WriterT, execWriterT, unless)
 import Data.Aeson.Types            (typeMismatch)
 import Data.Char                   (ord)
 import Data.List                   (foldl')
-import Data.Maybe                  (isJust)
+import Data.Maybe                  (isJust, isNothing)
 import Data.Swagger
        (defaultSchemaOptions, genericDeclareNamedSchemaUnrestricted)
 import FUM.Types.Login             (loginRegexp)
@@ -97,6 +97,8 @@ data ValidationMessage
     | SupervisorNotActive !Text
     | OfficeCountryDontMatch Office Country
     | EmployerCountryDontMatch Country Company
+    | StartDateMissing
+    | EndDateBeforeStart Day Day
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 instance ToJSON ValidationMessage
@@ -194,6 +196,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , workPermitEndsMissing
         , officeCountryDontMatch
         , employerCountryDontMatch
+        , startDateMissing
+        , endDateBeforeStart
         ]
       where
         isExternal = e ^. employeeEmploymentType == Just External
@@ -522,6 +526,15 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
             c  = e ^. employeeCountry
             em = e ^. employeeEmployer
+
+        startDateMissing :: WriterT [ValidationMessage] Parser ()
+        startDateMissing = when (isNothing $ e ^. employeeHireDate) $
+            tell [StartDateMissing]
+
+        endDateBeforeStart :: WriterT [ValidationMessage] Parser ()
+        endDateBeforeStart = case (e ^. employeeHireDate, e ^. employeeEndDate) of
+            (Just hire, Just end) | hire > end -> tell [EndDateBeforeStart hire end]
+            _ -> pure ()
 
         finnishOffices :: [Office]
         finnishOffices = filter (\o -> officeCountry o == countryFinland) [minBound .. maxBound]
