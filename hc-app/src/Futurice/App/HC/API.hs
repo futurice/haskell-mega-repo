@@ -2,13 +2,16 @@
 {-# LANGUAGE TypeOperators #-}
 module Futurice.App.HC.API where
 
-import Futurice.App.HC.EarlyCaring.Types (EarlyCaringEmail, SignedBlob)
-import Futurice.Lucid.Foundation         (HtmlPage)
+import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
 import Servant.API.Generic
+import Servant.Chart             (Chart, SVG)
+
+import Futurice.App.HC.Achoo.Types       (AchooChart)
+import Futurice.App.HC.EarlyCaring.Types (EarlyCaringEmail, SignedBlob)
 
 data Record route = Record
     { recIndex               :: route :- SSOUser
@@ -32,6 +35,20 @@ data Record route = Record
         :> "early-caring-submit"
         :> ReqBody '[JSON] (SignedBlob EarlyCaringEmail)
         :> Post '[JSON] Bool
+    -- achoo report
+    , recAchooReport        :: route :- SSOUser
+        :> "achoo-report"
+        :> QueryParam "from" Day
+        :> QueryParam "to"   Day
+        :> QueryParam "whole" Bool
+        :> Get '[HTML] (HtmlPage "achoo-report")
+    , recAchooChart         ::  route :- SSOUser
+        :> "achoo-chart"
+        :> Capture "type" AchooChart
+        :> QueryParam' '[ Required ] "from" Day
+        :> QueryParam' '[ Required ] "type" Day
+        :> QueryParam' '[ Required ] "whole" Bool
+        :> Get '[SVG] (Chart "achoo-chart")
     }
   deriving Generic
 
