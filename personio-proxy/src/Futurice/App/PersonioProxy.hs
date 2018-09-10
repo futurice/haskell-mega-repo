@@ -30,6 +30,7 @@ server ctx = pure "Try /swagger-ui/"
     :<|> scheduleEmployees ctx
     :<|> employeesChart ctx
     :<|> tribeEmployeesChart ctx
+    :<|> careerLevelsChart ctx
     :<|> rolesDistributionChart ctx
 
 defaultMain :: IO ()
@@ -45,15 +46,15 @@ newCtx
     -> Cache
     -> Postgres.Pool Postgres.Connection
     -> IdMap P.Employee
-    -> [P.EmployeeValidation]
+    -> P.PersonioAllData
     -> IO Ctx
-newCtx lgr cache pool es vs = do
+newCtx lgr cache pool es allData = do
     today <- currentDay
     let active = Map.singleton today $ P.internSimpleEmployees traverse $
             es ^.. folded . P.simpleEmployee
     Ctx lgr cache pool
         <$> newTVarIO es
-        <*> newTVarIO vs
+        <*> newTVarIO allData
         <*> newTVarIO active
 
 selectLastQuery :: Postgres.Query
@@ -88,7 +89,8 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
                     return []
 
     -- context
-    ctx <- newCtx lgr cache pool (IdMap.fromFoldable employees) []
+    let emptyData = P.PersonioAllData employees [] mempty mempty
+    ctx <- newCtx lgr cache pool (IdMap.fromFoldable employees) emptyData
 
     -- jobs
     let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
@@ -97,9 +99,9 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
 
     pure (ctx, [ employeesJob ])
   where
-    updateJob :: Ctx -> IO ([P.Employee], [P.EmployeeValidation]) -> IO ()
+    updateJob :: Ctx -> IO P.PersonioAllData -> IO ()
     updateJob ctx fetchEmployees = do
-        (employees', validations') <- fetchEmployees
+        P.PersonioAllData employees' validations' cl clRole <- fetchEmployees
         let employees = filter notMachine employees'
         let validations = filter (notMachine . view P.evEmployee) validations'
 
@@ -107,7 +109,8 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             oldMap <- readTVar (ctxPersonio ctx)
             let newMap = IdMap.fromFoldable employees
             writeTVar (ctxPersonio ctx) newMap
-            writeTVar (ctxPersonioValidations ctx) validations
+            writeTVar (ctxPersonioData ctx) $
+                P.PersonioAllData employees validations cl clRole
             return (comparePersonio oldMap newMap)
                 
         -- Update active

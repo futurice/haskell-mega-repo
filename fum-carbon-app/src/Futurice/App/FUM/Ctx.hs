@@ -25,16 +25,16 @@ import Futurice.App.FUM.Config
 import Futurice.App.FUM.Types
 
 data Ctx = Ctx
-    { ctxLogger              :: !Logger
-    , ctxManager             :: !Manager
-    , ctxConfig              :: !Config
-    , ctxPersonio            :: !(TVar (IdMap Personio.Employee))
-    , ctxPersonioValidations :: !(TVar [Personio.EmployeeValidation])
-    , ctxWorld               :: !(TVar World)
-    , ctxTransactorMVar      :: !(MVar ())
-    , ctxCommandChannel      :: !(TChan SomeCommand)
-    , ctxPostgres            :: !(Pool Postgres.Connection)
-    , ctxPRNGs               :: !(Pool (TVar CryptoGen))
+    { ctxLogger         :: !Logger
+    , ctxManager        :: !Manager
+    , ctxConfig         :: !Config
+    , ctxPersonio       :: !(TVar (IdMap Personio.Employee))
+    , ctxPersonioData   :: !(TVar Personio.PersonioAllData)
+    , ctxWorld          :: !(TVar World)
+    , ctxTransactorMVar :: !(MVar ())
+    , ctxCommandChannel :: !(TChan SomeCommand)
+    , ctxPostgres       :: !(Pool Postgres.Connection)
+    , ctxPRNGs          :: !(Pool (TVar CryptoGen))
     }
 
 ctxMockUser :: Ctx -> Maybe Login
@@ -48,7 +48,7 @@ newCtx
     -> Manager
     -> Config
     -> IdMap Personio.Employee
-    -> [Personio.EmployeeValidation]
+    -> Personio.PersonioAllData
     -> IO Ctx
 newCtx lgr mgr cfg es vs = do
     pool <- createPostgresPool $ cfgPostgresConnInfo cfg
