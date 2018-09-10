@@ -31,6 +31,21 @@ futu.onload(function () {
     });
   });
 
+    $("form[data-futu-id=add-new-book]").onsubmit = function () {
+        $$('span.alert').forEach(function (s) {
+            s.remove();
+        });
+        var isbn = $("form[data-futu-id=add-new-book] input[name='isbn']").value;
+        if (/[^0-9\-]+/g.test(isbn)) {
+            var isbnAlert = document.createElement("span");
+            isbnAlert.className = 'alert label';
+            isbnAlert.innerText = 'No letters allowed in isbn';
+            futu.$("form[data-futu-id=add-new-book] input[name='isbn']").after(isbnAlert);
+            return false;
+        }
+        return true;
+    };
+
     $$("select[data-futu-id=add-new-item-select").forEach(function (sel) {
         sel.onchange = function () {
             $$("form").forEach(function (s) { s.style.display = "none" });

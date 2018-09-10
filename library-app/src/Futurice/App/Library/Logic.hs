@@ -8,6 +8,7 @@ import Data.List
 import Database.PostgreSQL.Simple         (In (..))
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.Types
+import Futurice.App.Sisosota.Types        (ContentHash)
 import Futurice.IdMap
 import Futurice.Postgres
 import Futurice.Prelude
@@ -69,6 +70,8 @@ idToName emap pid = case emap ^.at pid of
 
 itemArrayToMap :: [ItemData] -> Map ItemId (InfoId, Library)
 itemArrayToMap = Map.fromList . fmap (\(ItemData iid lib infoid) -> (iid, (infoid, lib)))
+
+
 
 -------------------------------------------------------------------------------
 -- Item functions
@@ -195,6 +198,9 @@ fetchBooksByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, lib
 fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformation]
 fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
 
+fetchCoverInformationsAsText :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [(BookInformationId, Text)]
+fetchCoverInformationsAsText ctx = safePoolQuery ctx "SELECT bookinfo_id, cover FROM library.bookinformation" ()
+
 -- data Args a b c d = Args a
 -- newtype Select = Select Query
 -- newtype From = From Query
@@ -231,7 +237,7 @@ fetchBookInformationsWithCriteria ctx criteria direction limit start search = do
       (Nothing, Nothing)  -> safePoolQuery ctx ("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> sortCriteria criteria direction <> " LIMIT ?") (Only limit)
       (Nothing, Just s)   -> safePoolQuery ctx ("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE" <> searchSqlString <> sortCriteria criteria direction <> " LIMIT ?") (s, limit)
     where
-      searchSqlString = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ to_tsquery(?)) "
+      searchSqlString = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ plainto_tsquery(?)) "
       sortDirection SortDesc = "DESC"
       sortDirection SortAsc  = "ASC"
       sortCriteria SortTitle dir     = " ORDER BY title " <> sortDirection dir <> ", bookinfo_id "
@@ -290,8 +296,8 @@ bookIdToInformation iid bookidmap bookinfomap = do
     binfoid <- bookinfoid
     bookinfomap ^.at binfoid
 
-addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> m Bool
-addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) = do
+addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> ContentHash -> m Bool
+addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) contentHash = do
     checkedInfoId <- runMaybeT $ do
         info <- MaybeT $ pure binfoid
         bookInformation <- MaybeT $ fetchBookInformation ctx info
@@ -299,9 +305,8 @@ addNewBook ctx (AddBookInformation title isbn author publisher published amazonL
     bookInfoId <- case checkedInfoId of
                     Nothing ->  listToMaybe <$> safePoolQuery
                                 ctx
-                                -- TODO add cover link
-                                "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, amazon_link) VALUES (?,?,?,?,?,?) returning bookinfo_id"
-                                (title, isbn, author, publisher, published, amazonLink)
+                                "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, cover, amazon_link) VALUES (?,?,?,?,?,?,?) returning bookinfo_id"
+                                (title, isbn, author, publisher, published, contentHash, amazonLink)
                     Just info -> pure $ Just info
     case bookInfoId of
       Just infoId -> do
@@ -309,6 +314,10 @@ addNewBook ctx (AddBookInformation title isbn author publisher published amazonL
               replicateM_ n $ safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id) VALUES (?,?)" (lib, infoId :: BookInformationId)
           pure True
       Nothing -> pure False
+
+updateBookCover :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> ContentHash -> m Int64
+updateBookCover ctx binfoid contentHash = safePoolExecute ctx "UPDATE library.bookinformation SET cover = ? where bookinfo_id = ?" (contentHash, binfoid)
+
 -------------------------------------------------------------------------------
 -- Boardgame functions
 -------------------------------------------------------------------------------

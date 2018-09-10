@@ -4,17 +4,21 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.Library (defaultMain) where
 
-import Codec.Picture             (DynamicImage, readImage)
-import Data.Text
+import Codec.Picture                (DynamicImage, decodeImage)
+import Data.Char                    (isSpace)
 import FUM.Types.Login
-import Futurice.IdMap            (IdMap, fromFoldable)
+import Futurice.App.Sisosota.Client
+import Futurice.App.Sisosota.Types  (ContentHash)
+import Futurice.Constants           (servicePublicUrl)
+import Futurice.IdMap               (IdMap, fromFoldable)
 import Futurice.Integrations
-import Futurice.Lucid.Foundation (HtmlPage)
+import Futurice.Lucid.Foundation    (HtmlPage)
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
+import Servant.Client
 import Servant.Multipart
 import Servant.Server.Generic
 
@@ -28,9 +32,9 @@ import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Types
 
-import qualified Data.ByteString      as DB
 import qualified Data.ByteString.Lazy as DBL
 import qualified Data.Map             as Map
+import qualified Data.Text            as T
 import qualified Personio             as P
 
 apiServer :: Ctx -> Server LibraryAPI
@@ -96,6 +100,17 @@ getPersonioDataMap ctx = do
     pure $ Map.fromList $ catMaybes $ fmap (\e -> case e ^. P.employeeLogin of
                                                Just login -> Just (login, e)
                                                Nothing -> Nothing) es'
+
+fetchCover :: (Monad m, MonadIO m, MonadThrow m) => Ctx -> ContentHash -> m (Either String DBL.ByteString)
+fetchCover ctx contentHash = do
+    url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
+    liftIO $ sisosotaGet (ctxManager ctx) url contentHash
+
+addNewCover :: Ctx -> DBL.ByteString -> IO ContentHash
+addNewCover ctx cover = do
+    url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
+    sisosotaPut (ctxManager ctx) url cover
+
 -------------------------------------------------------------------------------
 -- Implementations
 -------------------------------------------------------------------------------
@@ -107,12 +122,34 @@ getPersonioDataMap ctx = do
 --     _ <- runLogT "library" (ctxLogger ctx) $ migrateToPersonioNumber ctx emp
 --     pure ()
 
-getBookCoverImpl :: Ctx -> Text -> Handler (Headers '[Header "Cache-Control" Text] (DynamicImage))
-getBookCoverImpl _ctx picture = do
-    pictData <- liftIO $ readImage (unpack $ "/Users/toku/hmr/library-app/media/" <> picture)
-    case pictData of
-      Left _ -> throwError $ err404 { errBody = "Cover not found" }
-      Right pict -> pure $ addHeader "public, max-age=3600" pict
+--Helper function to load local cover pictures to sisosota
+_updateAllBookCovers :: Ctx -> Handler ()
+_updateAllBookCovers ctx = do
+    books <- runLogT "library" (ctxLogger ctx) $ fetchCoverInformationsAsText ctx
+    for_ books fetchAndSendCover
+  where
+      fetchAndSendCover :: (BookInformationId, Text) -> Handler ()
+      fetchAndSendCover (binfoId, coverText) = do
+          pictData <- if all isSpace (T.unpack coverText) || not (T.isPrefixOf "cover" coverText) then
+                        pure Nothing
+                      else
+                        Just <$> liftIO (DBL.readFile (T.unpack $ "ADD LOCAL MEDIA DIR" <> coverText))
+          contentHash <- case pictData of
+                           Nothing -> pure Nothing
+                           Just pic -> Just <$> liftIO (addNewCover ctx pic)
+          _ <- case contentHash of
+                 Just h -> runLogT "library" (ctxLogger ctx) $ updateBookCover ctx binfoId h
+                 Nothing -> pure 0
+          pure ()
+
+getBookCoverImpl :: Ctx -> ContentHash -> Handler (Headers '[Header "Cache-Control" Text] (DynamicImage))
+getBookCoverImpl ctx picture = do
+    picData <- fetchCover ctx picture
+    case picData of
+      Right pic -> case decodeImage $ DBL.toStrict pic of
+        Left _err -> throwError $ err404 { errBody = "Decoding failed" }
+        Right p -> pure $ addHeader "public, max-age=3600" p
+      Left _err -> throwError $ err404 { errBody = "Fetching cover failed" }
 
 indexPageImpl :: Ctx
               -> Maybe SortCriteria
@@ -222,8 +259,8 @@ personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
 
 addBookPostImpl :: Ctx -> AddBookInformation -> Handler (HtmlPage "additempage")
 addBookPostImpl ctx addBook@(AddBookInformation _ _ _ _ _ _ _ coverData _) = do
-    liftIO $ DB.writeFile ("/Users/toku/hmr/library-app/media/" ++ unpack (fdFileName coverData)) $ DBL.toStrict $ fdPayload coverData
-    res <- runLogT "library" (ctxLogger ctx) $ addNewBook ctx addBook
+    contentHash <- liftIO $ addNewCover ctx (fdPayload coverData)
+    res <- runLogT "library" (ctxLogger ctx) $ addNewBook ctx addBook contentHash
     if res then
       addItemPageGetImpl ctx
     else

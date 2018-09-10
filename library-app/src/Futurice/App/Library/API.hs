@@ -5,13 +5,14 @@ module Futurice.App.Library.API where
 import Futurice.Prelude
 import Prelude ()
 
-import Codec.Picture             (DynamicImage)
-import Futurice.Lucid.Foundation (HtmlPage)
-import Futurice.Servant          (SSOUser)
+import Codec.Picture               (DynamicImage)
+import Futurice.App.Sisosota.Types (ContentHash)
+import Futurice.Lucid.Foundation   (HtmlPage)
+import Futurice.Servant            (SSOUser)
 import Servant.API
 import Servant.API.Generic
-import Servant.HTML.Lucid        (HTML)
-import Servant.JuicyPixels       (PNG)
+import Servant.HTML.Lucid          (HTML)
+import Servant.JuicyPixels         (PNG)
 import Servant.Multipart
 
 import Futurice.App.Library.Types
@@ -57,7 +58,7 @@ type IndexPageEndpoint = QueryParam "criteria" SortCriteria
                          :> QueryParam "start" BookInformationId
                          :> QueryParam "search" Text
                          :> Get '[HTML] (HtmlPage "indexpage")
-type BookCoverEndpoint = "book" :> "cover" :> Capture "picture" Text :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
+type BookCoverEndpoint = "book" :> "cover" :> Capture "picture" ContentHash :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
 type BookInformationPageEndpoint = "book" :> "page" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "bookinformation")
 
 type HtmlAPI = ToServantApi HtmlRecord
