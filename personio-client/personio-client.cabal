@@ -22,8 +22,9 @@ source-repository head
 
 library
   default-extensions:
-    DerivingStrategies
     DeriveAnyClass
+    DeriveGeneric
+    DerivingStrategies
     GeneralizedNewtypeDeriving
   hs-source-dirs: src
   ghc-options: -Wall

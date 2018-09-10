@@ -15,13 +15,8 @@ import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Types
 import Futurice.FUM.MachineAPI
 
-import qualified Personio as P
-
 machineServer :: Ctx -> Server FumCarbonMachineApi
 machineServer ctx = machineServer' ctx
-    :<|> personioRequest ctx
-    :<|> rawEmployees ctx
-    :<|> rawValidations ctx
 
 machineServer' :: Ctx -> Server FUMMachineAPI
 machineServer' ctx = hoistServer fumMachineApi nt $ traverse haxl
@@ -40,25 +35,3 @@ machineServer' ctx = hoistServer fumMachineApi nt $ traverse haxl
 
     eg :: GroupName -> Reader World (Set Login)
     eg name = asks (setOf (worldGroups . ix name . groupEmployees . folded))
-
-personioRequest :: Ctx -> P.SomePersonioReq -> Handler P.SomePersonioRes
-personioRequest ctx (P.SomePersonioReq res) = case res of
-    P.PersonioEmployees       -> P.SomePersonioRes res <$> rawEmployees ctx
-    P.PersonioValidations     -> P.SomePersonioRes res <$> rawValidations ctx
-    P.PersonioSimpleEmployees -> P.SomePersonioRes res <$> rawSimpleEmployees ctx
-    P.PersonioAll             -> do
-        es <- rawEmployees ctx
-        vs <- rawValidations ctx
-        pure (P.SomePersonioRes res (es, vs))
-
-rawEmployees :: Ctx -> Handler [P.Employee]
-rawEmployees ctx = do
-    es <- liftIO $ readTVarIO $ ctxPersonio ctx
-    -- no filtering, all employees
-    pure $ toList es
-
-rawValidations :: Ctx -> Handler [P.EmployeeValidation]
-rawValidations ctx = liftIO $ readTVarIO $ ctxPersonioValidations ctx
-
-rawSimpleEmployees :: Ctx -> Handler (Map Day [P.SimpleEmployee])
-rawSimpleEmployees _ = fail "Not supported"
