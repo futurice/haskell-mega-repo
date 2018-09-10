@@ -15,7 +15,7 @@ import Numeric.Interval.NonEmpty (Interval, (...))
 import Personio.Types.Status
 import Prelude ()
 
-import qualified Numeric.Interval.NonEmpty as Interval
+import qualified Numeric.Interval.NonEmpty as I
 
 import Personio.Types.EmployeeId
 
@@ -96,6 +96,14 @@ employeeIsActiveInterval :: HasSimpleEmployee e =>Interval Day -> e -> Bool
 employeeIsActiveInterval interval e =
     case (e ^. employeeHireDate, e ^. employeeEndDate) of
         (Nothing, Nothing)    -> False
-        (Just hire, Nothing)  -> (hire ... hire) Interval.<=? interval -- exists y in interval, hire <= y
-        (Nothing, Just end)   -> (end  ... end)  Interval.>=? interval
-        (Just hire, Just end) -> (hire ... end)  Interval.==? interval
+        (Just hire, Nothing)  -> (hire ... hire) I.<=? interval -- exists y in interval, hire <= y
+        (Nothing, Just end)   -> (end  ... end)  I.>=? interval
+        (Just hire, Just end) -> (hire ... end)  I.==? interval
+
+employeeIsActiveWholeInterval :: HasSimpleEmployee e => Interval Day -> e -> Bool
+employeeIsActiveWholeInterval interval e =
+    case (e ^. employeeHireDate, e ^. employeeEndDate) of
+        (Nothing, Nothing)    -> False -- in theory should be True..., in practice
+        (Just hire, Nothing)  -> hire <= I.inf interval
+        (Nothing, Just end)   ->                           I.sup interval <= end
+        (Just hire, Just end) -> hire <= I.inf interval && I.sup interval <= end

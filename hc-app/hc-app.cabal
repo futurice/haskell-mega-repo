@@ -19,7 +19,15 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
+    DerivingStrategies
+    DeriveAnyClass
   ghc-options: -Wall
   build-depends:
       base >= 4.9 && <4.12,
@@ -27,6 +35,7 @@ library
       base16-bytestring,
       base64-bytestring-type,
       binary,
+      Chart,
       clay,
       containers,
       cryptohash-sha512,
@@ -34,6 +43,7 @@ library
       entropy,
       env-config,
       file-embed,
+      fin,
       fum-api,
       fum-types,
       futurice-foundation,
@@ -51,14 +61,20 @@ library
       planmill-client,
       range-set-list,
       servant,
+      servant-Chart,
       servant-client,
       servant-server,
       swagger2,
       template-haskell,
       text,
-      time
+      time,
+      vec,
+      unordered-containers
  
   exposed-modules:
+      Futurice.App.HC.Achoo.Fetch
+      Futurice.App.HC.Achoo.Render
+      Futurice.App.HC.Achoo.Types
       Futurice.App.HC.Anniversaries
       Futurice.App.HC.API
       Futurice.App.HC.Config
