@@ -9,6 +9,7 @@ module Futurice.App.Library.Types.BookInformation where
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToField
+import Futurice.App.Sisosota.Types          (ContentHash)
 import Futurice.Generics
 import Futurice.IdMap                       (HasKey (..))
 import Futurice.Prelude
@@ -23,10 +24,10 @@ data BookInformation = BookInformation
     , _bookAuthor                 :: !Text
     , _bookPublisher              :: !Text
     , _bookPublished              :: !Int
-    , _bookCover                  :: !Text
+    , _bookCover                  :: !ContentHash
     , _bookAmazonLink             :: !Text
     }
-  deriving (Eq, Ord, Show, Typeable, Generic, FromRow)
+  deriving (Show, Typeable, Generic, FromRow)
 
 deriveGeneric ''BookInformationId
 deriveGeneric ''BookInformation

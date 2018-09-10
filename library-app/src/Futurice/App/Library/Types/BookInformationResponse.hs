@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeOperators   #-}
 module Futurice.App.Library.Types.BookInformationResponse where
 
+import Futurice.App.Sisosota.Types (ContentHash)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -26,10 +27,10 @@ data BookInformationResponse = BookInformationResponse
     , _author      :: !Text
     , _publisher   :: !Text
     , _published   :: !Int
-    , _cover       :: !Text
+    , _cover       :: !ContentHash
     , _amazonLink  :: !Text
     , _books       :: ![Books]
-    } deriving  (Eq, Ord, Show, Typeable, Generic)
+    } deriving  (Show, Typeable, Generic)
 
 deriveGeneric ''Books
 deriveGeneric ''BookInformationResponse
