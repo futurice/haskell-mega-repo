@@ -43,7 +43,10 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                 td_ $ input_ [ name_ "amazon-link", type_ "text"]
             tr_ $ do
                 th_ "Cover"
-                td_ $ input_ [ name_ "cover-file", type_ "file", required_ ""]
+                td_ $ do
+                    input_ [ name_ "cover-file", type_ "file"]
+                    input_ [ name_ "cover-url", type_ "url", style_ "display:none"]
+                    img_ [ id_ "cover-image", src_ "", hidden_ ""]
             tr_ $ do
                 th_ "Library"
                 td_ $ libraryInput
