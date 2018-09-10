@@ -61,11 +61,12 @@ futu.onload(function () {
         buttonOnClick(btn, function () {
             var isbn = $("input#isbn").value;
             if(isbn) {
+                $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = '';
                 futu.fetchJSON("/book/isbn/" + isbn)
                     .then(function (response) {
                         //Fill form with the isbn values
-                        if(response.dataSource === 'DSDatabase') {
-                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.id;
+                        if(response.dataSource.source === 'Database') {
+                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.dataSource.bookinformationid;
                             $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
                             $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
                             $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
@@ -78,6 +79,18 @@ futu.onload(function () {
                             currentBooks = currentBooks + '</ul>';
                             $("div#info-box").innerHTML =
                                 '<span class="label warning">Books with this ISBN exists already in these libraries:'+currentBooks+'Add new copies by selecting a library and quantity.</span>';
+                            $("img#cover-image").src = "/book/cover/" + response.dataSource.coverhash;
+                            $("img#cover-image").style.display = "block";
+                        } else if(response.dataSource.source === 'Amazon') {
+                            $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
+                            $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
+                            $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
+                            $("form[data-futu-id=add-new-book] input[name='published']").value = response.published;
+                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLink;
+                            $("div#info-box").innerHTML = '<span class="label warning">Book information found from Amazon</span>';
+                            $("form[data-futu-id=add-new-book] input[name='cover-url']").value = response.dataSource.coverurl;
+                            $("img#cover-image").src = response.dataSource.coverurl;
+                            $("img#cover-image").style.display = "block";
                         }})
                     .catch(function (error) {
                         $("div#info-box").innerHTML = '<span class="info">No books found in database with this ISBN</span>';

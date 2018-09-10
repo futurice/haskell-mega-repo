@@ -6,6 +6,7 @@
 module Futurice.App.Library.Types (
     AddBookInformation (..),
     AddBoardGameInformation (..),
+    CoverData (..),
     BoardGameInformation (..),
     bookInformationId,
     bookTitle,

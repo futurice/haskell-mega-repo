@@ -5,7 +5,11 @@
 module Futurice.App.Library (defaultMain) where
 
 import Codec.Picture                (DynamicImage, decodeImage)
+import Crypto.Hash                  (HMAC (..), SHA256, hmac)
+import Data.Byteable                (toBytes)
 import Data.Char                    (isSpace)
+import Data.Time
+       (defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat)
 import FUM.Types.Login
 import Futurice.App.Sisosota.Client
 import Futurice.App.Sisosota.Types  (ContentHash)
@@ -16,11 +20,13 @@ import Futurice.Lucid.Foundation    (HtmlPage)
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
+import Network.HTTP.Types.URI       (urlEncode)
 import Prelude ()
 import Servant
 import Servant.Client
 import Servant.Multipart
 import Servant.Server.Generic
+import Text.Read                    (readMaybe)
 
 import Futurice.App.Library.API
 import Futurice.App.Library.Config
@@ -32,10 +38,16 @@ import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Types
 
-import qualified Data.ByteString.Lazy as DBL
-import qualified Data.Map             as Map
-import qualified Data.Text            as T
-import qualified Personio             as P
+import qualified Data.ByteString        as DB
+import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString.Char8  as C
+import qualified Data.ByteString.Lazy   as DBL
+import qualified Data.Map               as Map
+import qualified Data.Text              as T
+import qualified Data.Text.Encoding     as TE
+import qualified Network.HTTP.Client    as N
+import qualified Personio               as P
+import qualified Xeno.DOM               as X
 
 apiServer :: Ctx -> Server LibraryAPI
 apiServer ctx = genericServer $ Record
@@ -59,7 +71,6 @@ htmlServer ctx = genericServer $ HtmlRecord
     , bookPageGet          = bookInformationPageImpl ctx
     , indexPageGet         = indexPageImpl ctx
     , personalLoansPageGet = personalLoansPageImpl ctx
-
     }
 
 -------------------------------------------------------------------------------
@@ -111,16 +122,84 @@ addNewCover ctx cover = do
     url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
     sisosotaPut (ctxManager ctx) url cover
 
+makeAmazonAddress :: Ctx -> Text -> IO ByteString
+makeAmazonAddress ctx isbn = do
+    timeStamp <- formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S%EZ")) <$> getCurrentTime
+    pure $ "https://webservices.amazon.com/onca/xml?"
+        <> queryParameters timeStamp
+        <> "&Signature="
+        <> (urlEncode True . B64.encode . toBytes . hmacGetDigest . calcSign $ baseAddress timeStamp)
+  where
+    queryParameters ts = "AWSAccessKeyId=" <> TE.encodeUtf8 (cfgAmazonAccessKey cfg) <> "&"
+        <> "AssociateTag=" <> TE.encodeUtf8 (cfgAmazonAssociateTag cfg) <>"&"
+        <> "IdType=ISBN&"
+        <> "ItemId=" <> TE.encodeUtf8 isbn <> "&"
+        <> "Operation=ItemLookup&"
+        <> "ResponseGroup=Medium&"
+        <> "SearchIndex=Books&"
+        <> "Service=AWSECommerceService&"
+        <> "Timestamp=" <> TE.encodeUtf8 (T.replace ":" "%3A" $ T.pack ts)
+    baseAddress ts = "GET\n"
+        <> "webservices.amazon.com\n"
+        <> "/onca/xml\n"
+        <> queryParameters ts
+    calcSign :: ByteString -> HMAC SHA256
+    calcSign = hmac (TE.encodeUtf8 $ cfgAmazonSecretKey cfg)
+    cfg = ctxConfig ctx
+
+fetchBookInformationFromAmazon :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
+fetchBookInformationFromAmazon ctx isbn = do
+    amazonAddress <- makeAmazonAddress ctx isbn
+    request <- N.parseRequest $ C.unpack amazonAddress
+    response <- N.httpLbs request (ctxManager ctx)
+    case X.parse $ DBL.toStrict $ N.responseBody response of
+      Left _error -> pure Nothing
+      Right ns -> pure $ do
+          items <- (findItems . X.children) ns
+          item <- (findItem . X.children) items
+          itemAttributes <- (findItemAttributes . X.children) item
+          detailPageUrl <- (findDetailPageUrl . X.children) item
+          image <- (findImage . X.children) item
+          imageUrl <- (findImageUrl . X.children) image
+          BookInformationByISBNResponse
+              <$> (TE.decodeUtf8 <$> (getTitle . X.children) itemAttributes)
+              <*> Just isbn
+              <*> (TE.decodeUtf8 <$> (getAuthors . X.children) itemAttributes)
+              <*> (TE.decodeUtf8 <$> (getPublisher . X.children) itemAttributes)
+              <*> (((take 4 . T.unpack . TE.decodeUtf8) <$> (getPublished . X.children) itemAttributes) >>= readMaybe)
+              <*> (TE.decodeUtf8 <$> getUrlLink detailPageUrl)
+              <*> Just Map.empty
+              <*> (DSAmazon . TE.decodeUtf8 <$> getUrlLink imageUrl)
+  where
+      findItems = (listToMaybe . filter (\n -> X.name n == "Items"))
+      findItem = (listToMaybe . filter (\n -> X.name n == "Item"))
+      findItemAttributes = (listToMaybe . filter (\n -> X.name n == "ItemAttributes"))
+      findDetailPageUrl = (listToMaybe . filter (\n -> X.name n == "DetailPageURL"))
+      findImage = (listToMaybe . filter (\n -> X.name n == "LargeImage"))
+      findImageUrl = (listToMaybe . filter (\n -> X.name n == "URL"))
+      getUrlLink urlNode = (listToMaybe $ X.contents urlNode) >>= contentText
+      getAuthors attrs = do
+          authors <- traverse contentText (concat (X.contents <$> (filter (\n -> X.name n == "Author") attrs)))
+          pure $ DB.intercalate " and " authors
+      getValue val attrs =  do
+          content <- X.contents <$> (listToMaybe . filter (\n -> X.name n == val)) attrs
+          firstElement <- listToMaybe content
+          contentText firstElement
+      getTitle = getValue "Title"
+      getPublisher = getValue "Publisher"
+      getPublished = getValue "PublicationDate"
+      contentText (X.Text text) = Just text
+      contentText _             = Nothing
+
+fetchImageFromAmazon :: Ctx -> Text -> IO DBL.ByteString
+fetchImageFromAmazon ctx url = do
+    request <- N.parseRequest $ T.unpack url
+    response <- N.httpLbs request (ctxManager ctx)
+    pure $ N.responseBody response
+
 -------------------------------------------------------------------------------
 -- Implementations
 -------------------------------------------------------------------------------
-
--- Helper function to migrate to using personio_id:s
--- migrateToPersonioNumberImpl :: Ctx -> Handler ()
--- migrateToPersonioNumberImpl ctx = do
---     emp <- liftIO $ getPersonioDataMap ctx
---     _ <- runLogT "library" (ctxLogger ctx) $ migrateToPersonioNumber ctx emp
---     pure ()
 
 --Helper function to load local cover pictures to sisosota
 _updateAllBookCovers :: Ctx -> Handler ()
@@ -217,22 +296,23 @@ getBookImpl ctx lid = do
 
 getBookByISBNImpl :: Ctx -> Text -> Handler BookInformationByISBNResponse
 getBookByISBNImpl ctx isbn = do
-    info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformationByISBN ctx isbn
-    case info of
-      Just BookInformationResponse{..} -> pure $ BookInformationByISBNResponse
-        { _byISBNId         = _id
-        , _byISBNTitle      = _title
-        , _byISBNISBN       = _ISBN
-        , _byISBNAuthor     = _author
-        , _byISBNPublisher  = _publisher
-        , _byISBNPublished  = _published
-        , _byISBNCover      = _cover
-        , _byISBNAmazonLink = _amazonLink
-        , _byISBNBooks      = booksPerLibrary _books
-        , _byISBNDataSource = DSDatabase }
+    info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformationByISBN ctx cleanedISBN
+    amazonInfo <- liftIO $ fetchBookInformationFromAmazon ctx cleanedISBN
+    case (bookInformationToISBNresponse <$> info) <|> amazonInfo of
+      Just i -> pure i
       Nothing -> throwError $ err404 { errBody = "No book with that ISBN found" }
   where
       booksPerLibrary x = Map.fromListWith (+) ((\(Books lib _) -> (lib,1)) <$> x)
+      bookInformationToISBNresponse BookInformationResponse{..} = BookInformationByISBNResponse
+          { _byISBNTitle      = _title
+          , _byISBNISBN       = _ISBN
+          , _byISBNAuthor     = _author
+          , _byISBNPublisher  = _publisher
+          , _byISBNPublished  = _published
+          , _byISBNAmazonLink = _amazonLink
+          , _byISBNBooks      = booksPerLibrary _books
+          , _byISBNDataSource = DSDatabase _id _cover}
+      cleanedISBN = T.filter (/= '-') isbn
 
 getLoansImpl :: Ctx -> Handler [Loan]
 getLoansImpl ctx = do
@@ -258,8 +338,13 @@ personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
       Just es -> runLogT "library" (ctxLogger ctx) $ fetchPersonalLoans ctx eidmap (es ^. P.employeeId))
 
 addBookPostImpl :: Ctx -> AddBookInformation -> Handler (HtmlPage "additempage")
-addBookPostImpl ctx addBook@(AddBookInformation _ _ _ _ _ _ _ coverData _) = do
-    contentHash <- liftIO $ addNewCover ctx (fdPayload coverData)
+addBookPostImpl ctx addBook@AddBookInformation{..} = do
+    existingBook <- runLogT "library" (ctxLogger ctx) $ checkIfExistingBook ctx _addBookInformationId _addBookISBN
+    contentHash <- case existingBook of
+      Nothing -> liftIO $ Just <$> case _addBookCover of
+        CoverData coverData -> addNewCover ctx (fdPayload coverData)
+        CoverUrl url -> fetchImageFromAmazon ctx url >>= addNewCover ctx
+      Just _binfoid -> pure Nothing
     res <- runLogT "library" (ctxLogger ctx) $ addNewBook ctx addBook contentHash
     if res then
       addItemPageGetImpl ctx
