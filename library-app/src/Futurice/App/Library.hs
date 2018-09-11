@@ -166,14 +166,14 @@ fetchBookInformationFromAmazon ctx isbn = do
               image <- (findImage . X.children) item
               imageUrl <- (findImageUrl . X.children) image
               BookInformationByISBNResponse
-                  <$> (TE.decodeUtf8 <$> (getTitle . X.children) itemAttributes)
+                  <$> (decodeUtf8Lenient <$> (getTitle . X.children) itemAttributes)
                   <*> Just isbn
-                  <*> (TE.decodeUtf8 <$> (getAuthors . X.children) itemAttributes)
-                  <*> (TE.decodeUtf8 <$> (getPublisher . X.children) itemAttributes)
-                  <*> (((take 4 . T.unpack . TE.decodeUtf8) <$> (getPublished . X.children) itemAttributes) >>= readMaybe)
-                  <*> (TE.decodeUtf8 <$> getUrlLink detailPageUrl)
+                  <*> (decodeUtf8Lenient <$> (getAuthors . X.children) itemAttributes)
+                  <*> (decodeUtf8Lenient <$> (getPublisher . X.children) itemAttributes)
+                  <*> (((take 4 . T.unpack . decodeUtf8Lenient) <$> (getPublished . X.children) itemAttributes) >>= readMaybe)
+                  <*> (decodeUtf8Lenient <$> getUrlLink detailPageUrl)
                   <*> Just Map.empty
-                  <*> (DSAmazon . TE.decodeUtf8 <$> getUrlLink imageUrl)
+                  <*> (DSAmazon . decodeUtf8Lenient <$> getUrlLink imageUrl)
   where
       findItems = (listToMaybe . filter (\n -> X.name n == "Items"))
       findItem = (listToMaybe . filter (\n -> X.name n == "Item"))
