@@ -43,7 +43,6 @@ import qualified Data.ByteString.Char8  as BS8
 import qualified Data.ByteString.Lazy   as LBS
 import qualified Data.Map               as Map
 import qualified Data.Text              as T
-import qualified Data.Text.Encoding     as TE
 import qualified Network.HTTP.Client    as HTTP
 import qualified Personio               as P
 import qualified Xeno.DOM               as X
@@ -130,22 +129,22 @@ makeAmazonAddress ctx isbn = do
         <> (urlEncode True . Base64.encode . calcSign $ baseAddress timeStamp)
   where
     queryParameters ts = BS.intercalate "&"
-        [ "AWSAccessKeyId=" <> TE.encodeUtf8 (cfgAmazonAccessKey cfg)
-        , "AssociateTag=" <> TE.encodeUtf8 (cfgAmazonAssociateTag cfg)
+        [ "AWSAccessKeyId=" <> encodeUtf8 (cfgAmazonAccessKey cfg)
+        , "AssociateTag=" <> encodeUtf8 (cfgAmazonAssociateTag cfg)
         , "IdType=ISBN"
-        , "ItemId=" <> TE.encodeUtf8 isbn
+        , "ItemId=" <> encodeUtf8 isbn
         , "Operation=ItemLookup"
         , "ResponseGroup=Medium"
         , "SearchIndex=Books"
         , "Service=AWSECommerceService"
-        , "Timestamp=" <> TE.encodeUtf8 (T.replace ":" "%3A" $ T.pack ts)]
+        , "Timestamp=" <> encodeUtf8 (T.replace ":" "%3A" $ T.pack ts)]
     baseAddress ts = BS.intercalate "\n"
         [ "GET"
         , "webservices.amazon.com"
         , "/onca/xml"
         , queryParameters ts]
     calcSign :: ByteString -> ByteString
-    calcSign = hmac (TE.encodeUtf8 $ cfgAmazonSecretKey cfg)
+    calcSign = hmac (encodeUtf8 $ cfgAmazonSecretKey cfg)
     cfg = ctxConfig ctx
 
 fetchBookInformationFromAmazon :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
@@ -175,12 +174,13 @@ fetchBookInformationFromAmazon ctx isbn = do
                   <*> Just Map.empty
                   <*> (DSAmazon . decodeUtf8Lenient <$> getUrlLink imageUrl)
   where
-      findItems = (listToMaybe . filter (\n -> X.name n == "Items"))
-      findItem = (listToMaybe . filter (\n -> X.name n == "Item"))
-      findItemAttributes = (listToMaybe . filter (\n -> X.name n == "ItemAttributes"))
-      findDetailPageUrl = (listToMaybe . filter (\n -> X.name n == "DetailPageURL"))
-      findImage = (listToMaybe . filter (\n -> X.name n == "LargeImage"))
-      findImageUrl = (listToMaybe . filter (\n -> X.name n == "URL"))
+      findValue val = listToMaybe . filter (\n -> X.name n == val)
+      findItems = findValue "Items"
+      findItem = findValue "Item"
+      findItemAttributes = findValue "ItemAttributes"
+      findDetailPageUrl = findValue "DetailPageURL"
+      findImage = findValue "LargeImage"
+      findImageUrl = findValue "URL"
       getUrlLink urlNode = (listToMaybe $ X.contents urlNode) >>= contentText
       getAuthors attrs = do
           authors <- traverse contentText (concat (X.contents <$> (filter (\n -> X.name n == "Author") attrs)))
