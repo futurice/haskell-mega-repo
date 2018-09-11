@@ -35,9 +35,8 @@ library
       , aeson
       , base64-bytestring
       , bytestring
-      , byteable
       , containers
-      , cryptohash
+      , cryptohash-sha256
       , env-config
       , fum-types
       , futurice-constants

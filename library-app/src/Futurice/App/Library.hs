@@ -5,8 +5,7 @@
 module Futurice.App.Library (defaultMain) where
 
 import Codec.Picture                (DynamicImage, decodeImage)
-import Crypto.Hash                  (HMAC (..), SHA256, hmac)
-import Data.Byteable                (toBytes)
+import Crypto.Hash.SHA256           (hmac)
 import Data.Char                    (isSpace)
 import Data.Time
        (defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat)
@@ -38,14 +37,14 @@ import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Types
 
-import qualified Data.ByteString        as DB
-import qualified Data.ByteString.Base64 as B64
-import qualified Data.ByteString.Char8  as C
-import qualified Data.ByteString.Lazy   as DBL
+import qualified Data.ByteString        as BS
+import qualified Data.ByteString.Base64 as Base64
+import qualified Data.ByteString.Char8  as BS8
+import qualified Data.ByteString.Lazy   as LBS
 import qualified Data.Map               as Map
 import qualified Data.Text              as T
 import qualified Data.Text.Encoding     as TE
-import qualified Network.HTTP.Client    as N
+import qualified Network.HTTP.Client    as HTTP
 import qualified Personio               as P
 import qualified Xeno.DOM               as X
 
@@ -112,12 +111,12 @@ getPersonioDataMap ctx = do
                                                Just login -> Just (login, e)
                                                Nothing -> Nothing) es'
 
-fetchCover :: (Monad m, MonadIO m, MonadThrow m) => Ctx -> ContentHash -> m (Either String DBL.ByteString)
+fetchCover :: (Monad m, MonadIO m, MonadThrow m) => Ctx -> ContentHash -> m (Either String LBS.ByteString)
 fetchCover ctx contentHash = do
     url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
     liftIO $ sisosotaGet (ctxManager ctx) url contentHash
 
-addNewCover :: Ctx -> DBL.ByteString -> IO ContentHash
+addNewCover :: Ctx -> LBS.ByteString -> IO ContentHash
 addNewCover ctx cover = do
     url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
     sisosotaPut (ctxManager ctx) url cover
@@ -128,48 +127,53 @@ makeAmazonAddress ctx isbn = do
     pure $ "https://webservices.amazon.com/onca/xml?"
         <> queryParameters timeStamp
         <> "&Signature="
-        <> (urlEncode True . B64.encode . toBytes . hmacGetDigest . calcSign $ baseAddress timeStamp)
+        <> (urlEncode True . Base64.encode . calcSign $ baseAddress timeStamp)
   where
-    queryParameters ts = "AWSAccessKeyId=" <> TE.encodeUtf8 (cfgAmazonAccessKey cfg) <> "&"
-        <> "AssociateTag=" <> TE.encodeUtf8 (cfgAmazonAssociateTag cfg) <>"&"
-        <> "IdType=ISBN&"
-        <> "ItemId=" <> TE.encodeUtf8 isbn <> "&"
-        <> "Operation=ItemLookup&"
-        <> "ResponseGroup=Medium&"
-        <> "SearchIndex=Books&"
-        <> "Service=AWSECommerceService&"
-        <> "Timestamp=" <> TE.encodeUtf8 (T.replace ":" "%3A" $ T.pack ts)
-    baseAddress ts = "GET\n"
-        <> "webservices.amazon.com\n"
-        <> "/onca/xml\n"
-        <> queryParameters ts
-    calcSign :: ByteString -> HMAC SHA256
+    queryParameters ts = BS.intercalate "&"
+        [ "AWSAccessKeyId=" <> TE.encodeUtf8 (cfgAmazonAccessKey cfg)
+        , "AssociateTag=" <> TE.encodeUtf8 (cfgAmazonAssociateTag cfg)
+        , "IdType=ISBN"
+        , "ItemId=" <> TE.encodeUtf8 isbn
+        , "Operation=ItemLookup"
+        , "ResponseGroup=Medium"
+        , "SearchIndex=Books"
+        , "Service=AWSECommerceService"
+        , "Timestamp=" <> TE.encodeUtf8 (T.replace ":" "%3A" $ T.pack ts)]
+    baseAddress ts = BS.intercalate "\n"
+        [ "GET"
+        , "webservices.amazon.com"
+        , "/onca/xml"
+        , queryParameters ts]
+    calcSign :: ByteString -> ByteString
     calcSign = hmac (TE.encodeUtf8 $ cfgAmazonSecretKey cfg)
     cfg = ctxConfig ctx
 
 fetchBookInformationFromAmazon :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
 fetchBookInformationFromAmazon ctx isbn = do
     amazonAddress <- makeAmazonAddress ctx isbn
-    request <- N.parseRequest $ C.unpack amazonAddress
-    response <- N.httpLbs request (ctxManager ctx)
-    case X.parse $ DBL.toStrict $ N.responseBody response of
-      Left _error -> pure Nothing
-      Right ns -> pure $ do
-          items <- (findItems . X.children) ns
-          item <- (findItem . X.children) items
-          itemAttributes <- (findItemAttributes . X.children) item
-          detailPageUrl <- (findDetailPageUrl . X.children) item
-          image <- (findImage . X.children) item
-          imageUrl <- (findImageUrl . X.children) image
-          BookInformationByISBNResponse
-              <$> (TE.decodeUtf8 <$> (getTitle . X.children) itemAttributes)
-              <*> Just isbn
-              <*> (TE.decodeUtf8 <$> (getAuthors . X.children) itemAttributes)
-              <*> (TE.decodeUtf8 <$> (getPublisher . X.children) itemAttributes)
-              <*> (((take 4 . T.unpack . TE.decodeUtf8) <$> (getPublished . X.children) itemAttributes) >>= readMaybe)
-              <*> (TE.decodeUtf8 <$> getUrlLink detailPageUrl)
-              <*> Just Map.empty
-              <*> (DSAmazon . TE.decodeUtf8 <$> getUrlLink imageUrl)
+    request <- HTTP.parseRequest $ BS8.unpack amazonAddress
+    response <- HTTP.httpLbs request (ctxManager ctx)
+    runLogT "library" (ctxLogger ctx) $
+        case X.parse $ LBS.toStrict $ HTTP.responseBody response of
+          Left err -> do
+              _ <- error $ "Error while parsing Amazon response: " <> show err
+              pure Nothing
+          Right ns -> pure $ do
+              items <- (findItems . X.children) ns
+              item <- (findItem . X.children) items
+              itemAttributes <- (findItemAttributes . X.children) item
+              detailPageUrl <- (findDetailPageUrl . X.children) item
+              image <- (findImage . X.children) item
+              imageUrl <- (findImageUrl . X.children) image
+              BookInformationByISBNResponse
+                  <$> (TE.decodeUtf8 <$> (getTitle . X.children) itemAttributes)
+                  <*> Just isbn
+                  <*> (TE.decodeUtf8 <$> (getAuthors . X.children) itemAttributes)
+                  <*> (TE.decodeUtf8 <$> (getPublisher . X.children) itemAttributes)
+                  <*> (((take 4 . T.unpack . TE.decodeUtf8) <$> (getPublished . X.children) itemAttributes) >>= readMaybe)
+                  <*> (TE.decodeUtf8 <$> getUrlLink detailPageUrl)
+                  <*> Just Map.empty
+                  <*> (DSAmazon . TE.decodeUtf8 <$> getUrlLink imageUrl)
   where
       findItems = (listToMaybe . filter (\n -> X.name n == "Items"))
       findItem = (listToMaybe . filter (\n -> X.name n == "Item"))
@@ -180,7 +184,7 @@ fetchBookInformationFromAmazon ctx isbn = do
       getUrlLink urlNode = (listToMaybe $ X.contents urlNode) >>= contentText
       getAuthors attrs = do
           authors <- traverse contentText (concat (X.contents <$> (filter (\n -> X.name n == "Author") attrs)))
-          pure $ DB.intercalate " and " authors
+          pure $ BS.intercalate " and " authors
       getValue val attrs =  do
           content <- X.contents <$> (listToMaybe . filter (\n -> X.name n == val)) attrs
           firstElement <- listToMaybe content
@@ -191,11 +195,11 @@ fetchBookInformationFromAmazon ctx isbn = do
       contentText (X.Text text) = Just text
       contentText _             = Nothing
 
-fetchImageFromAmazon :: Ctx -> Text -> IO DBL.ByteString
+fetchImageFromAmazon :: Ctx -> Text -> IO LBS.ByteString
 fetchImageFromAmazon ctx url = do
-    request <- N.parseRequest $ T.unpack url
-    response <- N.httpLbs request (ctxManager ctx)
-    pure $ N.responseBody response
+    request <- HTTP.parseRequest $ T.unpack url
+    response <- HTTP.httpLbs request (ctxManager ctx)
+    pure $ HTTP.responseBody response
 
 -------------------------------------------------------------------------------
 -- Implementations
@@ -212,7 +216,7 @@ _updateAllBookCovers ctx = do
           pictData <- if all isSpace (T.unpack coverText) || not (T.isPrefixOf "cover" coverText) then
                         pure Nothing
                       else
-                        Just <$> liftIO (DBL.readFile (T.unpack $ "ADD LOCAL MEDIA DIR" <> coverText))
+                        Just <$> liftIO (LBS.readFile (T.unpack $ "ADD LOCAL MEDIA DIR" <> coverText))
           contentHash <- case pictData of
                            Nothing -> pure Nothing
                            Just pic -> Just <$> liftIO (addNewCover ctx pic)
@@ -225,7 +229,7 @@ getBookCoverImpl :: Ctx -> ContentHash -> Handler (Headers '[Header "Cache-Contr
 getBookCoverImpl ctx picture = do
     picData <- fetchCover ctx picture
     case picData of
-      Right pic -> case decodeImage $ DBL.toStrict pic of
+      Right pic -> case decodeImage $ LBS.toStrict pic of
         Left _err -> throwError $ err404 { errBody = "Decoding failed" }
         Right p -> pure $ addHeader "public, max-age=3600" p
       Left _err -> throwError $ err404 { errBody = "Fetching cover failed" }
