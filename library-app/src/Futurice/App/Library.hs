@@ -33,6 +33,7 @@ import Futurice.App.Library.Ctx
 import Futurice.App.Library.Logic
 import Futurice.App.Library.Pages.AddItemPage
 import Futurice.App.Library.Pages.BookInformationPage
+import Futurice.App.Library.Pages.EditItemPage
 import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Types
@@ -67,6 +68,8 @@ htmlServer ctx = genericServer $ HtmlRecord
     , addBoardGamePost     = addBoardGamePostImpl ctx
     , addItemPageGet       = addItemPageGetImpl ctx
     , bookPageGet          = bookInformationPageImpl ctx
+    , editBookPageGet      = editBookInformationPageImpl ctx
+    , editBookPost         = editBookInformationImpl ctx
     , indexPageGet         = indexPageImpl ctx
     , personalLoansPageGet = personalLoansPageImpl ctx
     }
@@ -231,7 +234,7 @@ getBookCoverImpl ctx picture = do
     case picData of
       Right pic -> case decodeImage $ LBS.toStrict pic of
         Left _err -> throwError $ err404 { errBody = "Decoding failed" }
-        Right p -> pure $ addHeader "public, max-age=3600" p
+        Right p -> pure $ addHeader "public, max-age=31536000" p
       Left _err -> throwError $ err404 { errBody = "Fetching cover failed" }
 
 indexPageImpl :: Ctx
@@ -355,13 +358,25 @@ addBookPostImpl ctx addBook@AddBookInformation{..} = do
     else
       throwError err400
 
-addBoardGamePostImpl :: Ctx -> AddBoardGameInformation ->  Handler (HtmlPage "additempage")
+addBoardGamePostImpl :: Ctx -> AddBoardGameInformation -> Handler (HtmlPage "additempage")
 addBoardGamePostImpl ctx addBoardGame = do
     res <- runLogT "library" (ctxLogger ctx) $ addNewBoardGame ctx addBoardGame
     if res then
       addItemPageGetImpl ctx
     else
       throwError err400
+
+editBookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "edititempage")
+editBookInformationPageImpl ctx binfoId = do
+    info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformation ctx binfoId
+    case info of
+      Just i -> pure $ editItemPage i
+      Nothing -> throwError err400
+
+editBookInformationImpl :: Ctx -> EditBookInformation -> Handler (HtmlPage "bookinformation")
+editBookInformationImpl ctx info = do
+    _ <- runLogT "library" (ctxLogger ctx) $ updateBookInformation ctx info
+    bookInformationPageImpl ctx (info ^. editBookInformationId)
 
 addItemPageGetImpl :: Ctx -> Handler (HtmlPage "additempage")
 addItemPageGetImpl _ = pure addItemPage
