@@ -16,7 +16,7 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
     select_ [data_ "futu-id" "add-new-item-select"] $ do
         optionSelected_ True  [ value_ "Book" ] $ "Add book"
         optionSelected_ False  [ value_ "Boardgame" ] $ "Add boardgame"
-    form_ [data_ "futu-id" "add-new-book",recordAction_ addBookPost, method_ "POST", enctype_ "multipart/form-data"] $ do
+    form_ [data_ "futu-id" "add-new-book", data_ "form-type" "book", recordAction_ addBookPost, method_ "POST", enctype_ "multipart/form-data"] $ do
         input_ [ name_ "bookinformationid", type_ "hidden"]
         table_ $ do
             tr_ $ do
@@ -24,7 +24,9 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                 td_ $ do
                     div_ [ class_ "input-group"] $ do
                         input_ [ class_ "input-group-field", name_ "isbn", id_ "isbn", type_ "text", required_ ""]
-                        div_ [ class_ "input-group-button"] $ button_ [ class_ "button", data_ "futu-id" "find-by-isbn"] $ "Magic"
+                        div_ [ class_ "input-group-button"] $ do
+                            button_ [ class_ "button", data_ "futu-id" "find-by-isbn"] $ "Magic"
+                            button_ [ class_ "button", data_ "futu-id" "clear-add-new-book", style_ "display: none"] $ "Clear"
                     div_ [ id_ "info-box"] ""
             tr_ $ do
                 th_ "Title"
