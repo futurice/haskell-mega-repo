@@ -31,22 +31,48 @@ futu.onload(function () {
     });
   });
 
-    $("form[data-futu-id=add-new-book]").onsubmit = function () {
-        $$('span.alert').forEach(function (s) {
-            s.remove();
-        });
-        var isbn = $("form[data-futu-id=add-new-book] input[name='isbn']").value;
+    var isbnCheck = function(isbn) {
         if (/[^0-9\-]+/g.test(isbn)) {
             var isbnAlert = document.createElement("span");
             isbnAlert.className = 'alert label';
             isbnAlert.innerText = 'No letters allowed in isbn';
-            futu.$("form[data-futu-id=add-new-book] input[name='isbn']").after(isbnAlert);
+            futu.$("form[data-form-type=book] input[name='isbn']").after(isbnAlert);
             return false;
         }
         return true;
     };
 
-    $$("select[data-futu-id=add-new-item-select").forEach(function (sel) {
+    $$("form[data-futu-id=edit-book]").forEach(function (frm) {
+        frm.onsubmit = function () {
+            $$('span.alert').forEach(function (s) {
+                s.remove();
+            });
+            var isbn = $("form[data-form-type=book] input[name='isbn']").value;
+            return isbnCheck(isbn);
+        };
+    });
+
+    $$("form[data-futu-id=add-new-book]").forEach(function (frm) {
+        frm.onsubmit = function () {
+            $$('span.alert').forEach(function (s) {
+                s.remove();
+            });
+            var isbn = $("form[data-form-type=book] input[name='isbn']").value;
+            var noErrors = true;
+            noErrors = isbnCheck(isbn);
+            if (!$("form[data-futu-id=add-new-book] input[name='cover-file']").value
+                && !$("form[data-futu-id=add-new-book] input[name='bookinformationid']").value) {
+                var coverAlert = document.createElement("span");
+                coverAlert.className = 'alert label';
+                coverAlert.innerText = 'Cover picture must be added';
+                futu.$("form[data-futu-id=add-new-book] input[name='cover-file']").after(coverAlert);
+                noErrors = false;
+            }
+            return noErrors;
+        };
+    });
+
+    $$("select[data-futu-id=add-new-item-select]").forEach(function (sel) {
         sel.onchange = function () {
             $$("form").forEach(function (s) { s.style.display = "none" });
             if (this.value === "Book") {
@@ -66,7 +92,7 @@ futu.onload(function () {
                     .then(function (response) {
                         //Fill form with the isbn values
                         if(response.dataSource.source === 'Database') {
-                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.dataSource.bookinformationid;
+                            $("Form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.dataSource.bookinformationid;
                             $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
                             $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
                             $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
@@ -91,11 +117,30 @@ futu.onload(function () {
                             $("form[data-futu-id=add-new-book] input[name='cover-url']").value = response.dataSource.coverurl;
                             $("img#cover-image").src = response.dataSource.coverurl;
                             $("img#cover-image").style.display = "block";
-                        }})
+                        }
+                        $("button[data-futu-id=find-by-isbn]").style.display = "none";
+                        $("button[data-futu-id=clear-add-new-book]").style.display = "block";
+                    })
                     .catch(function (error) {
                         $("div#info-box").innerHTML = '<span class="info">No books found in database with this ISBN</span>';
                     });
             }
+        });
+    });
+
+    $$("button[data-futu-id=clear-add-new-book]").forEach(function (btn) {
+        buttonOnClick(btn, function () {
+            $$("form[data-futu-id=add-new-book] input").forEach(function (i) {
+                i.value = "";
+            });
+            $$('span.alert').forEach(function (s) {
+                s.remove();
+            });
+            $("img#cover-image").src = "";
+            $("img#cover-image").style.display = "none";
+            $("div#info-box").innerHTML = "";
+            $("button[data-futu-id=find-by-isbn]").style.display = "block";
+            $("button[data-futu-id=clear-add-new-book]").style.display = "none";
         });
     });
 });

@@ -48,6 +48,8 @@ data HtmlRecord route = HtmlRecord
     , addBookPost          :: route :- "item" :> "add" :> "book" :> MultipartForm Mem AddBookInformation :> Post '[HTML] (HtmlPage "additempage")
     , addBoardGamePost     :: route :- "item" :> "add" :> "boardgame" :> MultipartForm Mem AddBoardGameInformation :> Post '[HTML] (HtmlPage "additempage")
     , bookPageGet          :: route :- BookInformationPageEndpoint
+    , editBookPageGet      :: route :- "item" :> "edit" :> "book" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "edititempage")
+    , editBookPost         :: route :- "item" :> "edit" :> "book" :> MultipartForm Mem EditBookInformation :> Post '[HTML] (HtmlPage "bookinformation")
     , indexPageGet         :: route :- IndexPageEndpoint
     , personalLoansPageGet :: route :- SSOUser :> "user" :> "page" :> Get '[HTML] (HtmlPage "personalinformation")
     } deriving (Generic)

@@ -24,6 +24,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
         div_ [] $ do
             img_ [src_ $ linkToText $ fieldLink bookCoverGet cover ]
         div_ [] $ do
+            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBookPageGet binfoid] "Edit book information"
             table_ $ do
                 tr_ $ do
                     th_ "Title"
@@ -33,7 +34,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                     td_ $ toHtml $ author
                 tr_ $ do
                     th_ "Publisher"
-                    td_ $ toHtml $ show publisher
+                    td_ $ toHtml $ publisher
                 tr_ $ do
                     th_ "Published"
                     td_ $ toHtml $ show published
@@ -52,7 +53,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                                data_ "futu-id" "loan-item",
                                data_ "item-id" (T.pack $ show binfoid),
                                data_ "library" (T.pack $ show $ toHtml library)] $ toHtml ("Borrow" :: Text)
-                  table_ $ do
+                  for_ (listToMaybe $ fst (partitionByLoan bs)) $ \_ -> table_ $ do
                       thead_ $ tr_ $ th_ $ toHtml $ idT $ "Copies on loan "
                       tbody_ $ for_ (fst $ partitionByLoan bs) $ \b ->
                         for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> tr_ $ do

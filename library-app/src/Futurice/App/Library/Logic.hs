@@ -71,8 +71,6 @@ idToName emap pid = case emap ^.at pid of
 itemArrayToMap :: [ItemData] -> Map ItemId (InfoId, Library)
 itemArrayToMap = Map.fromList . fmap (\(ItemData iid lib infoid) -> (iid, (infoid, lib)))
 
-
-
 -------------------------------------------------------------------------------
 -- Item functions
 -------------------------------------------------------------------------------
@@ -201,18 +199,6 @@ fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, 
 fetchCoverInformationsAsText :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [(BookInformationId, Text)]
 fetchCoverInformationsAsText ctx = safePoolQuery ctx "SELECT bookinfo_id, cover FROM library.bookinformation" ()
 
--- data Args a b c d = Args a
--- newtype Select = Select Query
--- newtype From = From Query
--- newtype Order = Order Text
--- data Where a = Where Text a
-
--- instance Semigroup (Where a) where
---     (Where a) <> (Where b) = Where $ a <> " AND " <> b
-
--- newtype Limit = Limit Int
--- data SqlQuery = SqlQuery Select From Order Where Limit
-
 fetchBookInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m)
                                   => Ctx
                                   -> SortCriteria
@@ -323,6 +309,9 @@ addNewBook ctx (AddBookInformation title isbn author publisher published amazonL
 updateBookCover :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> ContentHash -> m Int64
 updateBookCover ctx binfoid contentHash = safePoolExecute ctx "UPDATE library.bookinformation SET cover = ? where bookinfo_id = ?" (contentHash, binfoid)
 
+updateBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> EditBookInformation -> m Int64
+updateBookInformation ctx info = safePoolExecute ctx "UPDATE library.bookinformation SET title = ?, isbn = ?, author = ?, publisher = ?, publishedyear = ?, amazon_link = ? where bookinfo_id = ?" (info ^. editBookTitle, info ^. editBookISBN, info ^. editBookAuthor, info ^. editBookPublisher, info ^. editBookPublished, info ^. editBookAmazonLink, info ^. editBookInformationId)
+
 -------------------------------------------------------------------------------
 -- Boardgame functions
 -------------------------------------------------------------------------------
@@ -345,3 +334,6 @@ addNewBoardGame ctx (AddBoardGameInformation name publisher published designer a
               replicateM_ n $ safePoolExecute ctx "INSERT INTO library.item (library, boardgameinfo_id) VALUES (?,?)" (lib, infoId :: BookInformationId)
           pure True
       Nothing -> pure False
+
+updateBoardGameInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BoardGameInformation -> m Int64
+updateBoardGameInformation ctx info = safePoolExecute ctx "UPDATE library.boardgameinformation SET name = ?, publisher = ?, publishedyear = ?, designer = ?, artist = ? WHERE boardgameinfo_id = ?" (info ^. boardgameName, info ^. boardgamePublisher, info ^. boardgamePublished, info ^. boardgameDesigner, info ^. boardgameArtist, info ^. boardgameInformationId)
