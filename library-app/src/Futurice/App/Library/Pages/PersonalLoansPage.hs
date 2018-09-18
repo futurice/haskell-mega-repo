@@ -49,11 +49,11 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
                 tbody_ $ do
                     for_ boardgameLoans $ \(lid, boardgame) -> do
                         tr_ $ do
-                            td_ $ toHtml $ boardgame ^. boardgameName
-                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardgamePublisher
-                            td_ $ toHtml $ show $ boardgame ^. boardgamePublished
-                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardgameDesigner
-                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardgameArtist
+                            td_ $ toHtml $ boardgame ^. boardGameName
+                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardGamePublisher
+                            td_ $ toHtml $ show $ boardgame ^. boardGamePublished
+                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardGameDesigner
+                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardGameArtist
                             td_ $ button_ [class_ "button", data_ "futu-id" "return-loan", data_ "loan-id" (T.pack $ show lid)] $ toHtml ("Return" :: Text)
   where
     loanSorter :: [Loan] -> ([(LoanId, BookInformation)], [(LoanId, BoardGameInformation)])
