@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -8,27 +9,61 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-data SortCriteria = SortTitle
-                  | SortAuthor
-                  | SortPublished
-                  | SortISBN
-                  deriving (Eq, Generic, Show, Enum, Bounded)
+import Futurice.App.Library.Types.BoardGameInformation
+import Futurice.App.Library.Types.BookInformation
+
+import qualified Data.Text as T
+
+data CriteriaAndData where
+    BookCD :: BookSortCriteria -> [BookInformation] -> CriteriaAndData
+    BoardGameCD :: BoardGameSortCriteria -> [BoardGameInformation] -> CriteriaAndData
+
+data SortCriteriaAndStart where
+    BookCS :: BookSortCriteria -> Maybe BookInformationId -> SortCriteriaAndStart
+    BoardGameCS :: BoardGameSortCriteria -> Maybe BoardGameInformationId -> SortCriteriaAndStart
+
+data SortCriteria = BookSort BookSortCriteria
+                  | BoardGameSort BoardGameSortCriteria
+                  deriving (Eq)
+
+data BookSortCriteria = SortTitle
+                      | SortAuthor
+                      | SortPublished
+                      | SortISBN
+                      deriving (Eq, Generic, Show, Enum, Bounded)
+
+data BoardGameSortCriteria = SortName
+                           | SortDesigner
+                           deriving (Eq, Generic, Show, Enum, Bounded)
 
 data SortDirection = SortDesc
                    | SortAsc
                    deriving (Eq, Generic, Show, Enum, Bounded)
 
-deriveGeneric ''SortCriteria
+deriveGeneric ''BookSortCriteria
+deriveGeneric ''BoardGameSortCriteria
 deriveGeneric ''SortDirection
 
-instance ToHttpApiData SortCriteria where toUrlPiece = enumToText
+instance ToHttpApiData BookSortCriteria where toUrlPiece = enumToText
+instance ToHttpApiData BoardGameSortCriteria where toUrlPiece = enumToText
 instance ToHttpApiData SortDirection where toUrlPiece = enumToText
-instance FromHttpApiData SortCriteria where parseUrlPiece = enumFromTextE
+instance ToHttpApiData SortCriteria where
+    toUrlPiece (BookSort bookSort) = "book-" <> toUrlPiece bookSort
+    toUrlPiece (BoardGameSort boardgameSort) = "boardgame-" <> toUrlPiece boardgameSort
+instance FromHttpApiData BookSortCriteria where parseUrlPiece = enumFromTextE
+instance FromHttpApiData BoardGameSortCriteria where parseUrlPiece = enumFromTextE
 instance FromHttpApiData SortDirection where parseUrlPiece = enumFromTextE
+instance FromHttpApiData SortCriteria where
+    parseUrlPiece x = case T.splitOn "-" x of
+      ["book", bookSort] -> BookSort <$> parseUrlPiece bookSort
+      ["boardgame", boardGameSort] -> BoardGameSort <$> parseUrlPiece boardGameSort
+      _ -> Left "not recognised sort criteria"
 
-instance TextEnum SortCriteria where
-    type TextEnumNames SortCriteria = '["title", "author", "published", "isbn"]
+instance TextEnum BookSortCriteria where
+    type TextEnumNames BookSortCriteria = '["title", "author", "published", "isbn"]
+instance TextEnum BoardGameSortCriteria where
+    type TextEnumNames BoardGameSortCriteria = '["name", "designer"]
 instance TextEnum SortDirection where
     type TextEnumNames SortDirection = '["desc", "asc"]
-instance ToParamSchema SortCriteria where toParamSchema = enumToParamSchema
+instance ToParamSchema BookSortCriteria where toParamSchema = enumToParamSchema
 instance ToParamSchema SortDirection where toParamSchema = enumToParamSchema

@@ -14,8 +14,8 @@ import qualified Data.Text as T
 personalLoansPage :: [Loan] -> HtmlPage ("personalinformation")
 personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
     let (bookLoans, boardgameLoans) = loanSorter loans
-    fullRow_ $ do
-        unless (null $ bookLoans) $ do
+    unless (null bookLoans && null boardgameLoans) $ fullRow_ $ do
+        unless (null bookLoans) $ do
             h2_ $ "Books"
             table_ $ do
                 thead_ $ do
@@ -35,10 +35,26 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
                             td_ $ toHtml $ show $ book ^. bookPublished
                             td_ $ toHtml $ book ^. bookISBN
                             td_ $ button_ [class_ "button", data_ "futu-id" "return-loan", data_ "loan-id" (T.pack $ show lid)] $ toHtml ("Return" :: Text)
--- TODO: Write the boardgame portion of display
-        unless (null $ boardgameLoans) $ do
+        unless (null boardgameLoans) $ do
             h2_ $ "Boardgames"
-
+            table_ $ do
+                thead_ $ do
+                    tr_ $ do
+                        th_ "Name"
+                        th_ "Publisher"
+                        th_ "Published"
+                        th_ "Designer"
+                        th_ "Artist"
+                        th_ ""
+                tbody_ $ do
+                    for_ boardgameLoans $ \(lid, boardgame) -> do
+                        tr_ $ do
+                            td_ $ toHtml $ boardgame ^. boardgameName
+                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardgamePublisher
+                            td_ $ toHtml $ show $ boardgame ^. boardgamePublished
+                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardgameDesigner
+                            td_ $ toHtml $ fromMaybe "" $ boardgame ^. boardgameArtist
+                            td_ $ button_ [class_ "button", data_ "futu-id" "return-loan", data_ "loan-id" (T.pack $ show lid)] $ toHtml ("Return" :: Text)
   where
     loanSorter :: [Loan] -> ([(LoanId, BookInformation)], [(LoanId, BoardGameInformation)])
     loanSorter ls = let sortLoan (lid, ItemBook book) = Left (lid, book)
