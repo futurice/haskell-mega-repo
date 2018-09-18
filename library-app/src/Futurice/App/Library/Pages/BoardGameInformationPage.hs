@@ -22,23 +22,23 @@ boardGameInformationPage :: BoardGameInformationResponse -> [LoanData] -> IdMap 
 boardGameInformationPage boardGameResponse ls employees = page_ "Board Game details" (Nothing :: Maybe Nav) $ do
     fullRow_ $ do
         div_ [] $ do
-            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBoardGamePageGet (boardGameResponse ^. boardgameResponseInformationId)] "Edit board game information"
+            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBoardGamePageGet (boardGameResponse ^. boardGameResponseInformationId)] "Edit board game information"
             table_ $ do
                 tr_ $ do
                     th_ "Name"
-                    td_ $ toHtml $ boardGameResponse ^. boardgameResponseName
+                    td_ $ toHtml $ boardGameResponse ^. boardGameResponseName
                 tr_ $ do
                     th_ "Publisher"
-                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardgameResponsePublisher
+                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponsePublisher
                 tr_ $ do
                     th_ "Published"
-                    td_ $ toHtml $ maybe "" show $ boardGameResponse ^. boardgameResponsePublished
+                    td_ $ toHtml $ maybe "" show $ boardGameResponse ^. boardGameResponsePublished
                 tr_ $ do
                     th_ "Designer"
-                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardgameResponseDesigner
+                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseDesigner
                 tr_ $ do
                     th_ "Artist"
-                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardgameResponseArtist
+                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseArtist
     fullRow_ $ do
         h2_ "Board games"
         for_ officeMap $ \(lib, bs) -> do
@@ -62,6 +62,6 @@ boardGameInformationPage boardGameResponse ls employees = page_ "Board Game deta
   where
     idT :: Text -> Text
     idT = id
-    officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_boardGamesLibrary x, [x])) <$> (boardGameResponse ^. boardgameResponseGames)
+    officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_boardGamesLibrary x, [x])) <$> (boardGameResponse ^. boardGameResponseGames)
     loanMap = M.fromList $ (\(LoanData lid day person iid) -> (iid, (lid, day, person))) <$> ls
     partitionByLoan = partition (\x -> isJust (loanMap ^.at (_boardGamesBoardGameId x)))

@@ -274,7 +274,7 @@ boardGameInformationPageImpl ctx boardgameInfoId = do
     case boardgameResponse of
       Just response -> do
           es <- liftIO $ getPersonioData ctx
-          ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_boardGamesBoardGameId <$> response ^. boardgameResponseGames)
+          ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_boardGamesBoardGameId <$> response ^. boardGameResponseGames)
           pure $ boardGameInformationPage response ls es
       Nothing -> throwError err404
 

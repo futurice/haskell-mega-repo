@@ -239,8 +239,8 @@ startBookInfo SortISBN info = info ^. bookISBN
 startBookInfo SortPublished info = T.pack $ show $ info ^. bookPublished
 
 startBoardGameInfo :: BoardGameSortCriteria -> BoardGameInformation -> Text
-startBoardGameInfo SortName info = info ^. boardgameName
-startBoardGameInfo SortDesigner info = fromMaybe "" $ info ^. boardgameDesigner
+startBoardGameInfo SortName info = info ^. boardGameName
+startBoardGameInfo SortDesigner info = fromMaybe "" $ info ^. boardGameDesigner
 
 searchSqlString :: SortCriteria -> Query
 searchSqlString (BookSort _) = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ plainto_tsquery(?)) "
@@ -262,7 +262,7 @@ fetchInformationsWithCriteria ctx criteria direction limit search = case criteri
     BoardGameCS crit start -> do
         boardGameInfo <- join <$> traverse (fetchBoardGameInformation ctx) start
         case boardGameInfo of
-            Just bi -> fetchInfo (BoardGameSort crit) (Just (bi ^. boardgameInformationId, startBoardGameInfo crit bi))
+            Just bi -> fetchInfo (BoardGameSort crit) (Just (bi ^. boardGameInformationId, startBoardGameInfo crit bi))
             Nothing -> fetchInfo (BoardGameSort crit) (Nothing :: Maybe (BoardGameInformationId, Text))
   where
     fetchInfo :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, FromRow a, ToField c, ToField d) => SortCriteria -> Maybe (c, d) -> m [a]
@@ -310,13 +310,13 @@ fetchBoardGameResponse ctx infoid = do
   where
     toBoardGame item = BoardGames (idLibrary item) (idItemId item)
     toBoardGameInformationResponse info boardgames = BoardGameInformationResponse
-        { _boardgameResponseInformationId  = info ^. boardgameInformationId
-        , _boardgameResponseName           = info ^. boardgameName
-        , _boardgameResponsePublisher      = info ^. boardgamePublisher
-        , _boardgameResponsePublished      = info ^. boardgamePublished
-        , _boardgameResponseDesigner       = info ^. boardgameDesigner
-        , _boardgameResponseArtist         = info ^. boardgameArtist
-        , _boardgameResponseGames          = boardgames
+        { _boardGameResponseInformationId  = info ^. boardGameInformationId
+        , _boardGameResponseName           = info ^. boardGameName
+        , _boardGameResponsePublisher      = info ^. boardGamePublisher
+        , _boardGameResponsePublished      = info ^. boardGamePublished
+        , _boardGameResponseDesigner       = info ^. boardGameDesigner
+        , _boardGameResponseArtist         = info ^. boardGameArtist
+        , _boardGameResponseGames          = boardgames
         }
 
 fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [BookInformation] -> m [BookInformationResponse]
