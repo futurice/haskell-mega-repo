@@ -32,6 +32,7 @@ import Futurice.App.Library.Config
 import Futurice.App.Library.Ctx
 import Futurice.App.Library.Logic
 import Futurice.App.Library.Pages.AddItemPage
+import Futurice.App.Library.Pages.BoardGameInformationPage
 import Futurice.App.Library.Pages.BookInformationPage
 import Futurice.App.Library.Pages.EditItemPage
 import Futurice.App.Library.Pages.IndexPage
@@ -68,6 +69,9 @@ htmlServer ctx = genericServer $ HtmlRecord
     , addBoardGamePost     = addBoardGamePostImpl ctx
     , addItemPageGet       = addItemPageGetImpl ctx
     , bookPageGet          = bookInformationPageImpl ctx
+    , boardGamePageGet     = boardGameInformationPageImpl ctx
+    , editBoardGamePost    = editBoardGameInformationImpl ctx
+    , editBoardGamePageGet = editBoardGameInformationPageImpl ctx
     , editBookPageGet      = editBookInformationPageImpl ctx
     , editBookPost         = editBookInformationImpl ctx
     , indexPageGet         = indexPageImpl ctx
@@ -242,15 +246,20 @@ indexPageImpl :: Ctx
               -> Maybe SortDirection
               -> Maybe Int
               -> Maybe BookInformationId
+              -> Maybe BoardGameInformationId
               -> Maybe Text
               -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx criteria direction limit startId search = do
-    crit <- pure $ fromMaybe SortTitle criteria
+indexPageImpl ctx criteria direction limit startBookId startBoardGameId search = do
+    crit <- pure $ fromMaybe (BookSort SortTitle) criteria
     dir <- pure $ fromMaybe SortAsc direction
     lim <- pure $ fromMaybe 10 limit
-    bookInfos <- runLogT "library" (ctxLogger ctx) $ fetchBookInformationsWithCriteria ctx crit dir lim startId search
-    books <- runLogT "library" (ctxLogger ctx) $ fetchBooksResponse ctx bookInfos
-    pure $ indexPage books crit dir lim startId search
+    case crit of
+      (BookSort bookCrit) -> do
+          bookInfos <- runLogT "library" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx (BookCS bookCrit startBookId) dir lim search
+          pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search
+      (BoardGameSort boardgameCrit) -> do
+          boardGameInfos <- runLogT "library" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx (BoardGameCS boardgameCrit startBoardGameId) dir lim search
+          pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search
 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
@@ -258,6 +267,16 @@ bookInformationPageImpl ctx binfoid = do
     es <- liftIO $ getPersonioData ctx
     ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_booksBookId <$> _books book)
     pure $ bookInformationPage book ls es
+
+boardGameInformationPageImpl :: Ctx -> BoardGameInformationId -> Handler (HtmlPage "boardgameinformation")
+boardGameInformationPageImpl ctx boardgameInfoId = do
+    boardgameResponse <- runLogT "library" (ctxLogger ctx) $ fetchBoardGameResponse ctx boardgameInfoId
+    case boardgameResponse of
+      Just response -> do
+          es <- liftIO $ getPersonioData ctx
+          ls <- runLogT "library" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_boardGamesBoardGameId <$> response ^. boardgameResponseGames)
+          pure $ boardGameInformationPage response ls es
+      Nothing -> throwError err404
 
 personalLoansPageImpl :: Ctx -> Maybe Login -> Handler (HtmlPage "personalinformation")
 personalLoansPageImpl ctx login = do
@@ -367,16 +386,28 @@ addBoardGamePostImpl ctx addBoardGame = do
       throwError err400
 
 editBookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "edititempage")
-editBookInformationPageImpl ctx binfoId = do
-    info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformation ctx binfoId
+editBookInformationPageImpl ctx infoId = do
+    info <- runLogT "library" (ctxLogger ctx) $ fetchBookInformation ctx infoId
     case info of
-      Just i -> pure $ editItemPage i
+      Just i -> pure $ editItemPage (Left i)
+      Nothing -> throwError err400
+
+editBoardGameInformationPageImpl :: Ctx -> BoardGameInformationId -> Handler (HtmlPage "edititempage")
+editBoardGameInformationPageImpl ctx infoid = do
+    info <- runLogT "library" (ctxLogger ctx) $ fetchBoardGameInformation ctx infoid
+    case info of
+      Just i -> pure $ editItemPage (Right i)
       Nothing -> throwError err400
 
 editBookInformationImpl :: Ctx -> EditBookInformation -> Handler (HtmlPage "bookinformation")
 editBookInformationImpl ctx info = do
     _ <- runLogT "library" (ctxLogger ctx) $ updateBookInformation ctx info
     bookInformationPageImpl ctx (info ^. editBookInformationId)
+
+editBoardGameInformationImpl :: Ctx -> EditBoardGameInformation -> Handler (HtmlPage "boardgameinformation")
+editBoardGameInformationImpl ctx info = do
+    _ <- runLogT "library" (ctxLogger ctx) $ updateBoardGameInformation ctx info
+    boardGameInformationPageImpl ctx (info ^. editBoardGameInformationId)
 
 addItemPageGetImpl :: Ctx -> Handler (HtmlPage "additempage")
 addItemPageGetImpl _ = pure addItemPage
