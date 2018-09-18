@@ -44,6 +44,7 @@ library
     , futurice-prelude
     , lucid
     , QuickCheck
+    , servant-client
     , swagger2
     , template-haskell
     , text
