@@ -89,7 +89,7 @@ cmdCopyArtifacts rootDir buildDir = withTempDirectory "/tmp" "copy-artifacts" $ 
         BSL.writeFile (dir </> lambdaName' -<.> "zip") bsl
 
     -- executables
-    (plan, _) <- findAndDecodePlanJson (Just buildDir)
+    plan <- findAndDecodePlanJson (InBuildDir buildDir)
     iforOf_ (mrtApps . ifolded) cfg $ \appName imgDef -> do
         fp <- maybe
             (hPutStrLn stderr ("Cannot find exe for " ++ show appName) >> exitFailure)
