@@ -18,13 +18,13 @@ data BoardGames = BoardGames
     deriving (Eq, Ord, Show, Generic, ToSchema, Typeable)
 
 data BoardGameInformationResponse = BoardGameInformationResponse
-    { _boardgameResponseInformationId  :: !BoardGameInformationId
-    , _boardgameResponseName           :: !Text
-    , _boardgameResponsePublisher      :: !(Maybe Text)
-    , _boardgameResponsePublished      :: !(Maybe Int)
-    , _boardgameResponseDesigner       :: !(Maybe Text)
-    , _boardgameResponseArtist         :: !(Maybe Text)
-    , _boardgameResponseGames          :: ![BoardGames]
+    { _boardGameResponseInformationId  :: !BoardGameInformationId
+    , _boardGameResponseName           :: !Text
+    , _boardGameResponsePublisher      :: !(Maybe Text)
+    , _boardGameResponsePublished      :: !(Maybe Int)
+    , _boardGameResponseDesigner       :: !(Maybe Text)
+    , _boardGameResponseArtist         :: !(Maybe Text)
+    , _boardGameResponseGames          :: ![BoardGames]
     }
     deriving (Show, Typeable, Generic)
 

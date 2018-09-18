@@ -89,7 +89,7 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search = page_
         Just _ -> Just $ _bookInformationId $ last infos
         Nothing -> Nothing
       lastBoardGameInfoId infos = case listToMaybe infos of
-        Just _ -> Just $ last infos ^. boardgameInformationId
+        Just _ -> Just $ last infos ^. boardGameInformationId
         Nothing -> Nothing
       paginationLinks :: CriteriaAndData -> HtmlT Identity ()
       paginationLinks (BookCD criteria infos) = do
