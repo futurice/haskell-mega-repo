@@ -12,8 +12,8 @@ import Futurice.App.Library.Types
 
 import qualified Data.Text as T
 
-editItemPage :: BookInformation -> HtmlPage "edititempage"
-editItemPage info = page_ "Edit book information" (Nothing :: Maybe Nav) $ do
+editItemPage :: Either BookInformation BoardGameInformation -> HtmlPage "edititempage"
+editItemPage (Left info) = page_ "Edit book information" (Nothing :: Maybe Nav) $ do
     form_ [data_ "futu-id" "edit-book", data_ "form-type" "book", recordAction_ editBookPost, method_ "POST", enctype_ "multipart/form-data"] $ do
         input_ [ name_ "bookinformationid", type_ "hidden", value_ ((T.pack . show) $ info ^. bookInformationId)]
         table_ $ do
@@ -35,4 +35,24 @@ editItemPage info = page_ "Edit book information" (Nothing :: Maybe Nav) $ do
             tr_ $ do
                 th_ "Amazon link"
                 td_ $ input_ [ name_ "amazon-link", type_ "text", value_ (info ^. bookAmazonLink)]
+        button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Edit"
+editItemPage (Right info) =  page_ "Edit board game information" (Nothing :: Maybe Nav) $ do
+    form_ [data_ "futu-id" "edit-boardgame", data_ "form-type" "boardgame", recordAction_ editBoardGamePost, method_ "POST", enctype_ "multipart/form-data"] $ do
+        input_ [ name_ "boardgameinformationid", type_ "hidden", value_ ((T.pack . show) $ info ^. boardgameInformationId)]
+        table_ $ do
+            tr_ $ do
+                th_ "Name"
+                td_ $ input_ [ name_ "name", type_ "text", required_ "", value_ (info ^. boardgameName)]
+            tr_ $ do
+                th_ "Publisher"
+                td_ $ input_ [ name_ "publisher", type_ "text", value_ (fromMaybe "" $ info ^. boardgamePublisher)]
+            tr_ $ do
+                th_ "Published"
+                td_ $ input_ [ name_ "published", type_ "number", value_ (maybe "" (T.pack . show) $ info ^. boardgamePublished)]
+            tr_ $ do
+                th_ "Designer"
+                td_ $ input_ [ name_ "designer", type_ "text", value_ (fromMaybe "" $ info ^. boardgameDesigner)]
+            tr_ $ do
+                th_ "Artist"
+                td_ $ input_ [ name_ "artist", type_ "text", value_ (fromMaybe "" $ info ^. boardgameArtist)]
         button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Edit"

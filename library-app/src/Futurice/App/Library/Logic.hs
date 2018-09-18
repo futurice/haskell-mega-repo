@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Library.Logic where
@@ -7,6 +8,7 @@ import Control.Monad                      (replicateM_)
 import Data.List
 import Database.PostgreSQL.Simple         (In (..))
 import Database.PostgreSQL.Simple.FromRow
+import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Simple.Types
 import Futurice.App.Sisosota.Types        (ContentHash)
 import Futurice.IdMap
@@ -117,7 +119,7 @@ fetchLoansWithItemIds ctx iids = safePoolQuery ctx "SELECT loan_id, date_loaned,
 borrowBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> P.EmployeeId -> BorrowRequest -> m (Maybe LoanData)
 borrowBook ctx eid (BorrowRequest binfoid _) = do
     now <- currentDay
-    books <- fetchBooksByBookInformation ctx binfoid
+    books <- fetchItemsByBookInformation ctx binfoid
     runMaybeT $ do
         freeBook <- MaybeT $ fetchItemsWithoutLoans ctx books
         MaybeT $ makeLoan ctx now freeBook eid
@@ -186,12 +188,15 @@ loanDataToLoan ctx es ldatas = do
           BookInfoId i      -> ItemBook      <$> binfos ^.at i
           BoardGameInfoId i -> ItemBoardGame <$> boainfos ^.at i
 
+fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m [ItemData]
+fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where bookinfo_id = ?" (Only binfoid)
+
+fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BoardGameInformationId -> m [ItemData]
+fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where boardgameinfo_id = ?" (Only binfoid)
+
 -------------------------------------------------------------------------------
 -- Book functions
 -------------------------------------------------------------------------------
-
-fetchBooksByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m [ItemData]
-fetchBooksByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where bookinfo_id = ?" (Only binfoid)
 
 fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [BookInformation]
 fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
@@ -199,47 +204,79 @@ fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, 
 fetchCoverInformationsAsText :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> m [(BookInformationId, Text)]
 fetchCoverInformationsAsText ctx = safePoolQuery ctx "SELECT bookinfo_id, cover FROM library.bookinformation" ()
 
-fetchBookInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m)
-                                  => Ctx
-                                  -> SortCriteria
-                                  -> SortDirection
-                                  -> Int
-                                  -> Maybe BookInformationId
-                                  -> Maybe Text
-                                  -> m [BookInformation]
-fetchBookInformationsWithCriteria ctx criteria direction limit start search = do
-    bookInfo <- case start of
-      Just s -> fetchBookInformation ctx s
-      Nothing -> pure Nothing
-    case (bookInfo, search) of
-      (Just info, Nothing) -> safePoolQuery
+selectStatement :: SortCriteria -> Query
+selectStatement (BookSort _) = "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation "
+selectStatement (BoardGameSort _) = "SELECT boardgameinfo_id, name, publisher, publishedYear, designer, artist FROM library.boardgameinformation "
+
+startDirection :: SortDirection -> Query
+startDirection SortDesc = " < "
+startDirection SortAsc  = " > "
+
+sortDirection :: SortDirection -> Query
+sortDirection SortDesc = "DESC"
+sortDirection SortAsc  = "ASC"
+
+startPos :: SortCriteria -> SortDirection -> Query
+startPos (BookSort SortTitle) dir         = " WHERE (title, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortAuthor) dir        = " WHERE (author, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortISBN) dir          = " WHERE (isbn, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortPublished) dir     = " WHERE (publishedYear, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BoardGameSort SortName) dir     = " WHERE (name, boardgameinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BoardGameSort SortDesigner) dir = " WHERE (designer, boardgameinfo_id)" <> startDirection dir <> "(?,?) "
+
+sortCriteria :: SortCriteria -> SortDirection -> Query
+sortCriteria (BookSort SortTitle) dir         = " ORDER BY title " <> sortDirection dir <> ", bookinfo_id "
+sortCriteria (BookSort SortAuthor) dir        = " ORDER BY author " <> sortDirection dir <> ", bookinfo_id "
+sortCriteria (BookSort SortISBN) dir          = " ORDER BY isbn " <> sortDirection dir <> ", bookinfo_id "
+sortCriteria (BookSort SortPublished) dir     = " ORDER BY publishedYear " <> sortDirection dir <> ", bookinfo_id "
+sortCriteria (BoardGameSort SortName) dir     = " ORDER BY name " <> sortDirection dir <> ", boardgameinfo_id "
+sortCriteria (BoardGameSort SortDesigner) dir = " ORDER BY designer " <> sortDirection dir <> ", boardgameinfo_id "
+
+startBookInfo :: BookSortCriteria -> BookInformation -> Text
+startBookInfo SortTitle info = info ^. bookTitle
+startBookInfo SortAuthor info = info ^. bookAuthor
+startBookInfo SortISBN info = info ^. bookISBN
+startBookInfo SortPublished info = T.pack $ show $ info ^. bookPublished
+
+startBoardGameInfo :: BoardGameSortCriteria -> BoardGameInformation -> Text
+startBoardGameInfo SortName info = info ^. boardgameName
+startBoardGameInfo SortDesigner info = fromMaybe "" $ info ^. boardgameDesigner
+
+searchSqlString :: SortCriteria -> Query
+searchSqlString (BookSort _) = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ plainto_tsquery(?)) "
+searchSqlString (BoardGameSort _) = " boardgameinfo_id in (SELECT boardgameinfo_id FROM (SELECT boardgameinfo_id, name, to_tsvector(name) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) || to_tsvector(designer) || to_tsvector(artist) as document FROM library.boardgameinformation) boardgame_search WHERE boardgame_search.document @@ plainto_tsquery(?)) "
+
+fetchInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, FromRow a)
+                                 => Ctx
+                                 -> SortCriteriaAndStart
+                                 -> SortDirection
+                                 -> Int
+                                 -> Maybe Text
+                                 -> m [a]
+fetchInformationsWithCriteria ctx criteria direction limit search = case criteria of
+    BookCS crit start -> do
+        bookInfo <- join <$> traverse (fetchBookInformation ctx) start
+        case bookInfo of
+            Just bi -> fetchInfo (BookSort crit) (Just (bi ^. bookInformationId, startBookInfo crit bi))
+            Nothing -> fetchInfo (BookSort crit) (Nothing :: Maybe (BookInformationId, Text))
+    BoardGameCS crit start -> do
+        boardGameInfo <- join <$> traverse (fetchBoardGameInformation ctx) start
+        case boardGameInfo of
+            Just bi -> fetchInfo (BoardGameSort crit) (Just (bi ^. boardgameInformationId, startBoardGameInfo crit bi))
+            Nothing -> fetchInfo (BoardGameSort crit) (Nothing :: Maybe (BoardGameInformationId, Text))
+  where
+    fetchInfo :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, FromRow a, ToField c, ToField d) => SortCriteria -> Maybe (c, d) -> m [a]
+    fetchInfo crit info = case (info, search) of
+      (Just (infoid, ii), Nothing) -> safePoolQuery
                               ctx
-                              (("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> startPos criteria direction <> sortCriteria criteria direction) <> " LIMIT ?")
-                              $ (startInfo criteria info, info ^. bookInformationId, limit)
-      (Just info, Just s) -> safePoolQuery
+                              ((selectStatement crit <> startPos crit direction <> sortCriteria crit direction) <> " LIMIT ?")
+                              $ (ii, infoid, limit)
+      (Just (infoid, ii), Just s) -> safePoolQuery
                              ctx
-                             (("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> startPos criteria direction <> " AND " <> searchSqlString <> sortCriteria criteria direction) <> " LIMIT ?")
-                             $ (startInfo criteria info, info ^. bookInformationId, s, limit)
-      (Nothing, Nothing)  -> safePoolQuery ctx ("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation " <> sortCriteria criteria direction <> " LIMIT ?") (Only limit)
-      (Nothing, Just s)   -> safePoolQuery ctx ("SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE" <> searchSqlString <> sortCriteria criteria direction <> " LIMIT ?") (s, limit)
-    where
-      searchSqlString = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ plainto_tsquery(?)) "
-      sortDirection SortDesc = "DESC"
-      sortDirection SortAsc  = "ASC"
-      sortCriteria SortTitle dir     = " ORDER BY title " <> sortDirection dir <> ", bookinfo_id "
-      sortCriteria SortAuthor dir    = " ORDER BY author " <> sortDirection dir <> ", bookinfo_id "
-      sortCriteria SortISBN dir      = " ORDER BY isbn " <> sortDirection dir <> ", bookinfo_id "
-      sortCriteria SortPublished dir = " ORDER BY publishedYear " <> sortDirection dir <> ", bookinfo_id "
-      startDirection SortDesc = " < "
-      startDirection SortAsc  = " > "
-      startPos SortTitle dir     = " WHERE (title, bookinfo_id)" <> startDirection dir <> "(?,?) "
-      startPos SortAuthor dir    = " WHERE (author, bookinfo_id)" <> startDirection dir <> "(?,?) "
-      startPos SortISBN dir      = " WHERE (isbn, bookinfo_id)" <> startDirection dir <> "(?,?) "
-      startPos SortPublished dir = " WHERE (publishedYear, bookinfo_id)" <> startDirection dir <> "(?,?) "
-      startInfo SortTitle info = info ^. bookTitle
-      startInfo SortAuthor info = info ^. bookAuthor
-      startInfo SortISBN info = info ^. bookISBN
-      startInfo SortPublished info = T.pack $ show $ info ^. bookPublished -- bookPublished
+                             ((selectStatement crit <> startPos crit direction <> " AND " <> searchSqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
+                             $ (ii, infoid, s, limit)
+      (Nothing, Nothing)  -> safePoolQuery ctx (selectStatement crit <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
+      (Nothing, Just s)   -> safePoolQuery ctx (selectStatement crit <> "WHERE" <> searchSqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
 
 fetchBookInformationByISBN :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Text -> m (Maybe BookInformationResponse)
 fetchBookInformationByISBN ctx isbn = do
@@ -253,7 +290,7 @@ fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT boo
 
 fetchBookResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BookInformationId -> m [BookInformationResponse]
 fetchBookResponse ctx binfoid = do
-    books <- fetchBooksByBookInformation ctx binfoid
+    books <- fetchItemsByBookInformation ctx binfoid
     binfo <- fetchBookInformation ctx binfoid
     case binfo of
       Nothing -> pure $ []
@@ -262,6 +299,25 @@ fetchBookResponse ctx binfoid = do
       toBooks item = [Books (idLibrary item) (idItemId item)]
       toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse infoid title isbn author publisher published cover amazonLink books
+
+fetchBoardGameResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BoardGameInformationId -> m (Maybe BoardGameInformationResponse)
+fetchBoardGameResponse ctx infoid = do
+    boardgames <- fetchItemsByBoardGameInformationId ctx infoid
+    binfo <- fetchBoardGameInformation ctx infoid
+    case binfo of
+      Nothing -> pure Nothing
+      Just info -> pure $ pure $ toBoardGameInformationResponse info (toBoardGame <$> boardgames)
+  where
+    toBoardGame item = BoardGames (idLibrary item) (idItemId item)
+    toBoardGameInformationResponse info boardgames = BoardGameInformationResponse
+        { _boardgameResponseInformationId  = info ^. boardgameInformationId
+        , _boardgameResponseName           = info ^. boardgameName
+        , _boardgameResponsePublisher      = info ^. boardgamePublisher
+        , _boardgameResponsePublished      = info ^. boardgamePublished
+        , _boardgameResponseDesigner       = info ^. boardgameDesigner
+        , _boardgameResponseArtist         = info ^. boardgameArtist
+        , _boardgameResponseGames          = boardgames
+        }
 
 fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> [BookInformation] -> m [BookInformationResponse]
 fetchBooksResponse ctx bookInfos = do
@@ -335,5 +391,5 @@ addNewBoardGame ctx (AddBoardGameInformation name publisher published designer a
           pure True
       Nothing -> pure False
 
-updateBoardGameInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> BoardGameInformation -> m Int64
-updateBoardGameInformation ctx info = safePoolExecute ctx "UPDATE library.boardgameinformation SET name = ?, publisher = ?, publishedyear = ?, designer = ?, artist = ? WHERE boardgameinfo_id = ?" (info ^. boardgameName, info ^. boardgamePublisher, info ^. boardgamePublished, info ^. boardgameDesigner, info ^. boardgameArtist, info ^. boardgameInformationId)
+updateBoardGameInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> EditBoardGameInformation -> m Int64
+updateBoardGameInformation ctx info = safePoolExecute ctx "UPDATE library.boardgameinformation SET name = ?, publisher = ?, publishedyear = ?, designer = ?, artist = ? WHERE boardgameinfo_id = ?" (info ^. editBoardGameName, info ^. editBoardGamePublisher, info ^. editBoardGamePublished, info ^. editBoardGameDesigner, info ^. editBoardGameArtist, info ^. editBoardGameInformationId)

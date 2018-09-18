@@ -48,6 +48,9 @@ data HtmlRecord route = HtmlRecord
     , addBookPost          :: route :- "item" :> "add" :> "book" :> MultipartForm Mem AddBookInformation :> Post '[HTML] (HtmlPage "additempage")
     , addBoardGamePost     :: route :- "item" :> "add" :> "boardgame" :> MultipartForm Mem AddBoardGameInformation :> Post '[HTML] (HtmlPage "additempage")
     , bookPageGet          :: route :- BookInformationPageEndpoint
+    , boardGamePageGet     :: route :- BoardGameInformationPageEndpoint
+    , editBoardGamePageGet :: route :- "item" :> "edit" :> "boardgame" :> Capture "id" BoardGameInformationId :> Get '[HTML] (HtmlPage "edititempage")
+    , editBoardGamePost    :: route :- "item" :> "edit" :> "boardgame" :> MultipartForm Mem EditBoardGameInformation :> Post '[HTML] (HtmlPage "boardgameinformation")
     , editBookPageGet      :: route :- "item" :> "edit" :> "book" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "edititempage")
     , editBookPost         :: route :- "item" :> "edit" :> "book" :> MultipartForm Mem EditBookInformation :> Post '[HTML] (HtmlPage "bookinformation")
     , indexPageGet         :: route :- IndexPageEndpoint
@@ -57,11 +60,13 @@ data HtmlRecord route = HtmlRecord
 type IndexPageEndpoint = QueryParam "criteria" SortCriteria
                          :> QueryParam "direction" SortDirection
                          :> QueryParam "limit" Int
-                         :> QueryParam "start" BookInformationId
+                         :> QueryParam "start-book" BookInformationId
+                         :> QueryParam "start-boardgame" BoardGameInformationId
                          :> QueryParam "search" Text
                          :> Get '[HTML] (HtmlPage "indexpage")
 type BookCoverEndpoint = "book" :> "cover" :> Capture "picture" ContentHash :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
 type BookInformationPageEndpoint = "book" :> "page" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "bookinformation")
+type BoardGameInformationPageEndpoint = "boardgame" :> "page" :> Capture "id" BoardGameInformationId :> Get '[HTML] (HtmlPage "boardgameinformation")
 
 type HtmlAPI = ToServantApi HtmlRecord
 

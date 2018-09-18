@@ -14,6 +14,15 @@ module Futurice.App.Library.Types (
     boardgameArtist,
     boardgameInformationId,
     BoardGameInformation (..),
+    BoardGameInformationResponse (..),
+    BoardGames (..),
+    boardgameResponseInformationId,
+    boardgameResponseName,
+    boardgameResponsePublisher,
+    boardgameResponsePublished,
+    boardgameResponseDesigner,
+    boardgameResponseArtist,
+    boardgameResponseGames,
     bookInformationId,
     bookTitle,
     bookISBN,
@@ -36,6 +45,13 @@ module Futurice.App.Library.Types (
     editBookPublisher,
     editBookPublished,
     editBookAmazonLink,
+    EditBoardGameInformation,
+    editBoardGameInformationId,
+    editBoardGameName,
+    editBoardGamePublisher,
+    editBoardGamePublished,
+    editBoardGameDesigner,
+    editBoardGameArtist,
     Books (..),
     BorrowRequest (..),
     Loan (..),
@@ -50,12 +66,17 @@ module Futurice.App.Library.Types (
     allLibraries,
     libraryToText,
     usedLibraries,
+    BookSortCriteria (..),
+    BoardGameSortCriteria (..),
+    CriteriaAndData (..),
     SortCriteria (..),
+    SortCriteriaAndStart (..),
     SortDirection (..)
     ) where
 
 import Futurice.App.Library.Types.AddItemRequest
 import Futurice.App.Library.Types.BoardGameInformation
+import Futurice.App.Library.Types.BoardGameInformationResponse
 import Futurice.App.Library.Types.BookInformation
 import Futurice.App.Library.Types.BookInformationByISBNResponse
 import Futurice.App.Library.Types.BookInformationResponse
