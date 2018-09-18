@@ -6,7 +6,7 @@ module Futurice.App.MegaRepoTool.PatternCompleter (
 
 import Cabal.Plan
        (CompInfo (..), CompName (..), PkgId (..), PkgName (..), PlanJson (..),
-       Unit (..), dispCompName, findAndDecodePlanJson)
+       SearchPlanJson (..), Unit (..), dispCompName, findAndDecodePlanJson)
 import Control.Lens     (asIndex)
 import Data.Maybe       (isJust)
 import Futurice.Prelude
@@ -27,7 +27,7 @@ lambdaCompleter = O.listIOCompleter $ do
 -- | Exe completer from cabal plan
 patternCompleter :: Bool -> O.Completer
 patternCompleter onlyWithExes = O.mkCompleter $ \pfx -> do
-    (plan, _) <- findAndDecodePlanJson Nothing
+    plan <- findAndDecodePlanJson $ ProjectRelativeToDir "."
     let tpfx  = T.pack pfx
         components = findComponents plan
 
