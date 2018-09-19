@@ -89,6 +89,7 @@ packages:
   futurice-pure-trans/
   futurice-reports/
   futurice-servant/
+  futurice-signed/
   futurice-tribes/
   github-proxy/
   github-sync/
