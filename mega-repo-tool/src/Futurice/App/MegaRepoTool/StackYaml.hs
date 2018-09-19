@@ -3,7 +3,7 @@ module Futurice.App.MegaRepoTool.StackYaml (stackYaml) where
 
 import Cabal.Plan
        (FlagName, PkgId (..), PkgName, PlanJson (..), Unit (..), UnitType (..),
-       findAndDecodePlanJson)
+       findAndDecodePlanJson, SearchPlanJson (..))
 import Control.Monad.Trans.State (StateT, execStateT, modify')
 import Data.Aeson                (ToJSON (..), object, (.=))
 import Data.List                 (elemIndex)
@@ -68,7 +68,7 @@ fieldLineContents (P.FieldLine _ bs) = bs
 stackYaml :: IO ()
 stackYaml = do
     pkgs <- readPackages
-    (plan, _) <- findAndDecodePlanJson Nothing
+    plan <- findAndDecodePlanJson $ ProjectRelativeToDir "."
     let sy = StackYaml
             { syResolver  = pjCompilerId plan
             , syPackages  = sort pkgs

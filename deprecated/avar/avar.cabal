@@ -1,3 +1,4 @@
+name:           avar
 version:        0
 synopsis:       TVar that can be asynchronously set
 description:    See the <http://docs.futurice.com/haskell-mega-repo/avar-0/Futurice-AVar.html haddocks>.

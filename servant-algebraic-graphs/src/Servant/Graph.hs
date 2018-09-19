@@ -26,6 +26,7 @@ import System.Process.ByteString.Lazy (readProcessWithExitCode)
 
 import qualified Algebra.Graph           as G
 import qualified Algebra.Graph.Class     as ALGA
+import qualified Algebra.Graph.ToGraph     as ALGA
 import qualified Data.ByteString.Lazy    as LBS
 import qualified Data.Text          as T
 import qualified Data.Text.Lazy          as LT
@@ -118,7 +119,7 @@ instance ALGA.Graph (Graph a name) where
     Graph a `overlay` Graph b = Graph (a `G.overlay` b)
     Graph a `connect` Graph b = Graph (a `G.connect` b)
 
-instance ALGA.ToGraph (Graph a name) where
+instance Ord a => ALGA.ToGraph (Graph a name) where
     type ToVertex (Graph a name) =  a
     toGraph (Graph g) = ALGA.toGraph g
 
