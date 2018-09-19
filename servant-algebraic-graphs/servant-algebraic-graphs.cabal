@@ -1,9 +1,7 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
+cabal-version:  2.0
 name:           servant-algebraic-graphs
 version:        0
+
 synopsis:       Servant support for algebraic-graphs
 description:    Servant support for algebraic-graphs, uses graphviz to render them.
 category:       Web
@@ -15,7 +13,6 @@ license:        BSD3
 license-file:   LICENSE
 tested-with:    GHC==8.0.2, GHC==8.2.1
 build-type:     Simple
-cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
@@ -29,7 +26,8 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      algebraic-graphs
+      algebraic-graphs ^>= 0.2
+
     , base           >=4.9   && <4.12
     , bytestring
     , deepseq
