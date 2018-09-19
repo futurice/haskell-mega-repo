@@ -33,8 +33,10 @@ library
   build-depends:
       base >= 4.7 && <4.12
       , aeson
+      , base64-bytestring
       , bytestring
       , containers
+      , cryptohash-sha256
       , env-config
       , fum-types
       , futurice-constants
@@ -44,6 +46,8 @@ library
       , futurice-prelude
       , futurice-servant
       , futurice-tribes
+      , http-client
+      , http-types
       , JuicyPixels
       , personio-client
       , postgresql-simple
@@ -56,6 +60,8 @@ library
       , sisosota-client
       , swagger2
       , text
+      , time
+      , xeno
   exposed-modules:
       Futurice.App.Library
       Futurice.App.Library.API

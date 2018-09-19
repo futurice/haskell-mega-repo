@@ -296,17 +296,22 @@ bookIdToInformation iid bookidmap bookinfomap = do
     binfoid <- bookinfoid
     bookinfomap ^.at binfoid
 
-addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> ContentHash -> m Bool
+checkIfExistingBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> Maybe BookInformationId -> Text -> m (Maybe BookInformationId)
+checkIfExistingBook ctx binfoid isbn = runMaybeT $ do
+    info <- MaybeT $ pure binfoid
+    bookInformation <- MaybeT $ fetchBookInformation ctx info
+    if bookInformation ^. bookISBN == isbn then pure $ bookInformation ^. bookInformationId else MaybeT $ pure Nothing
+
+addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> AddBookInformation -> Maybe ContentHash -> m Bool
 addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) contentHash = do
-    checkedInfoId <- runMaybeT $ do
-        info <- MaybeT $ pure binfoid
-        bookInformation <- MaybeT $ fetchBookInformation ctx info
-        if bookInformation ^. bookISBN == isbn then pure $ bookInformation ^. bookInformationId else MaybeT $ pure Nothing
+    checkedInfoId <- checkIfExistingBook ctx binfoid isbn
     bookInfoId <- case checkedInfoId of
-                    Nothing ->  listToMaybe <$> safePoolQuery
-                                ctx
-                                "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, cover, amazon_link) VALUES (?,?,?,?,?,?,?) returning bookinfo_id"
-                                (title, isbn, author, publisher, published, contentHash, amazonLink)
+                    Nothing -> runMaybeT $ do
+                        ch <- pure contentHash
+                        MaybeT $ listToMaybe <$> safePoolQuery
+                            ctx
+                            "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, cover, amazon_link) VALUES (?,?,?,?,?,?,?) returning bookinfo_id"
+                            (title, isbn, author, publisher, published, ch, amazonLink)
                     Just info -> pure $ Just info
     case bookInfoId of
       Just infoId -> do

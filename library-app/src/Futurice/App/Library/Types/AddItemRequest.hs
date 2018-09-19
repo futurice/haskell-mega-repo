@@ -16,7 +16,12 @@ import Servant.Multipart
 import Futurice.App.Library.Types.BookInformation
 import Futurice.App.Library.Types.Library
 
-import qualified Data.Text as T
+import qualified Data.ByteString.Lazy as DBL
+import qualified Data.Text            as T
+
+data CoverData = CoverData (FileData Mem)
+               | CoverUrl Text
+               deriving Show
 
 data AddBookInformation = AddBookInformation
     { _addBookTitle                  :: !Text
@@ -26,7 +31,7 @@ data AddBookInformation = AddBookInformation
     , _addBookPublished              :: !Int
     , _addBookAmazonLink             :: !Text
     , _addBookLibraries              :: ![(Library, Int)]
-    , _addBookCover                  :: !(FileData Mem)
+    , _addBookCover                  :: !CoverData
     , _addBookInformationId          :: !(Maybe BookInformationId)
     } deriving Show
 
@@ -79,7 +84,11 @@ instance FromMultipart Mem AddBookInformation where
         <*> cover
         <*> pure (BookInformationId <$> fromIntegral <$> (lookupInputAndClean "bookinformationid" multipartData >>= fromtextToInt))
       where
-        cover = lookupFile "cover-file" $ multipartData
+        isEmptyT t | T.null t = Nothing
+                   | otherwise = Just t
+        isEmptyB b | DBL.null (fdPayload b) = Nothing
+                   | otherwise = Just b
+        cover = (CoverUrl <$> (lookupInput "cover-url" multipartData >>= isEmptyT)) <|> (CoverData <$> (lookupFile "cover-file" multipartData >>= isEmptyB))
 
 instance FromMultipart Mem AddBoardGameInformation where
     fromMultipart multipartData = AddBoardGameInformation
