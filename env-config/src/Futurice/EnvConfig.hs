@@ -38,14 +38,16 @@ import Servant.Client                 (BaseUrl, parseBaseUrl)
 import System.Environment             (getEnvironment)
 import System.Exit                    (exitFailure)
 
-import qualified Chat.Flowdock.REST as FD
-import qualified Data.ByteString    as B
-import qualified Data.Map           as Map
-import qualified Data.Set           as Set
-import qualified Data.Text          as T
-import qualified Data.UUID.Types    as UUID
-import qualified GitHub             as GH
-import qualified Network.AWS        as AWS
+import qualified Chat.Flowdock.REST     as FD
+import qualified Crypto.Sign.Ed25519    as Ed
+import qualified Data.ByteString        as BS
+import qualified Data.ByteString.Base16 as Base16
+import qualified Data.Map               as Map
+import qualified Data.Set               as Set
+import qualified Data.Text              as T
+import qualified Data.UUID.Types        as UUID
+import qualified GitHub                 as GH
+import qualified Network.AWS            as AWS
 
 data EnvVarP a = EnvVar
     { _envVarName :: String
@@ -205,7 +207,7 @@ instance FromEnvVar Text where
 instance FromEnvVar Int where
     fromEnvVar = readMaybe
 
-instance FromEnvVar B.ByteString where
+instance FromEnvVar BS.ByteString where
     fromEnvVar = Just . fromString
 
 instance FromEnvVar Word64 where
@@ -232,8 +234,30 @@ instance FromEnvVar Request where
     -- TODO: change to parseRequest
     fromEnvVar s = fromEnvVar s >>= parseUrlThrow
 
+-------------------------------------------------------------------------------
+-- servant-client-core
+-------------------------------------------------------------------------------
+
 instance FromEnvVar BaseUrl where
     fromEnvVar s = fromEnvVar s >>= parseBaseUrl
+
+-------------------------------------------------------------------------------
+-- ed25519
+-------------------------------------------------------------------------------
+--
+instance FromEnvVar Ed.SecretKey where
+    fromEnvVar s
+        | BS.null sfx = Just (Ed.SecretKey pfx)
+        | otherwise   = Nothing
+      where
+        (pfx, sfx) = Base16.decode $ encodeUtf8 $ s ^. packed
+
+instance FromEnvVar Ed.PublicKey where
+    fromEnvVar s
+        | BS.null sfx = Just (Ed.PublicKey pfx)
+        | otherwise   = Nothing
+      where
+        (pfx, sfx) = Base16.decode $ encodeUtf8 $ s ^. packed
 
 -------------------------------------------------------------------------------
 -- Futurice.Time
