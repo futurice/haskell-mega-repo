@@ -19,6 +19,7 @@ import Futurice.App.MegaRepoTool.CopyArtifacts
 import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Exec
 import Futurice.App.MegaRepoTool.GenPass
+import Futurice.App.MegaRepoTool.GenKeys
 import Futurice.App.MegaRepoTool.Keys
 import Futurice.App.MegaRepoTool.Lambda
 import Futurice.App.MegaRepoTool.PatternCompleter
@@ -31,6 +32,7 @@ data Cmd
     | CmdAction (IO ())
     | CmdViewConfig
     | CmdGenPass
+    | CmdGenKeys
     | CmdStackYaml
     | CmdListKeys !Bool
     | CmdAddKey !Text !Text
@@ -69,6 +71,9 @@ viewConfigOptions = pure CmdViewConfig
 
 genPassOptions :: O.Parser Cmd
 genPassOptions = pure CmdGenPass
+
+genKeysOptions :: O.Parser Cmd
+genKeysOptions = pure CmdGenKeys
 
 stackYamlOptions :: O.Parser Cmd
 stackYamlOptions = pure CmdStackYaml
@@ -146,6 +151,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "estimator"    estimatorOptions   "Calculate estimates"
     , cmdParser "view-config"  viewConfigOptions  "view config"
     , cmdParser "gen-pass"     genPassOptions     "Generate passwords"
+    , cmdParser "gen-keys"     genKeysOptions     "Generate ed25519 key-pair"
     , cmdParser "stack-yaml"   stackYamlOptions   "Generate stack.yaml from cabal.project"
     , cmdParser "list-keys"    listKeysOptions    "List all keys"
     , cmdParser "add-key"      addKeyOptions      "Add new key"
@@ -167,6 +173,7 @@ main' (CmdBuildDocker imgs)    = cmdBuildDocker imgs
 main' CmdBuildCommand          = cmdBuildCommand
 main' (CmdAction x)            = x
 main' CmdGenPass               = cmdGenPass
+main' CmdGenKeys               = cmdGenKeys
 main' CmdStackYaml             = stackYaml
 main' CmdViewConfig            = do
     cfg <- readConfig
