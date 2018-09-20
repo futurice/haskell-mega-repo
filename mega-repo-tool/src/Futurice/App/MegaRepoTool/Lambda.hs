@@ -4,6 +4,7 @@ module Futurice.App.MegaRepoTool.Lambda (cmdLambda) where
 import Data.Aeson         (encode)
 import Data.Machine
        (MachineT (..), Step (..), await, repeatedly, runT_, (<~))
+import Futurice.Clock     (clocked, timeSpecToSecondsD)
 import Futurice.Prelude
 import PackageAwsLambda   (compilePython, findForeignLib, mkConf')
 import Prelude ()
@@ -13,6 +14,7 @@ import System.Exit        (ExitCode (..), exitFailure, exitWith)
 import System.FilePath    (takeDirectory, (</>))
 import System.IO          (Handle, hFlush, hIsEOF, stdout)
 import System.IO.Temp     (withTempDirectory)
+import Text.Printf        (printf)
 
 import qualified Control.Concurrent.Async as A
 import qualified Data.ByteString          as BS
@@ -73,8 +75,9 @@ cmdLambda lambdaName mpayload = do
               { Process.cwd = Just tmpDir
               , Process.env = Just env
               }
-        (ec, ()) <- readCreateProcessMachines proc $ \mout merr ->
+        (ts, (ec, ())) <- clocked $ readCreateProcessMachines proc $ \mout merr ->
             A.runConcurrently $ A.Concurrently (drain mout) *> A.Concurrently (drain merr)
+        putStrLn $ printf "Elapsed %.02fs" (timeSpecToSecondsD ts)
         exitWith ec
 
 drain :: MachineT IO k ByteString -> IO ()
