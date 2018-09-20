@@ -58,6 +58,7 @@ library
     , http-types
     , lens
     , log-cloudwatch
+    , lzma
     , optparse-applicative
     , periocron
     , regex-applicative-text
