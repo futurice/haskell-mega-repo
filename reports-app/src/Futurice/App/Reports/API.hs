@@ -27,6 +27,7 @@ import Futurice.App.Reports.PowerProjects             (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser                 (PowerUserReport)
 import Futurice.App.Reports.SupervisorsGraph          (Emp)
 import Futurice.App.Reports.TimereportsByTask         (TimereportsByTaskReport)
+import Futurice.App.Reports.TimereportsDump           (SimpleTimereport)
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -66,6 +67,8 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts
     :<|> "tables" :> "planmill-account-validation" :> Get '[HTML] PMAccountValidation
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
+    -- Dump
+    :<|> "dump" :> "timereports-dump" :> Get '[CSV] [SimpleTimereport]
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")

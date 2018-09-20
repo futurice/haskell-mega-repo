@@ -143,6 +143,7 @@ library
       Futurice.App.Reports.PlanMillAccountValidation
       Futurice.App.Reports.Templates
       Futurice.App.Reports.TimereportsByTask
+      Futurice.App.Reports.TimereportsDump
       Futurice.App.Reports.UtzChart
       Futurice.Chart.Stacked
   default-language: Haskell2010

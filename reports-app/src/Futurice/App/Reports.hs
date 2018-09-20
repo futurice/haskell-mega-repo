@@ -47,6 +47,7 @@ import Futurice.App.Reports.MissingHoursDailyChart
 import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
+import Futurice.App.Reports.TimereportsDump           (timereportsDump)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
@@ -209,6 +210,8 @@ server ctx = makeServer ctx reports
     :<|> liftIO (serveData activeAccountsData ctx)
     :<|> liftIO (serveData pmAccountValidationData ctx)
     :<|> liftIO serveInventory
+    -- dumps
+    :<|> liftIO (serveData timereportsDump ctx)
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
