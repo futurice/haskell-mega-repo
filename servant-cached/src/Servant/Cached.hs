@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -5,6 +6,7 @@
 -- | Not really Cached, but PreRendered
 module Servant.Cached (
     Cached,
+    CachedGet,
     mkCached,
     getCached,
     -- * Unsafe
@@ -20,6 +22,8 @@ import qualified Data.ByteString.Lazy as LBS
 
 newtype Cached ct a = Cached LBS.ByteString
   deriving (Typeable)
+
+type CachedGet ct a = Get '[ct] (Cached ct a)
 
 getCached :: Cached ct a -> LBS.ByteString
 getCached = coerce
@@ -37,8 +41,8 @@ mkCached = Cached . mimeRender (Proxy :: Proxy ct)
 unsafeMkCached :: LBS.ByteString -> Cached ct a
 unsafeMkCached = Cached
 
-instance (ct ~ ct', MimeRender ct a) => MimeRender ct' (Cached ct a) where
+instance {-# OVERLAPPABLE #-} (ct ~ ct', MimeRender ct a) => MimeRender ct' (Cached ct a) where
     mimeRender _ = getCached
 
-instance (ct ~ ct', Accept ct) => MimeUnrender ct' (Cached ct a) where
+instance {-# OVERLAPPABLE #-} (ct ~ ct', Accept ct) => MimeUnrender ct' (Cached ct a) where
     mimeUnrender _ = Right . Cached

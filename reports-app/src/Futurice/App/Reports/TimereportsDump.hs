@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies    #-}
 module Futurice.App.Reports.TimereportsDump (
     SimpleTimereport (..),
     timereportsDump,
@@ -7,63 +8,78 @@ module Futurice.App.Reports.TimereportsDump (
 
 import Data.Aeson                (ToJSON (..))
 import FUM.Types.Login           (Login)
+import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 
-import qualified Data.Csv         as Csv
-import qualified Data.Swagger     as Sw
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
+import qualified Data.Csv            as Csv
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Swagger        as Sw
+import qualified Personio            as P
+import qualified PlanMill            as PM
+import qualified PlanMill.Queries    as PMQ
 
 data SimpleTimereport = SimpleTimereport
     { strLogin    :: !Login
+    , strPlanmill :: !PM.UserId
+    , strPersonio :: !P.EmployeeId
     , strProject  :: !Text
     , strTask     :: !Text
     , strDay      :: !Day
     , strDuration :: !(NDT 'Hours Double)
     , strComment  :: !Text
     }
-  deriving Generic
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
-instance NFData SimpleTimereport
+deriveGeneric ''SimpleTimereport
 
-instance Csv.DefaultOrdered SimpleTimereport
-instance Csv.ToNamedRecord SimpleTimereport
+instance Csv.DefaultOrdered SimpleTimereport where
+    headerOrder = Csv.genericHeaderOrder $ Csv.defaultOptions
+        { Csv.fieldLabelModifier = drop 3
+        }
+instance Csv.ToNamedRecord SimpleTimereport where
+    toNamedRecord = Csv.genericToNamedRecord $ Csv.defaultOptions
+        { Csv.fieldLabelModifier = drop 3
+        }
 
 instance ToJSON SimpleTimereport
-instance Sw.ToSchema SimpleTimereport
+instance Sw.ToSchema SimpleTimereport where declareNamedSchema = sopDeclareNamedSchema
 
 timereportsDump
-    :: forall m. ( MonadTime m, MonadPlanMillQuery m)
+    :: forall m. (MonadTime m, MonadPlanMillQuery m, MonadPersonio m)
     => m [SimpleTimereport]
 timereportsDump = do
     today <- currentDay
     let interval = $(mkDay "2017-01-01") PM.... today
     let chopped = chopInterval interval
-    us <- PMQ.users
+    fpm0 <- personioPlanmillMap
+    let fpm = HM.filter (P.employeeIsActive today . fst) fpm0
     data_ <- bindForM chopped $ \i ->
-        for (toList us) $ \pmUser -> do
-            for (PM.userLogin pmUser) $ \login -> do
-                -- we ask for all timereports
-                trs <- PMQ.timereports i (pmUser ^. PM.identifier)
-                for trs $ \tr -> do
-                    for (PM.trProject tr) $ \prId -> do
-                        (p, t) <- liftA2 (,)
-                            (PMQ.project prId)
-                            (PMQ.task $ PM.trTask tr)
-                        return SimpleTimereport
-                            { strLogin    = login
-                            , strProject  = PM.pName p
-                            , strTask     = PM.taskName t
-                            , strDay      = PM.trStart tr
-                            , strDuration = ndtConvert' $ PM.trAmount tr
-                            , strComment  = fromMaybe mempty $ PM.trComment tr
-                            }
+        ifor fpm $ \login (e, pmUser) -> do
+            -- we ask for all timereports
+            let pmUid = pmUser ^. PM.identifier
+            trs <- PMQ.timereports i pmUid
+            for trs $ \tr -> do
+                for (PM.trProject tr) $ \prId -> do
+                    (p, t) <- liftA2 (,)
+                        (PMQ.project prId)
+                        (PMQ.task $ PM.trTask tr)
+                    return SimpleTimereport
+                        { strLogin    = login
+                        , strPlanmill = pmUid
+                        , strPersonio = e ^. P.employeeId
+                        , strProject  = PM.pName p
+                        , strTask     = PM.taskName t
+                        , strDay      = PM.trStart tr
+                        , strDuration = ndtConvert' $ PM.trAmount tr
+                        , strComment  = fromMaybe mempty $ PM.trComment tr
+                        }
 
-    return $ data_ ^.. folded  . folded . folded . folded . folded
+    return $ data_ ^.. folded  . folded . folded . folded
 
 -------------------------------------------------------------------------------
 -- Extras

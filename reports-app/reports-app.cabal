@@ -30,7 +30,7 @@ library
     GeneralizedNewtypeDeriving
     InstanceSigs
     ScopedTypeVariables
-  ghc-options: -Wall
+  ghc-options: -Wall -fprint-potential-instances
   build-depends:
       base >= 4.8 && <4.12
     , base-compat
@@ -98,6 +98,7 @@ library
     , resource-pool
     , servant
     , servant-algebraic-graphs
+    , servant-cached
     , servant-cassava
     , servant-Chart
     , servant-client

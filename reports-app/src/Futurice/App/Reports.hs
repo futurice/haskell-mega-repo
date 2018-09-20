@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 -fprint-potential-instances #-}
 module Futurice.App.Reports (defaultMain) where
 
 import Control.Lens               (each)
@@ -24,18 +24,18 @@ import GHC.TypeLits               (KnownSymbol, symbolVal)
 import Numeric.Interval.NonEmpty  ((...))
 import Prelude ()
 import Servant
+import Servant.Cached             (mkCached)
 import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
 
 import Futurice.App.Reports.ActiveAccounts
-import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.API
-import Futurice.App.Reports.PlanMillAccountValidation (pmAccountValidationData)
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
 import Futurice.App.Reports.Dashdo                    (makeDashdoServer)
+import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, mhpTotalHours, missingHoursEmployeePredicate,
@@ -45,9 +45,9 @@ import Futurice.App.Reports.MissingHoursChart
 import Futurice.App.Reports.MissingHoursDailyChart
        (missingHoursDailyChartData, missingHoursDailyChartRender)
 import Futurice.App.Reports.MissingHoursNotifications
+import Futurice.App.Reports.PlanMillAccountValidation (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
-import Futurice.App.Reports.TimereportsDump           (timereportsDump)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
@@ -55,6 +55,7 @@ import Futurice.App.Reports.PowerUser
 import Futurice.App.Reports.SupervisorsGraph          (supervisorsGraph)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
+import Futurice.App.Reports.TimereportsDump           (timereportsDump)
 import Futurice.App.Reports.UtzChart
        (utzChartData, utzChartRender)
 
@@ -211,7 +212,7 @@ server ctx = makeServer ctx reports
     :<|> liftIO (serveData pmAccountValidationData ctx)
     :<|> liftIO serveInventory
     -- dumps
-    :<|> liftIO (serveData timereportsDump ctx)
+    :<|> liftIO (serveData (mkCached <$> timereportsDump) ctx)
     -- charts
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
@@ -232,7 +233,7 @@ server ctx = makeServer ctx reports
   where
     serveInventory = do
         let lgr = ctxLogger ctx
-        let cfg = ctxConfig ctx 
+        let cfg = ctxConfig ctx
         pp <- createPostgresPool $ cfgPostgresConnInfoInv cfg
         xs <- runLogT "inventory-data" lgr $ inventorySummaryQuery pp
 
