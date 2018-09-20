@@ -28,6 +28,7 @@ import Text.Regex.Applicative.Text (RE')
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Csv                             as Csv
 import qualified Data.Swagger                         as Swagger
+import qualified Codec.Serialise                      as S
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
@@ -157,3 +158,9 @@ instance FromEnvVarList GroupName where
       where
         p = groupNameParser `sepBy1` comma
         comma = char ',' <?> "comma"
+
+instance S.Serialise GroupName where
+    encode (GroupName l) = S.encode l
+    decode           = do
+        l <- S.decode
+        either fail return $ parseGroupName' l

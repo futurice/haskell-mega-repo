@@ -30,14 +30,18 @@ library
     , base
     , bytestring
     , exceptions
-    , futurice-prelude
+    , fum-types
+    , futurice-constants
     , futurice-foundation
+    , futurice-prelude
     , futurice-servant
+    , futurice-signed
     , machines
     , optparse-applicative
     , periocron
     , process
     , servant
+    , servant-client
     , servant-lucid
     , servant-server
     , servant-swagger

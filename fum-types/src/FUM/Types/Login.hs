@@ -24,6 +24,7 @@ import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
 import Text.Regex.Applicative.Text (RE')
 
+import qualified Codec.Serialise                      as S
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Csv                             as Csv
 import qualified Data.Swagger                         as Swagger
@@ -177,6 +178,12 @@ instance Postgres.FromField Login where
 
 instance FromEnvVar Login where
     fromEnvVar = fromEnvVar >=> parseLogin
+
+instance S.Serialise Login where
+    encode (Login l) = S.encode l
+    decode           = do
+        l <- S.decode
+        either fail return $ parseLogin' l
 
 -- $setup
 -- >>> import qualified Kleene.Internal.Pretty as K

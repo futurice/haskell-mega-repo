@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
 -- | Implementation of the machine API.
 module Futurice.App.FUM.Machine (machineServer) where
 
@@ -7,10 +6,12 @@ import Control.Concurrent.STM (readTVarIO)
 import Control.Monad.Reader   (Reader, asks, runReader)
 import Data.Set.Lens          (setOf)
 import Futurice.Prelude
+import Futurice.Signed        (SecretKey, Signed, signed, sign)
 import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
+import Futurice.App.FUM.Config
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Types
 import Futurice.FUM.MachineAPI
@@ -31,7 +32,12 @@ machineServer' ctx = hoistServer fumMachineApi nt $ traverse haxl
     haxl (SomeFUM6 req) = SomeFUM6Response req <$> haxl' req
 
     haxl' :: FUM6 a -> Reader World a
-    haxl' (FUMGroupEmployees n) = eg n
+    haxl' (FUMGroupEmployees n) = signed <$> eg n
 
-    eg :: GroupName -> Reader World (Set Login)
-    eg name = asks (setOf (worldGroups . ix name . groupEmployees . folded))
+    secretKey :: SecretKey
+    secretKey = cfgSecretKey (ctxConfig ctx)
+
+    eg :: GroupName -> Reader World (Signed (Set Login))
+    eg name = asks
+        $ sign [ secretKey ]
+        . setOf (worldGroups . ix name . groupEmployees . folded)

@@ -59,6 +59,7 @@ library
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , futurice-signed
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
