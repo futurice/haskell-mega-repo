@@ -58,6 +58,7 @@ library
     , lens
     , lucid
     , servant
+    , servant-cached
     , servant-JuicyPixels
     , servant-lucid
     , servant-multipart

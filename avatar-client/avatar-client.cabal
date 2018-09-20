@@ -35,9 +35,9 @@ library
     , futurice-prelude
     , JuicyPixels
     , servant
+    , servant-cached
     , servant-JuicyPixels
     , swagger2
   exposed-modules:
       Futurice.App.Avatar.API
-      Servant.Cached
   default-language: Haskell2010
