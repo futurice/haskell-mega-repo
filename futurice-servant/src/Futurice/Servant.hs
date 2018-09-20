@@ -109,6 +109,7 @@ import Network.Wai
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Prelude ()
 import Servant
+import Servant.Cached
 import Servant.CSV.Cassava                  (CSV)
 import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
 import Servant.HTML.Lucid                   (HTML)
@@ -143,11 +144,17 @@ data LZMA a
 instance Accept (LZMA ct) where
     contentType _ = "application/x-lzma"
 
-instance MimeRender ct a => MimeRender (LZMA ct) a where
+instance {-# OVERLAPPABLE #-} MimeRender ct a => MimeRender (LZMA ct) a where
     mimeRender _ = LZMA.compress . mimeRender (Proxy :: Proxy ct)
 
-instance MimeUnrender ct a => MimeUnrender (LZMA ct) a where
+instance {-# OVERLAPPABLE #-} MimeUnrender ct a => MimeUnrender (LZMA ct) a where
     mimeUnrender _ = mimeUnrender (Proxy :: Proxy ct) . LZMA.decompress
+
+instance {-# OVERLAPPING #-} (ct ~ ct', MimeRender ct a) => MimeRender (LZMA ct') (Cached (LZMA ct) a) where
+    mimeRender _ = getCached
+
+instance {-# OVERLAPPING #-} (ct ~ ct', Accept ct) => MimeUnrender (LZMA ct') (Cached (LZMA ct) a) where
+    mimeUnrender _ = Right . unsafeMkCached
 
 -------------------------------------------------------------------------------
 -- FuturiceAPI

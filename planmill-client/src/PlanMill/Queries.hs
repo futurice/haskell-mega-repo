@@ -42,7 +42,7 @@ import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, CapacityCalendars, Me, Project,
        ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
-       Timereports, User, UserCapacities, UserId, Users)
+       Timereports, User, UserCapacities, UserId, Users, identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -237,9 +237,10 @@ projectTasks pid = planmillVectorQuery
 --
 -- TODO: seems to return 500 for most tasks
 task :: MonadPlanMillQuery m => TaskId -> m Task
-task pid = planmillQuery
+task tid = fmap (identifier .~ tid) -- this is a HACK, as not all task have id. We set it explicitly.
+    $ planmillQuery
     $ QueryGet QueryTagTask mempty
-    $ toUrlParts $ ("tasks" :: Text) // pid
+    $ toUrlParts $ ("tasks" :: Text) // tid
 
 -- | Get a list of capacitycalendars
 --
