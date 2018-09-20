@@ -58,8 +58,7 @@ futu.onload(function () {
                 s.remove();
             });
             var isbn = $("form[data-form-type=book] input[name='isbn']").value;
-            var noErrors = true;
-            noErrors = isbnCheck(isbn);
+            var noErrors = isbnCheck(isbn);
             if (!$("form[data-futu-id=add-new-book] input[name='cover-file']").value
                 && !$("form[data-futu-id=add-new-book] input[name='bookinformationid']").value) {
                 var coverAlert = document.createElement("span");
@@ -92,7 +91,7 @@ futu.onload(function () {
                     .then(function (response) {
                         //Fill form with the isbn values
                         if(response.dataSource.source === 'Database') {
-                            $("Form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.dataSource.bookinformationid;
+                            $("form[data-futu-id=add-new-book] input[name='bookinformationid']").value = response.dataSource.bookinformationid;
                             $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
                             $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
                             $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
