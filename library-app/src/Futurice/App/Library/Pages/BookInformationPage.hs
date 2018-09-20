@@ -26,34 +26,24 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
         div_ [] $ do
             a_ [class_ "button small", href_ $ linkToText $ fieldLink editBookPageGet binfoid] "Edit book information"
             table_ $ do
-                tr_ $ do
-                    th_ "Title"
-                    td_ $ toHtml $ title
-                tr_ $ do
-                    th_ "Author"
-                    td_ $ toHtml $ author
-                tr_ $ do
-                    th_ "Publisher"
-                    td_ $ toHtml $ publisher
-                tr_ $ do
-                    th_ "Published"
-                    td_ $ toHtml $ show published
-                tr_ $ do
-                    th_ "ISBN"
-                    td_ $ toHtml $ isbn
+                vertRow_ "Title" $ toHtml $ title
+                vertRow_ "Author" $ toHtml $ author
+                vertRow_ "Publisher" $ toHtml $ publisher
+                vertRow_ "Published" $ toHtml $ show published
+                vertRow_ "ISBN" $ toHtml $ isbn
     fullRow_ $ do
         h2_ "Books"
         for_ officeMap $ \(lib, bs) -> do
             case lib of
               OfficeLibrary library -> do
                   h3_ $ T.pack $ show $ toHtml library
-                  for_ (listToMaybe $ (snd . partitionByLoan) bs) $ \_ -> do
+                  unless (null $ (snd . partitionByLoan) bs) $ do
                       span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (show . length . snd . partitionByLoan) bs <> " books available"
                       button_ [class_ "button tiny",
                                data_ "futu-id" "loan-item",
                                data_ "item-id" (T.pack $ show binfoid),
                                data_ "library" (T.pack $ show $ toHtml library)] $ toHtml ("Borrow" :: Text)
-                  for_ (listToMaybe $ fst (partitionByLoan bs)) $ \_ -> table_ $ do
+                  unless (null $ fst (partitionByLoan bs)) $ table_ $ do
                       thead_ $ tr_ $ th_ $ toHtml $ idT $ "Copies on loan "
                       tbody_ $ for_ (fst $ partitionByLoan bs) $ \b ->
                         for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> tr_ $ do
