@@ -68,7 +68,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "planmill-account-validation" :> Get '[HTML] PMAccountValidation
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
     -- Dump
-    :<|> "dump" :> "timereports-dump" :> Get '[CSV] [SimpleTimereport]
+    :<|> "dump" :> "timereports.csv.xz" :> Get '[LZMA CSV] [SimpleTimereport]
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
