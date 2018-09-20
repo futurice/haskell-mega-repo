@@ -18,6 +18,8 @@ module Futurice.Servant (
     HTML,
     -- * CSV (cassava)
     CSV,
+    -- * LZMA
+    LZMA,
     -- * Swagger
     -- | These are useful for defining empty schemas
     --
@@ -114,6 +116,7 @@ import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
 
+import qualified Codec.Compression.Lzma    as LZMA
 import qualified Data.Aeson                as Aeson
 import qualified Data.Map.Strict           as Map
 import qualified Data.Typeable             as Typeable
@@ -129,6 +132,26 @@ import qualified Network.AWS.CloudWatch.PutMetricData as AWS
 import qualified Network.AWS.CloudWatch.Types         as AWS
 
 import Data.Typeable
+
+-------------------------------------------------------------------------------
+-- LZMA
+-------------------------------------------------------------------------------
+
+data LZMA a
+
+-- | @application/x-lzma@
+instance Accept (LZMA ct) where
+    contentType _ = "application/x-lzma"
+
+instance MimeRender ct a => MimeRender (LZMA ct) a where
+    mimeRender _ = LZMA.compress . mimeRender (Proxy :: Proxy ct)
+
+instance MimeUnrender ct a => MimeUnrender (LZMA ct) a where
+    mimeUnrender _ = mimeUnrender (Proxy :: Proxy ct) . LZMA.decompress
+
+-------------------------------------------------------------------------------
+-- FuturiceAPI
+-------------------------------------------------------------------------------
 
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
