@@ -11,6 +11,8 @@
 module Futurice.FUM.MachineAPI (
     FUMMachineAPI,
     fumMachineApi,
+    -- * Endpoints
+    GroupMembersEndpoint,
     -- * Class
     MonadFUM6 (..),
     -- * haxl
@@ -30,6 +32,7 @@ import Data.GADT.Compare        (GEq (..))
 import Data.Type.Equality
 import FUM.Types.GroupName      (GroupName)
 import FUM.Types.Login          (Login)
+import Futurice.Signed (Signed)
 import Futurice.Prelude
 import Haxl.Core
 import Prelude ()
@@ -43,7 +46,13 @@ import qualified Network.HTTP.Client as HTTP
 -------------------------------------------------------------------------------
 
 type FUMMachineAPI = "haxl" :> Summary "Haxl endpoint" :> ReqBody '[JSON] [SomeFUM6] :> Post '[JSON] [SomeFUM6Response]
-    :<|> "groups" :> Summary "Get group members" :> Capture "group-name" GroupName :> "employees" :> Get '[JSON] (Set Login)
+    :<|> GroupMembersEndpoint
+
+type GroupMembersEndpoint = Summary "Get group members"
+    :> "groups"
+    :> Capture "group-name" GroupName
+    :> "employees"
+    :> Get '[JSON] (Signed (Set Login))
 
 fumMachineApi :: Proxy FUMMachineAPI
 fumMachineApi = Proxy

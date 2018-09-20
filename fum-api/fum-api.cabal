@@ -35,6 +35,7 @@ library
     , dependent-sum
     , fum-types
     , futurice-prelude
+    , futurice-signed
     , generics-sop
     , github
     , haxl
