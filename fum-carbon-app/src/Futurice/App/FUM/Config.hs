@@ -8,6 +8,7 @@ import FUM.Types.Login            (Login)
 import Futurice.EnvConfig
 import Futurice.Integrations      (IntegrationsConfig)
 import Futurice.Prelude
+import Futurice.Signed            (SecretKey)
 import Prelude ()
 
 import qualified Personio
@@ -17,6 +18,7 @@ data Config = Config
     , cfgPersonioCfg        :: !(Personio.Cfg)
     , cfgIntegrationsConfig :: !(IntegrationsConfig '[Proxy, I, Proxy, Proxy, Proxy, Proxy])
     , cfgMockUser           :: !(Maybe Login)
+    , cfgSecretKey          :: !SecretKey
     }
 
 instance Configure Config where
@@ -25,3 +27,4 @@ instance Configure Config where
         <*> configure
         <*> configure
         <*> optionalAlt (envVar "MOCKUSER")
+        <*> envVar "BASIC_SECRETKEY"
