@@ -94,7 +94,7 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search = page_
       paginationLinks :: CriteriaAndData -> HtmlT Identity ()
       paginationLinks (BookCD criteria infos) = do
           for_ startBookInfoId $ \_ -> a_ [class_ "button", href_ "javascript:history.back()"] $ toHtml ("prev" :: Text)
-          for_ (listToMaybe infos) $ \_ -> a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort criteria) (Just direction) (Just limit) (lastBookInfoId infos) Nothing search] $ toHtml ("next" :: Text)
+          unless (null infos) $ a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort criteria) (Just direction) (Just limit) (lastBookInfoId infos) Nothing search] $ toHtml ("next" :: Text)
       paginationLinks (BoardGameCD criteria infos) = do
           for_ startBoardGameInfoId $ \_ -> a_ [class_ "button", href_ "javascript:history.back()"] $ toHtml ("prev" :: Text)
-          for_ (listToMaybe infos) $ \_ -> a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort criteria) (Just direction) (Just limit) Nothing (lastBoardGameInfoId infos) search] $ toHtml ("next" :: Text)
+          unless (null infos) $ a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort criteria) (Just direction) (Just limit) Nothing (lastBoardGameInfoId infos) search] $ toHtml ("next" :: Text)

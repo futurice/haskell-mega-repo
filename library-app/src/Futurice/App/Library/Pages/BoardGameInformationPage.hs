@@ -24,35 +24,25 @@ boardGameInformationPage boardGameResponse ls employees = page_ "Board Game deta
         div_ [] $ do
             a_ [class_ "button small", href_ $ linkToText $ fieldLink editBoardGamePageGet (boardGameResponse ^. boardGameResponseInformationId)] "Edit board game information"
             table_ $ do
-                tr_ $ do
-                    th_ "Name"
-                    td_ $ toHtml $ boardGameResponse ^. boardGameResponseName
-                tr_ $ do
-                    th_ "Publisher"
-                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponsePublisher
-                tr_ $ do
-                    th_ "Published"
-                    td_ $ toHtml $ maybe "" show $ boardGameResponse ^. boardGameResponsePublished
-                tr_ $ do
-                    th_ "Designer"
-                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseDesigner
-                tr_ $ do
-                    th_ "Artist"
-                    td_ $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseArtist
+                vertRow_ "Name" $ toHtml $ boardGameResponse ^. boardGameResponseName
+                vertRow_ "Publisher" $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponsePublisher
+                vertRow_ "Published" $ toHtml $ maybe "" show $ boardGameResponse ^. boardGameResponsePublished
+                vertRow_ "Designer" $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseDesigner
+                vertRow_ "Artist" $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseArtist
     fullRow_ $ do
         h2_ "Board games"
         for_ officeMap $ \(lib, bs) -> do
             case lib of
               OfficeLibrary library -> do
                   h3_ $ T.pack $ show $ toHtml library
-                  for_ (listToMaybe $ (snd . partitionByLoan) bs) $ \_ -> do
+                  unless (null $ (snd . partitionByLoan) bs) $ do
                       span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (show . length . snd . partitionByLoan) bs <> " board games available"
                       -- HOX! We currently don't want to loan boardgames, but this can be opened up later
                       -- button_ [class_ "button tiny",
                       --          data_ "futu-id" "loan-item",
                       --          data_ "item-id" (T.pack $ show binfoid),
                       --          data_ "library" (T.pack $ show $ toHtml library)] $ toHtml ("Borrow" :: Text)
-                  for_ (listToMaybe $ fst (partitionByLoan bs)) $ \_ -> table_ $ do
+                  unless (null $ fst (partitionByLoan bs)) $ table_ $ do
                       thead_ $ tr_ $ th_ $ toHtml $ idT $ "Copies on loan "
                       tbody_ $ for_ (fst $ partitionByLoan bs) $ \b ->
                         for_ (loanMap ^.at (_boardGamesBoardGameId b)) $ \(_, day, person) -> tr_ $ do
