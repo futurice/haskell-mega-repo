@@ -37,8 +37,11 @@ library
       base                  >=4.10   && <4.12
     , avatar-client
     , containers
+    , fum-api
+    , fum-types
     , futurice-constants
     , futurice-prelude
+    , futurice-signed
     , postgresql-simple
     , servant
     , servant-cassava

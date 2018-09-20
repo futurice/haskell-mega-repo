@@ -25,6 +25,8 @@ import Servant.CSV.Cassava         (CSV)
 -- Integrations
 import Servant.Binary.Tagged (BINARYTAGGED)
 
+import           FUM.Types.GroupName                    (GroupName)
+import           FUM.Types.Login                        (Login)
 import           Futurice.App.Avatar.API                (AvatarFumEndpoint)
 import qualified Futurice.App.Contacts.Types            as Contact
 import           Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
@@ -34,6 +36,7 @@ import           Futurice.App.Reports.TimereportsByTask
 import qualified Futurice.FUM.MachineAPI                as FUM6
 import qualified Futurice.GitHub                        as GH
                  (SomeRequest, SomeResponse)
+import           Futurice.Signed                        (Signed)
 import qualified Personio
 import qualified PlanMill.Types.Query                   as PM
                  (SomeQuery, SomeResponse)
@@ -82,6 +85,16 @@ data Routes = Routes
     , routePowerTribes :: ProxiedEndpoint 'PowerService
         ("api" :> "v2" :> "tribes" :> Get '[JSON] Value)
         ("power" :> "api" :> "tribes" :> Get '[JSON] Value)
+
+    -- FUM
+    , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
+          FUM6.GroupMembersEndpoint
+          (Summary "FUM6 group members"
+              :> "fum"
+              :> "groups"
+              :> Capture "group-name" GroupName
+              :> "employees"
+              :> Get '[JSON] (Signed (Set Login)))
 
     -- HAXL endpoints
     , routeFumCarbonHaxl :: ProxiedEndpoint 'FumCarbonService

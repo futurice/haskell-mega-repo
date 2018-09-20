@@ -3,7 +3,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.Croned where
+module Futurice.App.Croned (
+    defaultMain,
+    ) where
 
 import Control.Applicative       ((<**>))
 import Control.Concurrent        (forkIO)
@@ -12,18 +14,24 @@ import Control.Monad.Catch       (bracket)
 import Data.Aeson                (ToJSON)
 import Data.Machine
 import Data.Swagger              (ToSchema)
+import FUM.Types.GroupName       (GroupName, parseGroupName')
 import Futurice.Clock
+import Futurice.Constants        (servicePublicUrl)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation
 import Futurice.Periocron        (defaultOptions, every, mkJob, spawnPeriocron)
 import Futurice.Prelude
 import Futurice.Servant
+import Futurice.Services         (Service (..))
+import Futurice.Signed ()
 import Prelude ()
 import Servant.API
 import Servant.API.Generic
+import Servant.Client            (BaseUrl, parseBaseUrl)
 import Servant.HTML.Lucid        (HTML)
 import Servant.Server
 import Servant.Server.Generic
+import System.Environment        (getEnvironment)
 import System.Exit               (ExitCode (..))
 import System.IO                 (Handle, hIsEOF)
 
@@ -39,7 +47,8 @@ import qualified System.Process           as Proc
 
 defaultMain :: IO ()
 defaultMain = withStderrLogger $ \lgr -> do
-    Opts {..} <- O.execParser opts
+    env <- getEnvironment
+    Opts {..} <- O.execParser (opts env)
 
     ctx <- atomically $ Ctx lgr optsCommand optsArgs
         <$> newTVar False
@@ -57,7 +66,7 @@ defaultMain = withStderrLogger $ \lgr -> do
     settings port = Warp.defaultSettings
         & Warp.setPort port
 
-    opts = O.info (optsP <**> O.helper) $ mconcat
+    opts env = O.info (optsP env <**> O.helper) $ mconcat
         [ O.fullDesc
         , O.progDesc "Wrap script in a service"
         , O.header "croned-server - run script as a background task"
@@ -67,15 +76,24 @@ defaultMain = withStderrLogger $ \lgr -> do
 -- cli options
 -------------------------------------------------------------------------------
 
+type Env = [(String,String)]
+
 data Opts = Opts
     { optsPort     :: Int
     , optsInterval :: Int
+    , optsACL      :: Maybe ACL
     , optsCommand  :: String
     , optsArgs     :: [String]
     }
 
-optsP :: O.Parser Opts
-optsP = Opts <$> portP <*> intervalP <*> commandArg <*> args where
+optsP :: Env -> O.Parser Opts
+optsP _env = Opts
+    <$> portP
+    <*> intervalP
+    <*> {- optional (aclP env) -} pure Nothing
+    <*> commandArg
+    <*> args
+  where
     portP = O.option (clamped 1 0xffff) $ mconcat
         [ O.short 'p'
         , O.long "port"
@@ -97,6 +115,7 @@ optsP = Opts <$> portP <*> intervalP <*> commandArg <*> args where
     commandArg = O.strArgument $ mconcat
         [ O.metavar "CMD"
         ]
+
     args = many $ O.strArgument $ mconcat
         [ O.metavar "ARGS..."
         ]
@@ -107,6 +126,45 @@ optsP = Opts <$> portP <*> intervalP <*> commandArg <*> args where
         Just x | x < mi -> Left $ show x ++ " < " ++ show mi
         Just x | x > ma -> Left $ show x ++ " > " ++ show mi
         Just x          -> Right x
+
+data ACL = ACL
+    { _aclGroups  :: ![GroupName]
+    , _aclBaseurl :: !BaseUrl
+    , _aclUser    :: !ByteString
+    , _aclPass    :: !ByteString
+    }
+
+_aclP :: Env -> O.Parser ACL
+_aclP _env = ACL <$> some groupP <*> baseurlP <*> userP <*> passP
+  where
+    userP = O.strOption $ mconcat
+        [ O.metavar "USER"
+        , O.long "user"
+        , O.help "ACL: Prox user."
+        ]
+
+    passP = O.strOption $ mconcat
+        [ O.metavar "PASS"
+        , O.long "pass"
+        , O.help "ACL: Prox token."
+        ]
+
+    baseurlP = O.option (O.maybeReader parseBaseUrl) $ mconcat
+        [ O.metavar "URL"
+        , O.long "prox"
+        , O.help "ACL: Prox address"
+        , O.value $ fromMaybe (error "prox: public-url") $ parseBaseUrl
+            $ view unpacked
+            $ servicePublicUrl ProxService
+        , O.showDefault
+        ]
+
+    groupP =  O.option (O.eitherReader $ parseGroupName' . view packed) $ mconcat
+        [ O.metavar "GROUP"
+        , O.long "group"
+        , O.short 'g'
+        , O.help "ACL: Group"
+        ]
 
 -------------------------------------------------------------------------------
 -- Trigger
@@ -250,8 +308,8 @@ triggerHandler ctx = liftIO $ void $ forkIO $ void $ trigger ctx
 -------------------------------------------------------------------------------
 
 data Outputs = Outputs
-    { outStdout :: !Text
-    , outStderr :: !Text
+    { _outStdout :: !Text
+    , _outStderr :: !Text
     }
   deriving (Generic)
 

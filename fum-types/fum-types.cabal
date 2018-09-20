@@ -45,6 +45,7 @@ library
     , postgresql-simple
     , QuickCheck
     , regex-applicative-text
+    , serialise
     , swagger2
     , template-haskell
     , text

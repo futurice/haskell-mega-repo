@@ -48,6 +48,7 @@ library
     , async
     , base >=4.7   && <4.12
     , base-compat
+    , base16-bytestring
     , base64-bytestring
     , bytestring
     , Cabal
@@ -56,6 +57,7 @@ library
     , containers
     , crypto-api
     , directory
+    , ed25519
     , entropy
     , exceptions
     , filepath
@@ -94,6 +96,7 @@ library
       Futurice.App.MegaRepoTool.Estimator
       Futurice.App.MegaRepoTool.Exec
       Futurice.App.MegaRepoTool.GenPass
+      Futurice.App.MegaRepoTool.GenKeys
       Futurice.App.MegaRepoTool.Keys
       Futurice.App.MegaRepoTool.Lambda
       Futurice.App.MegaRepoTool.PatternCompleter
