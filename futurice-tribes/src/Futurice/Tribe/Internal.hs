@@ -16,6 +16,7 @@ data TribeInfo = TribeInfo
     , tiAliases     :: [Text]
     , tiCostCenters :: NonEmpty CostCenter
     , tiDefault     :: !Bool
+    -- tiSubsidiary :: !Bool -- TODO: ?
     }
   deriving (Eq, Show, Lift)
 
