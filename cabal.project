@@ -116,6 +116,7 @@ packages:
   reports-app/
   servant-algebraic-graphs/
   servant-binary-tagged/
+  servant-cached/
   servant-Chart/
   servant-dashdo/
   sisosota-app/

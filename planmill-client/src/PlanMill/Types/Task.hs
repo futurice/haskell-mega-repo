@@ -15,7 +15,7 @@ module PlanMill.Types.Task (
 
 import PlanMill.Internal.Prelude
 
-import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
+import PlanMill.Types.Identifier (HasIdentifier (..), Identifier (..))
 import PlanMill.Types.Project    (ProjectId)
 
 type TaskId = Identifier Task
@@ -68,11 +68,11 @@ instance HasSemanticVersion Task
 
 instance FromJSON Task where
     parseJSON = withObject "Task" $ \obj -> Task
-        <$> obj .: "id"
-        <*> (getParsedAsText <$> obj .: "name") -- HACK
-        <*> obj .: "billableStatus"
+        <$> (obj .: "id" <|> pure (Ident 0)) -- this is very BAD HACK
+        <*> (getParsedAsText <$> obj .: "name" <|> pure "") -- HACK^2
+        <*> obj .:? "billableStatus"
         <*> obj .:? "description"
-        <*> obj .: "dutyType"
+        <*> obj .:? "dutyType"
         <*> (dayFromZ <$> obj .: "finish")
         <*> (getU <$$> obj .:? "finishOld")
         <*> (getU <$$> obj .:? "originalFinish")
@@ -81,10 +81,10 @@ instance FromJSON Task where
         <*> obj .:? "predecessorTask"
         <*> obj .:? "priceType"
         <*> obj .:? "project"
-        <*> (dayFromZ <$> obj .: "start")
+        <*> (dayFromZ <$> obj .: "start" <|> pure (ModifiedJulianDay 57023)) -- 2015-01-01
         -- <*> obj .: "status"
         <*> obj .:? "targetEffort"
         <*> (getU <$$> obj .:? "tempFinish")
-        <*> obj .: "type"
+        <*> obj .:? "type"
         <*> obj .: "unitPrice"
         <*> obj .: "wbs"

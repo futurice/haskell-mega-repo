@@ -1,85 +1,97 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies    #-}
 module Futurice.App.Reports.TimereportsDump (
     SimpleTimereport (..),
     timereportsDump,
     ) where
 
-import Control.Monad.State.Lazy  (StateT, execStateT, modify)
 import Data.Aeson                (ToJSON (..))
 import FUM.Types.Login           (Login)
+import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 
-import qualified Data.Csv         as Csv
-import qualified Data.Swagger     as Sw
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
+import qualified Data.Csv            as Csv
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Swagger        as Sw
+import qualified Personio            as P
+import qualified PlanMill            as PM
+import qualified PlanMill.Queries    as PMQ
 
 data SimpleTimereport = SimpleTimereport
     { strLogin    :: !Login
+    , strPlanmill :: !PM.UserId
+    , strPersonio :: !P.EmployeeId
     , strProject  :: !Text
     , strTask     :: !Text
     , strDay      :: !Day
     , strDuration :: !(NDT 'Hours Double)
     , strComment  :: !Text
     }
-  deriving Generic
+  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
-instance NFData SimpleTimereport
+deriveGeneric ''SimpleTimereport
 
-instance Csv.DefaultOrdered SimpleTimereport
-instance Csv.ToNamedRecord SimpleTimereport
+instance Csv.DefaultOrdered SimpleTimereport where
+    headerOrder = Csv.genericHeaderOrder $ Csv.defaultOptions
+        { Csv.fieldLabelModifier = drop 3
+        }
+instance Csv.ToNamedRecord SimpleTimereport where
+    toNamedRecord = Csv.genericToNamedRecord $ Csv.defaultOptions
+        { Csv.fieldLabelModifier = drop 3
+        }
 
 instance ToJSON SimpleTimereport
-instance Sw.ToSchema SimpleTimereport
+instance Sw.ToSchema SimpleTimereport where declareNamedSchema = sopDeclareNamedSchema
 
 timereportsDump
-    :: forall m. ( MonadTime m, MonadPlanMillQuery m)
+    :: forall m. (MonadTime m, MonadPlanMillQuery m, MonadPersonio m)
     => m [SimpleTimereport]
 timereportsDump = do
     today <- currentDay
-    let interval = $(mkDay "2018-08-01") PM.... today
+    let interval = $(mkDay "2017-01-01") PM.... today
     let chopped = chopInterval interval
-    us <- PMQ.users
-    consume $ bindForM_ (toList us) $ \pmUser -> do
-        trs <- lift $ for chopped $ \i -> do
+    fpm0 <- personioPlanmillMap
+    let fpm = HM.filter (P.employeeIsActive today . fst) fpm0
+    data_ <- bindForM chopped $ \i ->
+        ifor fpm $ \login (e, pmUser) -> do
             -- we ask for all timereports
-            PMQ.timereports i (pmUser ^. PM.identifier)
-        for_ (PM.userLogin pmUser) $ \login -> do
-            for_ (mconcat trs) $ \tr -> do
-                for_ (PM.trProject tr) $ \prId -> do
-                    (p, t) <- lift $ liftA2 (,)
+            let pmUid = pmUser ^. PM.identifier
+            trs <- PMQ.timereports i pmUid
+            for trs $ \tr -> do
+                for (PM.trProject tr) $ \prId -> do
+                    (p, t) <- liftA2 (,)
                         (PMQ.project prId)
                         (PMQ.task $ PM.trTask tr)
-                    produce SimpleTimereport
+                    return SimpleTimereport
                         { strLogin    = login
+                        , strPlanmill = pmUid
+                        , strPersonio = e ^. P.employeeId
                         , strProject  = PM.pName p
                         , strTask     = PM.taskName t
                         , strDay      = PM.trStart tr
                         , strDuration = ndtConvert' $ PM.trAmount tr
                         , strComment  = fromMaybe mempty $ PM.trComment tr
                         }
-  where
-    consume :: Monad n => StateT ([a] -> [a]) n () -> n [a]
-    consume action = ($[]) <$> execStateT action id
 
-    produce :: Monad n => a -> StateT ([a] -> [a]) n ()
-    produce x = modify (. (x :))
+    return $ data_ ^.. folded  . folded . folded . folded
 
 -------------------------------------------------------------------------------
 -- Extras
 -------------------------------------------------------------------------------
 
 -- bindForM and chopInterval used to cut the parallelism, as we ask "for everything"
-bindForM_ :: Monad m => [a] -> (a -> m b) -> m ()
-bindForM_ [] _ = return ()
-bindForM_ (a:as) f = do
-    _ <- f a
-    bindForM_ as f
+bindForM :: Monad m => [a] -> (a -> m b) -> m [b]
+bindForM xs f = go xs where
+    go [] = return []
+    go (a:as) = do
+        b <- f a
+        (b:) <$> go as
 
 chopInterval :: (Ord a, Enum a) => Interval a -> [Interval a]
 chopInterval i
