@@ -15,6 +15,7 @@ import Futurice.Servant
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Prelude ()
 import Servant
+import Servant.Cached
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
@@ -68,7 +69,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "planmill-account-validation" :> Get '[HTML] PMAccountValidation
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
     -- Dump
-    :<|> "dump" :> "timereports-dump" :> Get '[CSV] [SimpleTimereport]
+    :<|> "dump" :> "timereports.csv.xz" :> CachedGet (LZMA CSV) [SimpleTimereport]
     -- Charts
     :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
     :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
