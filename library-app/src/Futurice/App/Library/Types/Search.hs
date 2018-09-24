@@ -19,12 +19,12 @@ data CriteriaAndData where
     BoardGameCD :: BoardGameSortCriteria -> [BoardGameInformation] -> CriteriaAndData
 
 data SortCriteriaAndStart where
-    BookCS :: BookSortCriteria -> Maybe BookInformationId -> SortCriteriaAndStart
-    BoardGameCS :: BoardGameSortCriteria -> Maybe BoardGameInformationId -> SortCriteriaAndStart
+    BookCS :: BookSortCriteria -> Maybe BookInformation -> SortCriteriaAndStart
+    BoardGameCS :: BoardGameSortCriteria -> Maybe BoardGameInformation -> SortCriteriaAndStart
 
 data SortCriteria = BookSort BookSortCriteria
                   | BoardGameSort BoardGameSortCriteria
-                  deriving (Eq)
+                  deriving (Eq, Generic)
 
 data BookSortCriteria = SortTitle
                       | SortAuthor
