@@ -30,9 +30,12 @@ data IntervalType
 -- | Map to query string value.
 intervalToQueryString :: ResultInterval -> QueryString
 intervalToQueryString (ResultInterval t i) =
+    -- This is tricky, not well documented.
+    -- We have inclusive day interval, and need to translate it into
+    -- something API treats well
     Map.fromList [ ("interval", t')
     , ("intervalstart", fromString . showPlanmillDay $ inf i)
-    , ("intervalfinish", fromString . showPlanmillDay $ sup i)
+    , ("intervalfinish", fromString . showPlanmillDay $ succ $ sup i)
     ]
   where
     t' = case t of
