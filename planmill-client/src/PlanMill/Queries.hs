@@ -42,7 +42,8 @@ import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, CapacityCalendars, Me, Project,
        ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
-       Timereports, User, UserCapacities, UserId, Users, identifier)
+       Timereport, Timereports, User, UserCapacities, UserId, Users,
+       identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -263,6 +264,10 @@ instance HasMeta User where
 
 instance HasMeta Absence where
     metaPath _ = t "absences" // t "meta"
+      where t = id :: Text -> Text
+
+instance HasMeta Timereport where
+    metaPath _ = t "timereports" // t "meta"
       where t = id :: Text -> Text
 
 meta :: MonadPlanMillQuery m => HasMeta entity => Proxy entity -> m Meta

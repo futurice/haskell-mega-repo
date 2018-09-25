@@ -18,11 +18,12 @@ module PlanMill.Types.Timereport (
 
 import PlanMill.Internal.Prelude
 
-import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
-import PlanMill.Types.Project         (ProjectId)
-import PlanMill.Types.Task            (TaskId)
-import PlanMill.Types.UOffset         (UOffset (..))
-import PlanMill.Types.User            (UserId)
+import PlanMill.Types.Enumeration (EnumValue)
+import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
+import PlanMill.Types.Project     (ProjectId)
+import PlanMill.Types.Task        (TaskId)
+import PlanMill.Types.UOffset     (UOffset (..))
+import PlanMill.Types.User        (UserId)
 
 type TimereportId = Identifier Timereport
 type Timereports = Vector Timereport
@@ -31,17 +32,17 @@ data Timereport = Timereport
     { _trId             :: !TimereportId
     , trTask            :: !TaskId
     , trAmount          :: !(NDT 'Minutes Int)
-    , trBillableStatus  :: !Int          -- TODO: make into enum
+    , trBillableStatus  :: !(EnumValue Timereport "billableStatus")
     , trBillingComment  :: !(Maybe Text)
     , trComment         :: !(Maybe Text)
-    , trDutyType        :: !(Maybe Int)  -- TODO: make type, schema says it's mandatory
+    , trDutyType        :: !(Maybe (EnumValue Timereport "dutyType"))
     , trFinish          :: !Day
     , trOvertimeAmount  :: !(Maybe Int)
     , trOvertimeComment :: !(Maybe Text)
     , trPerson          :: !UserId
     , trProject         :: !(Maybe ProjectId)
     , trStart           :: !Day   -- ^ The ''UTCTime' would be more precise, but we care about day more
-    , trStatus          :: !Int   -- TODO: make type
+    , trStatus          :: !(EnumValue Timereport "status") -- Note: metadata is wrong for this field. (2018-09-25)
     , trTravelAmount    :: !(Maybe Int)
     , trTravelComment   :: !(Maybe Text)
     }
