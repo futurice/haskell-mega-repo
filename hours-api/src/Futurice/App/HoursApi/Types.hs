@@ -13,7 +13,7 @@
 -- /NOTE:/ Golang backend LatestEntry is Entry with a Date
 module Futurice.App.HoursApi.Types where
 
-import Control.Lens              (foldOf, imap, sumOf)
+import Control.Lens              (foldOf, imap, sumOf, filtered)
 import Data.Aeson                (Value (..), withText)
 import Data.Aeson.Types          (typeMismatch)
 import Data.Fixed                (Centi)
@@ -75,6 +75,7 @@ data EntryType
     = EntryTypeBillable
     | EntryTypeNotBillable
     | EntryTypeAbsence
+    | EntryTypeBalanceAbsence
   deriving (Eq, Ord, Show, Enum, Bounded, Typeable, Generic)
 
 -- Entries for a specific Day
@@ -93,9 +94,10 @@ data Entry = Entry
 entryUtilizationAvg :: Getter Entry (Maybe (Average Float))
 entryUtilizationAvg = getter $ \entry ->
     let NDT hours = _entryHours entry in case _entryBillable entry of
-        EntryTypeBillable    -> Just $ Average (realToFrac hours) 100
-        EntryTypeNotBillable -> Just $ Average (realToFrac hours) 0
-        EntryTypeAbsence     -> Nothing
+        EntryTypeBillable       -> Just $ Average (realToFrac hours) 100
+        EntryTypeNotBillable    -> Just $ Average (realToFrac hours) 0
+        EntryTypeAbsence        -> Nothing
+        EntryTypeBalanceAbsence -> Nothing
 
 -- TODO: perhaps a lens getter for an Entry?
 
@@ -250,7 +252,9 @@ mkHoursMonth capacities interval holidays entries =
   where
     mkHoursMonth' :: Month -> Map Day [Entry] -> HoursMonth
     mkHoursMonth' m mm = HoursMonth
-        { _monthHours           = sumOf (folded . folded . entryHours) mm
+        -- we filter balanceLeaves from monthHours (see dayHours)
+        -- balance leaves are dummy markings, should count towards total worked hours
+        { _monthHours           = sumOf (folded . folded . filtered (\e -> _entryBillable e /= EntryTypeBalanceAbsence) . entryHours) mm
         , _monthCapacity        = fromMaybe 0 $ capacities ^? ix m
         , _monthUtilizationRate = utz
         , _monthDays            = Map.filterWithKey inInterval $ imap mkHoursDay mm
@@ -280,7 +284,7 @@ mkHoursMonth capacities interval holidays entries =
     mkHoursDay :: Day -> [Entry] -> HoursDay
     mkHoursDay d es = HoursDay
         { _dayType    = fromMaybe DayTypeNormal $ holidays ^? ix d
-        , _dayHours   = sumOf (folded . entryHours) es
+        , _dayHours   = sumOf (folded . entryHours) es -- day hours not filtered. (see monthHours)
         , _dayEntries = es
         , _dayClosed  = False -- TODO: not correct: andOf (folded . entryClosed) es
           -- day is closed if every entry in it is closed
@@ -298,7 +302,9 @@ latestEntryFromEntry e = LatestEntry
 -------------------------------------------------------------------------------
 
 instance TextEnum EntryType where
-    type TextEnumNames EntryType = '["billable", "non-billable", "absence"]
+    -- Both absences are just "absence", this is safe if we don't have FromJSON etc. instances
+    type TextEnumNames EntryType = '["billable", "non-billable", "absence", "absence"]
+
 
 instance Arbitrary EntryType where
     arbitrary = arbitraryBoundedEnum
@@ -309,33 +315,27 @@ entryTypeText :: EntryType -> Text
 entryTypeText = enumToText
 
 deriveVia [t| ToJSON EntryType   `Via` Enumica EntryType |]
-deriveVia [t| FromJSON EntryType `Via` Enumica EntryType |]
 instance ToParamSchema EntryType where toParamSchema = enumToParamSchema
 instance ToSchema EntryType where declareNamedSchema = enumDeclareNamedSchema
 
 deriveVia [t| forall task. (Arbitrary task => Arbitrary (Project task)) `Via` Sopica (Project task) |]
 deriveVia [t| forall task. (ToJSON task => ToJSON (Project task))       `Via` Sopica (Project task) |]
-deriveVia [t| forall task. (FromJSON task => FromJSON (Project task))   `Via` Sopica (Project task) |]
 instance ToSchema task => ToSchema (Project task) where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary ReportableTask `Via` Sopica ReportableTask |]
 deriveVia [t| ToJSON ReportableTask    `Via` Sopica ReportableTask |]
-deriveVia [t| FromJSON ReportableTask  `Via` Sopica ReportableTask |]
 instance ToSchema ReportableTask where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary MarkedTask `Via` Sopica MarkedTask |]
 deriveVia [t| ToJSON MarkedTask    `Via` Sopica MarkedTask |]
-deriveVia [t| FromJSON MarkedTask  `Via` Sopica MarkedTask |]
 instance ToSchema MarkedTask where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary LatestEntry `Via` Sopica LatestEntry |]
 deriveVia [t| ToJSON LatestEntry    `Via` Sopica LatestEntry |]
-deriveVia [t| FromJSON LatestEntry  `Via` Sopica LatestEntry |]
 instance ToSchema LatestEntry where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary Entry `Via` Sopica Entry |]
 deriveVia [t| ToJSON Entry    `Via` Sopica Entry |]
-deriveVia [t| FromJSON Entry  `Via` Sopica Entry |]
 instance ToSchema Entry where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary EntryUpdate `Via` Sopica EntryUpdate |]
@@ -345,7 +345,6 @@ instance ToSchema EntryUpdate where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary EntryUpdateResponse `Via` Sopica EntryUpdateResponse |]
 deriveVia [t| ToJSON EntryUpdateResponse    `Via` Sopica EntryUpdateResponse |]
-deriveVia [t| FromJSON EntryUpdateResponse  `Via` Sopica EntryUpdateResponse |]
 instance ToSchema EntryUpdateResponse where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary User `Via` Sopica User |]
@@ -374,15 +373,12 @@ instance ToSchema DayType where
 
 deriveVia [t| Arbitrary HoursDay `Via` Sopica HoursDay |]
 deriveVia [t| ToJSON HoursDay    `Via` Sopica HoursDay |]
-deriveVia [t| FromJSON HoursDay  `Via` Sopica HoursDay |]
 instance ToSchema HoursDay where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary HoursMonth `Via` Sopica HoursMonth |]
 deriveVia [t| ToJSON HoursMonth    `Via` Sopica HoursMonth |]
-deriveVia [t| FromJSON HoursMonth  `Via` Sopica HoursMonth |]
 instance ToSchema HoursMonth where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary HoursResponse `Via` Sopica HoursResponse |]
 deriveVia [t| ToJSON HoursResponse    `Via` Sopica HoursResponse |]
-deriveVia [t| FromJSON HoursResponse  `Via` Sopica HoursResponse |]
 instance ToSchema HoursResponse where declareNamedSchema = sopDeclareNamedSchema

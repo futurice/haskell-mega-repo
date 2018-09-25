@@ -162,10 +162,10 @@ data ReportableAssignment = ReportableAssignment
   deriving (Eq, Show, Generic)
 
 data Task = Task
-    { _taskId        :: !PM.TaskId
-    , _taskName      :: !Text
-    , _taskProjectId :: !PM.ProjectId
-    , _taskFinish    :: !Day
+    { _taskId         :: !PM.TaskId
+    , _taskName       :: !Text
+    , _taskProjectId  :: !PM.ProjectId
+    , _taskFinish     :: !Day
     }
   deriving (Eq, Show, Generic)
 
