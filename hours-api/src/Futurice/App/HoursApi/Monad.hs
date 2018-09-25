@@ -332,31 +332,35 @@ nonEmptyComment comm = case T.strip (T.map spacesToSpace comm) of
     spacesToSpace c             = c
 
 convertTimereport :: PM.Timereport -> Hours Timereport
-convertTimereport tr = case PM.trProject tr of
-    Just pid -> pure (makeTimereport pid tr)
-    Nothing -> do
-        t <- task (PM.trTask tr)
-        pure (makeTimereport (t ^. taskProjectId) tr)
+convertTimereport tr = do
+    (bs, dt) <- liftA2 (,)
+        (PMQ.enumerationValue (PM.trBillableStatus tr) "")
+        (traverse (`PMQ.enumerationValue` "") (PM.trDutyType tr))
+    pid <- case PM.trProject tr of
+        Just pid -> return pid
+        Nothing  -> view taskProjectId <$>  task (PM.trTask tr)
+    p <- PMQ.project pid
+    pure (makeTimereport p tr bs dt)
 
-makeTimereport :: PM.ProjectId -> PM.Timereport -> Timereport
-makeTimereport pid tr = Timereport
+makeTimereport :: PM.Project -> PM.Timereport -> Text -> Maybe Text -> Timereport
+makeTimereport p tr bs dt = Timereport
     { _timereportId        = tr ^. PM.identifier
     , _timereportTaskId    = PM.trTask tr
-    , _timereportProjectId = pid
+    , _timereportProjectId = p ^. PM.identifier
     , _timereportDay       = PM.trStart tr
     , _timereportComment   = fromMaybe "" (PM.trComment tr)
     , _timereportAmount    = ndtConvert' (PM.trAmount tr)
-    , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
+    , _timereportType      = billableStatus p bs dt
     , _timereportClosed    =
         -- see [Note: editing timereports]
         not $
             PM.trStatus tr `elem` [0, 4]  -- reported or preliminary
-            && PM.trBillableStatus tr `elem` [1,3,4]  -- non-billable, billable or in-billing
+            && bs `elem` ["Non-billable", "Billable", "In-billing"]  -- non-billable, billable or in-billing
     }
 
 -- [Note: editing timereports]
 --
--- @pm-cli -- enumeration "Time report.Billable status"@
+-- @mega-repo-tool run pm-cli -- enumeration "Time report.Billable status"@
 --
 -- @
 -- IntMap [1 : Billable
@@ -364,8 +368,9 @@ makeTimereport pid tr = Timereport
 --        :4 : In billing
 --        :5 : Draft invoice
 --        :6 : Invoiced]
--- @-
--- % tajna run -r pm-cli -- enumeration 'Time report.Status'
+-- @
+--
+-- % mega-repo-tool run -r pm-cli -- enumeration 'Time report.Status'
 -- IntMap [0 : Reported
 --        :1 : Accepted
 --        :2 : Locked
@@ -378,10 +383,11 @@ makeTimereport pid tr = Timereport
 -- /TODO:/ absences should be EntryTypeAbsence
 -- seems that Nothing projectId is the thing there.
 --
-billableStatus :: Maybe PM.ProjectId -> Int -> T.EntryType
-billableStatus Nothing _ = T.EntryTypeAbsence
-billableStatus _ 3       = T.EntryTypeNotBillable
-billableStatus _ _       = T.EntryTypeBillable
+billableStatus :: PM.Project -> Text -> Maybe Text -> T.EntryType
+billableStatus _ "Non-billable" (Just "Balance leave") = T.EntryTypeBalanceAbsence
+billableStatus p "Non-billable" _  | isAbsence p       = T.EntryTypeAbsence
+billableStatus _ "Non-billable" _                      = T.EntryTypeNotBillable
+billableStatus _ _              _                      = T.EntryTypeBillable
 
 -- | Absences go into magic project.
 isAbsence :: PM.Project -> Bool
