@@ -111,10 +111,12 @@ test-suite unit-tests
     , env-config
     , futurice-postgres
     , futurice-prelude
+    , log-base
     , postgresql-simple
     , sisosota-client
     , tasty
     , tasty-hunit
     , tasty-quickcheck
+    , text
     , library-app
   default-language: Haskell2010
