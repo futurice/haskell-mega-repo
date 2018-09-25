@@ -1,10 +1,13 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 import Data.Either
+import Data.IORef
 import Database.PostgreSQL.Simple
 import Futurice.App.Sisosota.Types
-import Futurice.EnvConfig
 import Futurice.Postgres
 import Futurice.Prelude
+import Log.Data
+import Log.Logger
 import Prelude ()
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -15,6 +18,8 @@ import Futurice.App.Library.Types.BoardGameInformation
        (BoardGameInformationId (..))
 import Futurice.App.Library.Types.BookInformation      (BookInformationId (..))
 
+import qualified Data.Text as T
+
 main :: IO ()
 main = defaultMain tests
 
@@ -22,28 +27,38 @@ main = defaultMain tests
 testConnection :: (MonadIO m) => m (Pool Connection)
 testConnection = createPostgresPool defaultConnectInfo
 
+assertNoAttentionLogMessages :: Text -> IO ()
+assertNoAttentionLogMessages "" = pure ()
+assertNoAttentionLogMessages err = assertFailure (T.unpack err)
+
+withSimpleAttentionLogger :: (Logger -> IO r) -> IO Text
+withSimpleAttentionLogger act = do
+    ref <- newIORef ""
+    logger <- mkLogger "" (\logMessage -> case lmLevel logMessage of
+                              LogAttention -> modifyIORef ref (<> showLogMessage Nothing logMessage <> "\n")
+                              _ -> pure ())
+    _ <- act logger
+    attentionMessages <- readIORef ref
+    pure attentionMessages
+
 tests :: TestTree
 tests = testGroup "Sql tests"
-    [ testCase "Search bookInformation" $ withStderrLogger $ \logger -> do
+    [ testCase "Search bookInformation" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
           pp <- runLogT "testing" logger testConnection
           for_ allBookSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit Nothing :: IO [BookInformation]
-          pure ()
-    , testCase "Search bookInformation with search" $ withStderrLogger $ \logger -> do
+            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit Nothing :: IO [BookInformation])
+    , testCase "Search bookInformation with search" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
           pp <- runLogT "testing" logger testConnection
           for_ allBookSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: IO [BookInformation]
-          pure ()
-    , testCase "Search boardgameInformation" $ withStderrLogger $ \logger -> do
+            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: IO [BookInformation])
+    , testCase "Search boardgameInformation" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
           pp <- runLogT "testing" logger testConnection
           for_ allBoardGameSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit Nothing :: IO [BoardGameInformation]
-          pure ()
-    , testCase "Search boardgameInformation with search" $ withStderrLogger $ \logger -> do
+            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit Nothing :: IO [BoardGameInformation])
+    , testCase "Search boardgameInformation with search" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
           pp <- runLogT "testing" logger testConnection
           for_ allBoardGameSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: IO [BoardGameInformation]
-          pure ()
+            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: IO [BoardGameInformation])
     ]
   where
     testContentHash = head $ rights $ [contentHashFromText "DRmKYxSH8aggYWd7S5ZNIKPdcPRho6Taxx5BhHRC0cr-0B7OGttEi_mq6dr4JP1r_aVHg3SU-d6PTWuPx2SCkw=="] -- Partial!
