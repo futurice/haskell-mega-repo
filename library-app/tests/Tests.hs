@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+import Control.Concurrent.STM
 import Data.Either
-import Data.IORef
 import Database.PostgreSQL.Simple
 import Futurice.App.Sisosota.Types
 import Futurice.Postgres
@@ -33,12 +33,12 @@ assertNoAttentionLogMessages err = assertFailure (T.unpack err)
 
 withSimpleAttentionLogger :: (Logger -> IO r) -> IO Text
 withSimpleAttentionLogger act = do
-    ref <- newIORef ""
+    var <- newTVarIO ""
     logger <- mkLogger "" (\logMessage -> case lmLevel logMessage of
-                              LogAttention -> modifyIORef ref (<> showLogMessage Nothing logMessage <> "\n")
+                              LogAttention -> atomically $ modifyTVar' var (<> showLogMessage Nothing logMessage <> "\n")
                               _ -> pure ())
     _ <- act logger
-    attentionMessages <- readIORef ref
+    attentionMessages <- readTVarIO var
     pure attentionMessages
 
 tests :: TestTree
