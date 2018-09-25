@@ -122,9 +122,9 @@ hoursResponse interval = do
     -- no ApplicativeDo for now yet
     (reports, reportable, capacities, wh) <- (,,,)
         <$> H.timereports monthInterval
-        <*> reportableProjects                               -- reportable projects; the ones we can report
+        <*> reportableProjects            -- reportable projects; the ones we can report
         <*> (H.capacities monthInterval)  -- holiday names
-        <*> H.workingHours                                   -- working hours
+        <*> H.workingHours                -- working hours
 
     let holidayNames    = mkHolidayNames capacities
     let monthCapacities = mkMonthCapacities capacities
@@ -279,9 +279,10 @@ userResponse = User
       where
         timereportAverageUtz :: H.Timereport -> Average Float
         timereportAverageUtz report = case report ^. H.timereportType of
-            EntryTypeBillable    -> Average hours 100
-            EntryTypeNotBillable -> Average hours 0
-            EntryTypeAbsence     -> mempty
+            EntryTypeBillable       -> Average hours 100
+            EntryTypeNotBillable    -> Average hours 0
+            EntryTypeAbsence        -> mempty
+            EntryTypeBalanceAbsence -> mempty
           where
             NDT hours = fmap realToFrac (report ^. H.timereportAmount) :: NDT 'Hours Float
 
