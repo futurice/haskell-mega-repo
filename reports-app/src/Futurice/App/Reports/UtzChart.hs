@@ -108,10 +108,10 @@ timereportUtzPerWeek = fmap getAverage . Map.fromListWith (<>) . fmap mk
 -- Copied from hours-api
 -------------------------------------------------------------------------------
 
-billableStatus :: Maybe PM.ProjectId -> Int -> EntryType
-billableStatus Nothing _ = EntryTypeOther
-billableStatus _ 3       = EntryTypeNotBillable
-billableStatus _ _       = EntryTypeBillable
+billableStatus :: Maybe PM.ProjectId -> PM.EnumValue e f -> EntryType
+billableStatus Nothing _                = EntryTypeOther
+billableStatus _       (PM.EnumValue 3) = EntryTypeNotBillable
+billableStatus _       _                = EntryTypeBillable
 
 reportUtilizationAvg :: Getter PM.Timereport (Average Double)
 reportUtilizationAvg = getter $ \tr ->
