@@ -351,14 +351,26 @@ makeTimereport p tr bs dt = Timereport
     , _timereportComment   = fromMaybe "" (PM.trComment tr)
     , _timereportAmount    = ndtConvert' (PM.trAmount tr)
     , _timereportType      = billableStatus p bs dt
-    , _timereportClosed    =
-        -- see [Note: editing timereports]
-        not $
-            PM.trStatus tr `elem` [0, 4]  -- reported or preliminary
+    , _timereportClosed    = case PM.trStatus tr of
+        PM.EnumValue st -> not $
+            -- see [Note: editing timereports]
+            st `elem` [0, 4]  -- reported or preliminary
             && bs `elem` ["Non-billable", "Billable", "In-billing"]  -- non-billable, billable or in-billing
     }
 
 -- [Note: editing timereports]
+--
+-- The timereports/meta doesn't return the name of status enumeration,
+-- so we prefetched it: (This is TODO as 2018-09-25)
+--
+-- % mega-repo-tool run -r pm-cli -- enumeration 'Time report.Status'
+-- IntMap [0 : Reported
+--        :1 : Accepted
+--        :2 : Locked
+--        :4 : Preliminary]
+--
+-- The billableStatus works well, now. Here's enumeration values for
+-- the reference. We use textual names in code.
 --
 -- @mega-repo-tool run pm-cli -- enumeration "Time report.Billable status"@
 --
@@ -370,19 +382,7 @@ makeTimereport p tr bs dt = Timereport
 --        :6 : Invoiced]
 -- @
 --
--- % mega-repo-tool run -r pm-cli -- enumeration 'Time report.Status'
--- IntMap [0 : Reported
---        :1 : Accepted
---        :2 : Locked
---        :4 : Preliminary]
---
 
--- |
--- /TODO:/ we hard code enumeration values.
---
--- /TODO:/ absences should be EntryTypeAbsence
--- seems that Nothing projectId is the thing there.
---
 billableStatus :: PM.Project -> Text -> Maybe Text -> T.EntryType
 billableStatus _ "Non-billable" (Just "Balance leave") = T.EntryTypeBalanceAbsence
 billableStatus p "Non-billable" _  | isAbsence p       = T.EntryTypeAbsence

@@ -42,7 +42,7 @@ data Timereport = Timereport
     , trPerson          :: !UserId
     , trProject         :: !(Maybe ProjectId)
     , trStart           :: !Day   -- ^ The ''UTCTime' would be more precise, but we care about day more
-    , trStatus          :: !Int   -- TODO: make type. timereports/meta returns wrong data.
+    , trStatus          :: !(EnumValue Timereport "status") -- Note: metadata is wrong for this field. (2018-09-25)
     , trTravelAmount    :: !(Maybe Int)
     , trTravelComment   :: !(Maybe Text)
     }
