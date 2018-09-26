@@ -355,7 +355,7 @@ makeTimereport p tr bs dt = Timereport
         PM.EnumValue st -> not $
             -- see [Note: editing timereports]
             st `elem` [0, 4]  -- reported or preliminary
-            && bs `elem` ["Non-billable", "Billable", "In-billing"]  -- non-billable, billable or in-billing
+            && bs `elem` ["Non-billable", "Billable", "In billing"]  -- non-billable, billable or in-billing
     }
 
 -- [Note: editing timereports]
