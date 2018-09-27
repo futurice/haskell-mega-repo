@@ -25,6 +25,7 @@ import Futurice.Tribe
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
+import qualified Personio            as P
 
 -------------------------------------------------------------------------------
 -- Flowdock
@@ -98,6 +99,7 @@ data Contact avatar = Contact
     , contactCompetence :: !Text
     , contactExternal   :: !Bool
     , contactHrnumber   :: !(Maybe Int)
+    , contactPersonio   :: !P.EmployeeId
     }
   deriving stock
     ( Eq, Ord, Show, Generic, Typeable
@@ -131,4 +133,5 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "team"       $ toField contactTeam
         , (,) "competence" $ toField contactCompetence
         , (,) "hrnumber"   $ toField contactHrnumber
+        , (,) "personio"   $ toField contactPersonio
         ]
