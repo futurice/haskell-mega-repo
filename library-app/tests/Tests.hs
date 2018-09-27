@@ -4,6 +4,7 @@ import Control.Concurrent.STM
 import Data.Either
 import Database.PostgreSQL.Simple
 import Futurice.App.Sisosota.Types
+import Futurice.EnvConfig
 import Futurice.Postgres
 import Futurice.Prelude
 import Log.Data
@@ -23,19 +24,23 @@ import qualified Data.Text as T
 main :: IO ()
 main = defaultMain tests
 
--- TODO: how to change this take the connection details from env like the app
-testConnection :: (MonadIO m) => m (Pool Connection)
-testConnection = createPostgresPool defaultConnectInfo
+testConnection :: (MonadIO m, MonadLog m) => m (Pool Connection)
+testConnection = do
+    connectInfo <- getConfig' "TEST" envConnectInfo
+    createPostgresPool connectInfo
 
-assertNoAttentionLogMessages :: Text -> IO ()
-assertNoAttentionLogMessages "" = pure ()
-assertNoAttentionLogMessages err = assertFailure (T.unpack err)
+assertNoAttentionLogMessages :: LogT IO () -> IO ()
+assertNoAttentionLogMessages test = do
+    logMessages <- withSimpleAttentionLogger (\logger -> runLogT "testing" logger test)
+    case logMessages of
+      [] -> pure ()
+      xs -> assertFailure (T.unpack $ T.intercalate "\n" ((showLogMessage Nothing) <$> xs))
 
-withSimpleAttentionLogger :: (Logger -> IO r) -> IO Text
+withSimpleAttentionLogger :: (Logger -> IO r) -> IO [LogMessage]
 withSimpleAttentionLogger act = do
-    var <- newTVarIO ""
+    var <- newTVarIO []
     logger <- mkLogger "" (\logMessage -> case lmLevel logMessage of
-                              LogAttention -> atomically $ modifyTVar' var (<> showLogMessage Nothing logMessage <> "\n")
+                              LogAttention -> atomically $ modifyTVar' var (<> [logMessage])
                               _ -> pure ())
     _ <- act logger
     attentionMessages <- readTVarIO var
@@ -43,22 +48,22 @@ withSimpleAttentionLogger act = do
 
 tests :: TestTree
 tests = testGroup "Sql tests"
-    [ testCase "Search bookInformation" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
-          pp <- runLogT "testing" logger testConnection
+    [ testCase "Search bookInformation" $ assertNoAttentionLogMessages $ do
+          pp <- testConnection
           for_ allBookSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit Nothing :: IO [BookInformation])
-    , testCase "Search bookInformation with search" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
-          pp <- runLogT "testing" logger testConnection
+            fetchInformationsWithCriteria pp cri dir testLimit Nothing :: LogT IO [BookInformation]
+    , testCase "Search bookInformation with search" $ assertNoAttentionLogMessages $ do
+          pp <- testConnection
           for_ allBookSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: IO [BookInformation])
-    , testCase "Search boardgameInformation" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
-          pp <- runLogT "testing" logger testConnection
+            fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: LogT IO [BookInformation]
+    , testCase "Search boardgameInformation" $ assertNoAttentionLogMessages $ do
+          pp <- testConnection
           for_ allBoardGameSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit Nothing :: IO [BoardGameInformation])
-    , testCase "Search boardgameInformation with search" $ assertNoAttentionLogMessages =<< withSimpleAttentionLogger (\logger -> do
-          pp <- runLogT "testing" logger testConnection
+            fetchInformationsWithCriteria pp cri dir testLimit Nothing :: LogT IO [BoardGameInformation]
+    , testCase "Search boardgameInformation with search" $ assertNoAttentionLogMessages $ do
+          pp <- testConnection
           for_ allBoardGameSortCriteriaAndStart $ \cri -> for allDirections $ \dir ->
-            runLogT "testing" logger $ fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: IO [BoardGameInformation])
+            fetchInformationsWithCriteria pp cri dir testLimit (Just "testing") :: LogT IO [BoardGameInformation]
     ]
   where
     testContentHash = head $ rights $ [contentHashFromText "DRmKYxSH8aggYWd7S5ZNIKPdcPRho6Taxx5BhHRC0cr-0B7OGttEi_mq6dr4JP1r_aVHg3SU-d6PTWuPx2SCkw=="] -- Partial!
