@@ -90,6 +90,7 @@ employeeToContact e = Contact
     , contactCompetence = e ^. Personio.employeeRole
     , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
     , contactHrnumber   = e ^. Personio.employeeHRNumber
+    , contactPersonio   = e ^. Personio.employeeId
     }
   where
     fumLogin = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
