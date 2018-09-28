@@ -69,17 +69,21 @@ library
       Futurice.App.Library.Config
       Futurice.App.Library.Logic
       Futurice.App.Library.Markup
-      Futurice.App.Library.Pages.BookInformationPage
-      Futurice.App.Library.Pages.IndexPage
       Futurice.App.Library.Pages.AddItemPage
+      Futurice.App.Library.Pages.BoardGameInformationPage
+      Futurice.App.Library.Pages.BookInformationPage
+      Futurice.App.Library.Pages.EditItemPage
+      Futurice.App.Library.Pages.IndexPage
       Futurice.App.Library.Pages.PersonalLoansPage
       Futurice.App.Library.Types
       Futurice.App.Library.Types.AddItemRequest
       Futurice.App.Library.Types.BoardGameInformation
+      Futurice.App.Library.Types.BoardGameInformationResponse
       Futurice.App.Library.Types.BookInformation
       Futurice.App.Library.Types.BookInformationResponse
       Futurice.App.Library.Types.BookInformationByISBNResponse
       Futurice.App.Library.Types.BorrowRequest
+      Futurice.App.Library.Types.EditItemRequest
       Futurice.App.Library.Types.Item
       Futurice.App.Library.Types.Library
       Futurice.App.Library.Types.Loan
@@ -93,5 +97,27 @@ executable library-app-server
   build-depends:
       base >= 4.7 && <4.12
     , futurice-prelude
+    , library-app
+  default-language: Haskell2010
+
+test-suite unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Tests.hs
+  hs-source-dirs:
+      tests/
+  ghc-options: -Wall
+  build-depends:
+      base
+    , env-config
+    , futurice-postgres
+    , futurice-prelude
+    , log-base
+    , postgresql-simple
+    , sisosota-client
+    , stm
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , text
     , library-app
   default-language: Haskell2010
