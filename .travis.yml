@@ -8,6 +8,10 @@ branches:
   - master
   submodules: false
 
+# Services for integration tests
+services:
+  - postgresql
+
 # Caching so the next build will be fast too.
 cache:
   directories:
@@ -58,6 +62,13 @@ before_install:
 - DEB_BUILD_MAINT_OPTIONS=hardening=-all
 - dpkg-buildflags --get LDFLAGS
 - dpkg-buildflags --get CFLAGS
+
+# Create DB stuff
+- psql -c 'create database travis_ci_test;' -U postgres
+- psql -f library-app/schema.sql -U postgres travis_ci_test
+- export TEST_DB_URL=postgresql://postgres@/travis_ci_test
+
+
 # Install tools
 - scripts/travis.sh prepare $BUILD
 
