@@ -75,10 +75,7 @@ instance FromMultipart Mem AddBookInformation where
         <*> (lookupInputAndClean "isbn" multipartData >>= (validateISBN . T.filter (/= '-')))
         <*> lookupInputAndClean "author" multipartData
         <*> lookupInputAndClean "publisher" multipartData
-        <*> (lookupInputAndClean "published" multipartData >>=
-              (\x -> case decimal x of
-                       Left _ -> Nothing
-                       Right (num,_) -> Just num))
+        <*> (lookupInputAndClean "published" multipartData >>= readMaybe . T.unpack)
         <*> lookupInputAndClean "amazon-link" multipartData
         <*> pure (booksPerLibrary multipartData)
         <*> cover
