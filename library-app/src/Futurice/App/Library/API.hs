@@ -63,6 +63,8 @@ type IndexPageEndpoint = QueryParam "criteria" SortCriteria
                          :> QueryParam "start-book" BookInformationId
                          :> QueryParam "start-boardgame" BoardGameInformationId
                          :> QueryParam "search" Text
+                         :> QueryParam "library" HttpApiDataLibrary
+                         :> QueryParam "only-available" Text
                          :> Get '[HTML] (HtmlPage "indexpage")
 type BookCoverEndpoint = "book" :> "cover" :> Capture "picture" ContentHash :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
 type BookInformationPageEndpoint = "book" :> "page" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "bookinformation")

@@ -22,24 +22,30 @@ indexPage :: CriteriaAndData
           -> Maybe BookInformationId
           -> Maybe BoardGameInformationId
           -> Maybe Text
+          -> Maybe HttpApiDataLibrary
+          -> Maybe Text
           -> HtmlPage "indexpage"
-indexPage cd direction limit startBookInfoId startBoardGameInfoId search = page_ "Library" (Just NavHome) $ do
+indexPage cd direction limit startBookInfoId startBoardGameInfoId search library onlyAvailable = page_ "Library" (Just NavHome) $ do
     fullRow_ $
         div_ [class_ "small button-group", style_ "float: right"] $ do
-            a_ [class_ (currentPage Book <> "button"), href_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort SortTitle) Nothing Nothing Nothing Nothing Nothing] $ "Books"
-            a_ [class_ (currentPage BoardGame <> "button"), href_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort SortName) Nothing Nothing Nothing Nothing Nothing] $ "Boardgames"
+            a_ [class_ (currentPage Book <> "button"), href_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort SortTitle) Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ "Books"
+            a_ [class_ (currentPage BoardGame <> "button"), href_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort SortName) Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ "Boardgames"
     case cd of
       BookCD bookCriteria books -> do
           let bookIndexPageLink = indexPageLink (BookSort bookCriteria)
           paginationLinks cd
           div_ $ do
-              form_ [action_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort bookCriteria) (Just direction) (Just limit) startBookInfoId Nothing Nothing] $ do
-                  button_ [class_ "button", style_ "float: right"] "Submit"
-                  input_ [style_ "width: 90%;", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search", required_ ""]
+              form_ [action_ $ linkToText $ fieldLink indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ do
+                  div_ [ class_ "input-group"] $ do
+                      input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
+                      div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
                   input_ [hidden_ "", name_ "criteria", value_ (toQueryParam (BookSort bookCriteria))]
                   input_ [hidden_ "", name_ "direction", value_ (toQueryParam direction)]
                   input_ [hidden_ "", name_ "limit", value_ (toQueryParam limit)]
                   for_ startBookInfoId $ \infoid -> input_ [hidden_ "", name_ "start-book", value_ (toQueryParam infoid)]
+                  fullRow_ $ do
+                      librarySelect
+                      onlyAvailableCheckbox
           fullRow_ $ table_ [id_ "main"] $ do
               thead_ $ tr_ $ do
                   th_ "Cover"
@@ -58,13 +64,17 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search = page_
           let boardgameIndexPageLink = indexPageLink (BoardGameSort boardgameCriteria)
           paginationLinks cd
           div_ $ do
-              form_ [action_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort boardgameCriteria) (Just direction) (Just limit) Nothing startBoardGameInfoId Nothing] $ do
-                  button_ [class_ "button", style_ "float: right"] "Submit"
-                  input_ [style_ "width: 90%;", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search", required_ ""]
+              form_ [action_ $ linkToText $ fieldLink indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ do
+                  div_ [ class_ "input-group"] $ do
+                      input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
+                      div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
                   input_ [hidden_ "", name_ "criteria", value_ (toQueryParam (BoardGameSort boardgameCriteria))]
                   input_ [hidden_ "", name_ "direction", value_ (toQueryParam direction)]
                   input_ [hidden_ "", name_ "limit", value_ (toQueryParam limit)]
                   for_ startBoardGameInfoId $ \infoid -> input_ [hidden_ "", name_ "start-boardgame", value_ (toQueryParam infoid)]
+                  fullRow_ $ do
+                      librarySelect
+                      -- onlyAvailableCheckbox -- Removed for now as boardgames are not loanable
           fullRow_ $ table_ [id_ "main"] $ do
               thead_ $ tr_ $ do
                   th_ $ a_ [href_ $ linkToText $ boardgameIndexPageLink (BoardGameSort SortName)] "Name"
@@ -77,12 +87,22 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search = page_
           paginationLinks cd
 
   where
+      libraryCompare a = maybe False (\lib -> a == lib) (library >>= libraryData)
+      librarySelect =
+          select_ [data_ "futu-id" "filter-library-select", name_ "library", style_ "width: 15%; float: left;"] $ do
+              optionSelected_ (maybe True (const False) library)  [ value_ ""] $ "All libraries"
+              for_ usedLibraries $ \lib -> optionSelected_ (libraryCompare lib) [ value_ (libraryToText lib)] $ toHtml $ libraryToText lib
+      onlyAvailableCheckbox = div_ [class_ "column large-10"] $ do
+          case onlyAvailable of
+            Just _ -> input_ [type_ "checkbox", name_ "only-available", checked_ ]
+            Nothing -> input_ [type_ "checkbox", name_ "only-available"]
+          label_ "Show only available books"
       currentPage condition = case cd of
         BookCD _ _ -> if condition == Book then "" else "secondary "
         BoardGameCD _ _ -> if condition == BoardGame then "" else "secondary "
       indexPageLink oldcrit newcrit
-          | newcrit /= oldcrit = fieldLink indexPageGet (Just newcrit) (Just SortAsc) (Just limit) Nothing Nothing search
-          | otherwise          = fieldLink indexPageGet (Just newcrit) (Just $ reverseDir direction) (Just limit) Nothing Nothing search
+          | newcrit /= oldcrit = fieldLink indexPageGet (Just newcrit) (Just SortAsc) (Just limit) Nothing Nothing search library onlyAvailable
+          | otherwise          = fieldLink indexPageGet (Just newcrit) (Just $ reverseDir direction) (Just limit) Nothing Nothing search library onlyAvailable
       reverseDir SortDesc = SortAsc
       reverseDir SortAsc = SortDesc
       lastBookInfoId infos = case listToMaybe infos of
@@ -94,7 +114,7 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search = page_
       paginationLinks :: CriteriaAndData -> HtmlT Identity ()
       paginationLinks (BookCD criteria infos) = do
           for_ startBookInfoId $ \_ -> a_ [class_ "button", href_ "javascript:history.back()"] $ toHtml ("prev" :: Text)
-          unless (null infos) $ a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort criteria) (Just direction) (Just limit) (lastBookInfoId infos) Nothing search] $ toHtml ("next" :: Text)
+          unless (null infos) $ a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BookSort criteria) (Just direction) (Just limit) (lastBookInfoId infos) Nothing search library onlyAvailable] $ toHtml ("next" :: Text)
       paginationLinks (BoardGameCD criteria infos) = do
           for_ startBoardGameInfoId $ \_ -> a_ [class_ "button", href_ "javascript:history.back()"] $ toHtml ("prev" :: Text)
-          unless (null infos) $ a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort criteria) (Just direction) (Just limit) Nothing (lastBoardGameInfoId infos) search] $ toHtml ("next" :: Text)
+          unless (null infos) $ a_ [class_ "button", href_ $ linkToText $ fieldLink indexPageGet (Just $ BoardGameSort criteria) (Just direction) (Just limit) Nothing (lastBoardGameInfoId infos) search library onlyAvailable] $ toHtml ("next" :: Text)

@@ -7,6 +7,7 @@ module Futurice.App.Library (defaultMain) where
 import Codec.Picture                (DynamicImage, decodeImage)
 import Crypto.Hash.SHA256           (hmac)
 import Data.Char                    (isSpace)
+import Data.Maybe                   (isJust)
 import Data.Time
        (defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat)
 import FUM.Types.Login
@@ -248,20 +249,26 @@ indexPageImpl :: Ctx
               -> Maybe BookInformationId
               -> Maybe BoardGameInformationId
               -> Maybe Text
+              -> Maybe HttpApiDataLibrary
+              -> Maybe Text
               -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx criteria direction limit startBookId startBoardGameId search = do
-    crit <- pure $ fromMaybe (BookSort SortTitle) criteria
-    dir <- pure $ fromMaybe SortAsc direction
-    lim <- pure $ fromMaybe 10 limit
+indexPageImpl ctx criteria direction limit startBookId startBoardGameId search library onlyAvailableText = do
+    let lib = library >>= libraryData
+        onlyAvailable = isJust onlyAvailableText
+        cleanedSearch = search >>= (\s -> if s == "" then Nothing else Just s)
+        crit = fromMaybe (BookSort SortTitle) criteria
+        dir = fromMaybe SortAsc direction
+        lim = fromMaybe 10 limit
     case crit of
       (BookSort bookCrit) -> do
           bookInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBookInformation (ctxPostgres ctx) x) startBookId
-          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BookCS bookCrit bookInfo) dir lim search
-          pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search
+          _ <- runLogT "test" (ctxLogger ctx) $ logInfo_ $ "Only available is " <> T.pack (show onlyAvailable)
+          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BookCS bookCrit bookInfo) dir lim cleanedSearch lib onlyAvailable
+          pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
       (BoardGameSort boardgameCrit) -> do
           boardGameInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBoardGameInformation (ctxPostgres ctx) x) startBoardGameId
-          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BoardGameCS boardgameCrit boardGameInfo) dir lim search
-          pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search
+          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BoardGameCS boardgameCrit boardGameInfo) dir lim cleanedSearch lib onlyAvailable
+          pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
