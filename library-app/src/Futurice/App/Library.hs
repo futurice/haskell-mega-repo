@@ -306,16 +306,19 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
 snatchBookImpl :: Ctx -> Maybe Login -> ItemId -> Handler Loan
 snatchBookImpl ctx login iid = withAuthUser ctx login $ (\l -> do
     emap <- liftIO $ getPersonioDataMap ctx
-    case emap ^.at l of
-      Nothing -> throwError err403
-      Just es -> do
-          loanData <- runLogT "snatch-book" (ctxLogger ctx) $ snatchBook (ctxPostgres ctx) (es ^. P.employeeId) iid
-          case loanData of
-            Nothing -> throwError $ err404 { errBody = "Couln't loan book" }
-            Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
+    newLoan <- runMaybeT $ do
+        loanData <- MaybeT $ runLogT "fetch-loanid" (ctxLogger ctx) $ fetchLoanIdWithItemId (ctxPostgres ctx) iid
+        _ <- runLogT "return-item" (ctxLogger ctx) $ returnItem (ctxPostgres ctx) (ldLoanId loanData)
+        itemData <- MaybeT $ runLogT "fetch-itemdata" (ctxLogger ctx) $ fetchItem (ctxPostgres ctx) iid
+        es <- MaybeT $ pure $ emap ^.at l
+        newLoanData <- case itemData of
+          ItemData _ library (BookInfoId binfoid) -> MaybeT $ runLogT "borrow-book" (ctxLogger ctx) (borrowBook (ctxPostgres ctx) (es ^. P.employeeId) (BorrowRequest binfoid library))
+          _ -> throwError err403
+        pure $ getLoanImpl ctx (ldLoanId newLoanData)
+    fromMaybe (throwError err403 { errBody = "Couldn't make forced loan"}) newLoan)
 
 returnLoanImpl :: Ctx -> LoanId -> Handler Bool
-returnLoanImpl ctx lid = runLogT "return-book" (ctxLogger ctx) (executeReturnBook (ctxPostgres ctx) lid)
+returnLoanImpl ctx lid = runLogT "return-loan" (ctxLogger ctx) $ returnItem (ctxPostgres ctx) lid
 
 getBooksImpl :: Ctx -> Handler [BookInformationResponse]
 getBooksImpl ctx = do

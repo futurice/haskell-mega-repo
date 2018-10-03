@@ -31,6 +31,18 @@ futu.onload(function () {
     });
   });
 
+  $$("button[data-futu-id=snatch-item]").forEach(function (btn) {
+    buttonOnClick(btn, function () {
+        // prevent dbl-click
+        btn.disabled = true;
+        var itemid = btn.dataset.itemId;
+        fetch("/book/snatch/" + itemid, { method: "POST"})
+            .then(function (response) { console.log("Force borrow was successful"); location=location.href; })
+            .catch(function (error) { console.log("Couldn't force borrow book") });
+    });
+  });
+
+
     var isbnCheck = function(isbn) {
         if (/[^0-9\-]+/g.test(isbn)) {
             var isbnAlert = document.createElement("span");
