@@ -48,7 +48,11 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                       tbody_ $ for_ (fst $ partitionByLoan bs) $ \b ->
                         for_ (loanMap ^.at (_booksBookId b)) $ \(_, day, person) -> tr_ $ do
                           td_ $ toHtml $ (idToName es $ person)
-                          td_ $ toHtml $ T.pack $ show day
+                          td_ $ do
+                              div_ [ style_ "float: left;"] $ toHtml $ T.pack $ show day
+                              button_ [class_ "button tiny",
+                                          data_ "futu-id" "snatch-item",
+                                          data_ "item-id" (T.pack $ show (_booksBookId b))] $ toHtml ("Snatch" :: Text)
               _ -> pure ()
     where
       idT :: Text -> Text

@@ -104,14 +104,6 @@ makeLoan ctx date iid (P.EmployeeId eid) = do
     _ <- safePoolExecute ctx "INSERT INTO library.loan (date_loaned, personio_id, item_id) VALUES (?,?,?)" (date, toInteger eid, iid)
     listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only iid)
 
-makeForcedLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> Day -> LoanId -> P.EmployeeId -> m (Maybe LoanData)
-makeForcedLoan ctx date lid (P.EmployeeId eid) = do
-    result <- safePoolExecute ctx "UPDATE library.loan SET date_loaned = ?, personio_id = ? WHERE loan_id = ?" (date, toInteger eid, lid)
-    if result == 1 then
-      listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
-    else
-      pure Nothing
-
 fetchLoansWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [ItemId] -> m [LoanData]
 fetchLoansWithItemIds ctx iids = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id in ?;" (Only (In iids))
 
@@ -122,13 +114,6 @@ borrowBook ctx eid (BorrowRequest binfoid _) = do
     runMaybeT $ do
         freeBook <- MaybeT $ fetchItemsWithoutLoans ctx books
         MaybeT $ makeLoan ctx now freeBook eid
-
-snatchBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> P.EmployeeId -> ItemId -> m (Maybe LoanData)
-snatchBook ctx eid iid = do
-    now <- currentDay
-    runMaybeT $ do
-        (LoanData lid _ _ _) <- MaybeT $ fetchLoanByItemId ctx iid
-        MaybeT $ makeForcedLoan ctx now lid eid
 
 loans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [LoanData]
 loans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
