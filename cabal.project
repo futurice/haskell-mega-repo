@@ -1,4 +1,4 @@
-index-state: 2018-09-18T15:44:42Z
+index-state: 2018-10-02T10:27:01Z
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
@@ -46,13 +46,12 @@ allow-newer:
   diagrams-rasterific:JuicyPixels,
   diagrams-svg:JuicyPixels
 
--- phadej's libs QuickCheck and other
 allow-newer:
-  kleene:QuickCheck,
-  step-function:QuickCheck,
-  base64-bytestring-type:QuickCheck,
-  tree-diff:QuickCheck,
   tdigest:vector-algorithms
+
+-- stm 2.5
+allow-newer:
+  servant-client:stm
 
 allow-newer:
   *:Cabal
@@ -91,6 +90,7 @@ packages:
   futurice-servant/
   futurice-signed/
   futurice-tribes/
+  fuqu/
   github-proxy/
   github-sync/
   haxl-fxtra/

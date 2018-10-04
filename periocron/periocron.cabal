@@ -36,7 +36,7 @@ library
     , lifted-base
     , mtl
     , nf
-    , stm
+    , stm >=2.5
     , text
     , time
     , transformers

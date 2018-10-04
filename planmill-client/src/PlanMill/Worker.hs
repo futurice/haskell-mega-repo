@@ -1,18 +1,23 @@
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DerivingStrategies   #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module PlanMill.Worker where
 
-import Control.Concurrent             (ThreadId, forkFinally)
+import Control.Concurrent             (ThreadId, forkFinally, killThread)
 import Control.Concurrent.STM         (atomically)
 import Control.Concurrent.STM.TBQueue
-       (TBQueue, newTBQueue, readTBQueue, writeTBQueue)
+       (TBQueue, isFullTBQueue, lengthTBQueue, newTBQueue, readTBQueue,
+       writeTBQueue)
 import Control.Concurrent.STM.TMVar
        (TMVar, newEmptyTMVar, putTMVar, readTMVar)
+import Control.Exception
+       (AsyncException (..), asyncExceptionFromException)
 import Control.Exception              (throwIO)
 import Control.Monad.Http             (runHttpT)
-import Data.Aeson.Compat              (FromJSON)
+import Data.Aeson.Compat              (FromJSON, object, (.=))
 import Futurice.CryptoRandom          (mkCryptoGen, runCRandTThrow')
 import Futurice.Prelude
 import Prelude ()
@@ -29,6 +34,10 @@ data Job where
     Job :: (FromJSON a, NFData a)
         => TMVar (Either SomeException a) -> PlanMill a -> Job
 
+data QueueFullException = QueueFullException
+  deriving stock Show
+  deriving anyclass (Exception)
+
 submitPlanMill
     :: (FromJSON a, NFData a)
     => Workers
@@ -42,11 +51,19 @@ submitPlanMillE
     -> PlanMill a
     -> IO (Either SomeException a)
 submitPlanMillE (Workers q _) pm = do
-    tmvar <- atomically $ do
+    tmvarE <- atomically $ do
         tmvar <- newEmptyTMVar
-        writeTBQueue q (Job tmvar pm)
-        return tmvar
-    atomically (readTMVar tmvar)
+        full <- isFullTBQueue q
+        if full
+        then return (Left QueueFullException)
+        else do
+            writeTBQueue q (Job tmvar pm)
+            return (Right tmvar)
+
+    -- wait.
+    case tmvarE of
+        Left e      -> return (Left (SomeException e))
+        Right tmvar -> atomically (readTMVar tmvar)
 
 workers
     :: Logger
@@ -65,7 +82,9 @@ workers lgr mgr cfg names = do
   where
     cleanup :: Either SomeException () -> IO ()
     cleanup e = runLogT "workers" lgr $
-        logAttention "Thread died" (show e)
+        case first asyncExceptionFromException e of
+            Left (Just ThreadKilled) -> logInfo_ "Thread killed"
+            _                        -> logAttention "Thread died" (show e)
 
     loop name q g = do
         Job tmvar pm <- atomically (readTBQueue q)
@@ -85,3 +104,13 @@ workers lgr mgr cfg names = do
             Right (a, g') -> do
                 atomically (putTMVar tmvar (Right a))
                 loop name q g'
+
+closeWorkers :: Workers -> LogT IO ()
+closeWorkers (Workers q tids) = do
+    logInfo_ "Closing workers"
+
+    n <- lift $ atomically $ lengthTBQueue q
+    logInfoI "Length of the work queue $n" $ object [ "n" .= n ]
+
+    for_ tids $ \tid -> do
+        lift (killThread tid)

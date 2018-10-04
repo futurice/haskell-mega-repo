@@ -16,7 +16,8 @@ import Futurice.Postgres
 import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
-import PlanMill.Worker           (Workers, submitPlanMill, workers)
+import PlanMill.Worker
+       (Workers, closeWorkers, submitPlanMill, workers)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -51,6 +52,8 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
         if v == "without-timereports"
         then updateWithoutTimereports pool ws
         else updateAllTimereports pool ws now
+
+        closeWorkers ws
 
 -------------------------------------------------------------------------------
 -- Intervals
