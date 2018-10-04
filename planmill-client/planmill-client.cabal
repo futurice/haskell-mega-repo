@@ -81,7 +81,7 @@ library
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
-    , stm
+    , stm >= 2.5.0.0
     , swagger2
     , text
     , time

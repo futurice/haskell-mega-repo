@@ -52,7 +52,7 @@ getMonotonicClock = liftIO $ Clock.getTime Clock.Monotonic
 data Options = Options
     { _optionsLogger         :: !Logger
     , _optionsInterval       :: !TimeSpec
-    , _optionsConcurrentJobs :: !Int
+    , _optionsConcurrentJobs :: !Integer
     }
 
 -- | Create 'Options' object.
