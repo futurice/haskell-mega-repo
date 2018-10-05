@@ -249,7 +249,7 @@ fetchInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, Mo
                                  -> SortDirection
                                  -> Int
                                  -> Maybe Text
-                                 -> Maybe Library
+                                 -> LibraryOrAll
                                  -> Bool
                                  -> m [a]
 fetchInformationsWithCriteria ctx criteria direction limit search library onlyAvailable = case criteria of
@@ -260,46 +260,46 @@ fetchInformationsWithCriteria ctx criteria direction limit search library onlyAv
   where
     fetchInfo :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, FromRow a, ToField c, ToField d) => SortCriteria -> Maybe (c, d) -> m [a]
     fetchInfo crit info = case (info, search, library, onlyAvailable) of
-      (Just (infoid, ii), Nothing, Nothing, False) -> safePoolQuery
+      (Just (infoid, ii), Nothing, AllLibraries, False) -> safePoolQuery
                               ctx
                               ((selectStatement crit <> " WHERE " <> startPos crit direction <> sortCriteria crit direction) <> " LIMIT ?")
                               $ (ii, infoid, limit)
-      (Just (infoid, ii), Just s, Nothing, False) -> safePoolQuery
+      (Just (infoid, ii), Just s, AllLibraries, False) -> safePoolQuery
                              ctx
                              ((selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> searchSqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
                              $ (ii, infoid, s, limit)
-      (Nothing, Nothing, Nothing, False) -> safePoolQuery ctx (selectStatement crit <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
-      (Nothing, Just s, Nothing, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> searchSqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
-      (Just (infoid, ii), Nothing, Just lib, False) -> safePoolQuery
+      (Nothing, Nothing, AllLibraries, False) -> safePoolQuery ctx (selectStatement crit <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
+      (Nothing, Just s, AllLibraries, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> searchSqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
+      (Just (infoid, ii), Nothing, JustLibrary lib, False) -> safePoolQuery
                               ctx
                               ((selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> librarySqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
                               $ (ii, infoid, lib, limit)
-      (Just (infoid, ii), Just s, Just lib, False) -> safePoolQuery
+      (Just (infoid, ii), Just s, JustLibrary lib, False) -> safePoolQuery
                              ctx
                              ((selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> searchSqlString crit <> " AND " <> librarySqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
                              $ (ii, infoid, s, lib, limit)
-      (Nothing, Nothing, Just lib, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> librarySqlString crit <> sortCriteria crit direction <> " LIMIT ?") (lib, limit)
-      (Nothing, Just s, Just lib, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> searchSqlString crit <> " AND " <> librarySqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, lib, limit)
-      (Just (infoid, ii), Nothing, Nothing, True) -> safePoolQuery
+      (Nothing, Nothing, JustLibrary lib, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> librarySqlString crit <> sortCriteria crit direction <> " LIMIT ?") (lib, limit)
+      (Nothing, Just s, JustLibrary lib, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> searchSqlString crit <> " AND " <> librarySqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, lib, limit)
+      (Just (infoid, ii), Nothing, AllLibraries, True) -> safePoolQuery
                               ctx
                               (selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> availabilitySqlString crit Nothing <> sortCriteria crit direction <> " LIMIT ?")
                               $ (ii, infoid, limit)
-      (Just (infoid, ii), Just s, Nothing, True) -> safePoolQuery
+      (Just (infoid, ii), Just s, AllLibraries, True) -> safePoolQuery
                              ctx
                              (selectStatement crit <> " WHERE " <> wherewrapper [startPos crit direction, searchSqlString crit, availabilitySqlString crit Nothing] <> sortCriteria crit direction <> " LIMIT ?")
                              $ (ii, infoid, s, limit)
-      (Nothing, Nothing, Nothing, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> availabilitySqlString crit Nothing <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
-      (Nothing, Just s, Nothing, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [searchSqlString crit, availabilitySqlString crit Nothing] <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
-      (Just (infoid, ii), Nothing, Just lib, True) -> safePoolQuery
+      (Nothing, Nothing, AllLibraries, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> availabilitySqlString crit Nothing <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
+      (Nothing, Just s, AllLibraries, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [searchSqlString crit, availabilitySqlString crit Nothing] <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
+      (Just (infoid, ii), Nothing, JustLibrary lib, True) -> safePoolQuery
                               ctx
                               ((selectStatement crit <> " WHERE " <> wherewrapper [startPos crit direction,librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction) <> " LIMIT ?")
                               $ (ii, infoid, lib, lib, limit)
-      (Just (infoid, ii), Just s, Just lib, True) -> safePoolQuery
+      (Just (infoid, ii), Just s, JustLibrary lib, True) -> safePoolQuery
                              ctx
                              ((selectStatement crit <> " WHERE " <> wherewrapper [startPos crit direction, searchSqlString crit, librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction) <> " LIMIT ?")
                              $ (ii, infoid, s, lib, lib, limit)
-      (Nothing, Nothing, Just lib, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction <> " LIMIT ?") (lib, lib, limit)
-      (Nothing, Just s, Just lib, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [searchSqlString crit, librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction <> " LIMIT ?") (s, lib, lib, limit)
+      (Nothing, Nothing, JustLibrary lib, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction <> " LIMIT ?") (lib, lib, limit)
+      (Nothing, Just s, JustLibrary lib, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [searchSqlString crit, librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction <> " LIMIT ?") (s, lib, lib, limit)
     wherewrapper = fold . intersperse " AND "
 
 

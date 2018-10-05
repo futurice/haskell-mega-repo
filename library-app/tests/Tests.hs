@@ -74,6 +74,6 @@ tests = testGroup "Sql tests"
     allDirections = [minBound .. maxBound] :: [SortDirection]
     allBookSortCriteriaAndStart = concat [(flip BookCS Nothing) <$> allBookCriterias, (flip BookCS (Just testBookInformation)) <$> allBookCriterias]
     allBoardGameSortCriteriaAndStart = concat [(flip BoardGameCS Nothing) <$> allBoardGameCriterias, (flip BoardGameCS (Just testBoardGameInformation)) <$> allBoardGameCriterias]
-    allTestLibraries = Nothing : (Just <$> allLibraries)
+    allTestLibraries = AllLibraries : (JustLibrary <$> allLibraries)
     allAvailibilities = [False, True]
     testLimit = 20

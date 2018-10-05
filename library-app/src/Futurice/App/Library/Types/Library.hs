@@ -26,7 +26,9 @@ data Library
     | UnknownLibrary
     deriving (Eq, Show, Ord, Typeable, Generic)
 
-newtype HttpApiDataLibrary = HttpApiDataLibrary { libraryData :: Maybe Library }
+data LibraryOrAll = AllLibraries
+                  | JustLibrary Library
+                  deriving (Eq)
 
 deriveGeneric ''Library
 
@@ -76,13 +78,10 @@ instance FromJSON Library where
         office <- l .: "office"
         pure $ libraryFromText office
 
-instance ToHttpApiData HttpApiDataLibrary where
-    toUrlPiece (HttpApiDataLibrary (Just lib)) = libraryToText lib
-    toUrlPiece (HttpApiDataLibrary Nothing) = ""
+instance ToHttpApiData LibraryOrAll where
+    toUrlPiece AllLibraries = "all"
+    toUrlPiece (JustLibrary lib) = libraryToText lib
 
-instance FromHttpApiData HttpApiDataLibrary where
-    parseUrlPiece library = case officeFromText library of
-      Just office                      -> Right $ HttpApiDataLibrary $ Just $ OfficeLibrary office
-      Nothing | library == "Elibrary"  -> Right $ HttpApiDataLibrary $ Just Elibrary
-              | library == ""          -> Right $ HttpApiDataLibrary Nothing
-              | otherwise              -> Left "No matching library"
+instance FromHttpApiData LibraryOrAll where
+    parseUrlPiece "all" = Right AllLibraries
+    parseUrlPiece lib = Right $ JustLibrary $ libraryFromText lib

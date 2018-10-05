@@ -249,11 +249,12 @@ indexPageImpl :: Ctx
               -> Maybe BookInformationId
               -> Maybe BoardGameInformationId
               -> Maybe Text
-              -> Maybe HttpApiDataLibrary
+              -> Maybe LibraryOrAll
               -> Maybe Text
               -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx criteria direction limit startBookId startBoardGameId search library onlyAvailableText = do
-    let lib = library >>= libraryData
+    -- default values
+    let lib = fromMaybe AllLibraries library
         onlyAvailable = isJust onlyAvailableText
         cleanedSearch = search >>= (\s -> if s == "" then Nothing else Just s)
         crit = fromMaybe (BookSort SortTitle) criteria
@@ -262,7 +263,6 @@ indexPageImpl ctx criteria direction limit startBookId startBoardGameId search l
     case crit of
       (BookSort bookCrit) -> do
           bookInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBookInformation (ctxPostgres ctx) x) startBookId
-          _ <- runLogT "test" (ctxLogger ctx) $ logInfo_ $ "Only available is " <> T.pack (show onlyAvailable)
           bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BookCS bookCrit bookInfo) dir lim cleanedSearch lib onlyAvailable
           pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
       (BoardGameSort boardgameCrit) -> do
@@ -306,14 +306,14 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
 snatchBookImpl :: Ctx -> Maybe Login -> ItemId -> Handler Loan
 snatchBookImpl ctx login iid = withAuthUser ctx login $ (\l -> do
     emap <- liftIO $ getPersonioDataMap ctx
-    newLoan <- runMaybeT $ do
-        loanData <- MaybeT $ runLogT "fetch-loanid" (ctxLogger ctx) $ fetchLoanIdWithItemId (ctxPostgres ctx) iid
-        _ <- runLogT "return-item" (ctxLogger ctx) $ returnItem (ctxPostgres ctx) (ldLoanId loanData)
-        itemData <- MaybeT $ runLogT "fetch-itemdata" (ctxLogger ctx) $ fetchItem (ctxPostgres ctx) iid
+    newLoan <- runLogT "snatch" (ctxLogger ctx) $ runMaybeT $ do
+        loanData <- MaybeT $ fetchLoanIdWithItemId (ctxPostgres ctx) iid
+        _ <- returnItem (ctxPostgres ctx) (ldLoanId loanData)
+        itemData <- MaybeT $ fetchItem (ctxPostgres ctx) iid
         es <- MaybeT $ pure $ emap ^.at l
         newLoanData <- case itemData of
-          ItemData _ library (BookInfoId binfoid) -> MaybeT $ runLogT "borrow-book" (ctxLogger ctx) (borrowBook (ctxPostgres ctx) (es ^. P.employeeId) (BorrowRequest binfoid library))
-          _ -> throwError err403
+           ItemData _ library (BookInfoId binfoid) -> MaybeT $ borrowBook (ctxPostgres ctx) (es ^. P.employeeId) (BorrowRequest binfoid library)
+           _ -> throwError err403
         pure $ getLoanImpl ctx (ldLoanId newLoanData)
     fromMaybe (throwError err403 { errBody = "Couldn't make forced loan"}) newLoan)
 
