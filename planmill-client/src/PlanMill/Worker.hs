@@ -14,8 +14,7 @@ import Control.Concurrent.STM.TBQueue
 import Control.Concurrent.STM.TMVar
        (TMVar, newEmptyTMVar, putTMVar, readTMVar)
 import Control.Exception
-       (AsyncException (..), asyncExceptionFromException)
-import Control.Exception              (throwIO)
+       (AsyncException (..), asyncExceptionFromException, throwIO)
 import Control.Monad.Http             (runHttpT)
 import Data.Aeson.Compat              (FromJSON, object, (.=))
 import Futurice.CryptoRandom          (mkCryptoGen, runCRandTThrow')

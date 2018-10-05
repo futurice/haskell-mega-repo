@@ -73,6 +73,7 @@ library
     , parsec
     , process
     , process-extras
+    , raw-strings-qq
     , semigroups
     , tagged
     , tdigest
