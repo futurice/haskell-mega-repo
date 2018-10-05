@@ -22,7 +22,7 @@ indexPage :: CriteriaAndData
           -> Maybe BookInformationId
           -> Maybe BoardGameInformationId
           -> Maybe Text
-          -> Maybe HttpApiDataLibrary
+          -> Maybe LibraryOrAll
           -> Maybe Text
           -> HtmlPage "indexpage"
 indexPage cd direction limit startBookInfoId startBoardGameInfoId search library onlyAvailable = page_ "Library" (Just NavHome) $ do
@@ -87,10 +87,10 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search library
           paginationLinks cd
 
   where
-      libraryCompare a = maybe False (\lib -> a == lib) (library >>= libraryData)
+      libraryCompare a = maybe False (\lib -> JustLibrary a == lib) library
       librarySelect =
           select_ [data_ "futu-id" "filter-library-select", name_ "library", style_ "width: 15%; float: left;"] $ do
-              optionSelected_ (maybe True (const False) library)  [ value_ ""] $ "All libraries"
+              optionSelected_ (maybe True (const False) library)  [ value_ "all"] $ "All libraries"
               for_ usedLibraries $ \lib -> optionSelected_ (libraryCompare lib) [ value_ (libraryToText lib)] $ toHtml $ libraryToText lib
       onlyAvailableCheckbox = div_ [class_ "column large-10"] $ do
           case onlyAvailable of

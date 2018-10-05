@@ -8,7 +8,6 @@ module Futurice.App.Library.Types.Loan where
 
 import Data.Aeson
 import Database.PostgreSQL.Simple.FromField
-import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToField
 import Futurice.Generics
 import Futurice.Prelude
@@ -52,8 +51,6 @@ instance ToJSON Loan where
         , "library" .= _itemLibrary item
         ]
 
-instance FromRow LoanId where
-    fromRow = field
 instance ToParamSchema LoanId where toParamSchema = newtypeToParamSchema
 instance ToSchema LoanId where declareNamedSchema = newtypeDeclareNamedSchema
 instance ToSchema Loan
