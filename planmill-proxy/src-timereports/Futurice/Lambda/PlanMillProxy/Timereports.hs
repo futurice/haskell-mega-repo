@@ -17,7 +17,7 @@ import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
 import PlanMill.Worker
-       (Workers, closeWorkers, submitPlanMill, workers)
+       (Workers, closeWorkers, submitPlanMillE, workers)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -43,15 +43,15 @@ instance Configure Config where
 planMillProxyTimereportsLambda :: AwsLambdaHandler
 planMillProxyTimereportsLambda = makeAwsLambda impl where
     impl :: LambdaContext -> AWSEnv -> Config -> Logger -> Manager -> Value -> LogT IO ()
-    impl _ _ Config {..} lgr mgr v = do
+    impl lc _ Config {..} lgr mgr v = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
         ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
         now <- currentTime
 
         if v == "without-timereports"
-        then updateWithoutTimereports pool ws
-        else updateAllTimereports pool ws now
+        then updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws
+        else updateAllTimereports ((lcRemainingTimeInMillis lc)) pool ws now
 
         closeWorkers ws
 
@@ -75,8 +75,8 @@ intervals =
 
 -- | Update timereports for people without any timereports
 updateWithoutTimereports
-    :: Pool Connection -> Workers -> LogT IO ()
-updateWithoutTimereports pool ws = for_ intervals $ \interval -> do
+    :: IO Int -> Pool Connection -> Workers -> LogT IO ()
+updateWithoutTimereports remaining pool ws = for_ intervals $ \interval -> do
     let dayMin = inf interval
     let dayMax = sup interval
 
@@ -85,17 +85,19 @@ updateWithoutTimereports pool ws = for_ intervals $ \interval -> do
         , "max" .= dayMax
         ]
 
-    res <- liftIO $ tryDeep $ submitPlanMill ws $ PM.queryToRequest usersQuery
-    for_ res $ \allUsers -> do
-        let allUidsSet = Set.fromList $ allUsers ^.. traverse . PM.identifier
+    res <- liftIO $ submitPlanMillE ws $ PM.queryToRequest usersQuery
+    case res of
+        Left exc -> logAttention "Exception" $ object [ "exc" .= show exc ]
+        Right allUsers -> do
+            let allUidsSet = Set.fromList $ allUsers ^.. traverse . PM.identifier
 
-        uids <- Postgres.fromOnly <$$> safePoolQuery_ pool selectUsersQuery
-        let uidsSet = Set.fromList uids
-        let uidsWithout = Set.difference allUidsSet uidsSet
+            uids <- Postgres.fromOnly <$$> safePoolQuery_ pool selectUsersQuery
+            let uidsSet = Set.fromList uids
+            let uidsWithout = Set.difference allUidsSet uidsSet
 
-        logInfo "Users without timereports" uidsWithout
+            logInfo "Users without timereports" uidsWithout
 
-        for_ uidsWithout (updateTimereportsForUser pool ws dayMin dayMax)
+            for_ uidsWithout (updateTimereportsForUser remaining pool ws dayMin dayMax)
   where
     selectUsersQuery :: Postgres.Query
     selectUsersQuery = fromString $ unwords $
@@ -108,8 +110,8 @@ updateWithoutTimereports pool ws = for_ intervals $ \interval -> do
 
 -- | Update timereports.
 updateAllTimereports
-    :: Pool Connection -> Workers -> UTCTime -> LogT IO ()
-updateAllTimereports pool ws now = do
+    :: IO Int -> Pool Connection -> Workers -> UTCTime -> LogT IO ()
+updateAllTimereports remaining pool ws now = do
     logInfo_ "Updating timereports for users"
 
     -- We want a UTC 02:00 point before `now`.
@@ -131,7 +133,7 @@ updateAllTimereports pool ws now = do
             , "max"  .= dayMax
             ]
 
-    for_ uids (updateTimereportsForUser pool ws dayMin dayMax)
+    for_ uids (updateTimereportsForUser remaining pool ws dayMin dayMax)
   where
     selectUids :: UTCTime -> NonEmpty (PM.Interval Day) -> LogT IO ([PM.UserId], Day, Day)
     selectUids stamp (i :| is) = do
@@ -154,40 +156,44 @@ updateAllTimereports pool ws now = do
         , ";"
         ]
 
-
-
 -------------------------------------------------------------------------------
 -- Update timereports of user
 -------------------------------------------------------------------------------
 
-updateTimereportsForUser :: Pool Connection -> Workers -> Day -> Day -> PM.UserId -> LogT IO ()
-updateTimereportsForUser pool ws dayMin dayMax uid = do
-    let interval = dayMin ... dayMax
-    let q = PM.QueryTimereports (Just interval) uid
+updateTimereportsForUser :: IO Int -> Pool Connection -> Workers -> Day -> Day -> PM.UserId -> LogT IO ()
+updateTimereportsForUser remaining pool ws dayMin dayMax uid = do
+    remaining' <- liftIO remaining
+    if remaining' < 35 * 1000  -- PlanMill make take 30 seconds to answer
+    then logAttentionI "Aborting rest jobs: $remaining ms remaining" $ object [ "remaining" .= remaining' ]
+    else do
+        let interval = dayMin ... dayMax
+        let q = PM.QueryTimereports (Just interval) uid
 
-    -- Fetch timereports from planmill
-    res <- liftIO $ tryDeep $ submitPlanMill ws $ PM.queryToRequest q
+        -- Fetch timereports from planmill
+        res <- liftIO $ submitPlanMillE ws $ PM.queryToRequest q
 
-    for_ res $ \tr -> do
-        -- Check what timereports we have stored, remove ones not in planmill anymore
-        let planmillTrids = Set.fromList (tr ^.. traverse . PM.identifier)
-        postgresTrids <- toTrids <$> safePoolQuery pool selectQuery (uid, dayMin, dayMax)
+        case res of
+            Left exc -> logAttention "Exception" $ object [ "exc" .= show exc ]
+            Right tr -> do
+                -- Check what timereports we have stored, remove ones not in planmill anymore
+                let planmillTrids = Set.fromList (tr ^.. traverse . PM.identifier)
+                postgresTrids <- toTrids <$> safePoolQuery pool selectQuery (uid, dayMin, dayMax)
 
-        let notInPlanmill = Set.difference postgresTrids planmillTrids
-        when (not $ Set.null notInPlanmill) $ do
-            let notInPlanmillCount = Set.size notInPlanmill
-            logInfo_ $
-                "Found " <> textShow notInPlanmillCount <>
-                " timereports not in planmill anymore"
-            i <- safePoolExecute pool deleteQuery
-                (Postgres.Only $ Postgres.In $ Set.toList notInPlanmill)
-            when (fromIntegral i /= notInPlanmillCount) $
-                logAttention_ $
-                    "Deleted " <> textShow i <>
-                    " out of " <> textShow notInPlanmillCount <> " timereports"
+                let notInPlanmill = Set.difference postgresTrids planmillTrids
+                when (not $ Set.null notInPlanmill) $ do
+                    let notInPlanmillCount = Set.size notInPlanmill
+                    logInfo_ $
+                        "Found " <> textShow notInPlanmillCount <>
+                        " timereports not in planmill anymore"
+                    i <- safePoolExecute pool deleteQuery
+                        (Postgres.Only $ Postgres.In $ Set.toList notInPlanmill)
+                    when (fromIntegral i /= notInPlanmillCount) $
+                        logAttention_ $
+                            "Deleted " <> textShow i <>
+                            " out of " <> textShow notInPlanmillCount <> " timereports"
 
-        -- Insert timereports
-        liftIO $ void $ insertTimereports pool tr
+                -- Insert timereports
+                liftIO $ void $ insertTimereports pool tr
   where
     selectQuery :: Postgres.Query
     selectQuery = fromString $ unwords $

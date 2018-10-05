@@ -12,7 +12,7 @@ import Data.Aeson
        (FromJSON, ToJSON, Value, eitherDecodeStrict, encode, object, (.=))
 import Data.Aeson.Types           (emptyObject)
 import Data.Char                  (toUpper)
-import Foreign.C                  (CString, peekCString, withCString)
+import Foreign.C                  (CLong (..), CString, peekCString, withCString)
 import Foreign.Ptr                (Ptr)
 import Futurice.EnvConfig         (Configure, getConfig)
 import Futurice.Metrics.RateMeter (values)
@@ -44,6 +44,7 @@ foreign import ccall "PyObject_CallFunction" logC :: Ptr LoggingFunc -> CString 
 foreign import ccall "Py_DecRef" pyDecRef :: Ptr PyObject -> IO ()
 
 foreign import ccall "futuriceLambdaFunctionName" futuriceLambdaFunctionName :: Ptr LambdaContextC -> IO CString
+foreign import ccall "futuriceLambdaTimeRemainingInMillis" fituriceLambdaTimeRemainingInMillis :: Ptr LambdaContextC -> IO CLong
 
 -- LambdaContext
 -- https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html#python-context-object-methods
@@ -52,7 +53,8 @@ foreign import ccall "futuriceLambdaFunctionName" futuriceLambdaFunctionName :: 
 data LambdaContextC
 
 data LambdaContext = LambdaContext
-    { lcName :: !Text
+    { lcName                  :: !Text
+    , lcRemainingTimeInMillis :: !(IO Int)
     }
 
 -- | A special type for (callable) logging function.
@@ -71,7 +73,9 @@ makeAwsLambda handler input lc lf = do
     fnNameC <- futuriceLambdaFunctionName lc
     fnName <- peekCString fnNameC
     let fnNameT = fnName ^. packed
-    let lambdaContext = LambdaContext fnNameT
+
+    let timeRemainingInMillis = fromIntegral <$> fituriceLambdaTimeRemainingInMillis lc
+    let lambdaContext = LambdaContext fnNameT timeRemainingInMillis
 
     -- HTTP Manager
     mgr <- newManager tlsManagerSettings
@@ -82,8 +86,10 @@ makeAwsLambda handler input lc lf = do
 
     inputBS  <- BS.packCString input
     output <- runLogT fnNameT lgr $ do
+        logInfoI "Lambda $name started" $ object [ "name" .= fnNameT ]
+
         cfg <- getConfig (map toUpper fnName)
-        case eitherDecodeStrict inputBS of
+        res <- case eitherDecodeStrict inputBS of
             Left err -> do
                 logAttention "Invalid JSON" err
                 encodeErr err
@@ -94,6 +100,12 @@ makeAwsLambda handler input lc lf = do
                         logAttention "Exception" $ show exc
                         encodeErr $ show exc
                     Right x  -> return $ LBS.toStrict $ encode x
+
+        remaining <- liftIO timeRemainingInMillis
+        logInfoI "Lambda $name ending. Remaining $remaining ms" $
+            object [ "name" .= fnNameT, "remaining" .= remaining ]
+
+        return res
 
     -- Write aws env
     meters <- liftIO values

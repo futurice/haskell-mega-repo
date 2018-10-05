@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 module Futurice.App.MegaRepoTool.Lambda (cmdLambda) where
 
-import Data.Aeson         (encode)
+import Data.Aeson         (encode, object, (.=))
 import Data.Machine
        (MachineT (..), Step (..), await, repeatedly, runT_, (<~))
 import Futurice.Clock     (clocked, timeSpecToSecondsD)
@@ -18,10 +19,10 @@ import Text.Printf        (printf)
 
 import qualified Control.Concurrent.Async as A
 import qualified Data.ByteString          as BS
-import qualified Data.ByteString.Char8    as BS8
-import qualified Data.ByteString.Lazy     as BSL
 import qualified Data.Map                 as Map
 import qualified System.Process           as Process
+import qualified Text.Microstache         as MS
+import qualified Text.RawString.QQ        as QQ
 
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
@@ -89,19 +90,41 @@ drain m = runT_ $ sink <~ m where
             hFlush stdout
 
 pyModule :: Text -> Maybe Value -> ByteString
-pyModule n v = BS8.unlines
-    [ "from __future__ import print_function"
-    , "import json"
-    , "import pprint"
-    , "import Lambda_native"
-    , "class LambdaContext:"
-    , "    function_name = '''" <> n' <> "'''"
-    , "Lambda_native.hs_init(['tmpLambda', '+RTS', '-T'])"
-    , "pprint.pprint(json.loads(Lambda_native.handler('''" <> v' <> "''', LambdaContext(), print)), indent=2)"
-    ]
-  where
-    v' = maybe "null" (BSL.toStrict . encode) v
-    n' = encodeUtf8 n
+pyModule n v
+    = encodeUtf8
+    $ view strict
+    $ MS.renderMustache lambdaPyTemplate
+    $ object
+        [ "name" .= n
+        , "value" .= decodeUtf8Lenient (view strict (encode v))
+        ]
+
+lambdaPyTemplate :: MS.Template
+Right lambdaPyTemplate = MS.compileMustacheText "lambda" [QQ.r|
+from __future__ import print_function
+import json
+import pprint
+import sys
+import time
+import Lambda_native
+
+startClock = time.time()
+timeLimit = 180  # seconds
+
+class LambdaContext:
+    function_name = '''{{{name}}}'''
+
+    def get_remaining_time_in_millis(self):
+        currClock = time.time();
+        return int((timeLimit - (currClock - startClock)) * 1000)
+
+def log(*args):
+   print(*args)
+   sys.stdout.flush()
+
+Lambda_native.hs_init(['tmpLambda', '+RTS', '-T'])
+pprint.pprint(json.loads(Lambda_native.handler('''{{{value}}}''', LambdaContext(), log)), indent=2)
+|]
 
 -------------------------------------------------------------------------------
 -- "machines-process"
