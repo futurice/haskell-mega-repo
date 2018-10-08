@@ -124,8 +124,8 @@ library
     , wai
   exposed-modules:
       Futurice.App.Reports
-      Futurice.App.Reports.ActiveAccounts
       Futurice.App.Reports.API
+      Futurice.App.Reports.ActiveAccounts
       Futurice.App.Reports.CareerLengthChart
       Futurice.App.Reports.Config
       Futurice.App.Reports.Ctx
@@ -138,11 +138,12 @@ library
       Futurice.App.Reports.MissingHoursDailyChart
       Futurice.App.Reports.MissingHoursDashdo
       Futurice.App.Reports.MissingHoursNotifications
+      Futurice.App.Reports.PlanMillAccountValidation
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerProjects
       Futurice.App.Reports.PowerUser
+      Futurice.App.Reports.ProjectHours
       Futurice.App.Reports.SupervisorsGraph
-      Futurice.App.Reports.PlanMillAccountValidation
       Futurice.App.Reports.Templates
       Futurice.App.Reports.TimereportsByTask
       Futurice.App.Reports.TimereportsDump
