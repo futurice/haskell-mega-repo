@@ -52,6 +52,7 @@ import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
        (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.ProjectHours              (projectHoursData)
 import Futurice.App.Reports.SupervisorsGraph          (supervisorsGraph)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
@@ -211,6 +212,8 @@ server ctx = makeServer ctx reports
     :<|> liftIO (serveData activeAccountsData ctx)
     :<|> liftIO (serveData pmAccountValidationData ctx)
     :<|> liftIO serveInventory
+    :<|> liftIO (serveData projectHoursData ctx)
+    :<|> liftIO (serveData projectHoursData ctx)
     -- dumps
     :<|> liftIO (serveData (mkCached <$> timereportsDump) ctx)
     -- charts
