@@ -26,6 +26,7 @@ import Futurice.App.Reports.PlanMillAccountValidation (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences             (PowerAbsenceReport)
 import Futurice.App.Reports.PowerProjects             (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser                 (PowerUserReport)
+import Futurice.App.Reports.ProjectHours              (ProjectHoursData)
 import Futurice.App.Reports.SupervisorsGraph          (Emp)
 import Futurice.App.Reports.TimereportsByTask         (TimereportsByTaskReport)
 import Futurice.App.Reports.TimereportsDump           (SimpleTimereport)
@@ -68,6 +69,8 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts
     :<|> "tables" :> "planmill-account-validation" :> Get '[HTML] PMAccountValidation
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
+    :<|> "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
+    :<|> "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
     -- Dump
     :<|> "dump" :> "timereports.csv.xz" :> CachedGet (LZMA CSV) [SimpleTimereport]
     -- Charts
