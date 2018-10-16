@@ -81,6 +81,7 @@ install)
 		(makestore || true)
 
         # Install doctest
+		(cd /tmp && echo "" | cabal new-repl fail)
 		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --symlink-bindir="$HOME/.local/bin") || exit 1
         doctest --version
 
