@@ -11,9 +11,10 @@ module PlanMill.Types.Project (Project(..), Projects, ProjectId) where
 
 import PlanMill.Internal.Prelude
 
-import PlanMill.Types.Account         (AccountId)
-import PlanMill.Types.Identifier      (HasIdentifier (..), Identifier)
-import PlanMill.Types.User            (UserId)
+import PlanMill.Types.Account     (AccountId)
+import PlanMill.Types.Enumeration (EnumValue)
+import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
+import PlanMill.Types.User        (UserId)
 
 type ProjectId = Identifier Project
 type Projects = Vector Project
@@ -28,7 +29,7 @@ data Project = Project
     , pActualEffort               :: !(Maybe Int)
     , pActualRevenue              :: !(Maybe Double) -- Currency unit
     , pBillableStatus             :: !(Maybe Int) -- @TODO enum;!SCHEMA NULL
-    , pCategory                   :: !(Maybe Int)
+    , pCategory                   :: !(EnumValue Project "category")
     , pFinish                     :: !(Maybe UTCTime)
     , pFixedRevenue               :: !(Maybe Double)
     -- , pFixedWork                  :: !(Maybe Double)

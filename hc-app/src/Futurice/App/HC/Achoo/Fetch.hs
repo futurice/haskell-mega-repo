@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.HC.Achoo.Fetch (achooReportFetch) where
 
 import Control.Lens              (Getting)
@@ -44,8 +45,12 @@ achooReportFetch dayMin dayMax whole = do
               else P.employeeIsActiveInterval interval p
             ]
 
-    let _absenceTypes :: Map (PM.EnumValue PM.Absence "absenceType") Text
-        _absenceTypes = absenceTypes
+    let sickAbsences :: [PM.EnumValue PM.Absence "absenceType"]
+        sickAbsences =
+            [ k
+            | (k, v) <- Map.toList absenceTypes
+            , v == "Sick leave" || v == "Sick leave by medical certificate"
+            ]
 
     let absenceMapAll :: Map PM.UserId [Interval Day]
         absenceMapAll = Map.fromListWith (++) $ mapMaybe f (toList absences) where
@@ -53,10 +58,6 @@ achooReportFetch dayMin dayMax whole = do
                 -- we aren't interested in older absences, let's filter them
                 | PM.absenceFinish a < dayMin                    = Nothing
                 | otherwise = Just (PM.absencePerson a, [PM.absenceStart a ... PM.absenceFinish a])
-
-            -- NOTE: hardcoded values, as there is really no way to find out
-            -- which types are sick leaves.
-            sickAbsences = map PM.EnumValue [1010, 1025]
 
     -- absence map with trimmed intervals
     let absenceMapI   = mapMaybe (I.intersection interval) <$> absenceMapAll

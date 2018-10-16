@@ -24,7 +24,7 @@
     "workCompletenessPercentage": 0,
     "fixedRevenue": null,
     "name": "Project A",
-    "category": null,
+    "category": 0,
     "totalCost": 2528.2032051124797,
     "account": 558783,
     "status": 3
@@ -84,7 +84,7 @@
     "workCompletenessPercentage": 0,
     "fixedRevenue": null,
     "name": "Project C",
-    "category": null,
+    "category": 0,
     "totalCost": 94.2,
     "account": 504828,
     "status": 3

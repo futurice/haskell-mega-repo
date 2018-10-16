@@ -19,7 +19,8 @@ import Futurice.App.HoursMock.Ctx
 import Futurice.App.HoursMock.MockData
 import Futurice.App.HoursMock.World
 
-import qualified PlanMill as PM
+import qualified Futurice.Integrations.TimereportKind as TK
+import qualified PlanMill                             as PM
 
 data Env = Env
     { _envNow   :: !UTCTime
@@ -127,7 +128,7 @@ instance MonadHours Hours where
                 , _timereportDay       = ntr ^. newTimereportDay
                 , _timereportComment   = ntr ^. newTimereportComment
                 , _timereportAmount    = ntr ^. newTimereportAmount
-                , _timereportType      = EntryTypeBillable -- :)
+                , _timereportKind      = TK.KindBillable -- :)
                 , _timereportClosed    = False
                 }
             maxId = case reports of

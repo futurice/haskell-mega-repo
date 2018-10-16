@@ -225,9 +225,10 @@ instance IdentifierToHtml Account where
             ]
 
 data Account = Account
-    { _saId                 :: !AccountId
-    , saName                :: !Text
-    , saOwner               :: !(Maybe UserId)
+    { _saId   :: !AccountId
+    , saName  :: !Text
+    , saOwner :: !(Maybe UserId)
+    , saType  :: !(EnumValue Account "type")
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -243,6 +244,7 @@ instance FromJSON Account where
         Account <$> obj .: "id"
                 <*> obj .: "name"
                 <*> obj .:? "owner"
+                <*> obj .: "type"
 
 -------------------------------------------------------------------------------
 -- Identifiers

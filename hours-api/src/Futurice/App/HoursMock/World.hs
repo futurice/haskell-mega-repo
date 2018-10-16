@@ -7,6 +7,7 @@ import Futurice.App.HoursApi.Types     (EntryType (..))
 import Futurice.App.HoursMock.MockData
 import Futurice.Prelude
 import Prelude ()
+import Futurice.Integrations.TimereportKind (TimereportKind (..))
 
 import qualified PlanMill as PM
 
@@ -27,7 +28,7 @@ cleanWorld now = World
             , _timereportDay       = yesterday
             , _timereportComment   = "dev stuff"
             , _timereportAmount    = 7.5
-            , _timereportType      = EntryTypeBillable
+            , _timereportKind      = KindBillable
             , _timereportClosed    = False
             }
         ]
