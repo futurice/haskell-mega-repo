@@ -33,15 +33,16 @@ import Servant                   (Handler)
 import Futurice.App.HoursApi.Class
 import Futurice.App.HoursApi.Ctx
 
-import qualified Data.Text                   as T
-import qualified Futurice.App.HoursApi.Types as T
-import qualified Futurice.Time               as Time
-import qualified Haxl.Core                   as Haxl
-import qualified PlanMill                    as PM
-import qualified PlanMill.Queries            as PMQ
-import qualified PlanMill.Queries.Haxl       as PMQ
-import qualified PlanMill.Types.Query        as Q
-import qualified PlanMill.Worker             as PM
+import qualified Data.Text                            as T
+import qualified Futurice.App.HoursApi.Types          as T
+import qualified Futurice.Integrations.TimereportKind as TK
+import qualified Futurice.Time                        as Time
+import qualified Haxl.Core                            as Haxl
+import qualified PlanMill                             as PM
+import qualified PlanMill.Queries                     as PMQ
+import qualified PlanMill.Queries.Haxl                as PMQ
+import qualified PlanMill.Types.Query                 as Q
+import qualified PlanMill.Worker                      as PM
 
 data Env = Env
     { _envNow            :: !UTCTime
@@ -204,12 +205,13 @@ instance MonadHours Hours where
 
     project pid = do
         p <- withFallback (PMQ.project pid) (PM.project pid)
+        kind <- TK.projectKind p
         pure Project
             { _projectId     = p ^. PM.identifier
             , _projectName   = p ^. getter PM.pName
-            , _projectClosed = isAbsence p
-              -- TODO: closed if it's absence, but maybe be closed othersie
-            , _projectAbsence = isAbsence p
+            , _projectClosed = isAbsence kind
+              -- TODO: closed if it's absence, but maybe be closed otherwise too.
+            , _projectAbsence = isAbsence kind
             }
 
     task tid = do
@@ -317,7 +319,7 @@ instance MonadHours Hours where
 
 -- | Preprocess comments:
 --
--- * Convert 'isSpace' charters (etc. tabs, newlines) to ordinary spaces
+-- * Convert 'isSpace' characters (etc. tabs, newlines) to ordinary spaces
 --
 -- * Trim output (strip leading and trailing spaces)
 --
@@ -332,66 +334,35 @@ nonEmptyComment comm = case T.strip (T.map spacesToSpace comm) of
     spacesToSpace c             = c
 
 convertTimereport :: PM.Timereport -> Hours Timereport
-convertTimereport tr = do
-    (bs, dt) <- liftA2 (,)
-        (PMQ.enumerationValue (PM.trBillableStatus tr) "")
-        (traverse (`PMQ.enumerationValue` "") (PM.trDutyType tr))
-    pid <- case PM.trProject tr of
-        Just pid -> return pid
-        Nothing  -> view taskProjectId <$>  task (PM.trTask tr)
-    p <- PMQ.project pid
-    pure (makeTimereport p tr bs dt)
+convertTimereport tr = makeTimereport tr
+    <$> getProjectId
+    <*> TK.timereportKind tr
+    <*> PMQ.enumerationValue (PM.trBillableStatus tr) "Non-billable"
+    <*> PMQ.enumerationValue (PM.trStatus tr) "Status?"
+  where
+    getProjectId = case PM.trProject tr of
+        Just pid -> pure pid
+        Nothing  -> view taskProjectId <$> task (PM.trTask tr)
 
-makeTimereport :: PM.Project -> PM.Timereport -> Text -> Maybe Text -> Timereport
-makeTimereport p tr bs dt = Timereport
+makeTimereport
+    :: PM.Timereport
+    -> PM.ProjectId
+    -> TK.TimereportKind
+    -> Text -- ^ timereport billableStatus
+    -> Text -- ^ Timereport status
+    -> Timereport
+makeTimereport tr pid kind bs st = Timereport
     { _timereportId        = tr ^. PM.identifier
     , _timereportTaskId    = PM.trTask tr
-    , _timereportProjectId = p ^. PM.identifier
+    , _timereportProjectId = pid
     , _timereportDay       = PM.trStart tr
     , _timereportComment   = fromMaybe "" (PM.trComment tr)
     , _timereportAmount    = ndtConvert' (PM.trAmount tr)
-    , _timereportType      = billableStatus p bs dt
-    , _timereportClosed    = case PM.trStatus tr of
-        PM.EnumValue st -> not $
-            -- see [Note: editing timereports]
-            st `elem` [0, 4]  -- reported or preliminary
+    , _timereportKind      = kind
+    , _timereportClosed    = not $
+            st `elem` ["Reported", "Preliminary"]
             && bs `elem` ["Non-billable", "Billable", "In billing"]  -- non-billable, billable or in-billing
     }
-
--- [Note: editing timereports]
---
--- The timereports/meta doesn't return the name of status enumeration,
--- so we prefetched it: (This is TODO as 2018-09-25)
---
--- % mega-repo-tool run -r pm-cli -- enumeration 'Time report.Status'
--- IntMap [0 : Reported
---        :1 : Accepted
---        :2 : Locked
---        :4 : Preliminary]
---
--- The billableStatus works well, now. Here's enumeration values for
--- the reference. We use textual names in code.
---
--- @mega-repo-tool run pm-cli -- enumeration "Time report.Billable status"@
---
--- @
--- IntMap [1 : Billable
---        :3 : Non-billable
---        :4 : In billing
---        :5 : Draft invoice
---        :6 : Invoiced]
--- @
---
-
-billableStatus :: PM.Project -> Text -> Maybe Text -> T.EntryType
-billableStatus _ "Non-billable" (Just "Balance leave") = T.EntryTypeBalanceAbsence
-billableStatus p "Non-billable" _  | isAbsence p       = T.EntryTypeAbsence
-billableStatus _ "Non-billable" _                      = T.EntryTypeNotBillable
-billableStatus _ _              _                      = T.EntryTypeBillable
-
--- | Absences go into magic project.
-isAbsence :: PM.Project -> Bool
-isAbsence p = PM.pCategory p == Just 900
 
 -- | Asks from Planmill Proxy, if it doesn't know ask from PlanMill directly.
 withFallback
@@ -413,3 +384,9 @@ withFallback' action pm pred = do
         Just x | pred x -> pure x
         Just _          -> cachedPlanmillAction pm
         Nothing         -> cachedPlanmillAction pm
+
+isAbsence :: TK.TimereportKind -> Bool
+isAbsence TK.KindAbsence        = True
+isAbsence TK.KindBalanceAbsence = True
+isAbsence TK.KindSickLeave      = True
+isAbsence _                     = False

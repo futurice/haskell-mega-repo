@@ -35,7 +35,7 @@ data Timereport = Timereport
     , trBillableStatus  :: !(EnumValue Timereport "billableStatus")
     , trBillingComment  :: !(Maybe Text)
     , trComment         :: !(Maybe Text)
-    , trDutyType        :: !(Maybe (EnumValue Timereport "dutyType"))
+    , trDutyType        :: !(Maybe (EnumValue Timereport "dutyType")) -- TODO: can this be not Maybe?
     , trFinish          :: !Day
     , trOvertimeAmount  :: !(Maybe Int)
     , trOvertimeComment :: !(Maybe Text)

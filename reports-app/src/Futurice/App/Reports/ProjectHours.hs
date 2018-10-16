@@ -15,22 +15,24 @@ module Futurice.App.Reports.ProjectHours (
     ProjectHours (..),
     ) where
 
-import Control.Lens              (alaf)
-import Data.Fixed                (Centi)
+import Control.Lens                         (alaf)
+import Data.Fixed                           (Centi)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Integrations.TimereportKind
+       (TimereportKind (..), timereportKind)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Time.Month
-import Numeric.Interval.NonEmpty (Interval, (...))
+import Numeric.Interval.NonEmpty            (Interval, (...))
 import Prelude ()
 
-import qualified Data.Map.Strict     as Map
-import qualified FUM.Types.Login     as FUM
-import qualified Personio            as P
-import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
+import qualified Data.Map.Strict  as Map
+import qualified FUM.Types.Login  as FUM
+import qualified Personio         as P
+import qualified PlanMill         as PM
+import qualified PlanMill.Queries as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -103,23 +105,15 @@ projectHoursData = do
     groupHours :: [PM.Timereport] -> m Aux
     groupHours trs = fmap mconcat $ for trs $ \tr -> do
         let hours = ndtConvert' $ PM.trAmount tr
+        kind <- timereportKind tr
 
-        -- for some reason annual holidays (at least?) have unknown billable status
-        billableStatus <- PMQ.enumerationValue (PM.trBillableStatus tr) "Non-billable"
-        dutyType <- traverse (`PMQ.enumerationValue` "???") (PM.trDutyType tr)
-
-        pid <- case PM.trProject tr of
-            Just pid -> return (Just pid)
-            Nothing  -> PM.taskProject <$> PMQ.task (PM.trTask tr)
-
-        mproject <- traverse PMQ.project pid
-
-        case status mproject billableStatus dutyType of
-            Billable       -> return mempty { auxBillable    = hours }
-            NonBillable    -> return mempty { auxNonBillable = hours }
-            Internal       -> return mempty { auxInternal    = hours }
-            Absence        -> return mempty { auxAbsence     = hours }
-            BalanceAbsence -> return mempty
+        case kind of
+            KindBillable       -> return mempty { auxBillable    = hours }
+            KindNonBillable    -> return mempty { auxNonBillable = hours }
+            KindInternal       -> return mempty { auxInternal    = hours }
+            KindAbsence        -> return mempty { auxAbsence     = hours }
+            KindSickLeave      -> return mempty { auxAbsence     = hours }
+            KindBalanceAbsence -> return mempty
 
 -------------------------------------------------------------------------------
 -- Aux
@@ -139,35 +133,6 @@ instance Semigroup Aux where
 instance Monoid Aux where
     mempty  = Aux 0 0 0 0
     mappend = (<>)
-
-data Status = Billable | NonBillable | Internal | Absence | BalanceAbsence
-  deriving (Eq, Show)
-
--- in hours-api we assume project-id 0 if tasks' project id is not set.
-status
-    :: Maybe PM.Project
-    -> Text        -- ^ billable status
-    -> Maybe Text  -- ^ duty type
-    -> Status
-status _        "Non-billable" (Just "Balance leave") = BalanceAbsence
-status (Just p) "Non-billable" _  | isAbsence p       = Absence
-status (Just p) "Non-billable" _  | isInternal p      = Internal
-status _        "Non-billable" _                      = NonBillable
-status _        _              _                      = Billable
-
--- | Absences go into magic project.
---
--- TODO: use enumeration
-isAbsence :: PM.Project -> Bool
-isAbsence p = PM.pCategory p == Just 900
-
--- | TODO: Use PM.Account with type == 100
--- or even better textual "My company"
-isInternal :: PM.Project -> Bool
-isInternal p = PM.pAccount p `elem`
-    [ Just (PM.Ident i)
-    | i <- [ 461507, 1003024, 3426, 17716, 469, 179108 ]
-    ]
 
 -------------------------------------------------------------------------------
 -- Html

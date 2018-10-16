@@ -26,7 +26,7 @@ module Futurice.App.HoursApi.Class (
     timereportDay,
     timereportComment,
     timereportAmount,
-    timereportType,
+    timereportKind,
     timereportClosed,
     -- ** New timereport
     NewTimereport (..),
@@ -52,12 +52,13 @@ module Futurice.App.HoursApi.Class (
     absenceInterval,
     ) where
 
-import Control.Lens              ((<&>))
-import Data.Fixed                (Centi)
-import Data.Time                 (addDays)
+import Control.Lens                         ((<&>))
+import Data.Fixed                           (Centi)
+import Data.Time                            (addDays)
+import Futurice.Integrations.TimereportKind (TimereportKind)
 import Futurice.Prelude
 import Futurice.Time
-import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
+import Numeric.Interval.NonEmpty            (Interval, inf, sup, (...))
 import Prelude ()
 
 import qualified Futurice.App.HoursApi.Types as T
@@ -184,7 +185,7 @@ data Timereport = Timereport
     , _timereportDay       :: !Day
     , _timereportComment   :: !Text
     , _timereportAmount    :: !(NDT 'Hours Centi)
-    , _timereportType      :: !T.EntryType
+    , _timereportKind      :: !TimereportKind
     , _timereportClosed    :: !Bool -- ^ i.e. not editable
     }
   deriving (Eq, Show, Generic)
