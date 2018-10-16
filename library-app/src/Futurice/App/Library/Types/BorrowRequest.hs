@@ -1,10 +1,12 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE InstanceSigs    #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE InstanceSigs      #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module Futurice.App.Library.Types.BorrowRequest where
 
+import Data.Aeson
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -20,6 +22,10 @@ data BorrowRequest = BorrowRequest
 
 deriveGeneric ''BorrowRequest
 
-deriveVia [t| FromJSON BorrowRequest `Via` Sopica BorrowRequest |]
+instance FromJSON BorrowRequest where
+    parseJSON (Object v) =  BorrowRequest
+        <$> v .: "book"
+        <*> (libraryFromText <$> v .: "library")
+    parseJSON _ = mzero
 
 instance ToSchema BorrowRequest where declareNamedSchema = sopDeclareNamedSchema
