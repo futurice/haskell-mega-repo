@@ -86,6 +86,10 @@ data Routes = Routes
         ("api" :> "v2" :> "tribes" :> Get '[JSON] Value)
         ("power" :> "api" :> "tribes" :> Get '[JSON] Value)
 
+    , routePowerAllocations :: ProxiedEndpoint 'PowerService
+        ("api" :> "v2" :> "allocations" :> Get '[JSON] Value)
+        ("power" :> "api" :> "allocations" :> Get '[JSON] Value)
+
     -- FUM
     , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
           FUM6.GroupMembersEndpoint
