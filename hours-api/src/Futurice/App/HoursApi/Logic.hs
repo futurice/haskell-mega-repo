@@ -27,12 +27,13 @@ import Prelude ()
 
 import Futurice.App.HoursApi.Types
 
-import qualified Data.List.NonEmpty        as NE
-import qualified Data.Map                  as Map
-import qualified Data.Set                  as Set
-import qualified Numeric.Interval.NonEmpty as Interval
-import qualified PlanMill                  as PM
-import qualified PlanMill.Queries          as PMQ
+import qualified Data.List.NonEmpty                   as NE
+import qualified Data.Map                             as Map
+import qualified Data.Set                             as Set
+import qualified Futurice.Integrations.TimereportKind as TK
+import qualified Numeric.Interval.NonEmpty            as Interval
+import qualified PlanMill                             as PM
+import qualified PlanMill.Queries                     as PMQ
 
 -- Note: we don't import .Monad!
 import qualified Futurice.App.HoursApi.Class as H
@@ -174,7 +175,7 @@ hoursResponse interval = do
         , _entryDescription = tr ^. H.timereportComment
         , _entryClosed      = tr ^. H.timereportClosed
         , _entryHours       = tr ^. H.timereportAmount
-        , _entryBillable    = tr ^. H.timereportType
+        , _entryBillable    = tr ^. H.timereportKind . getter kindToType
         }
 
     markedProject :: PM.ProjectId -> Set PM.TaskId -> m (Project MarkedTask)
@@ -278,14 +279,24 @@ userResponse = User
         pure utz
       where
         timereportAverageUtz :: H.Timereport -> Average Float
-        timereportAverageUtz report = case report ^. H.timereportType of
-            EntryTypeBillable       -> Average hours 100
-            EntryTypeNotBillable    -> Average hours 0
-            EntryTypeAbsence        -> mempty
-            EntryTypeBalanceAbsence -> mempty
+        timereportAverageUtz report = case report ^. H.timereportKind of
+            TK.KindBillable       -> Average hours 100
+            TK.KindNonBillable    -> Average hours 0
+            TK.KindInternal       -> Average hours 0
+            TK.KindAbsence        -> mempty
+            TK.KindSickLeave      -> mempty
+            TK.KindBalanceAbsence -> mempty
           where
             NDT hours = fmap realToFrac (report ^. H.timereportAmount) :: NDT 'Hours Float
 
 entryUpdateResponse :: H.MonadHours m => Day -> m EntryUpdateResponse
 entryUpdateResponse d =
     EntryUpdateResponse <$> userResponse <*> hoursResponse (d ... d)
+
+kindToType :: TK.TimereportKind -> EntryType
+kindToType TK.KindBillable       = EntryTypeBillable
+kindToType TK.KindNonBillable    = EntryTypeNotBillable
+kindToType TK.KindInternal       = EntryTypeNotBillable
+kindToType TK.KindAbsence        = EntryTypeAbsence
+kindToType TK.KindSickLeave      = EntryTypeAbsence
+kindToType TK.KindBalanceAbsence = EntryTypeBalanceAbsence

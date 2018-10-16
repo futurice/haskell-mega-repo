@@ -270,6 +270,14 @@ instance HasMeta Timereport where
     metaPath _ = t "timereports" // t "meta"
       where t = id :: Text -> Text
 
+instance HasMeta Account where
+    metaPath _ = t "accounts" // t "meta"
+      where t = id :: Text -> Text
+
+instance HasMeta Project where
+    metaPath _ = t "projects" // t "meta"
+      where t = id :: Text -> Text
+
 meta :: MonadPlanMillQuery m => HasMeta entity => Proxy entity -> m Meta
 meta p = planmillQuery
     $ QueryGet QueryTagMeta mempty
