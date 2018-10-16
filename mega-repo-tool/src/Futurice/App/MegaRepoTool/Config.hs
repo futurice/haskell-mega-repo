@@ -26,6 +26,7 @@ type DebName = Text
 data ImageDefinition = ImageDefinition
     { _idDockerImage :: !Text
     , _idExecutable  :: !Text
+    , _idRestart     :: !(Maybe AppName)
     }
   deriving (Show, Generic)
 
@@ -103,7 +104,7 @@ parseConfig contents config = do
     field (P.Section (P.Name pos name) args fs)
         | name == "application" = do
             appName <- parseAppName args
-            imageDefinition <- execStateT (traverse application fs) (ImageDefinition "" "")
+            imageDefinition <- execStateT (traverse application fs) (ImageDefinition "" "" Nothing)
             mrtApps . at appName ?= imageDefinition
 
         | name == "aws-lambda" = do
@@ -123,6 +124,7 @@ parseConfig contents config = do
     application (P.Field (P.Name pos name) fls)
         | name == "docker"     = idDockerImage .=  fls'
         | name == "executable" = idExecutable .=  fls'
+        | name == "restart"    = idRestart ?= fls'
         | otherwise =
             throwError $ "unknown application field " ++ show name ++ " at " ++ P.showPos pos
       where

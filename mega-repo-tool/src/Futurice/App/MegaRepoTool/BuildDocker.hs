@@ -160,7 +160,7 @@ cmdBuildDocker appnames = do
         exitFailure
 
     -- Build docker images
-    images <- ifor apps $ \appname (ImageDefinition image exe) -> do
+    images <- ifor apps $ \appname (ImageDefinition image exe restart) -> do
         -- Write Dockerfile
         dockerfile <- makeDockerfile exe cfg
         T.putStrLn dockerfile
@@ -184,21 +184,26 @@ cmdBuildDocker appnames = do
             callProcess "docker" ["build", "-t", T.unpack fullimage, "-f", fp, directory]
 
             -- accumulate image names
-            pure (appname, fullimage, "futurice/" <> image)
+            pure (appname, fullimage, "futurice/" <> image, restart)
 
     T.putStrLn "Upload images by:"
     ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
-    for_ images $ \(_, image, _) ->
+    for_ images $ \(_, image, _, _) ->
         T.putStrLn $ "  docker push " <> image
     ANSI.setSGR []
 
     T.putStrLn "Deploy images by:"
+
     ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
-    for_ images $ \(appname, _, image) ->
+    for_ images $ \(appname, _, image, restart) -> do
         T.putStrLn $ "  appswarm app:deploy"
             <> " --name " <> appname
             <> " --image " <> image
             <> " --tag " <> githash
+
+        for_ restart $ \appname' -> T.putStrLn $ "  appswarm app:restart"
+            <> " --name " <> appname'
+
     ANSI.setSGR []
 
 makeDockerfile :: Text -> MRTConfig -> IO Text
