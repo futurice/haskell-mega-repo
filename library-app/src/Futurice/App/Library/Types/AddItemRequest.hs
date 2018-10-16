@@ -1,18 +1,22 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Library.Types.AddItemRequest where
 
 import Data.Char      (digitToInt, isDigit)
 import Data.Text.Read (decimal)
 
+import Data.Swagger
 import Futurice.Office   (offOther)
 import Futurice.Prelude
 import Prelude ()
 import Servant.Multipart
 
+import Futurice.App.Library.Types.BoardGameInformation
 import Futurice.App.Library.Types.BookInformation
 import Futurice.App.Library.Types.Library
 
@@ -45,13 +49,22 @@ data AddBoardGameInformation = AddBoardGameInformation
     }
     deriving Show
 
-usedLibraries :: [Library]
-usedLibraries = let librarySelectSortOrder a b = case (a,b) of
+data AddItemRequest = AddItemRequest
+    { _addItemLibrary                :: !Library
+    , _addItemBookInformationId      :: !(Maybe BookInformationId)
+    , _addItemBoardGameInformationId :: !(Maybe BoardGameInformationId)
+    }
+    deriving (Show, Generic, ToSchema)
+
+librarySelectSortOrder :: Library -> Library -> Ordering
+librarySelectSortOrder a b = case (a,b) of
                         (Elibrary, Elibrary) -> EQ
                         (Elibrary, _) -> GT
                         (_, Elibrary) -> LT
                         _ -> compare (libraryToText a) (libraryToText b)
-                    usedLibs = (filter (/= OfficeLibrary offOther) . filter (/= UnknownLibrary)) allLibraries
+
+usedLibraries :: [Library]
+usedLibraries = let usedLibs = (filter (/= OfficeLibrary offOther) . filter (/= UnknownLibrary)) allLibraries
                 in sortBy librarySelectSortOrder usedLibs
 
 fromtextToInt :: Text -> Maybe Int
@@ -101,3 +114,9 @@ instance FromMultipart Mem AddBoardGameInformation where
         <*> pure (lookupInputAndClean "designer" multipartData)
         <*> pure (lookupInputAndClean "artist" multipartData)
         <*> pure (booksPerLibrary multipartData)
+
+instance FromMultipart Mem AddItemRequest where
+    fromMultipart multipartData = AddItemRequest
+        <$> (libraryFromText <$> lookupInputAndClean "library" multipartData)
+        <*> pure (lookupInputAndClean "bookinformationid" multipartData >>= readMaybe . T.unpack)
+        <*> pure (lookupInputAndClean "boardgameinformationid" multipartData >>= readMaybe . T.unpack)

@@ -92,6 +92,19 @@ fetchItem ctx iid = listToMaybe <$> (safePoolQuery ctx "SELECT item_id, library,
 fetchItems :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [ItemData]
 fetchItems ctx = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item " ()
 
+deleteItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m Bool
+deleteItem ctx iid = (1 ==) <$> safePoolExecute ctx "DELETE FROM library.item WHERE item_id = ?" (Only iid)
+
+addItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> AddItemRequest -> m Bool
+addItem ctx (AddItemRequest lib bookinfo_id boardgameinfo_id) =
+    (1 ==) <$> safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id, boardgameinfo_id) VALUES (?,?,?)" (lib, bookinfo_id, boardgameinfo_id)
+
+fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m [ItemData]
+fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE bookinfo_id = ?" (Only binfoid)
+
+fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m [ItemData]
+fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE boardgameinfo_id = ?" (Only binfoid)
+
 -------------------------------------------------------------------------------
 -- Loan functions
 -------------------------------------------------------------------------------
@@ -123,6 +136,13 @@ loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, p
 
 fetchLoanIdWithItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe LoanData)
 fetchLoanIdWithItemId ctx itemId = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only itemId)
+
+checkLoanStatus :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m LoanStatus
+checkLoanStatus ctx itemid = do
+    loandata <- fetchLoanIdWithItemId ctx itemid
+    case loandata of
+      Just _ -> pure Loaned
+      Nothing -> pure NotLoaned
 
 fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
 fetchLoan ctx emap lid = do
@@ -174,12 +194,6 @@ loanDataToLoan ctx es ldatas = do
         case idInfoId item of
           BookInfoId i      -> ItemBook      <$> binfos ^.at i
           BoardGameInfoId i -> ItemBoardGame <$> boainfos ^.at i
-
-fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m [ItemData]
-fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where bookinfo_id = ?" (Only binfoid)
-
-fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m [ItemData]
-fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where boardgameinfo_id = ?" (Only binfoid)
 
 -------------------------------------------------------------------------------
 -- Book functions

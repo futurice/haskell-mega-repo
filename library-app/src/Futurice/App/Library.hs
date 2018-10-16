@@ -32,6 +32,7 @@ import Futurice.App.Library.API
 import Futurice.App.Library.Config
 import Futurice.App.Library.Ctx
 import Futurice.App.Library.Logic
+import Futurice.App.Library.Markup
 import Futurice.App.Library.Pages.AddItemPage
 import Futurice.App.Library.Pages.BoardGameInformationPage
 import Futurice.App.Library.Pages.BookInformationPage
@@ -57,6 +58,7 @@ apiServer ctx = genericServer $ Record
     , bookByISBNGet        = getBookByISBNImpl ctx
     , bookCoverGet         = getBookCoverImpl ctx
     , borrowPost           = borrowBookImpl ctx
+    , itemDelete           = itemDeleteImpl ctx
     , snatchPost           = snatchBookImpl ctx
     , loansGet             = getLoansImpl ctx
     , loanGet              = getLoanImpl ctx
@@ -69,6 +71,7 @@ htmlServer ctx = genericServer $ HtmlRecord
     { addBookPost          = addBookPostImpl ctx
     , addBoardGamePost     = addBoardGamePostImpl ctx
     , addItemPageGet       = addItemPageGetImpl ctx
+    , addItemPost          = addItemPostImpl ctx
     , bookPageGet          = bookInformationPageImpl ctx
     , boardGamePageGet     = boardGameInformationPageImpl ctx
     , editBoardGamePost    = editBoardGameInformationImpl ctx
@@ -396,17 +399,25 @@ addBoardGamePostImpl ctx addBoardGame = do
       throwError err400
 
 editBookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "edititempage")
-editBookInformationPageImpl ctx infoId = do
-    info <- runLogT "fetch-book-information" (ctxLogger ctx) $ fetchBookInformation (ctxPostgres ctx) infoId
+editBookInformationPageImpl ctx infoId = runLogT "edit-bookinformation" (ctxLogger ctx) $ do
+    info <- fetchBookInformation (ctxPostgres ctx) infoId
+    books <- fetchItemsByBookInformation (ctxPostgres ctx) infoId
+    b <- for books $ \(ItemData itemid library _) -> do
+        status <- checkLoanStatus (ctxPostgres ctx) itemid
+        pure (itemid, status, library)
     case info of
-      Just i -> pure $ editItemPage (Left i)
+      Just i -> pure $ editItemPage (Left (i, b))
       Nothing -> throwError err400
 
 editBoardGameInformationPageImpl :: Ctx -> BoardGameInformationId -> Handler (HtmlPage "edititempage")
-editBoardGameInformationPageImpl ctx infoid = do
-    info <- runLogT "fetch-boardgame-information" (ctxLogger ctx) $ fetchBoardGameInformation (ctxPostgres ctx) infoid
+editBoardGameInformationPageImpl ctx infoId = runLogT "edit-boardgameinformation" (ctxLogger ctx) $ do
+    info <- fetchBoardGameInformation (ctxPostgres ctx) infoId
+    boardgames <- fetchItemsByBoardGameInformationId (ctxPostgres ctx) infoId
+    b <- for boardgames $ \(ItemData itemid library _) -> do
+        status <- checkLoanStatus (ctxPostgres ctx) itemid
+        pure (itemid, status, library)
     case info of
-      Just i -> pure $ editItemPage (Right i)
+      Just i -> pure $ editItemPage (Right (i, b))
       Nothing -> throwError err400
 
 editBookInformationImpl :: Ctx -> EditBookInformation -> Handler (HtmlPage "bookinformation")
@@ -421,6 +432,30 @@ editBoardGameInformationImpl ctx info = do
 
 addItemPageGetImpl :: Ctx -> Handler (HtmlPage "additempage")
 addItemPageGetImpl _ = pure addItemPage
+
+itemDeleteImpl :: Ctx -> ItemId -> Handler Text
+itemDeleteImpl ctx itemid = runLogT "delete-item" (ctxLogger ctx) $ do
+    loanData <- fetchLoanByItemId (ctxPostgres ctx) itemid --don't delete item that is loaned
+    case loanData of
+      Just _ -> throwError err405 { errBody = "Item is loaned"}
+      Nothing -> do
+          itemData <- fetchItem (ctxPostgres ctx) itemid
+          res <- deleteItem (ctxPostgres ctx) itemid
+          if res then
+            case itemData of
+              Just (ItemData _ _ (BookInfoId infoid)) -> pure (linkToText $ fieldLink editBookPageGet infoid)
+              Just (ItemData _ _ (BoardGameInfoId infoid)) -> pure (linkToText $ fieldLink editBoardGamePageGet infoid)
+              Nothing -> throwError err500 { errBody = "No item information found" }
+          else
+            throwError err405 { errBody = "Item is loaned"}
+
+addItemPostImpl :: Ctx -> AddItemRequest -> Handler (HtmlPage "edititempage")
+addItemPostImpl ctx req = do
+    res <- runLogT "add-item" (ctxLogger ctx) $ addItem (ctxPostgres ctx) req
+    case (res, req) of
+      (True, AddItemRequest _ (Just bookinfoid) _) -> editBookInformationPageImpl ctx bookinfoid
+      (True, AddItemRequest _ _ (Just boardgameinformationId)) -> editBoardGameInformationPageImpl ctx boardgameinformationId
+      _ -> throwError err404
 
 withAuthUser :: Ctx -> Maybe Login -> (Login -> Handler a) -> Handler a
 withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of

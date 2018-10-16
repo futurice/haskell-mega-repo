@@ -21,16 +21,16 @@ import qualified Personio  as P
 bookInformationPage :: BookInformationResponse -> [LoanData] -> IdMap P.Employee -> HtmlPage ("bookinformation")
 bookInformationPage (BookInformationResponse binfoid title isbn author publisher published cover _amazonLink books) ls es = page_ "Book details " (Nothing :: Maybe Nav) $ do
     fullRow_ $ do
-        div_ [] $ do
-            img_ [src_ $ linkToText $ fieldLink bookCoverGet cover ]
-        div_ [] $ do
-            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBookPageGet binfoid] "Edit book information"
+        div_ [ class_ "large-2 columns"] $ do
+            img_ [style_ "max-height: 400px; display: block; margin-left: auto; margin-right: auto;", src_ $ linkToText $ fieldLink bookCoverGet cover ]
+        div_ [ class_ "large-10 columns"] $ do
             table_ $ do
                 vertRow_ "Title" $ toHtml $ title
                 vertRow_ "Author" $ toHtml $ author
                 vertRow_ "Publisher" $ toHtml $ publisher
                 vertRow_ "Published" $ toHtml $ show published
                 vertRow_ "ISBN" $ toHtml $ isbn
+            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBookPageGet binfoid] "Edit book information"
     fullRow_ $ do
         h2_ "Books"
         for_ officeMap $ \(lib, bs) -> do
