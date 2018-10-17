@@ -12,7 +12,7 @@ module PlanMill.Types.Project (Project(..), Projects, ProjectId) where
 import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Account     (AccountId)
-import PlanMill.Types.Enumeration (EnumValue)
+import PlanMill.Types.Enumeration (EnumValue (..))
 import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
 import PlanMill.Types.User        (UserId)
 
@@ -81,7 +81,7 @@ instance FromJSON Project where
                 <*> obj .:? "actualEffort"
                 <*> obj .:? "actualRevenue"
                 <*> obj .: "billableStatus"
-                <*> obj .: "category"
+                <*> (obj .:? "category" .!= EnumValue (-1)) -- seems not all projects have category?
                 <*> (getU <$$> obj .:? "finish")
                 <*> obj .: "fixedRevenue"
                 -- <*> obj .: "fixedWork"
@@ -90,7 +90,7 @@ instance FromJSON Project where
                 <*> obj .:? "invoicedRevenue"
                 -- <*> obj .: "operationalId"
                 <*> obj .:? "plannedEffort"
-                <*> (obj .: "portfolio" <|> pure (-1)) -- TODO: remove field (bustes cache)
+                <*> (obj .:? "portfolio" .!= (-1)) -- TODO: remove field (bustes cache)
                 <*> obj .:? "projectManager"
                 <*> obj .:? "remainingEffort"
                 <*> obj .:? "reportedHours"
