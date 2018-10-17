@@ -7,7 +7,7 @@ module Personio.Eval (
     ) where
 
 import Control.Monad.Http
-import Control.Monad.State  (State, evalState, state)
+import Control.Monad.State  (State, state, runState)
 import Data.Aeson.Compat    (FromJSON (..), decode)
 import Data.Aeson.Types     (listParser)
 import Futurice.CareerLevel
@@ -126,11 +126,17 @@ instance FromJSON CL where
 -- Intern
 -------------------------------------------------------------------------------
 
+data St = St !Int !(HashMap SimpleEmployee SimpleEmployee)
+
 -- | @'internSimpleEmployees' = 'id'@, but the result is shared
 -- as much as possible.
 internSimpleEmployees :: Traversal' s SimpleEmployee -> s -> s
-internSimpleEmployees tr s = evalState (tr intern s) HM.empty where
-    intern :: SimpleEmployee -> State (HashMap SimpleEmployee SimpleEmployee) SimpleEmployee
-    intern e = state $ \es -> case es ^. at e of
-        Just e' -> (e', es)
-        Nothing -> (e,  es & at e ?~ e)
+internSimpleEmployees tr s = 
+    -- so we can debug...
+    let (x, _) = runState (tr intern s) (St 0 HM.empty)
+    in x
+  where
+    intern :: SimpleEmployee -> State St SimpleEmployee
+    intern e = state $ \(St n es) -> case es ^. at e of
+        Just e' -> (e', St (n + 1) es) --  TODO
+        Nothing -> (e,  St (n + 1) $ es & at e ?~ e)

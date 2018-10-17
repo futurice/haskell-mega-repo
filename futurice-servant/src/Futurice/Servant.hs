@@ -109,7 +109,6 @@ import Network.Wai
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Prelude ()
 import Servant
-import Servant.Cached
 import Servant.CSV.Cassava                  (CSV)
 import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
 import Servant.HTML.Lucid                   (HTML)
@@ -128,6 +127,9 @@ import qualified Network.HTTP.Types.Status as HTTP
 import qualified Network.Wai.Handler.Warp  as Warp
 import qualified Options.Applicative       as O
 
+-- For performGC
+-- import qualified System.Mem                as Mem
+
 import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
 import qualified Network.AWS.CloudWatch.Types         as AWS
@@ -144,17 +146,11 @@ data LZMA a
 instance Accept (LZMA ct) where
     contentType _ = "application/x-lzma"
 
-instance {-# OVERLAPPABLE #-} MimeRender ct a => MimeRender (LZMA ct) a where
+instance MimeRender ct a => MimeRender (LZMA ct) a where
     mimeRender _ = LZMA.compress . mimeRender (Proxy :: Proxy ct)
 
-instance {-# OVERLAPPABLE #-} MimeUnrender ct a => MimeUnrender (LZMA ct) a where
+instance MimeUnrender ct a => MimeUnrender (LZMA ct) a where
     mimeUnrender _ = mimeUnrender (Proxy :: Proxy ct) . LZMA.decompress
-
-instance {-# OVERLAPPING #-} (ct ~ ct', MimeRender ct a) => MimeRender (LZMA ct') (Cached (LZMA ct) a) where
-    mimeRender _ = getCached
-
-instance {-# OVERLAPPING #-} (ct ~ ct', Accept ct) => MimeUnrender (LZMA ct') (Cached (LZMA ct) a) where
-    mimeUnrender _ = Right . unsafeMkCached
 
 -------------------------------------------------------------------------------
 -- FuturiceAPI
@@ -469,6 +465,9 @@ futuriceServerMain makeCtx (SC (I service) d htmlServer server middleware1 (I en
 
 cloudwatchJob :: Cache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Service -> IO ()
 cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
+    -- Trigger GC. Non needed in general.
+    -- liftIO $ Mem.performGC
+
     let awsService = serviceToText service
 
     -- averages

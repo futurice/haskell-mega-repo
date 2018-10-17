@@ -1,17 +1,20 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fprint-potential-instances #-}
 module Futurice.App.PersonioProxy (defaultMain) where
 
-import Control.Concurrent.STM (atomically, newTVarIO, readTVar, writeTVar)
-import Data.Aeson.Types       (object, parseEither, parseJSON, toJSON, (.=))
-import Futurice.IdMap         (IdMap)
+import Control.Concurrent.Async (async)
+import Control.Concurrent.STM   (atomically, newTVarIO, readTVar, writeTVar)
+import Control.DeepSeq          (force)
+import Data.Aeson.Types         (object, parseEither, parseJSON, toJSON, (.=))
+import Futurice.IdMap           (IdMap)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import Futurice.Time
 import Prelude ()
-import Servant                ((:<|>) (..), Server)
+import Servant                  ((:<|>) (..), Server)
 
 import Futurice.App.PersonioProxy.API
 import Futurice.App.PersonioProxy.Config
@@ -92,6 +95,9 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
     let emptyData = P.PersonioAllData employees [] mempty mempty
     ctx <- newCtx lgr cache pool (IdMap.fromFoldable employees) emptyData
 
+    -- Initial update of simple employees (history)
+    _ <- async $ updateSES ctx
+
     -- jobs
     let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
     let intervalSec = unNDT (ndtConvert' intervalMin :: NDT 'Seconds NominalDiffTime) -- TODO: add this to futurice-prelude
@@ -112,24 +118,10 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             writeTVar (ctxPersonioData ctx) $
                 P.PersonioAllData employees validations cl clRole
             return (comparePersonio oldMap newMap)
-                
-        -- Update active
-        runLogT "simple-employees" (ctxLogger ctx) $ do
-            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
-            let ses = P.internSimpleEmployees (traverse . traverse) $ Map.fromList
-                  [ (d, ids)
-                  | (t, v) <- res
-                  , let d = utctDay t
-                  , let ids = case parseEither parseJSON v of
-                          Left _   -> mempty
-                          Right es -> (es :: [P.Employee]) ^.. folded . P.simpleEmployee
-                  ]
-            logInfoI "Updating active list: count $n" $ object
-                [ "n" .= length ses
-                ]
-            liftIO $ atomically $ writeTVar (ctxSimpleEmployees ctx) ses
 
         unless (null changed) $ do
+            updateSES ctx
+
             runLogT "update" (ctxLogger ctx) $ do
                 logInfo "Personio updated, data changed" changed
                 -- Save in DB
@@ -137,6 +129,26 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
                 -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
 
+    updateSES :: Ctx -> IO ()
+    updateSES ctx = runLogT "simple-employees" (ctxLogger ctx) $ do
+        res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
+        let ses' :: Map Day [P.SimpleEmployee]
+            ses' = P.internSimpleEmployees (traverse . traverse) $ Map.fromList
+              [ (d, ids)
+              | (t, v) <- res
+              , let d = utctDay t
+              , let ids = case parseEither parseJSON v of
+                      Left _   -> mempty
+                      Right es -> (es :: [P.Employee]) ^.. folded . P.simpleEmployee
+              ]
+
+        -- this is important
+        ses <- liftIO $ evaluate $ force ses'
+
+        logInfoI "Updating active list: days $days" $ object
+            [ "days" .= length ses
+            ]
+        liftIO $ atomically $ writeTVar (ctxSimpleEmployees ctx) ses
 
 notMachine :: P.Employee -> Bool
 notMachine e = case e ^. P.employeeId of

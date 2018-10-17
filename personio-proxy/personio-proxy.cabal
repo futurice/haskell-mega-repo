@@ -29,8 +29,10 @@ library
       base >=4.7   && <4.12
     , adjunctions
     , aeson
+    , async
     , Chart
     , containers
+    , deepseq
     , distributive
     , dynmap-cache
     , env-config
@@ -44,6 +46,7 @@ library
     , mtl
     , periocron
     , personio-client
+    , servant-cached
     , servant-Chart
     , servant-server
     , stm

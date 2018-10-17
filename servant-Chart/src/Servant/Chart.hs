@@ -49,7 +49,7 @@ data SVG deriving Typeable
 instance Accept SVG where
     contentType _ = "image" M.// "svg+xml"
 
-instance ToRenderable a => MimeRender SVG a where
+instance {-# OVERLAPPABLE #-} ToRenderable a => MimeRender SVG a where
     mimeRender _
         = S.renderBS
         . D.renderDia DSVG.SVG opts

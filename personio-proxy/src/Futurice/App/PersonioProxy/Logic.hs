@@ -15,14 +15,15 @@ import Data.Functor.Rep
 import Data.List                        (foldl', partition)
 import Data.Time                        (addDays)
 import Futurice.App.PersonioProxy.Types
-import Futurice.Cache                   (cached)
+import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
 import Futurice.Daily
 import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
 import Servant
-import Servant.Chart                    (Chart (..))
+import Servant.Cached                   (Cached, mkCached)
+import Servant.Chart                    (Chart (..), SVG)
 
 import qualified Data.Map.Strict               as Map
 import qualified Futurice.Chart.Stacked        as C
@@ -61,17 +62,28 @@ rawSimpleEmployees :: Ctx -> Handler (Map Day [P.SimpleEmployee])
 rawSimpleEmployees = liftIO . readTVarIO . ctxSimpleEmployees
 
 -------------------------------------------------------------------------------
+-- Cached
+-------------------------------------------------------------------------------
+
+mkCached' :: (Typeable ct, Typeable a, MimeRender ct a) => Ctx -> IO a -> Handler (Cached ct a)
+mkCached' ctx action = liftIO $
+    cachedIO (ctxLogger ctx) (ctxCache ctx) 600 () $ mkCached <$> action
+
+-------------------------------------------------------------------------------
 -- Employees Chart
 -------------------------------------------------------------------------------
 
-employeesChart :: Ctx -> Handler (Chart "employees")
-employeesChart ctx = do
-    values <- liftIO $ runLogT "chart-employees" (ctxLogger ctx) $
-        cached (ctxCache ctx) 600 () $ do
-            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
-            return $ res <&> \(t, c) ->
-                let d = utctDay t
-                in (d, employeesCounts d c)
+employeesChart :: Ctx -> Handler (Cached SVG (Chart "employees"))
+employeesChart ctx = mkCached' ctx $ runLogT "chart-employees" (ctxLogger ctx) $ do
+    today <- currentDay
+
+    values <- do
+        fes <- liftIO $ readTVarIO $ ctxPersonio ctx
+        res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
+        return
+            [ pair d $ employeesCounts fes d (res ! d)
+            | d <- [ $(mkDay "2018-06-01") .. today ]
+            ]
 
     return $ Chart . C.toRenderable $ do
         C.layout_title .= "Employees"
@@ -84,14 +96,16 @@ employeesChart ctx = do
         C.layout_y_axis . C.laxis_title .= "Employees"
         C.layout_y_axis . C.laxis_override .= overrideY
   where
-    employeesCounts :: Day -> Value -> PerEmploymentType Int
-    employeesCounts today v = case parseEither parseJSON v of
-        Left _    -> PerEmploymentType 0 0
-        -- TODO: use @folds@ -package
-        Right es' -> PerEmploymentType (length int) (length ext)
-          where
-            es = filter (P.employeeIsActive today) es'
-            (int, ext) = partition (\p -> p ^. P.employeeEmploymentType /= Just P.External) es
+    pair :: a -> b -> (a, b)
+    pair = (,)
+
+    employeesCounts :: IdMap.IdMap P.Employee -> Day -> [P.SimpleEmployee] -> PerEmploymentType Int
+    employeesCounts fes today ses' = PerEmploymentType (length int) (length ext)
+      where
+        ses = filter (P.employeeIsActive today) ses'
+        (int, ext) = partition
+            (\p -> fes ^? ix (p ^. P.employeeId) . P.employeeEmploymentType . _Just /= Just P.External)
+            ses
 
     overrideY :: C.AxisData Int -> C.AxisData Int
     overrideY ax = ax & C.axis_grid .~ (ax ^.. C.axis_ticks . folded . _1)
@@ -119,21 +133,20 @@ instance Representable PerEmploymentType where
 -- Tribes employees chart
 -------------------------------------------------------------------------------
 
-tribeEmployeesChart :: Ctx -> Handler (Chart "tribe-employees")
-tribeEmployeesChart ctx = do
+tribeEmployeesChart :: Ctx -> Handler (Cached SVG (Chart "tribe-employees"))
+tribeEmployeesChart ctx = mkCached' ctx $ runLogT "chart-tribe-employees" (ctxLogger ctx) $ do
     today <- currentDay
 
-    (values, future) <- liftIO $ runLogT "chart-tribe-employees" (ctxLogger ctx) $
-        cached (ctxCache ctx) 600 () $ do
-            fes <- liftIO $ readTVarIO $ ctxPersonio ctx
-            res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
-            return $ pair
-                [ pair d $ employeesCounts True fes d (res ! d)
-                | d <- [ $(mkDay "2018-06-01") .. today ]
-                ]
-                [ pair d $ employeesCounts False fes d (res ! d)
-                | d <- [ today .. addDays 50 today ]
-                ]
+    (values, future) <- do
+        fes <- liftIO $ readTVarIO $ ctxPersonio ctx
+        res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
+        return $ pair
+            [ pair d $ employeesCounts True fes d (res ! d)
+            | d <- [ $(mkDay "2018-06-01") .. today ]
+            ]
+            [ pair d $ employeesCounts False fes d (res ! d)
+            | d <- [ today .. addDays 50 today ]
+            ]
 
     return $ Chart . C.toRenderable $ do
         C.layout_title .= "Employees per tribe"
@@ -184,12 +197,11 @@ tribeEmployeesChart ctx = do
 -- Career levels chart
 -------------------------------------------------------------------------------
 
-careerLevelsChart :: Ctx -> Handler (Chart "career-levels")
-careerLevelsChart ctx = do
-    (values, perRole) <- liftIO $ runLogT "career-levels" (ctxLogger ctx) $
-        cached (ctxCache ctx) 600 () $ do
-            xs <- liftIO $ readTVarIO $ ctxPersonioData ctx
-            return (P.paCareerLevels xs, P.paCareerLevelsRole xs)
+careerLevelsChart :: Ctx -> Handler (Cached SVG (Chart "career-levels"))
+careerLevelsChart ctx = mkCached' ctx $ runLogT "career-levels" (ctxLogger ctx) $ do
+    (values, perRole) <- liftIO $ do
+        xs <- liftIO $ readTVarIO $ ctxPersonioData ctx
+        return (P.paCareerLevels xs, P.paCareerLevelsRole xs)
 
     let roles = Map.keys perRole
 
@@ -242,14 +254,13 @@ careerLevelsChart ctx = do
 -- Roles distribution
 -------------------------------------------------------------------------------
 
-rolesDistributionChart :: Ctx -> Handler (Chart "roles-distribution")
-rolesDistributionChart ctx = do
-    values' <- liftIO $ runLogT "chart-roles-distribution" (ctxLogger ctx) $
-        cached (ctxCache ctx) 600 () $ do
-            res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
-            return $ res <&> \(t, c) ->
-                let d = utctDay t
-                in (d, rolesDistribution d c)
+rolesDistributionChart :: Ctx -> Handler (Cached SVG (Chart "roles-distribution"))
+rolesDistributionChart ctx = mkCached' ctx $ runLogT "chart-roles-distribution" (ctxLogger ctx) $ do
+    values' <- do
+        res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
+        return $ res <&> \(t, c) ->
+            let d = utctDay t
+            in (d, rolesDistribution d c)
 
     -- titles are also positions!
     let (titles, values) = postprocess values'

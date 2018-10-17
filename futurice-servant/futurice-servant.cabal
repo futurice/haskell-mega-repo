@@ -64,7 +64,6 @@ library
     , regex-applicative-text
     , servant
     , servant-cassava
-    , servant-cached
     , servant-lucid
     , servant-server
     , servant-swagger
