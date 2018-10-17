@@ -23,7 +23,7 @@ data Nav = NavHome
 instance Navigation Nav where
     serviceTitle _ = "Library"
 
-    navLink NavHome    = (recordHref_ indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing, "Library Home")
+    navLink NavHome    = (recordHref_ indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing, "Library Home")
     navLink NavUser    = (recordHref_ personalLoansPageGet, "My Loans")
     navLink NavAddItem = (recordHref_ addItemPageGet, "Add Item")
 

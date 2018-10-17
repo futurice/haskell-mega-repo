@@ -63,6 +63,7 @@ module Futurice.App.Library.Types (
     ItemInfo (..),
     LoanId,
     Library (..),
+    LibraryOrAll (..),
     allLibraries,
     libraryToText,
     usedLibraries,

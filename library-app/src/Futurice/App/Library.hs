@@ -7,6 +7,7 @@ module Futurice.App.Library (defaultMain) where
 import Codec.Picture                (DynamicImage, decodeImage)
 import Crypto.Hash.SHA256           (hmac)
 import Data.Char                    (isSpace)
+import Data.Maybe                   (isJust)
 import Data.Time
        (defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat)
 import FUM.Types.Login
@@ -248,20 +249,26 @@ indexPageImpl :: Ctx
               -> Maybe BookInformationId
               -> Maybe BoardGameInformationId
               -> Maybe Text
+              -> Maybe LibraryOrAll
+              -> Maybe Text
               -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx criteria direction limit startBookId startBoardGameId search = do
-    crit <- pure $ fromMaybe (BookSort SortTitle) criteria
-    dir <- pure $ fromMaybe SortAsc direction
-    lim <- pure $ fromMaybe 10 limit
+indexPageImpl ctx criteria direction limit startBookId startBoardGameId search library onlyAvailableText = do
+    -- default values
+    let lib = fromMaybe AllLibraries library
+        onlyAvailable = isJust onlyAvailableText
+        cleanedSearch = search >>= (\s -> if s == "" then Nothing else Just s)
+        crit = fromMaybe (BookSort SortTitle) criteria
+        dir = fromMaybe SortAsc direction
+        lim = fromMaybe 10 limit
     case crit of
       (BookSort bookCrit) -> do
           bookInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBookInformation (ctxPostgres ctx) x) startBookId
-          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BookCS bookCrit bookInfo) dir lim search
-          pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search
+          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BookCS bookCrit bookInfo) dir lim cleanedSearch lib onlyAvailable
+          pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
       (BoardGameSort boardgameCrit) -> do
           boardGameInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBoardGameInformation (ctxPostgres ctx) x) startBoardGameId
-          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BoardGameCS boardgameCrit boardGameInfo) dir lim search
-          pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search
+          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BoardGameCS boardgameCrit boardGameInfo) dir lim cleanedSearch lib onlyAvailable
+          pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
@@ -299,16 +306,19 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
 snatchBookImpl :: Ctx -> Maybe Login -> ItemId -> Handler Loan
 snatchBookImpl ctx login iid = withAuthUser ctx login $ (\l -> do
     emap <- liftIO $ getPersonioDataMap ctx
-    case emap ^.at l of
-      Nothing -> throwError err403
-      Just es -> do
-          loanData <- runLogT "snatch-book" (ctxLogger ctx) $ snatchBook (ctxPostgres ctx) (es ^. P.employeeId) iid
-          case loanData of
-            Nothing -> throwError $ err404 { errBody = "Couln't loan book" }
-            Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
+    newLoan <- runLogT "snatch" (ctxLogger ctx) $ runMaybeT $ do
+        loanData <- MaybeT $ fetchLoanIdWithItemId (ctxPostgres ctx) iid
+        _ <- returnItem (ctxPostgres ctx) (ldLoanId loanData)
+        itemData <- MaybeT $ fetchItem (ctxPostgres ctx) iid
+        es <- MaybeT $ pure $ emap ^.at l
+        newLoanData <- case itemData of
+           ItemData _ library (BookInfoId binfoid) -> MaybeT $ borrowBook (ctxPostgres ctx) (es ^. P.employeeId) (BorrowRequest binfoid library)
+           _ -> throwError err403
+        pure $ getLoanImpl ctx (ldLoanId newLoanData)
+    fromMaybe (throwError err403 { errBody = "Couldn't make forced loan"}) newLoan)
 
 returnLoanImpl :: Ctx -> LoanId -> Handler Bool
-returnLoanImpl ctx lid = runLogT "return-book" (ctxLogger ctx) (executeReturnBook (ctxPostgres ctx) lid)
+returnLoanImpl ctx lid = runLogT "return-loan" (ctxLogger ctx) $ returnItem (ctxPostgres ctx) lid
 
 getBooksImpl :: Ctx -> Handler [BookInformationResponse]
 getBooksImpl ctx = do

@@ -15,6 +15,7 @@ import Database.PostgreSQL.Simple.ToField
 import qualified Data.ByteString.Char8 as C
 import qualified Data.Text             as T
 
+import Futurice.Generics
 import Futurice.Office
 import Futurice.Prelude
 import Prelude ()
@@ -24,6 +25,10 @@ data Library
     | Elibrary
     | UnknownLibrary
     deriving (Eq, Show, Ord, Typeable, Generic)
+
+data LibraryOrAll = AllLibraries
+                  | JustLibrary Library
+                  deriving (Eq)
 
 deriveGeneric ''Library
 
@@ -72,3 +77,11 @@ instance FromJSON Library where
     parseJSON = withObject "Library" $ \l -> do
         office <- l .: "office"
         pure $ libraryFromText office
+
+instance ToHttpApiData LibraryOrAll where
+    toUrlPiece AllLibraries = "all"
+    toUrlPiece (JustLibrary lib) = libraryToText lib
+
+instance FromHttpApiData LibraryOrAll where
+    parseUrlPiece "all" = Right AllLibraries
+    parseUrlPiece lib = Right $ JustLibrary $ libraryFromText lib

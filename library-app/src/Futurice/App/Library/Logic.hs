@@ -104,14 +104,6 @@ makeLoan ctx date iid (P.EmployeeId eid) = do
     _ <- safePoolExecute ctx "INSERT INTO library.loan (date_loaned, personio_id, item_id) VALUES (?,?,?)" (date, toInteger eid, iid)
     listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only iid)
 
-makeForcedLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> Day -> LoanId -> P.EmployeeId -> m (Maybe LoanData)
-makeForcedLoan ctx date lid (P.EmployeeId eid) = do
-    result <- safePoolExecute ctx "UPDATE library.loan SET date_loaned = ?, personio_id = ? WHERE loan_id = ?" (date, toInteger eid, lid)
-    if result == 1 then
-      listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
-    else
-      pure Nothing
-
 fetchLoansWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [ItemId] -> m [LoanData]
 fetchLoansWithItemIds ctx iids = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id in ?;" (Only (In iids))
 
@@ -123,18 +115,14 @@ borrowBook ctx eid (BorrowRequest binfoid _) = do
         freeBook <- MaybeT $ fetchItemsWithoutLoans ctx books
         MaybeT $ makeLoan ctx now freeBook eid
 
-snatchBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> P.EmployeeId -> ItemId -> m (Maybe LoanData)
-snatchBook ctx eid iid = do
-    now <- currentDay
-    runMaybeT $ do
-        (LoanData lid _ _ _) <- MaybeT $ fetchLoanByItemId ctx iid
-        MaybeT $ makeForcedLoan ctx now lid eid
-
 loans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [LoanData]
 loans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
 
 loan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m (Maybe LoanData)
 loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
+
+fetchLoanIdWithItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe LoanData)
+fetchLoanIdWithItemId ctx itemId = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only itemId)
 
 fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
 fetchLoan ctx emap lid = do
@@ -157,8 +145,8 @@ fetchLoans ctx es = do
     l <- loans ctx
     loanDataToLoan ctx es l
 
-executeReturnBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m Bool
-executeReturnBook ctx lid = do
+returnItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m Bool
+returnItem ctx lid = do
     l <- loan ctx lid
     case l of
       Nothing -> pure False
@@ -216,12 +204,12 @@ sortDirection SortDesc = "DESC"
 sortDirection SortAsc  = "ASC"
 
 startPos :: SortCriteria -> SortDirection -> Query
-startPos (BookSort SortTitle) dir         = " WHERE (title, bookinfo_id)" <> startDirection dir <> "(?,?) "
-startPos (BookSort SortAuthor) dir        = " WHERE (author, bookinfo_id)" <> startDirection dir <> "(?,?) "
-startPos (BookSort SortISBN) dir          = " WHERE (isbn, bookinfo_id)" <> startDirection dir <> "(?,?) "
-startPos (BookSort SortPublished) dir     = " WHERE (publishedYear, bookinfo_id)" <> startDirection dir <> "(?,?) "
-startPos (BoardGameSort SortName) dir     = " WHERE (name, boardgameinfo_id)" <> startDirection dir <> "(?,?) "
-startPos (BoardGameSort SortDesigner) dir = " WHERE (designer, boardgameinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortTitle) dir         = " (title, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortAuthor) dir        = " (author, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortISBN) dir          = " (isbn, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BookSort SortPublished) dir     = " (publishedYear, bookinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BoardGameSort SortName) dir     = " (name, boardgameinfo_id)" <> startDirection dir <> "(?,?) "
+startPos (BoardGameSort SortDesigner) dir = " (designer, boardgameinfo_id)" <> startDirection dir <> "(?,?) "
 
 sortCriteria :: SortCriteria -> SortDirection -> Query
 sortCriteria (BookSort SortTitle) dir         = " ORDER BY title " <> sortDirection dir <> ", bookinfo_id "
@@ -245,31 +233,75 @@ searchSqlString :: SortCriteria -> Query
 searchSqlString (BookSort _) = " bookinfo_id in (SELECT bookinfo_id FROM (SELECT bookinfo_id, title, to_tsvector(title) || to_tsvector(isbn) || to_tsvector(author) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) as document FROM library.bookinformation) book_search WHERE book_search.document @@ plainto_tsquery(?)) "
 searchSqlString (BoardGameSort _) = " boardgameinfo_id in (SELECT boardgameinfo_id FROM (SELECT boardgameinfo_id, name, to_tsvector(name) || to_tsvector(publisher) || to_tsvector(to_char(publishedYear, '9999')) || to_tsvector(designer) || to_tsvector(artist) as document FROM library.boardgameinformation) boardgame_search WHERE boardgame_search.document @@ plainto_tsquery(?)) "
 
+librarySqlString :: SortCriteria -> Query
+librarySqlString (BookSort _) = " bookinfo_id in (select bookinfo_id from library.item where library = ? and bookinfo_id IS NOT NULL) "
+librarySqlString (BoardGameSort _) = " boardgameinfo_id in (select boardgameinfo_id from library.item where library = ? and boardgameinfo_id IS NOT NULL) "
+
+availabilitySqlString :: SortCriteria -> Maybe Library -> Query
+availabilitySqlString (BookSort _) Nothing = " EXISTS (select * from library.item where bookinfo_id = library.bookinformation.bookinfo_id and item_id not in (select item_id from library.loan)) "
+availabilitySqlString (BookSort _) (Just _) = " EXISTS (select * from library.item where bookinfo_id = library.bookinformation.bookinfo_id and library = ? and item_id not in (select item_id from library.loan)) "
+availabilitySqlString (BoardGameSort _) Nothing = " EXISTS (select * from library.item where boardgameinfo_id = library.boardgameinformation.boardgameinfo_id and item_id not in (select item_id from library.loan)) "
+availabilitySqlString (BoardGameSort _) (Just _) = " EXISTS (select * from library.item where boardgameinfo_id = library.boardgameinformation.boardgameinfo_id and library = ? and item_id not in (select item_id from library.loan)) "
+
 fetchInformationsWithCriteria :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, FromRow a)
                                  => Pool Connection
                                  -> SortCriteriaAndStart
                                  -> SortDirection
                                  -> Int
                                  -> Maybe Text
+                                 -> LibraryOrAll
+                                 -> Bool
                                  -> m [a]
-fetchInformationsWithCriteria ctx criteria direction limit search = case criteria of
+fetchInformationsWithCriteria ctx criteria direction limit search library onlyAvailable = case criteria of
     BookCS crit (Just bookInfo) -> fetchInfo (BookSort crit) (Just (bookInfo ^. bookInformationId, startBookInfo crit bookInfo))
     BookCS crit Nothing -> fetchInfo (BookSort crit) (Nothing :: Maybe (BookInformationId, Text))
     BoardGameCS crit (Just boardGameInfo) -> fetchInfo (BoardGameSort crit) (Just (boardGameInfo ^. boardGameInformationId, startBoardGameInfo crit boardGameInfo))
     BoardGameCS crit Nothing -> fetchInfo (BoardGameSort crit) (Nothing :: Maybe (BoardGameInformationId, Text))
   where
     fetchInfo :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, FromRow a, ToField c, ToField d) => SortCriteria -> Maybe (c, d) -> m [a]
-    fetchInfo crit info = case (info, search) of
-      (Just (infoid, ii), Nothing) -> safePoolQuery
+    fetchInfo crit info = case (info, search, library, onlyAvailable) of
+      (Just (infoid, ii), Nothing, AllLibraries, False) -> safePoolQuery
                               ctx
-                              ((selectStatement crit <> startPos crit direction <> sortCriteria crit direction) <> " LIMIT ?")
+                              ((selectStatement crit <> " WHERE " <> startPos crit direction <> sortCriteria crit direction) <> " LIMIT ?")
                               $ (ii, infoid, limit)
-      (Just (infoid, ii), Just s) -> safePoolQuery
+      (Just (infoid, ii), Just s, AllLibraries, False) -> safePoolQuery
                              ctx
-                             ((selectStatement crit <> startPos crit direction <> " AND " <> searchSqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
+                             ((selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> searchSqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
                              $ (ii, infoid, s, limit)
-      (Nothing, Nothing)  -> safePoolQuery ctx (selectStatement crit <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
-      (Nothing, Just s)   -> safePoolQuery ctx (selectStatement crit <> "WHERE" <> searchSqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
+      (Nothing, Nothing, AllLibraries, False) -> safePoolQuery ctx (selectStatement crit <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
+      (Nothing, Just s, AllLibraries, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> searchSqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
+      (Just (infoid, ii), Nothing, JustLibrary lib, False) -> safePoolQuery
+                              ctx
+                              ((selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> librarySqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
+                              $ (ii, infoid, lib, limit)
+      (Just (infoid, ii), Just s, JustLibrary lib, False) -> safePoolQuery
+                             ctx
+                             ((selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> searchSqlString crit <> " AND " <> librarySqlString crit <> sortCriteria crit direction) <> " LIMIT ?")
+                             $ (ii, infoid, s, lib, limit)
+      (Nothing, Nothing, JustLibrary lib, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> librarySqlString crit <> sortCriteria crit direction <> " LIMIT ?") (lib, limit)
+      (Nothing, Just s, JustLibrary lib, False) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> searchSqlString crit <> " AND " <> librarySqlString crit <> sortCriteria crit direction <> " LIMIT ?") (s, lib, limit)
+      (Just (infoid, ii), Nothing, AllLibraries, True) -> safePoolQuery
+                              ctx
+                              (selectStatement crit <> " WHERE " <> startPos crit direction <> " AND " <> availabilitySqlString crit Nothing <> sortCriteria crit direction <> " LIMIT ?")
+                              $ (ii, infoid, limit)
+      (Just (infoid, ii), Just s, AllLibraries, True) -> safePoolQuery
+                             ctx
+                             (selectStatement crit <> " WHERE " <> wherewrapper [startPos crit direction, searchSqlString crit, availabilitySqlString crit Nothing] <> sortCriteria crit direction <> " LIMIT ?")
+                             $ (ii, infoid, s, limit)
+      (Nothing, Nothing, AllLibraries, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> availabilitySqlString crit Nothing <> sortCriteria crit direction <> " LIMIT ?") (Only limit)
+      (Nothing, Just s, AllLibraries, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [searchSqlString crit, availabilitySqlString crit Nothing] <> sortCriteria crit direction <> " LIMIT ?") (s, limit)
+      (Just (infoid, ii), Nothing, JustLibrary lib, True) -> safePoolQuery
+                              ctx
+                              ((selectStatement crit <> " WHERE " <> wherewrapper [startPos crit direction,librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction) <> " LIMIT ?")
+                              $ (ii, infoid, lib, lib, limit)
+      (Just (infoid, ii), Just s, JustLibrary lib, True) -> safePoolQuery
+                             ctx
+                             ((selectStatement crit <> " WHERE " <> wherewrapper [startPos crit direction, searchSqlString crit, librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction) <> " LIMIT ?")
+                             $ (ii, infoid, s, lib, lib, limit)
+      (Nothing, Nothing, JustLibrary lib, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction <> " LIMIT ?") (lib, lib, limit)
+      (Nothing, Just s, JustLibrary lib, True) -> safePoolQuery ctx (selectStatement crit <> " WHERE " <> wherewrapper [searchSqlString crit, librarySqlString crit, availabilitySqlString crit (Just lib)] <> sortCriteria crit direction <> " LIMIT ?") (s, lib, lib, limit)
+    wherewrapper = fold . intersperse " AND "
+
 
 fetchBookInformationByISBN :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> Text -> m (Maybe BookInformationResponse)
 fetchBookInformationByISBN ctx isbn = do

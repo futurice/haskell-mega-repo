@@ -46,7 +46,13 @@ data AddBoardGameInformation = AddBoardGameInformation
     deriving Show
 
 usedLibraries :: [Library]
-usedLibraries = (filter (/= OfficeLibrary offOther) . filter (/= UnknownLibrary)) allLibraries
+usedLibraries = let librarySelectSortOrder a b = case (a,b) of
+                        (Elibrary, Elibrary) -> EQ
+                        (Elibrary, _) -> GT
+                        (_, Elibrary) -> LT
+                        _ -> compare (libraryToText a) (libraryToText b)
+                    usedLibs = (filter (/= OfficeLibrary offOther) . filter (/= UnknownLibrary)) allLibraries
+                in sortBy librarySelectSortOrder usedLibs
 
 fromtextToInt :: Text -> Maybe Int
 fromtextToInt t = case decimal t of
