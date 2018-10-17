@@ -20,7 +20,6 @@ import PlanMill.Internal.Prelude
 import PlanMill.Types.Enumeration (EnumValue)
 import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
 import PlanMill.Types.Project     (ProjectId)
-import PlanMill.Types.Timereport  (Timereport)
 import PlanMill.Types.User        (UserId)
 
 type AbsenceId = Identifier Absence
