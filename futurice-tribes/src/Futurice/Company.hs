@@ -23,6 +23,7 @@ module Futurice.Company (
     Country (..),
     companyCountry,
     countryToText,
+    countryToText',
     countryFromText,
     -- ** Known values
     countryFinland,
@@ -219,6 +220,10 @@ instance C.PlotValue Country where
 
 countryToText :: Country -> Text
 countryToText (Country c) = cCountry ci <> " / " <> cName ci where
+    ci = companyInfo c
+
+countryToText' :: Country -> Text
+countryToText' (Country c) = cCountry ci where
     ci = companyInfo c
 
 countryFromText :: Text -> Maybe Country
