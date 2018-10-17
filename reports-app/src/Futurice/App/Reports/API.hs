@@ -22,6 +22,8 @@ import Servant.Graph             (ALGA, Graph)
 import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
 import Futurice.App.Reports.Inventory                 (InventorySummary)
 import Futurice.App.Reports.MissingHours              (MissingHoursReport)
+import Futurice.App.Reports.OfficeVibeIntegration
+       (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
 import Futurice.App.Reports.PlanMillAccountValidation (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences             (PowerAbsenceReport)
 import Futurice.App.Reports.PowerProjects             (PowerProjectsReport)
@@ -71,6 +73,10 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
     :<|> "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
     :<|> "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
+    -- Officevibe
+    :<|> "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
+    :<|> "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]
+    :<|> "officevibe" :> "groups-mapping.csv" :> Get '[CSV] [OfficeVibeRelation]
     -- Dump
     :<|> "dump" :> "timereports.csv.xz" :> CachedGet (LZMA CSV) [SimpleTimereport]
     -- Charts

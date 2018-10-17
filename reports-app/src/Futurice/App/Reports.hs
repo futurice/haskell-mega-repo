@@ -28,6 +28,7 @@ import Servant.Cached             (mkCached)
 import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
 
+import Futurice.App.Reports.OfficeVibeIntegration     (OfficeVibeData (..), officeVibeData)
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
@@ -153,7 +154,17 @@ serveData
     => Integrations '[I, I, Proxy, I, I, I] v
     -> Ctx
     -> IO v
-serveData f ctx = cachedIO' ctx () $ runIntegrations' ctx f
+serveData f = serveData' f id
+
+serveData'
+    :: (Typeable a, NFData a)
+    => Integrations '[I, I, Proxy, I, I, I] a  -- ^ single cache
+    -> (a -> b)                                -- ^ multiple outputs?
+    -> Ctx
+    -> IO b
+serveData' f g ctx = do
+    a <- cachedIO' ctx () $ runIntegrations' ctx f
+    return (g a)
 
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
@@ -214,6 +225,10 @@ server ctx = makeServer ctx reports
     :<|> liftIO serveInventory
     :<|> liftIO (serveData projectHoursData ctx)
     :<|> liftIO (serveData projectHoursData ctx)
+    -- officevibe
+    :<|> liftIO (serveData' officeVibeData ovdUsers ctx)
+    :<|> liftIO (serveData' officeVibeData ovdGroups ctx)
+    :<|> liftIO (serveData' officeVibeData ovdRelations ctx)
     -- dumps
     :<|> liftIO (serveData (mkCached <$> timereportsDump) ctx)
     -- charts
