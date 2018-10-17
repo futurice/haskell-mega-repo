@@ -55,12 +55,12 @@ data Empty = Empty
   deriving anyclass (NFData)
 
 data OfficeVibeUser = OfficeVibeUser
-    { ovuId       :: OfficeVibeId OfficeVibeUser
-    , ovuEmail    :: Email
-    , ovuFirst    :: Text
-    , ovuLast     :: Text
-    , ovuTitle    :: Text
-    , ovuImageUrl :: Empty
+    { ovuId       :: !(OfficeVibeId OfficeVibeUser)
+    , ovuEmail    :: !Email
+    , ovuFirst    :: !Text
+    , ovuLast     :: !Text
+    , ovuTitle    :: !Text
+    , ovuImageUrl :: !Empty
     }
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
@@ -73,11 +73,11 @@ data OfficeVibeGroup = OfficeVibeGroup
   deriving anyclass (NFData)
 
 data OfficeVibeRelation = OfficeVibeRelation
-    { ovrGroupId    :: OfficeVibeId OfficeVibeGroup
-    , ovrUserId     :: OfficeVibeId OfficeVibeUser
-    , ovrSubGroupId :: Empty
-    , ovrIsMember   :: OfficeVibeBool
-    , ovrIsManager  :: OfficeVibeBool
+    { ovrGroupId    :: !(OfficeVibeId OfficeVibeGroup)
+    , ovrUserId     :: !(OfficeVibeId OfficeVibeUser)
+    , ovrSubGroupId :: !Empty
+    , ovrIsMember   :: !OfficeVibeBool
+    , ovrIsManager  :: !OfficeVibeBool
     }
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
