@@ -19,20 +19,6 @@ timed () {
     fi
 }
 
-# Temporal hack
-makestore () {
-	cd "$(mktemp -d)"
-
-    echo 'cabal-version: 2.2'      > z.cabal
-    echo 'name: z'                >> z.cabal
-    echo 'version: 0'             >> z.cabal
-    echo 'library'                >> z.cabal
-    echo '  build-depends: aeson' >> z.cabal
-
-    cat z.cabal \
-    cabal new-build || true
-}
-
 case $STEP in
 prepare)
     echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
@@ -77,10 +63,8 @@ install)
         ;;
 
     cabal)
-		(makestore || true)
-
         # Install doctest
-		(cd /tmp && echo "" | cabal new-repl fail)
+		(cd /tmp && echo "" | cabal new-repl --build-dep fail)
 		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --symlink-bindir="$HOME/.local/bin") || exit 1
         doctest --version
 
