@@ -495,7 +495,8 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
     -- gcm
     stats <- liftIO Stats.getRTSStats
 
-    let liveBytes =  Stats.gcdetails_live_bytes (Stats.gc stats)
+    let liveBytes = Stats.gcdetails_live_bytes (Stats.gc stats)
+    let compactBytes = Stats.gcdetails_compact_bytes (Stats.gc stats)
 
     let currMut = Stats.mutator_cpu_ns stats
     let currTot = Stats.cpu_ns stats
@@ -522,6 +523,7 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
 
     logInfo "RTS stats" $ Aeson.object
         [ "live bytes"         Aeson..= liveBytes
+        , "compact bytes"      Aeson..= compactBytes
         , "productivity cpu"   Aeson..= productivity
         , "productivity wall"  Aeson..= prodWall
         , "cache size"         Aeson..= cs

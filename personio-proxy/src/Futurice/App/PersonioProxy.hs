@@ -26,9 +26,9 @@ import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
 
 #if __GLASGOW_HASKELL__ >= 804
-import Data.Compact (compact, compactSize, getCompact)
+import Data.Compact (compactSize, compactWithSharing, getCompact, compactAddWithSharing)
 #else
-import Control.DeepSeq          (force)
+import Control.DeepSeq (force)
 #endif
 
 server :: Ctx -> Server PersonioProxyAPI
@@ -116,12 +116,25 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         let employees = filter notMachine employees'
         let validations = filter (notMachine . view P.evEmployee) validations'
 
+        let newMap' = IdMap.fromFoldable employees
+        let allData' = P.PersonioAllData employees validations cl clRole
+
+#if __GLASGOW_HASKELL__ >= 804
+        (newMap, allData) <- do
+            region0 <- compactWithSharing allData'
+            region1 <- compactAddWithSharing region0 newMap'
+            size <- compactSize region1
+            runLogT "compact" (ctxLogger ctx) $
+                logInfoI "Compacted personio data $size" $ object [ "size" .= size ]
+            return (getCompact region1, getCompact region0)
+#else
+        (newMap, allData) <- evaluate $ force $ (newMap', allData')
+#endif
+
         changed <- atomically $ do
             oldMap <- readTVar (ctxPersonio ctx)
-            let newMap = IdMap.fromFoldable employees
             writeTVar (ctxPersonio ctx) newMap
-            writeTVar (ctxPersonioData ctx) $
-                P.PersonioAllData employees validations cl clRole
+            writeTVar (ctxPersonioData ctx) allData
             return (comparePersonio oldMap newMap)
 
         unless (null changed) $ do
@@ -149,7 +162,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
 
         -- this is important
 #if __GLASGOW_HASKELL__ >= 804
-        sesCompact <- liftIO $ compact ses'
+        sesCompact <- liftIO $ compactWithSharing ses'
         let ses = getCompact sesCompact
         sesSize <- liftIO $ compactSize sesCompact
 #else

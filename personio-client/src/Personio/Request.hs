@@ -33,7 +33,7 @@ data PersonioAllData = PersonioAllData
     , paCareerLevelsRole :: !(Map Text (Map CareerLevel Int))
     }
   deriving stock (Show, Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving anyclass (ToJSON, FromJSON, NFData)
 
 data PersonioReq a where
     PersonioEmployees       :: PersonioReq [Employee]
