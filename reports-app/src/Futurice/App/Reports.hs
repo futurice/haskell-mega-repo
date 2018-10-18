@@ -10,6 +10,7 @@
 module Futurice.App.Reports (defaultMain) where
 
 import Control.Lens               (each)
+import Data.List                  (isSuffixOf)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
 import Futurice.Metrics.RateMeter (mark)
@@ -28,7 +29,9 @@ import Servant.Cached             (mkCached)
 import Servant.Chart              (Chart (..))
 import Servant.Graph              (Graph (..))
 
-import Futurice.App.Reports.OfficeVibeIntegration     (OfficeVibeData (..), officeVibeData)
+import qualified Data.Swagger           as Sw
+import qualified Futurice.KleeneSwagger as K
+
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
@@ -46,6 +49,8 @@ import Futurice.App.Reports.MissingHoursChart
 import Futurice.App.Reports.MissingHoursDailyChart
        (missingHoursDailyChartData, missingHoursDailyChartRender)
 import Futurice.App.Reports.MissingHoursNotifications
+import Futurice.App.Reports.OfficeVibeIntegration
+       (OfficeVibeData (..), officeVibeData)
 import Futurice.App.Reports.PlanMillAccountValidation (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
@@ -269,6 +274,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverApp reportsApi .~ server
     & serverEnvPfx         .~ "REPORTSAPP"
+    & serverSwaggerMod     .~ swaggerMod
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg lgr manager cache mq = do
@@ -296,3 +302,32 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         $ shifted (2 * 60) $ every $ 10 * 60
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
+
+    swaggerMod
+          = Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "power" *> many K.anySym)
+                [ "For Power" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "charts" *> many K.anySym)
+                [ "Charts" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "graphs" *> many K.anySym)
+                [ "Graphs" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "dump" *> many K.anySym)
+                [ "Data dumps" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "missing-hours" *> many K.anySym)
+                [ "Missing hours" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "tables" *> many K.anySym)
+                [ "Tables" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "officevibe" *> many K.anySym)
+                [ "For Officevibe" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ many K.anySym *> K.psym (isSuffixOf "csv"))
+                [ "CSV" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ many K.anySym *> K.psym (isSuffixOf "json"))
+                [ "JSON" ]

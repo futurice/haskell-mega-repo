@@ -68,6 +68,8 @@ library
     , servant-server
     , servant-swagger
     , servant-swagger-ui
+    , split
+    , regex-applicative
     , stm
     , swagger2
     , text
@@ -80,6 +82,7 @@ library
 
     , resourcet
   exposed-modules:
+      Futurice.KleeneSwagger
       Futurice.Servant
       Futurice.MessageQueue
   default-language: Haskell2010
