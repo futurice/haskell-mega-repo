@@ -28,17 +28,23 @@ library
       base           >=4.7      && <4.12
     , Chart
     , Chart-diagrams
+    , deepseq
     , diagrams-lib
     , diagrams-svg
     , file-embed
     , file-embed-lzma
     , http-media     >=0.6.2
     , servant        >=0.4.4.5  && <0.15
-    , swagger2
     , svg-builder
     , SVGFonts
+    , swagger2
+    , vector
   build-depends:
     adjunctions, futurice-prelude, mtl
+
+  if impl(ghc >= 8.4.4)
+    build-depends: compact
+
   exposed-modules:
       Servant.Chart
   default-language: Haskell2010
