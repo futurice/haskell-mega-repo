@@ -49,6 +49,7 @@ module Futurice.Servant (
     serverColour,
     serverEnvPfx,
     serverOpts,
+    serverSwaggerMod,
     -- * Options
     optionsFlag,
     -- ** WAI
@@ -181,14 +182,14 @@ futuriceServer
     :: forall api colour. (HasSwagger api)
     => Text  -- ^ title
     -> Text  -- ^ description
-    -> Cache
+    -> (Swagger -> Swagger)
     -> Proxy api
     -> Server api
     -> Server (FuturiceAPI api colour)
-futuriceServer t d _cache papi server
+futuriceServer t d swaggerMod papi server
     = serveFutuFavicon
     :<|> server
-    :<|> swaggerSchemaUIServer (swaggerDoc t d papi)
+    :<|> swaggerSchemaUIServer (swaggerMod (swaggerDoc t d papi))
     :<|> vendorServer
 
 -------------------------------------------------------------------------------
@@ -204,6 +205,7 @@ data ServerConfig f g opts (colour :: Colour) ctx htmlApi api = SC
     , _serverMiddleware  :: ctx -> Middleware
     , _serverEnvPfx      :: !(g Text)
     , _serverOpts        :: !(O.Parser opts)
+    , _serverSwaggerMod  :: Swagger -> Swagger
     }
 
 -- | Default server config, through the lenses the type of api will be refined
@@ -217,6 +219,7 @@ emptyServerConfig = SC
     , _serverMiddleware   = futuriceNoMiddleware
     , _serverEnvPfx       = Proxy
     , _serverOpts         = pure ()
+    , _serverSwaggerMod   = id
     }
 
 -- | Default middleware: i.e. nothing.
@@ -236,6 +239,9 @@ serverService = lens _serverService $ \sc x -> sc { _serverService = I x }
 
 serverDescription :: Lens' (ServerConfig f g opts colour ctx htmlApi api) Text
 serverDescription = lens _serverDescription $ \sc x -> sc { _serverDescription = x }
+
+serverSwaggerMod :: Lens' (ServerConfig f g opts colour ctx htmlApi api) (Swagger -> Swagger)
+serverSwaggerMod = lens _serverSwaggerMod $ \sc x -> sc { _serverSwaggerMod = x }
 
 serverEnvPfx :: Lens
     (ServerConfig f g opts colour ctx htmlApi api)
@@ -300,7 +306,7 @@ futuriceServerMain
     -> ServerConfig I I opts colour ctx htmlApi api
        -- ^ Server configuration
     -> IO ()
-futuriceServerMain makeCtx (SC (I service) d htmlServer server middleware1 (I envpfx) optsP) = do
+futuriceServerMain makeCtx (SC (I service) d htmlServer server middleware1 (I envpfx) optsP swaggerMod) = do
     (_showEnvConvig, middleware2, opts) <- O.execParser $ O.info (O.helper <*> args optsP) $ mconcat
         [ O.fullDesc
         , O.progDesc (d ^. unpacked)
@@ -349,7 +355,7 @@ futuriceServerMain makeCtx (SC (I service) d htmlServer server middleware1 (I en
         mgr            <- newManager tlsManagerSettings
         cache          <- newCache
         (ctx, jobs)    <- makeCtx opts cfg lgr mgr cache mq
-        let server'    =  futuriceServer (serviceToText service) d cache proxyApi (server ctx)
+        let server'    =  futuriceServer (serviceToText service) d swaggerMod proxyApi (server ctx)
                        :<|> htmlServer ctx
                        :: Server (FuturiceAPI api colour :<|> htmlApi)
 

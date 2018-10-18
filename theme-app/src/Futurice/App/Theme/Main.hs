@@ -11,6 +11,8 @@ import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Prelude ()
 import Servant
 
+import qualified Data.Swagger as Sw
+
 import Futurice.App.Theme.API
 import Futurice.App.Theme.Config
 import Futurice.App.Theme.Markup
@@ -30,6 +32,9 @@ defaultMain = futuriceServerMain (const makeCtx) $ (emptyServerConfig
     & serverColour       .~ (Proxy :: Proxy 'FutuGreen)
     & serverApp themeApi .~ server
     & serverEnvPfx       .~ "THEMEAPP" :: ServerConfig I I () 'FutuGreen () EmptyAPI ThemeAPI)
+    & serverSwaggerMod   .~ swaggerMod
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO ((), [Job])
     makeCtx _ _ _ _ _ = pure ((), [])
+
+    swaggerMod = Sw.applyTags [ "Operations" & Sw.description ?~ "Basic operations" ]

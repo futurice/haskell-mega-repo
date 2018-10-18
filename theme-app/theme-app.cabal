@@ -36,6 +36,7 @@ library
     , servant
     , servant-server
     , servant-swagger-ui
+    , swagger2
     , text
     , wai-app-static
   exposed-modules:
