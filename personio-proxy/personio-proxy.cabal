@@ -57,6 +57,9 @@ library
   build-depends:
     futurice-integrations
 
+  if impl(ghc >= 8.4.4)
+    build-depends: compact >= 0.1.0.1
+
   ghc-options: -freduction-depth=30
   exposed-modules:
       Futurice.App.PersonioProxy

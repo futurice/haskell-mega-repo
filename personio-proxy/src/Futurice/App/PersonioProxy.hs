@@ -1,12 +1,11 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -fprint-potential-instances #-}
 module Futurice.App.PersonioProxy (defaultMain) where
 
 import Control.Concurrent.Async (async)
 import Control.Concurrent.STM   (atomically, newTVarIO, readTVar, writeTVar)
-import Control.DeepSeq          (force)
 import Data.Aeson.Types         (object, parseEither, parseJSON, toJSON, (.=))
 import Futurice.IdMap           (IdMap)
 import Futurice.Periocron
@@ -25,6 +24,12 @@ import qualified Data.Map.Strict   as Map
 import qualified Futurice.IdMap    as IdMap
 import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
+
+#if __GLASGOW_HASKELL__ >= 804
+import Data.Compact (compact, compactSize, getCompact)
+#else
+import Control.DeepSeq          (force)
+#endif
 
 server :: Ctx -> Server PersonioProxyAPI
 server ctx = pure "Try /swagger-ui/"
@@ -143,10 +148,19 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
               ]
 
         -- this is important
+#if __GLASGOW_HASKELL__ >= 804
+        sesCompact <- liftIO $ compact ses'
+        let ses = getCompact sesCompact
+        sesSize <- liftIO $ compactSize sesCompact
+#else
         ses <- liftIO $ evaluate $ force ses'
+#endif
 
         logInfoI "Updating active list: days $days" $ object
             [ "days" .= length ses
+#if __GLASGOW_HASKELL__ >= 804
+            , "size" .= sesSize
+#endif
             ]
         liftIO $ atomically $ writeTVar (ctxSimpleEmployees ctx) ses
 
@@ -159,7 +173,7 @@ notMachine e = case e ^. P.employeeId of
     P.EmployeeId 656474 -> False
     P.EmployeeId 768834 -> False
     P.EmployeeId 768842 -> False
-    _      -> True
+    _ -> True
 
 comparePersonio
     :: IdMap P.Employee                    -- ^ old
