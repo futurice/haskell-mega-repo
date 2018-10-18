@@ -6,7 +6,6 @@ BUILD=$2
 STACK="stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check"
 
 CONCURRENCY=-j2
-# if [ "$HC" = "ghc-8.2.2" ]; then CONCURRENCY=-j1; fi
 
 timed () {
     JOB_CURR_TIME=$(date +%s)
