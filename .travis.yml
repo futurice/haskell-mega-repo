@@ -92,8 +92,8 @@ matrix:
         - cabal-install-head
         - ghc-8.2.2
         - libgmp-dev
-  - env: BUILD=cabal GHCVER=8.4.3 # PEDANTIC=YES
-    compiler: ghc-8.4.3
+  - env: BUILD=cabal GHCVER=8.4.4 # PEDANTIC=YES
+    compiler: ghc-8.4.4
     addons:
       apt:
         sources:
@@ -101,5 +101,5 @@ matrix:
         packages:
         - libfftw3-dev
         - cabal-install-head
-        - ghc-8.4.3
+        - ghc-8.4.4
         - libgmp-dev
