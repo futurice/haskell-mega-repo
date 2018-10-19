@@ -13,28 +13,31 @@ module Futurice.App.Proxy (
     defaultMain,
     ) where
 
-import Data.Aeson.Compat                    (object, (.=))
-import Data.Maybe                           (isNothing)
-import Data.Pool                            (withResource)
-import Data.Text.Encoding                   (decodeLatin1)
-import Futurice.Metrics.RateMeter           (mark)
-import Futurice.Postgres                    (createPostgresPool)
+import Data.Aeson.Compat               (object, (.=))
+import Data.List                       (isSuffixOf)
+import Data.Maybe                      (isNothing)
+import Data.Pool                       (withResource)
+import Data.Text.Encoding              (decodeLatin1)
+import Futurice.Metrics.RateMeter      (mark)
+import Futurice.Postgres               (createPostgresPool)
 import Futurice.Prelude
 import Futurice.Servant
-import Network.Wai                          (Request, rawPathInfo)
-import Network.Wai.Middleware.HttpAuth      (basicAuth')
+import Network.Wai                     (Request, rawPathInfo)
+import Network.Wai.Middleware.HttpAuth (basicAuth')
 import Prelude ()
 import Servant
-import Text.Regex.Applicative.Text          (RE', anySym, match, string)
+import Text.Regex.Applicative.Text     (RE', anySym, match, string)
 
-import qualified Data.Text                   as T
-import qualified Database.PostgreSQL.Simple  as Postgres
+import qualified Data.Swagger               as Sw
+import qualified Data.Text                  as T
+import qualified Database.PostgreSQL.Simple as PQ
+import qualified Futurice.KleeneSwagger     as K
 
 import Futurice.App.Proxy.API
-import Futurice.App.Proxy.Endpoint (proxyServer)
 import Futurice.App.Proxy.Config
-import Futurice.App.Proxy.Markup
 import Futurice.App.Proxy.Ctx
+import Futurice.App.Proxy.Endpoint (proxyServer)
+import Futurice.App.Proxy.Markup
 
 -------------------------------------------------------------------------------
 -- WAI/startup
@@ -53,6 +56,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp proxyAPI    .~ server
     & serverMiddleware      .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx          .~ "PROX"
+    & serverSwaggerMod      .~ swaggerMod
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg@Config {..} lgr _mgr _cache _mq = do
@@ -65,6 +69,15 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             , _ctxConfig      = cfg
             }
 
+    swaggerMod
+        = Sw.applyTagsFor
+            (K.operationsMatching $ K.sym "power" *> many K.anySym)
+            [ "Power reports" ]
+
+        . Sw.applyTagsFor
+              (K.operationsMatching $ K.sym "personio-request" <|> K.psym (isSuffixOf "-haxl"))
+              [ "Raw data access" ]
+
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
 checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
     let u' = decodeLatin1 u
@@ -74,18 +87,18 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         Nothing -> regularCheck conn u' p' endpoint
         Just _  -> swaggerCheck conn u' p' endpoint
   where
-    regularCheck :: Postgres.Connection -> Text -> Text -> Text -> IO Bool
+    regularCheck :: PQ.Connection -> Text -> Text -> Text -> IO Bool
     regularCheck conn u' p' endpoint = do
-        res <- Postgres.query conn (fromString credentialAndEndpointCheck)
-            (u', p', endpoint) :: IO [Postgres.Only Int]
+        res <- PQ.query conn (fromString credentialAndEndpointCheck)
+            (u', p', endpoint) :: IO [PQ.Only Int]
         case res of
             []    -> logInvalidLogin u' endpoint >> pure False
             _ : _ -> logAccess conn u' endpoint >> pure True
 
-    swaggerCheck :: Postgres.Connection -> Text -> Text -> Text -> IO Bool
+    swaggerCheck :: PQ.Connection -> Text -> Text -> Text -> IO Bool
     swaggerCheck conn u' p' endpoint = do
-        res <- Postgres.query conn (fromString credentialCheck)
-            (u', p') :: IO [Postgres.Only Int]
+        res <- PQ.query conn (fromString credentialCheck)
+            (u', p') :: IO [PQ.Only Int]
         case res of
             []    -> logInvalidLogin u' endpoint >> pure False
             _ : _ -> pure True
@@ -100,11 +113,11 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
                 ]
 
     -- | Logs user, and requested endpoint if endpoint is not swagger-related.
-    logAccess :: Postgres.Connection -> Text -> Text -> IO ()
+    logAccess :: PQ.Connection -> Text -> Text -> IO ()
     logAccess conn user endpoint =
         when (isNothing $ match isDocumentationRegexp endpoint) $ void $ do
             mark $ "endpoint " <> endpoint
-            Postgres.execute conn
+            PQ.execute conn
                 "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
                 (user, endpoint)
 

@@ -90,6 +90,15 @@ data Routes = Routes
         ("api" :> "v2" :> "allocations" :> Get '[JSON] Value)
         ("power" :> "api" :> "allocations" :> Get '[JSON] Value)
 
+    , routePowerProjectCompetences :: ProxiedEndpoint 'PowerService
+        ("api" :> "v2" :> "project_competences" :> Get '[JSON] Value)
+        ("power" :> "api" :> "project_competences" :> Get '[JSON] Value)
+
+    , routePowerSubcompetences :: ProxiedEndpoint 'PowerService
+        ("api" :> "v2" :> "subcompetences" :> Get '[JSON] Value)
+        ("power" :> "api" :> "subcompetences" :> Get '[JSON] Value)
+
+
     -- FUM
     , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
           FUM6.GroupMembersEndpoint
