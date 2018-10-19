@@ -38,7 +38,7 @@ editItemPage (Left (info, books)) = page_ "Edit book information" (Nothing :: Ma
         button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Edit"
     h3_ "Books"
     ul_ [class_ ""] $ do
-        for_ (sortBy (\(_,_,lib1) (_,_,lib2) -> librarySelectSortOrder lib1 lib2) books) $ \(itemid, status, library) ->
+        for_ (sortBy (librarySelectSortOrder `on` view _3) books) $ \(itemid, status, library) ->
           li_ $ do
             span_ [style_ "padding-right: 10px;"] $ toHtml $ library
             case status of

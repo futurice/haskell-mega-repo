@@ -22,10 +22,6 @@ data BorrowRequest = BorrowRequest
 
 deriveGeneric ''BorrowRequest
 
-instance FromJSON BorrowRequest where
-    parseJSON (Object v) =  BorrowRequest
-        <$> v .: "book"
-        <*> (libraryFromText <$> v .: "library")
-    parseJSON _ = mzero
+deriveVia [t| FromJSON BorrowRequest `Via` Sopica BorrowRequest |]
 
 instance ToSchema BorrowRequest where declareNamedSchema = sopDeclareNamedSchema

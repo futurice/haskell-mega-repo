@@ -35,7 +35,7 @@ futu.onload(function () {
         btn.disabled = true;
         var bookid = btn.dataset.itemId;
         var office = btn.dataset.library;
-        var payload = { "book": parseInt(bookid), "library": office };
+        var payload = { "book": parseInt(bookid), "library": { "office" : office } };
         futu.fetchJSON("/book/borrow/", payload)
             .then(function (response) { console.log("Borrow was successful"); location=location.href; })
             .catch(function (error) { console.log("Couldn't borrow book") });

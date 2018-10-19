@@ -10,7 +10,6 @@ module Futurice.App.Library.Types.AddItemRequest where
 import Data.Char      (digitToInt, isDigit)
 import Data.Text.Read (decimal)
 
-import Data.Swagger
 import Futurice.Office   (offOther)
 import Futurice.Prelude
 import Prelude ()
@@ -54,8 +53,9 @@ data AddItemRequest = AddItemRequest
     , _addItemBookInformationId      :: !(Maybe BookInformationId)
     , _addItemBoardGameInformationId :: !(Maybe BoardGameInformationId)
     }
-    deriving (Show, Generic, ToSchema)
+    deriving (Show, Generic)
 
+-- Order alphabetically, but make sure Elibrary is last
 librarySelectSortOrder :: Library -> Library -> Ordering
 librarySelectSortOrder a b = case (a,b) of
                         (Elibrary, Elibrary) -> EQ
@@ -64,7 +64,8 @@ librarySelectSortOrder a b = case (a,b) of
                         _ -> compare (libraryToText a) (libraryToText b)
 
 usedLibraries :: [Library]
-usedLibraries = let usedLibs = (filter (/= OfficeLibrary offOther) . filter (/= UnknownLibrary)) allLibraries
+usedLibraries = let isKnownLibrary lib = (lib /= OfficeLibrary offOther) && (lib /= UnknownLibrary)
+                    usedLibs = filter isKnownLibrary allLibraries
                 in sortBy librarySelectSortOrder usedLibs
 
 fromtextToInt :: Text -> Maybe Int
