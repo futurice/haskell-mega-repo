@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -38,6 +39,14 @@ import qualified Graphics.Svg.Core                as S
 import qualified Graphics.SVGFonts.ReadFont       as F
 import qualified Network.HTTP.Media               as M
 
+import System.IO.Unsafe (unsafePerformIO)
+
+#ifdef MIN_VERSION_compact
+import           Data.Compact
+                 (compactAddWithSharing, compactSize, compactWithSharing,
+                 getCompact)
+import qualified Data.Vector  as V
+#endif
 
 -------------------------------------------------------------------------------
 -- Servant
@@ -76,22 +85,63 @@ denv :: DEnv Double
 denv = createEnv B.vectorAlignmentFns 1000 700 loadSansSerifFonts
 
 loadSansSerifFonts :: FontSelector Double
-loadSansSerifFonts = selectFont
+loadSansSerifFonts = unsafePerformIO loadSansSerifFontsIO
+{-# NOINLINE loadSansSerifFonts #-}
+
+loadSansSerifFontsIO :: IO (FontSelector Double)
+loadSansSerifFontsIO = do
+    let sansR' :: F.PreparedFont Double
+        sansR'   = snd $ F.loadFont' "SourceSansPro_R"   $ sureLookup "/SourceSansPro_R.svg"    fontsDir
+
+        sansRB' :: F.PreparedFont Double
+        sansRB'  = snd $ F.loadFont' "SourceSansPro_RB"  $ sureLookup "/SourceSansPro_RB.svg"   fontsDir
+
+        sansRBI' :: F.PreparedFont Double
+        sansRBI' = snd $ F.loadFont' "SourceSansPro_RBI" $ sureLookup  "/SourceSansPro_RBI.svg" fontsDir
+
+        sansRI' :: F.PreparedFont Double
+        sansRI'  = snd $ F.loadFont' "SourceSansPro_RI"  $ sureLookup "/SourceSansPro_RI.svg"   fontsDir
+
+#ifdef MIN_VERSION_compact
+    regionR   <- compactWithSharing              (forceFontData $ fst sansR')
+    regionRB  <- compactAddWithSharing regionR   (forceFontData $ fst sansRB')
+    regionRBI <- compactAddWithSharing regionRB  (forceFontData $ fst sansRBI')
+    regionRI  <- compactAddWithSharing regionRBI (forceFontData $ fst sansRI')
+
+    print =<< compactSize regionRI
+
+    let sansR   = (getCompact regionR,   snd sansR')
+    let sansRB  = (getCompact regionRB,  snd sansRB')
+    let sansRBI = (getCompact regionRBI, snd sansRBI')
+    let sansRI  = (getCompact regionRI,  snd sansRI')
+#else
+    let sansR   = sansR'
+    let sansRB  = sansRB'
+    let sansRBI = sansRBI'
+    let sansRI  = sansRI'
+#endif
+
+    return (selectFont sansR sansRB sansRBI sansRI)
   where
     fontsDir = $(makeRelativeToProject "fonts" >>= embedDir)
 
-    sansR   = snd $ F.loadFont' "SourceSansPro_R"   $ sureLookup "/SourceSansPro_R.svg"    fontsDir
-    sansRB  = snd $ F.loadFont' "SourceSansPro_RB"  $ sureLookup "/SourceSansPro_RB.svg"   fontsDir
-    sansRBI = snd $ F.loadFont' "SourceSansPro_RBI" $ sureLookup  "/SourceSansPro_RBI.svg" fontsDir
-    sansRI  = snd $ F.loadFont' "SourceSansPro_RI"  $ sureLookup "/SourceSansPro_RI.svg"   fontsDir
+#ifdef MIN_VERSION_compact
+    forceFontData :: F.FontData Double -> F.FontData Double
+    forceFontData fd = fd { F.fontDataKerning = kern' } where
+        kern = F.fontDataKerning fd
+        kern' = kern { F.kernK = V.force $ F.kernK kern }
+#endif
 
     sureLookup :: (Eq a, Show a) => a -> [(a, b)] -> b
     sureLookup a xs = fromMaybe
         (error $ "Cannot find " ++ show a ++ " in " ++ show (map fst xs))
         (lookup a xs)
 
-    selectFont :: B.FontStyle -> F.PreparedFont Double
-    selectFont fs = case (B._font_name fs, B._font_slant fs, B._font_weight fs) of
+    selectFont
+        :: F.PreparedFont Double -> F.PreparedFont Double
+        -> F.PreparedFont Double -> F.PreparedFont Double
+        -> B.FontStyle -> F.PreparedFont Double
+    selectFont sansR sansRB sansRBI sansRI fs = case (B._font_name fs, B._font_slant fs, B._font_weight fs) of
         (_, B.FontSlantNormal , B.FontWeightNormal) -> alterFontFamily "sans-serif" sansR
         (_, B.FontSlantNormal , B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
         (_, B.FontSlantItalic , B.FontWeightNormal) -> alterFontFamily "sans-serif" sansRI

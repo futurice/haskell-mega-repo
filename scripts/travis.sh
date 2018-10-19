@@ -6,7 +6,6 @@ BUILD=$2
 STACK="stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check"
 
 CONCURRENCY=-j2
-# if [ "$HC" = "ghc-8.2.2" ]; then CONCURRENCY=-j1; fi
 
 timed () {
     JOB_CURR_TIME=$(date +%s)
@@ -18,20 +17,6 @@ timed () {
     else
         timeout "$JOB_DURR" "$@"
     fi
-}
-
-# Temporal hack
-makestore () {
-	cd "$(mktemp -d)"
-
-    echo 'cabal-version: 2.2'      > z.cabal
-    echo 'name: z'                >> z.cabal
-    echo 'version: 0'             >> z.cabal
-    echo 'library'                >> z.cabal
-    echo '  build-depends: aeson' >> z.cabal
-
-    cat z.cabal \
-    cabal new-build || true
 }
 
 case $STEP in
@@ -78,10 +63,8 @@ install)
         ;;
 
     cabal)
-		(makestore || true)
-
         # Install doctest
-		(cd /tmp && echo "" | cabal new-repl fail)
+		(cd /tmp && echo "" | cabal new-repl --build-dep fail)
 		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --symlink-bindir="$HOME/.local/bin") || exit 1
         doctest --version
 

@@ -37,4 +37,5 @@ defaultMain = futuriceServerMain (const makeCtx) $ (emptyServerConfig
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO ((), [Job])
     makeCtx _ _ _ _ _ = pure ((), [])
 
-    swaggerMod = Sw.applyTags [ "Operations" & Sw.description ?~ "Basic operations" ]
+    swaggerMod
+        = Sw.applyTags [ "Operations" & Sw.description ?~ "Basic operations" ]

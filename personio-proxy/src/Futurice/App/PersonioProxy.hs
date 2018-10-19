@@ -1,12 +1,11 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -fprint-potential-instances #-}
 module Futurice.App.PersonioProxy (defaultMain) where
 
 import Control.Concurrent.Async (async)
 import Control.Concurrent.STM   (atomically, newTVarIO, readTVar, writeTVar)
-import Control.DeepSeq          (force)
 import Data.Aeson.Types         (object, parseEither, parseJSON, toJSON, (.=))
 import Futurice.IdMap           (IdMap)
 import Futurice.Periocron
@@ -25,6 +24,12 @@ import qualified Data.Map.Strict   as Map
 import qualified Futurice.IdMap    as IdMap
 import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
+
+#if __GLASGOW_HASKELL__ >= 804
+import Data.Compact (compactSize, compactWithSharing, getCompact, compactAddWithSharing)
+#else
+import Control.DeepSeq (force)
+#endif
 
 server :: Ctx -> Server PersonioProxyAPI
 server ctx = pure "Try /swagger-ui/"
@@ -111,12 +116,25 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         let employees = filter notMachine employees'
         let validations = filter (notMachine . view P.evEmployee) validations'
 
+        let newMap' = IdMap.fromFoldable employees
+        let allData' = P.PersonioAllData employees validations cl clRole
+
+#if __GLASGOW_HASKELL__ >= 804
+        (newMap, allData) <- do
+            region0 <- compactWithSharing allData'
+            region1 <- compactAddWithSharing region0 newMap'
+            size <- compactSize region1
+            runLogT "compact" (ctxLogger ctx) $
+                logInfoI "Compacted personio data $size" $ object [ "size" .= size ]
+            return (getCompact region1, getCompact region0)
+#else
+        (newMap, allData) <- evaluate $ force $ (newMap', allData')
+#endif
+
         changed <- atomically $ do
             oldMap <- readTVar (ctxPersonio ctx)
-            let newMap = IdMap.fromFoldable employees
             writeTVar (ctxPersonio ctx) newMap
-            writeTVar (ctxPersonioData ctx) $
-                P.PersonioAllData employees validations cl clRole
+            writeTVar (ctxPersonioData ctx) allData
             return (comparePersonio oldMap newMap)
 
         unless (null changed) $ do
@@ -143,10 +161,19 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
               ]
 
         -- this is important
+#if __GLASGOW_HASKELL__ >= 804
+        sesCompact <- liftIO $ compactWithSharing ses'
+        let ses = getCompact sesCompact
+        sesSize <- liftIO $ compactSize sesCompact
+#else
         ses <- liftIO $ evaluate $ force ses'
+#endif
 
         logInfoI "Updating active list: days $days" $ object
             [ "days" .= length ses
+#if __GLASGOW_HASKELL__ >= 804
+            , "size" .= sesSize
+#endif
             ]
         liftIO $ atomically $ writeTVar (ctxSimpleEmployees ctx) ses
 
@@ -159,7 +186,7 @@ notMachine e = case e ^. P.employeeId of
     P.EmployeeId 656474 -> False
     P.EmployeeId 768834 -> False
     P.EmployeeId 768842 -> False
-    _      -> True
+    _ -> True
 
 comparePersonio
     :: IdMap P.Employee                    -- ^ old

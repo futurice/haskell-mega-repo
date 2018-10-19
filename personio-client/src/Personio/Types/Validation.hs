@@ -99,7 +99,8 @@ data ValidationMessage
     | EmployerCountryDontMatch Country Company
     | StartDateMissing
     | EndDateBeforeStart Day Day
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Typeable, Generic)
+  deriving anyclass (NFData)
 
 instance ToJSON ValidationMessage
 instance FromJSON ValidationMessage
@@ -110,7 +111,8 @@ data EmployeeValidation = EmployeeValidation
     { _evEmployee   :: !Employee
     , _evMessages   :: ![ValidationMessage]
     }
-  deriving Show
+  deriving stock (Show, Generic)
+  deriving anyclass (NFData)
 
 makeLenses ''EmployeeValidation
 deriveGeneric ''EmployeeValidation
