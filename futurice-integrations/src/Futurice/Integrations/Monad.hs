@@ -296,6 +296,8 @@ instance NthFUM idxs ~ I  => MonadFUM (Integrations idxs) where
 
 instance NthFD idxs ~ I => MonadFlowdock (Integrations idxs) where
     flowdockOrganisationReq = liftHaxl . FD.Haxl.organisation
+    flowdockMessagesSinceReq org flow since = liftHaxl $
+        FD.Haxl.messagesSince org flow since
 
 -------------------------------------------------------------------------------
 -- MonadFUM6

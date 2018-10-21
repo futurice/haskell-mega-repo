@@ -69,6 +69,7 @@ packages:
   email-proxy/
   env-config/
   flowdock-grep/
+  flowdock-proxy/
   flowdock-rest/
   fum-api/
   fum-carbon-app/
