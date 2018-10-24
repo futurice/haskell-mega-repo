@@ -101,5 +101,5 @@ insertRows ctx flowId rows
     | null rows = return ()
     | otherwise =
     void $ PQ.safePoolExecuteMany ctx
-        "INSERT INTO \"flowdock-proxy\".messages (flow_id, message_id, user_id, created, tags, content) VALUES (?, ?, ?, ?, ?, ?);"
+        "INSERT INTO \"flowdock-proxy\".messages (flow_id, message_id, user_id, created, tags, content) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (flow_id, message_id) DO UPDATE SET created = EXCLUDED.created, tags = EXCLUDED.tags, content = EXCLUDED.content;"
         [ (PQ.Only flowId PQ.:. row) | row <- rows ]

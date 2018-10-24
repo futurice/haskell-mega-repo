@@ -41,7 +41,7 @@ indexPage org flows mneedle mflow rows = page_ "Flowdock text search" (Just NavH
     if | isNothing mneedle -> mempty
        | null rows         -> hr_ [] >> i_ "No matches"
        | otherwise         -> do
-            p_ "Showing 1000 most recent case-insensitive matches"
+            p_ "Showing at most 1000 most recent case-insensitive matches"
 
             table_ $ do
                 thead_ $ do
