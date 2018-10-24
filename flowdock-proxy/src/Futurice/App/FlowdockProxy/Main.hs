@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -10,9 +11,11 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.FlowdockProxy.Main (defaultMain) where
 
+import Control.Concurrent.Async  (async)
 import Control.Concurrent.STM
        (atomically, newTVar, newTVarIO, readTVar, readTVarIO, writeTVar)
 import Data.Aeson                (object, (.=))
+import Data.Char                 (toLower)
 import Data.Ord                  (comparing)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
@@ -24,8 +27,10 @@ import Servant
 import Servant.Server.Generic
 
 import qualified Chat.Flowdock.REST as FD
+import qualified Data.List          as L
 import qualified Data.Map.Strict    as Map
 import qualified Data.Text          as T
+import qualified Data.Text.Short    as TS
 import qualified Futurice.Postgres  as PQ
 
 import Futurice.App.FlowdockProxy.API
@@ -74,14 +79,14 @@ indexPageAction ctx mneedle mflow = do
     strong = map (\(flowId, rows) -> map (flowId,) rows)
 
     search needle' flows mflow' allRows = do
-        let needle = T.toLower needle'
+        let needle = map toLower (T.unpack needle')
         let rows = take 1000
                 [ row
                 | row <- allRows
-                , needle `T.isInfixOf` T.toLower (rowText (snd row))
+                , needle `L.isInfixOf` map toLower (TS.toString $ rowText $ snd row)
                 ]
 
-        return $ indexPage org flows (Just needle) mflow' rows
+        return $ indexPage org flows (Just needle') mflow' rows
 
     merge []       = []
     merge [xs]     = xs
@@ -125,6 +130,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         flowRowsTVar <- newTVarIO mempty
         let ctx = Ctx cfg lgr mgr pool flowOrg flowMapTVar flowRowsTVar
 
+        -- Read contents into the memory immediately
+        void $ async $ runLogT "initial-read" lgr $ do
+            ifor_ flowMap $ \flowSlug (flowId, _) -> do
+                logInfoI "Initial read $flow" $ object [ "flow" .= flowSlug ]
+                readRows ctx flowId flowSlug
+
         -- Update job: fetch new rows
         let updateJobAction = runLogT "update-rows" lgr $
                 ifor_ flowMap $ \flowSlug (flowId, _) -> do
@@ -139,6 +150,18 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 -- Update rows
 -------------------------------------------------------------------------------
 
+readRows :: Ctx -> Int -> FD.FlowId -> LogT IO ()
+readRows ctx flowId flowSlug = do
+    rows <- queryRows ctx flowId
+    liftIO $ atomically $ do
+        m <- readTVar (ctxFlowRows ctx)
+        case Map.lookup flowSlug m of
+            Nothing -> do
+                tvar <- newTVar rows
+                writeTVar (ctxFlowRows ctx) (Map.insert flowSlug tvar m)
+            Just tvar -> do
+                writeTVar tvar rows
+
 updateRows :: Ctx -> Int -> FD.FlowId -> LogT IO ()
 updateRows ctx flowId flowSlug = do
     -- join :: Maybe (Maybe FD.MessageId) -> Maybe FD.MessageId to allow selecting NULL
@@ -149,23 +172,15 @@ updateRows ctx flowId flowSlug = do
     logInfoI "updating flow $flow" $ object [ "flow" .= flowId, "messageId" .= (messageId :: Maybe FD.MessageId) ]
 
     -- fetch stuff
-    loop messageId
+    new <- loop False messageId
 
     -- cache in memory
-    rows <- queryRows ctx flowId
-    liftIO $ atomically $ do
-        m <- readTVar (ctxFlowRows ctx)
-        case Map.lookup flowSlug m of
-            Nothing -> do
-                tvar <- newTVar rows
-                writeTVar (ctxFlowRows ctx) (Map.insert flowSlug tvar m)
-            Just tvar -> do
-                writeTVar tvar rows
+    when new $ readRows ctx flowId flowSlug
   where
     org = ctxFlowOrg ctx
 
-    loop :: Maybe FD.MessageId -> LogT IO ()
-    loop messageId = do
+    loop :: Bool -> Maybe FD.MessageId -> LogT IO Bool
+    loop !acc messageId = do
         logInfoI "Messages in $flow since $since" $ object [ "flow" .= flowSlug, "since" .= messageId ]
 
         messages <- liftIO $ runIntegrations' ctx $ flowdockMessagesSinceReq
@@ -174,10 +189,10 @@ updateRows ctx flowId flowSlug = do
             messageId
 
         if null messages
-        then return ()
+        then return acc
         else do
             insertRows ctx flowId $ mapMaybe messageToRow $ toList messages
-            loop (Just $ maximum $ messages ^.. folded . FD.msgId)
+            loop True (Just $ maximum $ messages ^.. folded . FD.msgId)
 
 -------------------------------------------------------------------------------
 -- Misc

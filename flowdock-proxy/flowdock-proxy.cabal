@@ -31,6 +31,7 @@ library
   ghc-options: -Wall
   build-depends:
       aeson,
+      async,
       base,
       clay,
       cmark-gfm,
@@ -49,6 +50,8 @@ library
       servant-server,
       stm,
       text,
+      text-short,
+      text-containers,
       vector,
       xss-sanitize
 

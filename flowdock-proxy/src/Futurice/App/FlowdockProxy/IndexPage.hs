@@ -5,6 +5,7 @@ module Futurice.App.FlowdockProxy.IndexPage (indexPage) where
 
 import Data.Bits        (shiftR, xor, (.&.))
 import Data.Maybe       (isNothing)
+import Data.Ord         (comparing)
 import Data.Word        (Word64)
 import Futurice.Prelude
 import Prelude ()
@@ -12,9 +13,9 @@ import Prelude ()
 import qualified Chat.Flowdock.REST    as FD
 import qualified CMarkGFM
 import qualified Data.Map.Strict       as Map
+import qualified Data.Text             as T
+import qualified Data.Text.Short       as TS
 import qualified Text.HTML.SanitizeXSS as XSS
-
-import qualified Data.Text as T
 
 import Futurice.App.FlowdockProxy.DB
 import Futurice.App.FlowdockProxy.Markup
@@ -33,7 +34,7 @@ indexPage org flows mneedle mflow rows = page_ "Flowdock text search" (Just NavH
             div_ [ class_ "columns medium-5" ] $ input_ [ name_ "needle", type_ "text", placeholder_ "Search for...", value_ $ fromMaybe "" mneedle ]
             div_ [ class_ "columns medium-5" ] $ select_ [ name_ "flow" ] $ do
                 optionSelected_ (Nothing == mflow) [ value_ "all" ] $ i_ "All flows"
-                ifor_ flows $ \flowId (_, flowName) ->
+                for_ (sortBy (comparing (snd . snd)) $ Map.toList flows) $ \(flowId, (_, flowName)) ->
                     optionSelected_ (Just flowId == mflow) [ value_ $ view packed $ FD.getIdentifier flowId ] $ toHtml $ flowName
             div_ [ class_ "columns medium-2" ] $ input_ [ type_ "submit", class_ "button", value_ "Search" ]
 
@@ -60,7 +61,7 @@ indexPage org flows mneedle mflow rows = page_ "Flowdock text search" (Just NavH
                             Nothing         -> shorten $ T.pack $ FD.getIdentifier flowId
                             Just (_, fname) -> shorten fname
                         td_ $ userIdToHtml $ rowUser row
-                        td_ $ toHtmlRaw $ XSS.sanitizeBalance $ CMarkGFM.commonmarkToHtml [] [] $ rowText row
+                        td_ [ class_ "message" ] $ toHtmlRaw $ XSS.sanitizeBalance $ CMarkGFM.commonmarkToHtml [] [] $ TS.toText $ rowText row
                         td_ $ a_ [ href_ $ msgUrl flowId row ] "###"
   where
     shorten :: Monad m => Text -> HtmlT m  ()

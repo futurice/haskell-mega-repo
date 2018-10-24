@@ -1,7 +1,8 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FlowdockProxy.DB where
 
+import Data.Text.Short  (ShortText)
 import Futurice.Prelude
 import Prelude ()
 
@@ -13,7 +14,8 @@ import Control.DeepSeq (force)
 
 import qualified Chat.Flowdock.REST                 as FD
 import qualified Data.Text                          as T
-import qualified Data.Vector                        as V
+import qualified Data.Text.Short                    as TS
+import qualified Data.TextSet.Unboxed               as TextSet
 import qualified Database.PostgreSQL.Simple.FromRow as PQ
 import qualified Database.PostgreSQL.Simple.ToField as PQ
 import qualified Database.PostgreSQL.Simple.ToRow   as PQ
@@ -28,8 +30,8 @@ data Row = Row
     { rowMessageId :: !FD.MessageId
     , rowUser      :: !FD.UserId
     , rowCreatedAt :: !UTCTime
-    , rowTags      :: ![FD.Tag]
-    , rowText      :: !Text
+    , rowTags      :: !TextSet.TextSet
+    , rowText      :: !ShortText
     }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (NFData)
@@ -39,16 +41,16 @@ instance PQ.FromRow Row where
         <$> (FD.mkIdentifier . fromInteger <$> PQ.field)
         <*> (FD.mkIdentifier . fromInteger <$> PQ.field)
         <*> PQ.field
-        <*> (map FD.Tag . PQ.fromPGArray <$> PQ.field)
-        <*> PQ.field
+        <*> (TextSet.fromList . map TS.fromText . PQ.fromPGArray <$> PQ.field)
+        <*> (TS.fromText <$> PQ.field)
 
 instance PQ.ToRow Row where
     toRow (Row mid uid created tags text) =
         [ PQ.toField $ toInteger $ FD.getIdentifier mid
         , PQ.toField $ toInteger $ FD.getIdentifier uid
         , PQ.toField created
-        , PQ.toField $ PQ.PGArray $ map FD.getTag tags
-        , PQ.toField text
+        , PQ.toField $ PQ.PGArray $ map TS.toText $ TextSet.toList tags
+        , PQ.toField (TS.toText text)
         ]
 
 messageToRow :: FD.Message -> Maybe Row
@@ -59,12 +61,18 @@ messageToRow msg = Row
     (filterTags $ msg ^. FD.msgTags)
     <$> messageContentToRow (msg ^. FD.msgContent)
   where
-    messageContentToRow (FD.MTMessage text) = Just text
-    messageContentToRow (FD.MTComment comm) = Just (comm ^. FD.commentText)
+    messageContentToRow (FD.MTMessage text) = Just (TS.fromText text)
+    messageContentToRow (FD.MTComment comm) = Just (TS.fromText $ comm ^. FD.commentText)
     messageContentToRow _                   = Nothing
 
-    filterTags = toList . V.filter (not . tagPredicate . FD.getTag)
-    tagPredicate t = T.isPrefixOf ":" t || T.isPrefixOf "influx:" t
+    filterTags = fromList . mapMaybe (tagPredicate . FD.getTag) . toList
+    tagPredicate t
+          | T.isPrefixOf ":" t || T.isPrefixOf "influx:" t = Nothing
+          | otherwise                                      = Just (TS.fromText t)
+
+    -- "singletonises"  empty lists
+    fromList [] = TextSet.empty
+    fromList xs = TextSet.fromList xs
 
 -------------------------------------------------------------------------------
 -- Query

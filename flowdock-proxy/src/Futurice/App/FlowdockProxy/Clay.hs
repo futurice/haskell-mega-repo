@@ -21,3 +21,17 @@ css = do
         color "#336699"
     ".nick-7" ? do
         color "#993366"
+
+    ".message" ? do
+        "word-break" -: "break-word"
+
+    ".message pre" ? do
+        -- TODO: wordBreak breakWord
+        -- https://github.com/sebastiaanvisser/clay/issues/183
+        "word-break" -: "break-word"
+        whiteSpace preWrap
+        backgroundColor "#e6e6e6"
+        border solid (px 1) "#e1dcdc"
+
+    ".message pre code" ? do
+        borderWidth nil
