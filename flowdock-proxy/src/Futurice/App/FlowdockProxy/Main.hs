@@ -17,6 +17,7 @@ import Control.Concurrent.STM
 import Data.Aeson                (object, (.=))
 import Data.Char                 (toLower)
 import Data.Ord                  (comparing)
+import FUM.Types.Login           (Login)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
@@ -32,17 +33,24 @@ import qualified Data.Map.Strict    as Map
 import qualified Data.Text          as T
 import qualified Data.Text.Short    as TS
 import qualified Futurice.Postgres  as PQ
+import qualified Personio           as P
 
 import Futurice.App.FlowdockProxy.API
 import Futurice.App.FlowdockProxy.Config
 import Futurice.App.FlowdockProxy.Ctx
 import Futurice.App.FlowdockProxy.DB
 import Futurice.App.FlowdockProxy.IndexPage
+import Futurice.App.FlowdockProxy.UsersPage
 
 server :: Ctx -> Server FlowdockProxyAPI
 server ctx = genericServer $ Record
     { recIndex = indexPageAction ctx
+    , recUsers = usersPageAction ctx
     }
+
+-------------------------------------------------------------------------------
+-- Index
+-------------------------------------------------------------------------------
 
 indexPageAction
     :: Ctx
@@ -55,7 +63,7 @@ indexPageAction ctx mneedle mflow = do
         case (,) <$> mneedle <*> mflow of
             Nothing ->
                 return $ indexPage org flows Nothing Nothing []
-            Just (needle', flow) | T.length needle' < 4 ->
+            Just (needle', flow) | T.length needle' < 3 ->
                 return $ indexPage org flows Nothing (Just flow) []
 
             -- special flow: "all". this is a HACK
@@ -98,6 +106,22 @@ indexPageAction ctx mneedle mflow = do
         LT -> y : merge2 xs ys'
         GT -> x : merge2 xs' ys
         EQ -> x : y : merge2 xs' ys'
+
+-------------------------------------------------------------------------------
+-- Users
+-------------------------------------------------------------------------------
+
+usersPageAction :: Ctx -> Maybe Login -> Handler (HtmlPage "users-page")
+usersPageAction ctx _ = do
+    (today, ps) <- liftIO $ runIntegrations' ctx $ do
+        today <- currentDay
+        ps <- personio P.PersonioEmployees
+        return (today, ps)
+    return $ usersPage today (ctxFlowOrg ctx) ps
+
+-------------------------------------------------------------------------------
+-- Main
+-------------------------------------------------------------------------------
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -198,7 +222,7 @@ updateRows ctx flowId flowSlug = do
 -- Misc
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[Proxy, Proxy, Proxy, Proxy, I, Proxy] a -> IO a
+runIntegrations' :: Ctx -> Integrations '[Proxy,Proxy, I, Proxy, I, I] a -> IO a
 runIntegrations' ctx m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsConfig cfg) m

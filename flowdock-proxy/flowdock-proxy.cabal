@@ -39,12 +39,16 @@ library
       deepseq,
       env-config,
       flowdock-rest,
+      fum-types,
       futurice-foundation,
       futurice-integrations,
       futurice-postgres,
       futurice-prelude,
       futurice-servant,
+      futurice-tribes,
+      lens,
       periocron,
+      personio-client,
       postgresql-simple,
       servant,
       servant-server,
@@ -52,6 +56,7 @@ library
       text,
       text-short,
       text-containers,
+      these,
       vector,
       xss-sanitize
 
@@ -68,6 +73,7 @@ library
       Futurice.App.FlowdockProxy.IndexPage
       Futurice.App.FlowdockProxy.Main
       Futurice.App.FlowdockProxy.Markup
+      Futurice.App.FlowdockProxy.UsersPage
 
   default-language: Haskell2010
 

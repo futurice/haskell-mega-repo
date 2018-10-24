@@ -11,11 +11,15 @@ import Servant.API.Generic
 
 import qualified Chat.Flowdock.REST as FD
 
-newtype Record route = Record
+data Record route = Record
     { recIndex :: route
         :- QueryParam "needle" Text
         :> QueryParam "flow" FD.FlowId
         :> Get '[HTML] (HtmlPage "index-page")
+    , recUsers :: route
+        :- "users"
+        :> SSOUser
+        :> Get '[HTML] (HtmlPage "users-page")
     }
   deriving Generic
 
