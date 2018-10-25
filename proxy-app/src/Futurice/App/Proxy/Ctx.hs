@@ -8,7 +8,6 @@ import Database.PostgreSQL.Simple (Connection)
 import Futurice.Prelude
 import Futurice.Services          (Service (..))
 import Prelude ()
-import Servant.Client             (BaseUrl)
 
 import Futurice.App.Proxy.Endpoint (HasClientBaseurl (..), HasHttpManager (..))
 
@@ -24,6 +23,10 @@ data Ctx = Ctx
 
 makeLenses ''Ctx
 
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
+
 instance HasHttpManager Ctx where
     httpManager = ctxManager
 
@@ -35,3 +38,4 @@ instance HasClientBaseurl Ctx 'GithubProxyService   where clientBaseurl _ = ctxC
 instance HasClientBaseurl Ctx 'PowerService         where clientBaseurl _ = ctxConfig . cfgPowerBaseurl
 instance HasClientBaseurl Ctx 'PersonioProxyService where clientBaseurl _ = ctxConfig . cfgPersonioProxyBaseurl
 instance HasClientBaseurl Ctx 'ContactsApiService   where clientBaseurl _ = ctxConfig . cfgContactsApiBaseurl
+instance HasClientBaseurl Ctx 'SmsProxyService      where clientBaseurl _ = ctxConfig . cfgSmsProxyBaseurl
