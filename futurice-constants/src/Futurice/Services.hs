@@ -31,6 +31,7 @@ data Service
     | ContactsService
     | ContactsApiService
     | EmailProxyService
+    | FlowdockProxyService
     | FumCarbonService
     | FumService
     | GithubProxyService
@@ -67,6 +68,7 @@ instance TextEnum Service where
         , "contacts"
         , "contacts-api"
         , "email-proxy"
+        , "flowdock-proxy"
         , "fum-carbon"
         , "fum"
         , "github-proxy"
@@ -127,6 +129,7 @@ data PerService a = PerService
     , perContacts      :: a
     , perContactsApi   :: a
     , perEmailProxy    :: a
+    , perFlowdockProxy :: a
     , perFumCarbon     :: a
     , perFum           :: a
     , perGithubProxy   :: a
@@ -165,6 +168,7 @@ instance Representable PerService where
     index p ContactsService      = perContacts p
     index p ContactsApiService   = perContactsApi p
     index p EmailProxyService    = perContactsApi p
+    index p FlowdockProxyService = perFlowdockProxy p
     index p FumCarbonService     = perFumCarbon p
     index p FumService           = perFum p
     index p GithubProxyService   = perGithubProxy p
@@ -195,6 +199,7 @@ instance Representable PerService where
         , perContacts      = f ContactsService
         , perContactsApi   = f ContactsApiService
         , perEmailProxy    = f ContactsApiService
+        , perFlowdockProxy = f FlowdockProxyService
         , perFumCarbon     = f FumCarbonService
         , perFum           = f FumService
         , perGithubProxy   = f GithubProxyService

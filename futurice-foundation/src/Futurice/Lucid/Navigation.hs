@@ -5,6 +5,7 @@ module Futurice.Lucid.Navigation (
     navigation_,
     futuriceCss,
     pageParamsWithJS,
+    pageParamsWithCSS,
   ) where
 
 import Futurice.Colour
@@ -53,6 +54,10 @@ pageParamsWithJS :: JS -> proxy nav -> PageParams
 pageParamsWithJS js _ = defPageParams
     & pageCss .~ [ futuriceCss ]
     & pageJs .~  [ js ]
+
+pageParamsWithCSS :: C.Css -> proxy nav -> PageParams
+pageParamsWithCSS css _ = defPageParams
+    & pageCss .~ [ futuriceCss, css ]
 
 futuriceCss :: C.Css
 futuriceCss = do

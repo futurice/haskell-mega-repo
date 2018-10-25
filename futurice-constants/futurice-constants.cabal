@@ -16,6 +16,7 @@ build-type:     Simple
 
 extra-source-files:
     README.md
+    constants.json
 
 source-repository head
   type: git

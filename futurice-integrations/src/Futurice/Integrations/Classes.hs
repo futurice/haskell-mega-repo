@@ -35,4 +35,12 @@ class (Monad m, All (MonadGitHubC m) GHTypes) => MonadGitHub m where
     githubReq :: MonadGitHubC m a => GH.Request 'GH.RA a -> m a
 
 class Monad m => MonadFlowdock m where
-    flowdockOrganisationReq :: FD.ParamName FD.Organisation -> m FD.Organisation
+    flowdockOrganisationReq
+        :: FD.ParamName FD.Organisation
+        -> m FD.Organisation
+
+    flowdockMessagesSinceReq
+        :: FD.ParamName FD.Organisation
+        -> FD.ParamName FD.Flow
+        -> Maybe FD.MessageId
+        -> m [FD.Message]
