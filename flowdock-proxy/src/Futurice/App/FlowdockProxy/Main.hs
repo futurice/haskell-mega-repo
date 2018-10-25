@@ -54,17 +54,18 @@ server ctx = genericServer $ Record
 
 indexPageAction
     :: Ctx
-    -> Maybe Text
+    -> Maybe Text  -- ^ user
+    -> Maybe Text  -- ^ nick
     -> Maybe FD.FlowId
     -> Handler (HtmlPage "index-page")
-indexPageAction ctx mneedle mflow = do
+indexPageAction ctx mneedle muserText mflow = do
     liftIO $ runLogT "index-page" (ctxLogger ctx) $ do
         flows <- liftIO (readTVarIO (ctxFlowMap ctx))
         case (,) <$> mneedle <*> mflow of
             Nothing ->
-                return $ indexPage org flows Nothing Nothing []
+                return $ indexPage org flows Nothing muid Nothing []
             Just (needle', flow) | T.length needle' < 3 ->
-                return $ indexPage org flows Nothing (Just flow) []
+                return $ indexPage org flows Nothing muid (Just flow) []
 
             -- special flow: "all". this is a HACK
             Just (needle', flow) | flow == FD.mkIdentifier "all" -> do
@@ -82,19 +83,35 @@ indexPageAction ctx mneedle mflow = do
                 search needle' flows (Just flow) $ map (flow,) allRows
   where
     org = ctxFlowOrg ctx
+    muid = muserText >>= \x -> Map.lookup (T.toLower x) users
 
     strong :: [(FD.FlowId, [Row])] -> [[(FD.FlowId, Row)]]
     strong = map (\(flowId, rows) -> map (flowId,) rows)
 
+    -- lower case nick to uid
+    users :: Map Text FD.UserId
+    users = Map.fromList
+        [ (orgUser ^. FD.userNick . getter T.toLower, orgUser ^. FD.userId)
+        | orgUser <- org ^.. FD.orgUsers . folded
+        ]
+
+    search
+        :: Text
+        -> Map FD.FlowId (Int, Text)
+        -> Maybe FD.FlowId
+        -> [(FD.FlowId, Row)]
+        -> LogT IO (HtmlPage "index-page")
     search needle' flows mflow' allRows = do
         let needle = map toLower (T.unpack needle')
         let rows = take 1000
                 [ row
                 | row <- allRows
-                , needle `L.isInfixOf` map toLower (TS.toString $ rowText $ snd row)
+                , let row' = snd row
+                , needle `L.isInfixOf` map toLower (TS.toString $ rowText row')
+                , maybe True (\uid -> uid == rowUser row') muid
                 ]
 
-        return $ indexPage org flows (Just needle') mflow' rows
+        return $ indexPage org flows (Just needle') muid mflow' rows
 
     merge []       = []
     merge [xs]     = xs

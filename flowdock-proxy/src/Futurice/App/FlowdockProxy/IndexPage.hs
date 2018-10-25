@@ -24,15 +24,17 @@ import Futurice.App.FlowdockProxy.Markup
 indexPage
     :: FD.Organisation           -- ^ flowdock organisation
     -> Map FD.FlowId (Int, Text) -- ^ known flows
-    -> Maybe Text
+    -> Maybe Text -- ^ Needle
+    -> Maybe FD.UserId
     -> Maybe FD.FlowId
     -> [(FD.FlowId, Row)]
     -> HtmlPage "index-page"
-indexPage org flows mneedle mflow rows = page_ "Flowdock text search" (Just NavHome) $ do
+indexPage org flows mneedle muid mflow rows = page_ "Flowdock text search" (Just NavHome) $ do
     form_ [ action_ "#", method_ "GET" ] $ do
         div_ [ class_ "row" ] $ do
             div_ [ class_ "columns medium-5" ] $ input_ [ name_ "needle", type_ "text", placeholder_ "Search for...", value_ $ fromMaybe "" mneedle ]
-            div_ [ class_ "columns medium-5" ] $ select_ [ name_ "flow" ] $ do
+            div_ [ class_ "columns medium-2" ] $ input_ [ name_ "nick", type_ "text", placeholder_ "... said by ...", value_ $ fromMaybe "" $ muid >>= \uid -> users ^? ix uid ] -- TODO value
+            div_ [ class_ "columns medium-3" ] $ select_ [ name_ "flow" ] $ do
                 optionSelected_ (Nothing == mflow) [ value_ "all" ] $ i_ "All flows"
                 for_ (sortBy (comparing (snd . snd)) $ Map.toList flows) $ \(flowId, (_, flowName)) ->
                     optionSelected_ (Just flowId == mflow) [ value_ $ view packed $ FD.getIdentifier flowId ] $ toHtml $ flowName

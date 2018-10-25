@@ -14,6 +14,7 @@ import qualified Chat.Flowdock.REST as FD
 data Record route = Record
     { recIndex :: route
         :- QueryParam "needle" Text
+        :> QueryParam "nick" Text
         :> QueryParam "flow" FD.FlowId
         :> Get '[HTML] (HtmlPage "index-page")
     , recUsers :: route

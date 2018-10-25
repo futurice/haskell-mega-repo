@@ -20,6 +20,6 @@ data Nav
 instance Navigation Nav where
     serviceTitle _ = "Flowdock Proxy"
 
-    navLink NavHome = (recordHref_ recIndex Nothing Nothing, "Flowdock Proxy")
+    navLink NavHome = (recordHref_ recIndex Nothing Nothing Nothing, "Flowdock Proxy")
 
     pageParams = pageParamsWithCSS css
