@@ -48,6 +48,7 @@ library
       futurice-servant,
       futurice-tribes,
       lens,
+      mtl,
       periocron,
       personio-client,
       postgresql-simple,
