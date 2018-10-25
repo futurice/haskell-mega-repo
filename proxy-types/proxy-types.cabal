@@ -47,6 +47,7 @@ library
     , servant-cassava
     , servant-client
     , servant-server
+    , sms-proxy-client
     , swagger2
     , text
   -- Integrations

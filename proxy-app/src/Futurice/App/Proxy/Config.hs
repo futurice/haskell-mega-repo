@@ -17,6 +17,7 @@ data Config = Config
     , _cfgPersonioProxyBaseurl :: !BaseUrl
     , _cfgPowerBaseurl         :: !BaseUrl
     , _cfgContactsApiBaseurl   :: !BaseUrl
+    , _cfgSmsProxyBaseurl      :: !BaseUrl
     }
 
 makeLenses ''Config
@@ -32,3 +33,4 @@ instance Configure Config where
         <*> envVar "PERSONIOPROXY_BASEURL"
         <*> envVar "POWER_BASEURL"
         <*> envVar "CONTACTSAPI_BASEURL"
+        <*> envVar "SMSPROXY_BASEURL"

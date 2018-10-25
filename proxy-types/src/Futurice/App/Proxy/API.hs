@@ -23,27 +23,26 @@ import Servant.API
 import Servant.CSV.Cassava         (CSV)
 
 -- Integrations
-import Servant.Binary.Tagged (BINARYTAGGED)
-
-import           FUM.Types.GroupName                    (GroupName)
-import           FUM.Types.Login                        (Login)
-import           Futurice.App.Avatar.API                (AvatarFumEndpoint)
-import qualified Futurice.App.Contacts.Types            as Contact
-import           Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
-import           Futurice.App.Reports.MissingHours      (MissingHoursReport)
-import           Futurice.App.Reports.TimereportsByTask
-                 (TimereportsByTaskReport)
-import qualified Futurice.FUM.MachineAPI                as FUM6
-import qualified Futurice.GitHub                        as GH
-                 (SomeRequest, SomeResponse)
-import           Futurice.Signed                        (Signed)
-import qualified Personio
-import qualified PlanMill.Types.Query                   as PM
-                 (SomeQuery, SomeResponse)
+import FUM.Types.GroupName                    (GroupName)
+import FUM.Types.Login                        (Login)
+import Futurice.App.Avatar.API                (AvatarFumEndpoint)
+import Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
+import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
+import Futurice.Signed                        (Signed)
+import Servant.Binary.Tagged                  (BINARYTAGGED)
 
 import qualified Data.Set                             as Set
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Futurice.App.Contacts.Types          as Contact
+import qualified Futurice.App.SmsProxy.Types          as SMS
+import qualified Futurice.FUM.MachineAPI              as FUM6
+import qualified Futurice.GitHub                      as GH
+                 (SomeRequest, SomeResponse)
+import qualified Personio
+import qualified PlanMill.Types.Query                 as PM
+                 (SomeQuery, SomeResponse)
 
 data Routes = Routes
     -- contacts
@@ -108,6 +107,14 @@ data Routes = Routes
               :> Capture "group-name" GroupName
               :> "employees"
               :> Get '[JSON] (Signed (Set Login)))
+
+    -- SMS proxy
+    , routeSmsSend :: ProxiedEndpoint 'SmsProxyService
+          ("send" :> ReqBody '[JSON] SMS.Req :> Post '[JSON] SMS.Res)
+          (Summary "Send sms"
+              :> "sms" :> "send"
+              :> ReqBody '[JSON] SMS.Req
+              :> Post '[JSON] SMS.Res)
 
     -- HAXL endpoints
     , routeFumCarbonHaxl :: ProxiedEndpoint 'FumCarbonService
