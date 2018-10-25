@@ -113,11 +113,19 @@ indexPageAction ctx mneedle mflow = do
 
 usersPageAction :: Ctx -> Maybe Login -> Handler (HtmlPage "users-page")
 usersPageAction ctx _ = do
-    (today, ps) <- liftIO $ runIntegrations' ctx $ do
+    extraOrgs' <- runLogT "users" lgr $ PQ.safePoolQuery_ ctx
+        "SELECT organisation_name FROM \"flowdock-proxy\".organisations ORDER BY organisation_name ASC;"
+    let extraOrgs :: [FD.ParamName FD.Organisation]
+        extraOrgs = map (FD.mkParamName . PQ.fromOnly) extraOrgs'
+    (today, ps, orgs) <- liftIO $ cachedIO lgr cch 600 () $ runIntegrations' ctx $ do
         today <- currentDay
         ps <- personio P.PersonioEmployees
-        return (today, ps)
-    return $ usersPage today (ctxFlowOrg ctx) ps
+        orgs <- traverse flowdockOrganisationReq extraOrgs
+        return (today, ps, orgs)
+    return $ usersPage today (ctxFlowOrg ctx) orgs ps
+  where
+    lgr = ctxLogger ctx
+    cch = ctxCache ctx
 
 -------------------------------------------------------------------------------
 -- Main
@@ -132,7 +140,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx               .~ "FLOWDOCK_PROXY"
   where
     makeCtx :: () -> Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx () cfg lgr mgr _cache _mq = do
+    makeCtx () cfg lgr mgr cache _mq = do
         pool <- PQ.createPostgresPool (cfgPostgresConnInfo cfg)
 
         -- flow map is reloaded on start
@@ -152,7 +160,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 
         -- Context
         flowRowsTVar <- newTVarIO mempty
-        let ctx = Ctx cfg lgr mgr pool flowOrg flowMapTVar flowRowsTVar
+        let ctx = Ctx cfg lgr mgr cache pool flowOrg flowMapTVar flowRowsTVar
 
         -- Read contents into the memory immediately
         void $ async $ runLogT "initial-read" lgr $ do

@@ -22,3 +22,9 @@ CREATE TABLE "flowdock-proxy".messages (
   FOREIGN KEY (flow_id) REFERENCES "flowdock-proxy".flows (flow_id),
   PRIMARY KEY (flow_id, message_id)
 );
+
+CREATE TABLE "flowdock-proxy".organisations (
+  organisation_name TEXT NOT NULL PRIMARY KEY
+);
+
+-- INSERT INTO "flowdock-proxy".organisations VALUES ('futurice-...');
