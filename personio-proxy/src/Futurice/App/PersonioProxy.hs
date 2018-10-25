@@ -137,11 +137,13 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             writeTVar (ctxPersonioData ctx) allData
             return (comparePersonio oldMap newMap)
 
-        unless (null changed) $ do
+        if null changed
+        then runLogT "update" (ctxLogger ctx) $ logInfo_ "Personio updated: no changes"
+        else do
             updateSES ctx
 
             runLogT "update" (ctxLogger ctx) $ do
-                logInfo "Personio updated, data changed" changed
+                logInfo "Personio updated: data changed" changed
                 -- Save in DB
                 _ <- Postgres.safePoolExecute ctx insertQuery (Postgres.Only $ toJSON employees)
                 -- Tell the world
