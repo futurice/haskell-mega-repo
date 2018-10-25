@@ -17,6 +17,7 @@ import Control.Concurrent.STM
 import Data.Aeson                (object, (.=))
 import Data.Char                 (toLower)
 import Data.Ord                  (comparing)
+import Data.Time                 (addDays)
 import FUM.Types.Login           (Login)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
@@ -25,6 +26,8 @@ import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
 import Servant
+import Servant.Cached            (mkCached)
+import Servant.Chart             (Chart)
 import Servant.Server.Generic
 
 import qualified Chat.Flowdock.REST as FD
@@ -36,6 +39,7 @@ import qualified Futurice.Postgres  as PQ
 import qualified Personio           as P
 
 import Futurice.App.FlowdockProxy.API
+import Futurice.App.FlowdockProxy.Charts
 import Futurice.App.FlowdockProxy.Config
 import Futurice.App.FlowdockProxy.Ctx
 import Futurice.App.FlowdockProxy.DB
@@ -46,7 +50,43 @@ server :: Ctx -> Server FlowdockProxyAPI
 server ctx = genericServer $ Record
     { recIndex = indexPageAction ctx
     , recUsers = usersPageAction ctx
+    , recCharts = return chartsPage
+    , recChartActivity
+        = liftIO
+        $ cachedIO (ctxLogger ctx) (ctxCache ctx) 600 ()
+        $ fmap mkCached
+        $ activityChartAction ctx
     }
+
+-------------------------------------------------------------------------------
+-- Activity chart
+-------------------------------------------------------------------------------
+
+activityChartAction :: Ctx ->  IO (Chart "activity")
+activityChartAction ctx = do
+    today <- currentDay
+    let fromDay = addDays (-180) today
+
+    (flowMap, allRows) <- atomically $ do
+        flowMap <- readTVar (ctxFlowMap ctx)
+        m <- readTVar (ctxFlowRows ctx)
+        allRows <- traverse readTVar m
+        return (flowMap, allRows)
+
+    let xss :: Map Text (Map Int Int)
+        xss = Map.fromList
+            [ (flowName, xs)
+            | (flowId, (_, flowName)) <- Map.toList flowMap
+            , let rows = fromMaybe [] $ Map.lookup flowId allRows
+            , let xs = Map.fromListWith (+)
+                    [ (todHour (localTimeOfDay lt), 1)
+                    | row <- rows
+                    , let lt = utcToHelsinkiTime (rowCreatedAt row)
+                    , fromDay < localDay lt
+                    ]
+            ]
+
+    return $ activityChart xss
 
 -------------------------------------------------------------------------------
 -- Index

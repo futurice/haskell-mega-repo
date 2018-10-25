@@ -33,6 +33,7 @@ library
       aeson,
       async,
       base,
+      Chart,
       clay,
       cmark-gfm,
       containers,
@@ -51,12 +52,15 @@ library
       personio-client,
       postgresql-simple,
       servant,
+      servant-cached,
+      servant-Chart,
       servant-server,
       stm,
       text,
       text-short,
       text-containers,
       these,
+      time,
       vector,
       xss-sanitize
 
@@ -66,6 +70,7 @@ library
 
   exposed-modules:
       Futurice.App.FlowdockProxy.API
+      Futurice.App.FlowdockProxy.Charts
       Futurice.App.FlowdockProxy.Clay
       Futurice.App.FlowdockProxy.Config
       Futurice.App.FlowdockProxy.Ctx

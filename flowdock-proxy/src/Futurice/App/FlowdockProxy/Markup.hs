@@ -15,11 +15,13 @@ import Futurice.App.FlowdockProxy.Clay (css)
 
 data Nav
     = NavHome
+    | NavCharts
   deriving (Eq, Ord, Enum, Bounded)
 
 instance Navigation Nav where
     serviceTitle _ = "Flowdock Proxy"
 
-    navLink NavHome = (recordHref_ recIndex Nothing Nothing Nothing, "Flowdock Proxy")
+    navLink NavHome   = (recordHref_ recIndex Nothing Nothing Nothing, "Flowdock Proxy")
+    navLink NavCharts = (recordHref_ recCharts, "Charts")
 
     pageParams = pageParamsWithCSS css
