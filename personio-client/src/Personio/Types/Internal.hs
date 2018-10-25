@@ -69,7 +69,7 @@ instance FromJSON FlowdockId where
         pure . FlowdockId . fmap FD.mkIdentifier . match flowdockRegexp
 
 flowdockRegexp :: RE' Word64
-flowdockRegexp = string "https://www.flowdock.com/app/private/" *> RE.decimal
+flowdockRegexp = "https://" *> optional "www." *> "flowdock.com/app/private/" *> RE.decimal
 
 newtype Expat = Expat { getExpat :: Bool }
 
