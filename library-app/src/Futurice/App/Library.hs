@@ -13,7 +13,6 @@ import Data.Time
 import FUM.Types.Login
 import Futurice.App.Sisosota.Client
 import Futurice.App.Sisosota.Types  (ContentHash)
-import Futurice.Constants           (servicePublicUrl)
 import Futurice.IdMap               (IdMap, fromFoldable)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation    (HtmlPage)
@@ -123,12 +122,12 @@ getPersonioDataMap ctx = do
 
 fetchCover :: (Monad m, MonadIO m, MonadThrow m) => Ctx -> ContentHash -> m (Either String LBS.ByteString)
 fetchCover ctx contentHash = do
-    url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
+    url <- parseBaseUrl $ T.unpack $ cfgSisosotaUrl $ ctxConfig ctx
     liftIO $ sisosotaGet (ctxManager ctx) url contentHash
 
 addNewCover :: Ctx -> LBS.ByteString -> IO ContentHash
 addNewCover ctx cover = do
-    url <- parseBaseUrl $ T.unpack $ servicePublicUrl SisosotaService
+    url <- parseBaseUrl $ T.unpack $ cfgSisosotaUrl $ ctxConfig ctx
     sisosotaPut (ctxManager ctx) url cover
 
 makeAmazonAddress :: Ctx -> Text -> IO ByteString
