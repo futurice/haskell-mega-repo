@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.FlowdockProxy.Main (defaultMain) where
 
+import Control.Concurrent        (threadDelay)
 import Control.Concurrent.Async  (async)
 import Control.Concurrent.STM
        (atomically, newTVar, newTVarIO, readTVar, readTVarIO, writeTVar)
@@ -228,6 +229,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         -- Update job: fetch new rows
         let updateJobAction = runLogT "update-rows" lgr $
                 ifor_ flowMap $ \flowSlug (flowId, _) -> do
+                    liftIO $ threadDelay $ 5*1000000  -- sleeping between each flow
                     logInfoI "Updating flow $flow" $ object [ "flow" .= flowSlug ]
                     updateRows ctx flowId flowSlug
 
@@ -289,9 +291,11 @@ updateRows ctx flowId flowSlug = do
 
 runIntegrations' :: Ctx -> Integrations '[Proxy,Proxy, I, Proxy, I, I] a -> IO a
 runIntegrations' ctx m = do
+    -- ! New manager each run. Maybe this helps with timeouts, maybe not.
+    mgr <- newManager tlsManagerSettings
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsConfig cfg) m
   where
-    mgr = ctxManager ctx
+    -- mgr = ctxManager ctx
     lgr = ctxLogger ctx
     cfg = ctxConfig ctx
