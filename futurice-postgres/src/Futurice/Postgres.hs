@@ -30,7 +30,6 @@ module Futurice.Postgres (
     -- * Re-export types
     Postgres.ConnectInfo,
     Postgres.Query,
-    Postgres.Only (..),
     ) where
 
 import Control.Monad.Catch        (Handler (..), catches)

@@ -1,4 +1,4 @@
-index-state: 2018-10-02T10:27:01Z
+index-state: 2018-10-29T22:03:05Z
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
@@ -9,20 +9,22 @@ constraints:
   Chart              ^>= 1.9,
   clay               ^>= 0.13.1,
   conduit            ^>= 1.3.0.2,
-  diagrams-lib       ^>=1.4.2.3,
-  github             ^>= 0.19,
+  diagrams-lib       ^>= 1.4.2.3,
+  generics-sop       ^>= 0.4.0.1,
+  github             ^>= 0.20,
   haxl               ^>= 2.0.0.0,
   http-types         ^>= 0.12,
   lens               ^>= 4.17,
   log-base           ^>= 0.7.4.0,
   semigroupoids      ^>= 5.3.1,
   servant            ^>= 0.14.1,
+  postgresql-simple  ^>= 0.6,
   servant-client     ^>= 0.14,
   servant-client-core^>= 0.14.1,
   servant-lucid      ^>= 0.8,
   servant-server     ^>= 0.14.1,
   servant-swagger-ui ^>= 0.3.0.3.13.2,
-  SVGFonts           ^>=1.7,
+  SVGFonts           ^>= 1.7,
   unix-time          ^>= 0.3.8,
   tdigest            ^>= 0.2
 

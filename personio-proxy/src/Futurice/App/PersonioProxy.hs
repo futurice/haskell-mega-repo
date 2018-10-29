@@ -90,7 +90,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
                 return []
 
             -- Note: if Personio.Employee changes, we have to make adoptions here!
-            (Postgres.Only v : _) -> case parseEither parseJSON v of
+            (Only v : _) -> case parseEither parseJSON v of
                 Right employees -> return employees
                 Left err        -> do
                     logAttention "Cannot parse previous Personio data" err
@@ -145,7 +145,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             runLogT "update" (ctxLogger ctx) $ do
                 logInfo "Personio updated: data changed" changed
                 -- Save in DB
-                _ <- Postgres.safePoolExecute ctx insertQuery (Postgres.Only $ toJSON employees)
+                _ <- Postgres.safePoolExecute ctx insertQuery (Only $ toJSON employees)
                 -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
 

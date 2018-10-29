@@ -9,7 +9,7 @@
 module Futurice.App.FUM.Command.Server (commandServer) where
 
 import Futurice.Prelude
-import Generics.SOP     (All, SList (..), SListI (..))
+import Generics.SOP     (All, SList (..), sList)
 import Prelude ()
 import Servant
 
