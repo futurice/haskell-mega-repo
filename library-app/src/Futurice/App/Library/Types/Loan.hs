@@ -20,6 +20,8 @@ import qualified Personio as P
 newtype LoanId   = LoanId Int32
     deriving newtype (Eq, Ord, Show, ToJSON, FromHttpApiData, ToHttpApiData, FromField, ToField)
 
+data LoanStatus = Loaned | NotLoaned
+
 data Loan = Loan
     { _loanId            :: !LoanId
     , _loanDateLoaned    :: !Text

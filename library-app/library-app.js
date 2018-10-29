@@ -7,6 +7,17 @@ futu.onload(function () {
   var assert = futu.assert;
   var buttonOnClick = futu.buttonOnClick;
 
+  $$("button[data-futu-id=delete-item]").forEach(function (btn) {
+      buttonOnClick(btn, function () {
+          // prevent dbl-click
+          btn.disabled = true;
+          var itemId = btn.dataset.itemId;
+          fetch("/item/" + itemId, { method: "DELETE" })
+              .then(function (response) { response.json().then(function (t) { location=t;}); })
+              .catch(function (error) { console.log("Got error " + error); });
+      });
+  });
+
   $$("button[data-futu-id=return-loan]").forEach(function (btn) {
     buttonOnClick(btn, function () {
         // prevent dbl-click
@@ -24,7 +35,7 @@ futu.onload(function () {
         btn.disabled = true;
         var bookid = btn.dataset.itemId;
         var office = btn.dataset.library;
-        var payload = { "book": parseInt(bookid), "library": office };
+        var payload = { "book": parseInt(bookid), "library": { "office" : office } };
         futu.fetchJSON("/book/borrow/", payload)
             .then(function (response) { console.log("Borrow was successful"); location=location.href; })
             .catch(function (error) { console.log("Couldn't borrow book") });

@@ -15,7 +15,7 @@ import Futurice.IdMap                       (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
-newtype BookInformationId   = BookInformationId Int32 deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
+newtype BookInformationId   = BookInformationId Int32 deriving newtype (Eq, Ord, Show, Read, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
 data BookInformation = BookInformation
     { _bookInformationId          :: !BookInformationId

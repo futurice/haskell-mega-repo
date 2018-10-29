@@ -11,7 +11,7 @@ import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Simple.Types
 import Futurice.App.Sisosota.Types        (ContentHash)
-import Futurice.IdMap
+import Futurice.IdMap                     (IdMap)
 import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
@@ -92,6 +92,19 @@ fetchItem ctx iid = listToMaybe <$> (safePoolQuery ctx "SELECT item_id, library,
 fetchItems :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [ItemData]
 fetchItems ctx = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item " ()
 
+deleteItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m Bool
+deleteItem ctx iid = (1 ==) <$> safePoolExecute ctx "DELETE FROM library.item WHERE item_id = ?" (Only iid)
+
+addItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> AddItemRequest -> m Bool
+addItem ctx (AddItemRequest lib bookinfo_id boardgameinfo_id) =
+    (1 ==) <$> safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id, boardgameinfo_id) VALUES (?,?,?)" (lib, bookinfo_id, boardgameinfo_id)
+
+fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m [ItemData]
+fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE bookinfo_id = ?" (Only binfoid)
+
+fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m [ItemData]
+fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE boardgameinfo_id = ?" (Only binfoid)
+
 -------------------------------------------------------------------------------
 -- Loan functions
 -------------------------------------------------------------------------------
@@ -108,11 +121,11 @@ fetchLoansWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Po
 fetchLoansWithItemIds ctx iids = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id in ?;" (Only (In iids))
 
 borrowBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> P.EmployeeId -> BorrowRequest -> m (Maybe LoanData)
-borrowBook ctx eid (BorrowRequest binfoid _) = do
+borrowBook ctx eid (BorrowRequest binfoid library) = do
     now <- currentDay
     books <- fetchItemsByBookInformation ctx binfoid
     runMaybeT $ do
-        freeBook <- MaybeT $ fetchItemsWithoutLoans ctx books
+        freeBook <- MaybeT $ fetchItemsWithoutLoans ctx (filter (\b -> library == idLibrary b) books)
         MaybeT $ makeLoan ctx now freeBook eid
 
 loans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [LoanData]
@@ -123,6 +136,13 @@ loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, p
 
 fetchLoanIdWithItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe LoanData)
 fetchLoanIdWithItemId ctx itemId = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only itemId)
+
+checkLoanStatus :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m LoanStatus
+checkLoanStatus ctx itemid = do
+    loandata <- fetchLoanIdWithItemId ctx itemid
+    case loandata of
+      Just _ -> pure Loaned
+      Nothing -> pure NotLoaned
 
 fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
 fetchLoan ctx emap lid = do
@@ -162,24 +182,18 @@ fetchPersonalLoans ctx es (P.EmployeeId eid) = do
 
 loanDataToLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => (Pool Connection) -> IdMap P.Employee -> [LoanData] -> m [Loan]
 loanDataToLoan ctx es ldatas = do
-    itemmap <- Map.fromList . fmap (\x -> (idItemId x, x)) <$> (fetchItemsWithItemIds ctx $ ldItemId <$> ldatas)
-    bookInfos <- idMapOf folded <$> fetchBookInformations ctx
-    boardgameInfos <- idMapOf folded <$> fetchBoardGameInformations ctx
-    pure $ catMaybes $ (\l ->
-        case (itemmap ^.at (ldItemId l)) >>= toItem bookInfos boardgameInfos of
-            Just item -> Just $ Loan (ldLoanId l) (T.pack $ show $ ldDateLoaned l) item (es ^.at (ldPersonioId l))
-            Nothing   -> Nothing) <$> ldatas
-  where
-    toItem binfos boainfos item = Item (idItemId item) (idLibrary item) <$>
-        case idInfoId item of
-          BookInfoId i      -> ItemBook      <$> binfos ^.at i
-          BoardGameInfoId i -> ItemBoardGame <$> boainfos ^.at i
-
-fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m [ItemData]
-fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where bookinfo_id = ?" (Only binfoid)
-
-fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m [ItemData]
-fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "select item_id, library, bookinfo_id, boardgameinfo_id from library.item where boardgameinfo_id = ?" (Only binfoid)
+    catMaybes <$> for ldatas (\ldata -> do
+        runMaybeT $ do
+            itemData <- MaybeT $ fetchItem ctx $ ldItemId ldata
+            case idInfoId itemData of
+              BookInfoId infoid -> do
+                  i <- fetchBookInformation ctx infoid
+                  item <- MaybeT $ pure $ (Item (idItemId itemData) (idLibrary itemData) . ItemBook) <$> i
+                  pure $ Loan (ldLoanId ldata) (T.pack $ show $ ldDateLoaned ldata) item (es ^.at (ldPersonioId ldata))
+              BoardGameInfoId infoid -> do
+                  i <- fetchBoardGameInformation ctx infoid
+                  item <- MaybeT $ pure $ (Item (idItemId itemData) (idLibrary itemData) . ItemBoardGame) <$> i
+                  pure $ Loan (ldLoanId ldata) (T.pack $ show $ ldDateLoaned ldata) item (es ^.at (ldPersonioId ldata)))
 
 -------------------------------------------------------------------------------
 -- Book functions

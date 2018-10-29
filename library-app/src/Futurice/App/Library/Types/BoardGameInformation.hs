@@ -14,7 +14,7 @@ import Futurice.IdMap                       (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
-newtype BoardGameInformationId   = BoardGameInformationId Int32 deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
+newtype BoardGameInformationId   = BoardGameInformationId Int32 deriving newtype (Eq, Ord, Show, Read, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
 data BoardGameInformation = BoardGameInformation
     { _boardGameInformationId  :: !BoardGameInformationId

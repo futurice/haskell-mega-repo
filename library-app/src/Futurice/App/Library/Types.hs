@@ -6,6 +6,7 @@
 module Futurice.App.Library.Types (
     AddBookInformation (..),
     AddBoardGameInformation (..),
+    AddItemRequest (..),
     CoverData (..),
     boardGameName,
     boardGamePublisher,
@@ -55,6 +56,7 @@ module Futurice.App.Library.Types (
     Books (..),
     BorrowRequest (..),
     Loan (..),
+    LoanStatus (..),
     loanId,
     loanInformation,
     Item (..),
@@ -67,6 +69,7 @@ module Futurice.App.Library.Types (
     allLibraries,
     libraryToText,
     usedLibraries,
+    librarySelectSortOrder,
     BookSortCriteria (..),
     BoardGameSortCriteria (..),
     CriteriaAndData (..),

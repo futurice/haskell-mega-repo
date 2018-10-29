@@ -27,6 +27,7 @@ data Record route = Record
     , bookByISBNGet        :: route :- "book" :> "isbn" :> Capture "isbn" Text :> Get '[JSON] BookInformationByISBNResponse
     , bookCoverGet         :: route :- BookCoverEndpoint
     , borrowPost           :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
+    , itemDelete           :: route :- "item"  :> Capture "id" ItemId :> Delete '[JSON] Text
     , snatchPost           :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan
     , loansGet             :: route :- "loan" :> Get '[JSON] [Loan]
     , loanGet              :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
@@ -44,9 +45,10 @@ libraryApi = genericApi (Proxy :: Proxy Record)
 ----------------------------
 
 data HtmlRecord route = HtmlRecord
-    { addItemPageGet       :: route :- "item" :> "add" :> Get '[HTML] (HtmlPage "additempage")
-    , addBookPost          :: route :- "item" :> "add" :> "book" :> MultipartForm Mem AddBookInformation :> Post '[HTML] (HtmlPage "additempage")
+    { addBookPost          :: route :- "item" :> "add" :> "book" :> MultipartForm Mem AddBookInformation :> Post '[HTML] (HtmlPage "additempage")
     , addBoardGamePost     :: route :- "item" :> "add" :> "boardgame" :> MultipartForm Mem AddBoardGameInformation :> Post '[HTML] (HtmlPage "additempage")
+    , addItemPageGet       :: route :- "item" :> "add" :> Get '[HTML] (HtmlPage "additempage")
+    , addItemPost          :: route :- "item"  :> MultipartForm Mem AddItemRequest :> Post '[HTML] (HtmlPage "edititempage")
     , bookPageGet          :: route :- BookInformationPageEndpoint
     , boardGamePageGet     :: route :- BoardGameInformationPageEndpoint
     , editBoardGamePageGet :: route :- "item" :> "edit" :> "boardgame" :> Capture "id" BoardGameInformationId :> Get '[HTML] (HtmlPage "edititempage")

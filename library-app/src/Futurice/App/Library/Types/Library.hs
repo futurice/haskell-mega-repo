@@ -78,6 +78,10 @@ instance FromJSON Library where
         office <- l .: "office"
         pure $ libraryFromText office
 
+instance ToHtml Library where
+    toHtml = toHtmlRaw
+    toHtmlRaw = toHtmlRaw . libraryToText
+
 instance ToHttpApiData LibraryOrAll where
     toUrlPiece AllLibraries = "all"
     toUrlPiece (JustLibrary lib) = libraryToText lib
