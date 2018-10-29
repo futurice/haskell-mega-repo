@@ -20,6 +20,7 @@ import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
 import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
+import Futurice.App.Reports.IDontKnow                 (IDontKnowData)
 import Futurice.App.Reports.Inventory                 (InventorySummary)
 import Futurice.App.Reports.MissingHours              (MissingHoursReport)
 import Futurice.App.Reports.OfficeVibeIntegration
@@ -73,6 +74,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
     :<|> "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
     :<|> "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
+    :<|> "tables" :> "i-dont-know"          :> QueryParam "month" Month :> Get '[HTML] IDontKnowData
     -- Officevibe
     :<|> "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
     :<|> "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]

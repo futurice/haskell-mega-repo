@@ -57,12 +57,16 @@ indexPage = page_ "Reports" $ do
         li_ $ a_ [ href_ "/tables/active-accounts" ] "Active accounts"
         li_ $ a_ [ href_ "/tables/planmill-account-validation" ] "Validation of PlanMill account data"
         li_ $ a_ [ href_ "/tables/inventory-summary" ] "Mobile budget stats"
+        li_ $ a_ [ href_ "/tables/project-hours" ] "Hours by project and type"
+        li_ $ a_ [ href_ "/tables/i-dont-know" ] "I don't know... report"
 
     fullRow_ $ h2_ "Integrations for Power"
     fullRow_ $ ul_ $ do
         li_ $ a_ [ href_ "/power/users" ] "Users"
         li_ $ a_ [ href_ "/power/projects" ] "Projects"
         li_ $ a_ [ href_ "/power/absences" ] "Absences"
+
+    -- TODO: dump
 
     fullRow_ $ h2_ "Reports and charts elsewhere"
     fullRow_ $ do
