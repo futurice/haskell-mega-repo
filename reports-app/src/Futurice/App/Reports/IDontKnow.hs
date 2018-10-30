@@ -12,26 +12,32 @@ module Futurice.App.Reports.IDontKnow (
     -- * Report
     iDontKnowData,
     -- * Types
-    IDontKnowData,
+    IDontKnowData (..),
     IDontKnow (..),
+    Category (..),
     ) where
 
-import Data.Fixed                (Centi)
-import Data.Ord                  (comparing)
+import Data.Aeson                           (Value)
+import Data.Fixed                           (Centi)
+import Data.Ord                             (comparing)
+import Data.Set.Lens                        (setOf)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Integrations.TimereportKind
+       (TimereportKind (..), timereportKind)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Time
-import Futurice.Integrations.TimereportKind
-       (TimereportKind (..), timereportKind)
 import Futurice.Time.Month
 import Futurice.Tribe
 import Prelude ()
 
+import qualified Data.Aeson.Lens as L
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Set            as Set
 import qualified Data.Text           as T
 import qualified Personio            as P
+import qualified Data.Swagger as Sw
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -39,11 +45,22 @@ import qualified PlanMill.Queries    as PMQ
 -- Data
 -------------------------------------------------------------------------------
 
+data Category
+    = CatIDontKnow
+    | CatICantMark
+    | CatInternal !Text
+  deriving stock (Show, Generic)
+  deriving anyclass (NFData, ToJSON, FromJSON)
+
+instance ToSchema Category where
+    declareNamedSchema = Sw.genericDeclareNamedSchemaUnrestricted Sw.defaultSchemaOptions
+
 data IDontKnow = IDontKnow
     { idkDate     :: !Day
     , idkName     :: !Text
     , idkTribe    :: !Tribe
-    , idkCategory :: !Text
+    , idkCategory :: !Category
+    , idkProject  :: !Text
     , idkHours    :: !(NDT 'Hours Centi)
     , idkDesc     :: !Text
     }
@@ -55,7 +72,7 @@ instance ToSchema IDontKnow where declareNamedSchema = sopDeclareNamedSchema
 deriveVia [t| ToJSON IDontKnow   `Via` Sopica IDontKnow |]
 deriveVia [t| FromJSON IDontKnow `Via` Sopica IDontKnow |]
 
-data IDontKnowData = IDK !Month [IDontKnow]
+data IDontKnowData = IDK !Day !Month (Set Text) [IDontKnow]
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
 
@@ -81,13 +98,28 @@ iDontKnowData mmonth = do
     fpm0 <- personioPlanmillMap
     let fpm = HM.filter (P.employeeIsActive today . fst) fpm0
 
-    prjs <- PMQ.projects 
-    accs' <- for (toList prjs) $ \prj ->
-        traverse PMQ.account (PM.pAccount prj)
-    -- accTypes <- PMQ.allEnumerationValues Proxy Proxy
+    prjs <- PMQ.projects
+    accTypes <- PMQ.allEnumerationValues Proxy Proxy
 
-    let accNames :: [T.Text]
-        accNames = accs' ^.. folded . folded . getter (T.toLower . PM.saName)
+    accs' <- for (toList prjs) $ \prj -> do
+        acc <- for (PM.pAccount prj) $ \accId -> do
+            acc <- PMQ.account accId
+            if accTypes ^? ix (PM.saType acc) == Just "My Company"
+            then return Nothing
+            else return (Just acc)
+        return (join acc)
+
+    let accNames' :: Set T.Text
+        accNames' = setOf
+            (folded . folded . getter (take 1 . filter (\w -> T.length w > 2) . T.words . T.toLower . PM.saName) . folded)
+            accs'
+
+        accNames :: Set T.Text
+        accNames = Set.difference accNames' excludes
+          where
+            excludes = setOf
+                (L.key "exclude" . L.values . L._String)
+                iDontKnowConfig
 
     idks <- ifor fpm $ \_login (p, pmu) -> do
         let uid = pmu ^. PM.identifier
@@ -95,16 +127,19 @@ iDontKnowData mmonth = do
 
         for (toList trs) $ \tr -> do
             task <- PMQ.task (PM.trTask tr)
+            prj <- traverse PMQ.project (PM.taskProject task)
             let taskName = PM.taskName task
             kind <- timereportKind tr
             let comment = fromMaybe "<empty>" $ PM.trComment tr
+            let commentWs = Set.fromList $ T.words $ T.toLower comment
 
             if  | T.isPrefixOf "I don't know" taskName -> do
                     return $ Just IDontKnow
                         { idkDate     = PM.trStart tr
                         , idkName     = p ^. P.employeeFullname
                         , idkTribe    = p ^. P.employeeTribe
-                        , idkCategory = "I don't know..."
+                        , idkCategory = CatIDontKnow
+                        , idkProject  = maybe "<project>" PM.pName prj
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
@@ -113,22 +148,27 @@ iDontKnowData mmonth = do
                         { idkDate     = PM.trStart tr
                         , idkName     = p ^. P.employeeFullname
                         , idkTribe    = p ^. P.employeeTribe
-                        , idkCategory = "I can't mark..."
+                        , idkCategory = CatICantMark
+                        , idkProject  = maybe "<project>" PM.pName prj
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
-                | taskName /= "Sales", kind == KindInternal, any (`T.isInfixOf` T.toLower comment) accNames ->
+                | not ("sales" `T.isInfixOf` T.toLower taskName), kind == KindInternal, not (Set.disjoint commentWs accNames) ->
                     return $ Just IDontKnow
                         { idkDate     = PM.trStart tr
                         , idkName     = p ^. P.employeeFullname
                         , idkTribe    = p ^. P.employeeTribe
-                        , idkCategory = PM.taskName task
+                        , idkCategory = CatInternal $ PM.taskName task
+                        , idkProject  = maybe "<project>" PM.pName prj
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
                 | otherwise -> return Nothing
 
-    return $ IDK month (idks ^.. folded . folded . _Just)
+    return $ IDK today month accNames (idks ^.. folded . folded . _Just)
+
+iDontKnowConfig :: Value
+iDontKnowConfig = $(makeRelativeToProject "i-dont-know.json" >>= embedFromJSON (Proxy :: Proxy Value))
 
 -------------------------------------------------------------------------------
 -- Html
@@ -139,15 +179,23 @@ instance ToHtml IDontKnowData where
     toHtml = toHtml . renderIDontKnowData
 
 renderIDontKnowData :: IDontKnowData -> HtmlPage "i-dont-know"
-renderIDontKnowData (IDK month xs) = page_ "I don't know..." $ do
-    h1_ $ "I don't know... " <> textShow month
+renderIDontKnowData (IDK today month accNames xs) = page_ "I don't know..." $ do
+    fullRow_ $ h1_ $ "I don't know... " <> monthToText month
 
-    sortableTable_ $ do
+    form_ $ div_ [ class_ "row" ] $ do
+        div_ [ class_ "columns medium-10" ] $ select_ [ name_ "month" ] $ do
+            -- TODO self update
+            for_ [ Month 2018 January .. succ (succ (dayToMonth today)) ] $ \m ->
+                optionSelected_ (m == month) [ value_ $ monthToText m ] $ toHtml m
+        div_ [ class_ "columns medium-2" ] $ input_ [ class_ "button", type_ "submit", value_ "Update" ]
+
+    fullRow_ $ sortableTable_ $ do
         thead_ $ do
             th_ "Date"
             th_ "Name"
             th_ "Tribe"
             th_ "Category"
+            th_ "Project"
             th_ "Hours"
             th_ "Description"
 
@@ -155,6 +203,15 @@ renderIDontKnowData (IDK month xs) = page_ "I don't know..." $ do
             td_ [ class_ "nowrap" ] $ toHtml $ textShow idkDate
             td_  [ class_ "nowrap" ] $ toHtml idkName
             td_ $ toHtml idkTribe
-            td_ $ toHtml idkCategory
+            td_ $ case idkCategory of
+                CatIDontKnow -> span_ [ class_ "label warning" ] "I don't know..."
+                CatICantMark -> span_ [ class_ "label alert"   ] "I can't mark..."
+                CatInternal t -> toHtml t
+            td_ $ toHtml idkProject
             td_ $ toHtml idkHours
-            td_ $ toHtml idkDesc
+            td_ $ wordsToHtml (T.words idkDesc)
+  where
+    wordsToHtml [] = pure ()
+    wordsToHtml (w:ws)
+        | Set.member (T.toLower w) accNames = span_ [ class_ "label success" ] (toHtml w) <> " " <> wordsToHtml ws
+        | otherwise                         = toHtml w <> " " <> wordsToHtml ws

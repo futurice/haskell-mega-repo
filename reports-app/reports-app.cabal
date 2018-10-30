@@ -12,6 +12,11 @@ license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
 
+extra-source-files:
+  i-dont-know.json
+  missing-hours-email.template
+  missing-hours-sms.template
+
 source-repository head
   type: git
   location: https://github.com/futurice/haskell-mega-repo
@@ -82,6 +87,7 @@ library
     , http-types
     , intervals
     , lens
+    , lens-aeson
     , lucid
     , lucid-extras
     , microstache
