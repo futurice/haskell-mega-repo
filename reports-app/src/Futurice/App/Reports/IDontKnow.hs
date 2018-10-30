@@ -108,6 +108,15 @@ iDontKnowData mmonth = do
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
+                | T.isPrefixOf "I can't mark" taskName -> do
+                    return $ Just IDontKnow
+                        { idkDate     = PM.trStart tr
+                        , idkName     = p ^. P.employeeFullname
+                        , idkTribe    = p ^. P.employeeTribe
+                        , idkCategory = "I can't mark..."
+                        , idkHours    = ndtConvert' (PM.trAmount tr)
+                        , idkDesc     = comment
+                        }
                 | taskName /= "Sales", kind == KindInternal, any (`T.isInfixOf` T.toLower comment) accNames ->
                     return $ Just IDontKnow
                         { idkDate     = PM.trStart tr
@@ -133,7 +142,7 @@ renderIDontKnowData :: IDontKnowData -> HtmlPage "i-dont-know"
 renderIDontKnowData (IDK month xs) = page_ "I don't know..." $ do
     h1_ $ "I don't know... " <> textShow month
 
-    table_ $ do
+    sortableTable_ $ do
         thead_ $ do
             th_ "Date"
             th_ "Name"
