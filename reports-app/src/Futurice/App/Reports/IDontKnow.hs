@@ -87,7 +87,7 @@ iDontKnowData mmonth = do
     -- accTypes <- PMQ.allEnumerationValues Proxy Proxy
 
     let accNames :: [T.Text]
-        accNames = accs' ^.. folded . folded . getter PM.saName
+        accNames = accs' ^.. folded . folded . getter (T.toLower . PM.saName)
 
     idks <- ifor fpm $ \_login (p, pmu) -> do
         let uid = pmu ^. PM.identifier
@@ -108,7 +108,7 @@ iDontKnowData mmonth = do
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
-                | taskName /= "Sales", kind == KindInternal, any (`T.isInfixOf` comment) accNames ->
+                | taskName /= "Sales", kind == KindInternal, any (`T.isInfixOf` T.toLower comment) accNames ->
                     return $ Just IDontKnow
                         { idkDate     = PM.trStart tr
                         , idkName     = p ^. P.employeeFullname
