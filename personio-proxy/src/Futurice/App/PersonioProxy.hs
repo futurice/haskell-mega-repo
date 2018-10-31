@@ -5,7 +5,8 @@
 module Futurice.App.PersonioProxy (defaultMain) where
 
 import Control.Concurrent.Async (async)
-import Control.Concurrent.STM   (atomically, newTVarIO, readTVar, writeTVar)
+import Control.Concurrent.STM
+       (atomically, newTVarIO, readTVar, readTVarIO, writeTVar)
 import Data.Aeson.Types         (object, parseEither, parseJSON, toJSON, (.=))
 import Futurice.IdMap           (IdMap)
 import Futurice.Periocron
@@ -17,6 +18,7 @@ import Servant                  ((:<|>) (..), Server)
 
 import Futurice.App.PersonioProxy.API
 import Futurice.App.PersonioProxy.Config
+import Futurice.App.PersonioProxy.IndexPage
 import Futurice.App.PersonioProxy.Logic
 import Futurice.App.PersonioProxy.Types
 
@@ -26,13 +28,14 @@ import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
 
 #if __GLASGOW_HASKELL__ >= 804
-import Data.Compact (compactSize, compactWithSharing, getCompact, compactAddWithSharing)
+import Data.Compact
+       (compactAddWithSharing, compactSize, compactWithSharing, getCompact)
 #else
 import Control.DeepSeq (force)
 #endif
 
 server :: Ctx -> Server PersonioProxyAPI
-server ctx = pure "Try /swagger-ui/"
+server ctx = indexPage'
     :<|> personioRequest ctx
     :<|> rawEmployees ctx
     :<|> scheduleEmployees ctx
@@ -40,6 +43,10 @@ server ctx = pure "Try /swagger-ui/"
     :<|> tribeEmployeesChart ctx
     :<|> careerLevelsChart ctx
     :<|> rolesDistributionChart ctx
+  where
+    indexPage' = liftIO $ do
+        ps <- readTVarIO (ctxPersonio ctx)
+        return (indexPage (toList ps))
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
