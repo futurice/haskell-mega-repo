@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE EmptyCase              #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -12,7 +13,8 @@
 module Futurice.Integrations.Serv (
     -- * Services
     Serv (..),
-    ServNat (..),
+    ServNat,
+    ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -23,11 +25,18 @@ module Futurice.Integrations.Serv (
     -- * fin extras
     LessThan (..),
     LessThanProof (..),
+    -- ** Comparison
+    CMP,
+    WithOrdering,
+    -- ** Lemmas
+    lessThanReflAbsurd,
+    lessThanCmpGT,
+    lessThanTrans,
     ) where
 
-import Data.Functor.Classes (showsUnaryWith)
-import Data.Kind            (Type)
-import Data.Proxy           (Proxy (..))
+import Data.Kind          (Type)
+import Data.Proxy         (Proxy (..))
+import Data.Type.Equality
 
 import qualified Data.Type.Nat as N
 
@@ -62,6 +71,32 @@ instance m ~ 'N.S m' => LessThan 'N.Z m where
 
 instance LessThan n m => LessThan ('N.S n) ('N.S m) where
     ltProof = LTS ltProof
+
+lessThanReflAbsurd :: N.SNat n -> LessThanProof n n -> a
+lessThanReflAbsurd N.SZ p       = case p of {}
+lessThanReflAbsurd N.SS (LTS p) = lessThanReflAbsurd N.snat p
+
+lessThanTrans
+    :: LessThanProof n m
+    -> LessThanProof m p
+    -> LessThanProof n p
+lessThanTrans LTZ      (LTS _)   = LTZ
+lessThanTrans (LTS lt) (LTS lt') = LTS (lessThanTrans lt lt')
+
+type family CMP (n :: N.Nat) (m :: N.Nat) :: Ordering where
+    CMP  'N.Z     'N.Z    = 'EQ
+    CMP  'N.Z    ('N.S m) = 'LT
+    CMP ('N.S n)  'N.Z    = 'GT
+    CMP ('N.S n) ('N.S m) = CMP n m
+
+type family WithOrdering (o :: Ordering) a b c :: Type where
+    WithOrdering 'LT a b c = a
+    WithOrdering 'EQ a b c = b
+    WithOrdering 'GT a b c = c
+
+lessThanCmpGT :: LessThanProof n m -> CMP m n :~: 'GT
+lessThanCmpGT LTZ      = Refl
+lessThanCmpGT (LTS lt) = case lessThanCmpGT lt of Refl -> Refl
 
 -------------------------------------------------------------------------------
 -- Services
@@ -204,7 +239,6 @@ instance
 -- | Fold over 'ServSet'.
 -- We don't use the set property here, as in some cases we don't need it on the value level: types have done their job.
 --
--- >>> import Data.Functor.Const (Const (..))
 -- >>> withServSet (Proxy :: Proxy '[ ServFD, ServGH ]) (Const []) (\s (Const ss) -> Const (show s : ss))
 -- Const ["SServFD","SServGH"]
 --
@@ -230,4 +264,4 @@ withServSet _ nil cons = go ssProof where
 -- $setup
 --
 -- >>> :set -XDataKinds
-
+-- >>> import Data.Functor.Const (Const (..))

@@ -87,5 +87,7 @@ library
       Futurice.Integrations.GitHub
       Futurice.Integrations.Monad
       Futurice.Integrations.Serv
+      Futurice.Integrations.Serv.Config
+      Futurice.Integrations.Serv.Contains
       Futurice.Integrations.TimereportKind
       Futurice.Integrations.Types
