@@ -22,7 +22,7 @@ data Nav = NavHome deriving (Eq, Ord, Enum, Bounded)
 instance Navigation Nav where
     serviceTitle _ = "Personio Proxy"
 
-    navLink NavHome = (href_ "/", "HC Home")
+    navLink NavHome = (href_ "/", "Personio Proxy")
 
     pageParams = pageParamsWithJS
         $(makeRelativeToProject "personio-proxy.js" >>= embedJS)
