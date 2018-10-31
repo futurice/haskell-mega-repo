@@ -162,6 +162,7 @@ serveData
     -> IO v
 serveData f = serveData' () (const f) id
 
+{-
 serveDataParam
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k)
     => k
@@ -169,6 +170,16 @@ serveDataParam
     -> Ctx
     -> IO v
 serveDataParam k f = serveData' k f id
+-}
+
+serveDataParam2
+    :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k, Eq k', Hashable k', Typeable k')
+    => k
+    -> k'
+    -> (k -> k' -> Integrations '[I, I, Proxy, I, I, I] v)
+    -> Ctx
+    -> IO v
+serveDataParam2 k k' f = serveData' (k, k') (uncurry f) id
 
 serveData'
     :: (Typeable a, NFData a, Eq k, Hashable k, Typeable k)
@@ -240,7 +251,7 @@ server ctx = makeServer ctx reports
     :<|> liftIO serveInventory
     :<|> liftIO (serveData projectHoursData ctx)
     :<|> liftIO (serveData projectHoursData ctx)
-    :<|> (\month -> liftIO (serveDataParam month iDontKnowData ctx))
+    :<|> (\month tribe -> liftIO (serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx))
     -- officevibe
     :<|> liftIO (serveData' () (const officeVibeData) ovdUsers ctx)
     :<|> liftIO (serveData' () (const officeVibeData) ovdGroups ctx)

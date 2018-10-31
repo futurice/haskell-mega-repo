@@ -17,6 +17,7 @@ module Futurice.App.Reports.IDontKnow (
     Category (..),
     ) where
 
+import Control.Lens                         (alaf)
 import Data.Aeson                           (Value)
 import Data.Fixed                           (Centi)
 import Data.Ord                             (comparing)
@@ -32,12 +33,12 @@ import Futurice.Time.Month
 import Futurice.Tribe
 import Prelude ()
 
-import qualified Data.Aeson.Lens as L
+import qualified Data.Aeson.Lens     as L
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Set            as Set
+import qualified Data.Swagger        as Sw
 import qualified Data.Text           as T
 import qualified Personio            as P
-import qualified Data.Swagger as Sw
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -72,7 +73,7 @@ instance ToSchema IDontKnow where declareNamedSchema = sopDeclareNamedSchema
 deriveVia [t| ToJSON IDontKnow   `Via` Sopica IDontKnow |]
 deriveVia [t| FromJSON IDontKnow `Via` Sopica IDontKnow |]
 
-data IDontKnowData = IDK !Day !Month (Set Text) [IDontKnow]
+data IDontKnowData = IDK !Day !Month !(Maybe Tribe) (Set Text) [IDontKnow]
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
 
@@ -89,14 +90,18 @@ deriveVia [t| FromJSON IDontKnowData `Via` Sopica IDontKnowData |]
 iDontKnowData
     :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m)
     => Maybe Month
+    -> Maybe Tribe
     -> m IDontKnowData
-iDontKnowData mmonth = do
+iDontKnowData mmonth mtribe = do
     today <- currentDay
     let month = fromMaybe (dayToMonth today) mmonth
     let interval = monthInterval month
 
     fpm0 <- personioPlanmillMap
-    let fpm = HM.filter (P.employeeIsActive today . fst) fpm0
+    let fpm1 = HM.filter (P.employeeIsActive today . fst) fpm0
+    let fpm = case mtribe of
+            Nothing    -> fpm1
+            Just tribe -> HM.filter (\e -> e ^. _1 . P.employeeTribe == tribe) fpm1
 
     prjs <- PMQ.projects
     accTypes <- PMQ.allEnumerationValues Proxy Proxy
@@ -165,7 +170,7 @@ iDontKnowData mmonth = do
                         }
                 | otherwise -> return Nothing
 
-    return $ IDK today month accNames (idks ^.. folded . folded . _Just)
+    return $ IDK today month mtribe accNames (idks ^.. folded . folded . _Just)
 
 iDontKnowConfig :: Value
 iDontKnowConfig = $(makeRelativeToProject "i-dont-know.json" >>= embedFromJSON (Proxy :: Proxy Value))
@@ -179,14 +184,23 @@ instance ToHtml IDontKnowData where
     toHtml = toHtml . renderIDontKnowData
 
 renderIDontKnowData :: IDontKnowData -> HtmlPage "i-dont-know"
-renderIDontKnowData (IDK today month accNames xs) = page_ "I don't know..." $ do
-    fullRow_ $ h1_ $ "I don't know... " <> monthToText month
+renderIDontKnowData (IDK today month mtribe accNames xs) = page_ "I don't know..." $ do
+    fullRow_ $ h1_ $ "I don't know... "
+        <> monthToText month
+        <> maybe "" (\t -> " " <> tribeToText t)mtribe
+
+    fullRow_ $ p_ $ do
+        toHtml $ alaf Sum foldMap idkHours xs
+        " hours in total"
 
     form_ $ div_ [ class_ "row" ] $ do
-        div_ [ class_ "columns medium-10" ] $ select_ [ name_ "month" ] $ do
-            -- TODO self update
+        div_ [ class_ "columns medium-5" ] $ select_ [ name_ "month" ] $ do
             for_ [ Month 2018 January .. succ (succ (dayToMonth today)) ] $ \m ->
                 optionSelected_ (m == month) [ value_ $ monthToText m ] $ toHtml m
+        div_ [ class_ "columns medium-5" ] $ select_ [ name_ "tribe" ] $ do
+            optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
+            for_ [ minBound .. maxBound ] $ \tribe ->
+                optionSelected_ (mtribe ==  Just tribe) [value_ $ tribeToText tribe ] $ toHtml tribe
         div_ [ class_ "columns medium-2" ] $ input_ [ class_ "button", type_ "submit", value_ "Update" ]
 
     fullRow_ $ sortableTable_ $ do
