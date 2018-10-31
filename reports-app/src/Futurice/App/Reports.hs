@@ -39,6 +39,7 @@ import Futurice.App.Reports.CareerLengthChart
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
 import Futurice.App.Reports.Dashdo                    (makeDashdoServer)
+import Futurice.App.Reports.IDontKnow                 (iDontKnowData)
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
@@ -159,16 +160,36 @@ serveData
     => Integrations '[I, I, Proxy, I, I, I] v
     -> Ctx
     -> IO v
-serveData f = serveData' f id
+serveData f = serveData' () (const f) id
+
+{-
+serveDataParam
+    :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k)
+    => k
+    -> (k -> Integrations '[I, I, Proxy, I, I, I] v)
+    -> Ctx
+    -> IO v
+serveDataParam k f = serveData' k f id
+-}
+
+serveDataParam2
+    :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k, Eq k', Hashable k', Typeable k')
+    => k
+    -> k'
+    -> (k -> k' -> Integrations '[I, I, Proxy, I, I, I] v)
+    -> Ctx
+    -> IO v
+serveDataParam2 k k' f = serveData' (k, k') (uncurry f) id
 
 serveData'
-    :: (Typeable a, NFData a)
-    => Integrations '[I, I, Proxy, I, I, I] a  -- ^ single cache
-    -> (a -> b)                                -- ^ multiple outputs?
+    :: (Typeable a, NFData a, Eq k, Hashable k, Typeable k)
+    => k
+    -> (k -> Integrations '[I, I, Proxy, I, I, I] a)  -- ^ single cache
+    -> (a -> b)                                       -- ^ multiple outputs?
     -> Ctx
     -> IO b
-serveData' f g ctx = do
-    a <- cachedIO' ctx () $ runIntegrations' ctx f
+serveData' k f g ctx = do
+    a <- cachedIO' ctx k $ runIntegrations' ctx (f k)
     return (g a)
 
 serveChart
@@ -230,10 +251,11 @@ server ctx = makeServer ctx reports
     :<|> liftIO serveInventory
     :<|> liftIO (serveData projectHoursData ctx)
     :<|> liftIO (serveData projectHoursData ctx)
+    :<|> (\month tribe -> liftIO (serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx))
     -- officevibe
-    :<|> liftIO (serveData' officeVibeData ovdUsers ctx)
-    :<|> liftIO (serveData' officeVibeData ovdGroups ctx)
-    :<|> liftIO (serveData' officeVibeData ovdRelations ctx)
+    :<|> liftIO (serveData' () (const officeVibeData) ovdUsers ctx)
+    :<|> liftIO (serveData' () (const officeVibeData) ovdGroups ctx)
+    :<|> liftIO (serveData' () (const officeVibeData) ovdRelations ctx)
     -- dumps
     :<|> liftIO (serveData (mkCached <$> timereportsDump) ctx)
     -- charts

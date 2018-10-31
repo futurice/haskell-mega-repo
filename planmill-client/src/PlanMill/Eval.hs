@@ -55,18 +55,16 @@ evalPlanMill
     => PlanMill a -> m a
 evalPlanMill pm = do
     baseReq <- mkBaseReq pm
-    let url = BS8.unpack (path baseReq <> queryString baseReq)
-    let emptyError = DecodeError url "empty input"
     case pm of
         PlanMillGet qs _ ->
-            singleReq baseReq qs (throwM emptyError)
+            singleReq baseReq qs Nothing
         PlanMillPagedGet qs _ ->
             pagedReq baseReq qs
         PlanMillPost e body _ -> do
             let req = addHeader ("Content-Type", "application/json;charset=UTF-8") $
                     baseReq { method = "POST", requestBody = RequestBodyLBS body }
             singleReq req mempty $ case e of
-                Nothing   -> throwM emptyError
+                Nothing   -> Nothing
                 Just Refl -> pure ()
         PlanMillDelete _ -> do
             let req = baseReq { method = "DELETE" }
@@ -81,7 +79,7 @@ evalPlanMill pm = do
         :: forall b. FromJSON b
         => Request
         -> QueryString
-        -> m b           -- ^ Action to return in case of empty response
+        -> Maybe b  -- ^ Possibly return when empty response
         -> m b
     singleReq req qs d = do
         let req' = setQueryString' qs req
@@ -105,10 +103,19 @@ evalPlanMill pm = do
                     -- logTrace_ $ "response body: " <> decodeUtf8Lenient (responseBody res ^. strict)
                     if statusIsSuccessful status
                         then parseResult url body
-                        else throwM $ parseError url body
+                        else do
+                            -- if we have "default" response, we return it in case of error
+                            let exc = parseError url body
+                            case d of
+                                Nothing -> throwM exc
+                                Just d' -> do
+                                    logAttention "Recoverable error" $ object [ "exc" .= textShow exc ]
+                                    return d'
                 else do
                     logTrace_ "empty response"
-                    d
+                    case d of
+                        Just d' -> pure d'
+                        Nothing -> throwM (emptyError url)
 
     setQueryString' :: QueryString -> Request -> Request
     setQueryString' qs = setQueryString (f <$> Map.toList qs)
@@ -126,6 +133,8 @@ evalPlanMill pm = do
         case eitherDecode body of
             Right exc -> ErrorResponse url exc
             Left err  -> DecodeError url err
+
+    emptyError url = DecodeError url "empty input"
 
     -- See https://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects_get
     -- for explanation of paged response query string parameters

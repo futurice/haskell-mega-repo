@@ -13,8 +13,8 @@ import Data.Time          (addDays)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
-       (ConnectInfo, HasPostgresPool, Only (..), createPostgresPool,
-       safePoolExecute, safePoolExecute_, safePoolQuery)
+       (ConnectInfo, HasPostgresPool, createPostgresPool, safePoolExecute,
+       safePoolExecute_, safePoolQuery)
 import Futurice.Prelude
 import PlanMill.Worker    (Workers, submitPlanMill, workers)
 import Prelude ()

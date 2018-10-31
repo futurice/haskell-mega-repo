@@ -16,7 +16,7 @@ import Database.PostgreSQL.Simple (In (..))
 import FUM.Types.Login            (Login, mkLogin)
 import Futurice.Lucid.Foundation  (HtmlPage)
 import Futurice.Postgres
-       (Only (..), createPostgresPool, safePoolExecute, safePoolQuery)
+       (createPostgresPool, safePoolExecute, safePoolQuery)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()

@@ -12,6 +12,7 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns   (Report)
 import Futurice.Servant
+import Futurice.Tribe            (Tribe)
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Prelude ()
 import Servant
@@ -20,6 +21,7 @@ import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
 import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
+import Futurice.App.Reports.IDontKnow                 (IDontKnowData)
 import Futurice.App.Reports.Inventory                 (InventorySummary)
 import Futurice.App.Reports.MissingHours              (MissingHoursReport)
 import Futurice.App.Reports.OfficeVibeIntegration
@@ -73,6 +75,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
     :<|> "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
     :<|> "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
+    :<|> "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
     -- Officevibe
     :<|> "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
     :<|> "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]

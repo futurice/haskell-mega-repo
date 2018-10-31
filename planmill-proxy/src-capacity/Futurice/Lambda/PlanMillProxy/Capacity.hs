@@ -5,12 +5,12 @@ module Futurice.Lambda.PlanMillProxy.Capacity (
     ) where
 
 import Data.Aeson         (Value, object, (.=))
-import Data.Time (addDays, addUTCTime)
 import Data.Binary.Tagged (taggedEncode)
+import Data.Time          (addDays, addUTCTime)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
-       (ConnectInfo, Only (..), Query, createPostgresPool, safePoolExecuteMany,
+       (ConnectInfo, Query, createPostgresPool, safePoolExecuteMany,
        safePoolQuery)
 import Futurice.Prelude
 import PlanMill.Worker    (submitPlanMill, workers)

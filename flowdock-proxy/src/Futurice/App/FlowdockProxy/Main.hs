@@ -174,7 +174,7 @@ usersPageAction ctx _ = do
     extraOrgs' <- runLogT "users" lgr $ PQ.safePoolQuery_ ctx
         "SELECT organisation_name FROM \"flowdock-proxy\".organisations ORDER BY organisation_name ASC;"
     let extraOrgs :: [FD.ParamName FD.Organisation]
-        extraOrgs = map (FD.mkParamName . PQ.fromOnly) extraOrgs'
+        extraOrgs = map (FD.mkParamName . fromOnly) extraOrgs'
     (today, ps, orgs) <- liftIO $ cachedIO lgr cch 600 () $ runIntegrations' ctx $ do
         today <- currentDay
         ps <- personio P.PersonioEmployees
@@ -256,9 +256,9 @@ readRows ctx flowId flowSlug = do
 updateRows :: Ctx -> Int -> FD.FlowId -> LogT IO ()
 updateRows ctx flowId flowSlug = do
     -- join :: Maybe (Maybe FD.MessageId) -> Maybe FD.MessageId to allow selecting NULL
-    messageId <- join . listToMaybe . map PQ.fromOnly <$> PQ.safePoolQuery ctx
+    messageId <- join . listToMaybe . map fromOnly <$> PQ.safePoolQuery ctx
         "SELECT MAX(message_id) from \"flowdock-proxy\".messages where flow_id = ?"
-        (PQ.Only flowId)
+        (Only flowId)
 
     logInfoI "updating flow $flow" $ object [ "flow" .= flowId, "messageId" .= (messageId :: Maybe FD.MessageId) ]
 
