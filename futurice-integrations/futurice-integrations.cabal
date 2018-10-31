@@ -10,7 +10,7 @@ author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
-tested-with:    GHC==7.10.3, GHC==8.0.1
+tested-with:    GHC==8.4.4
 build-type:     Simple
 
 extra-source-files:
@@ -36,7 +36,7 @@ library
     ScopedTypeVariables
     StandaloneDeriving
   build-depends:
-      base                  >=4.7   && <4.12
+      base                  >=4.11   && <4.12
     , aeson
     , aeson-compat
     , async
@@ -86,5 +86,6 @@ library
       Futurice.Integrations.Common
       Futurice.Integrations.GitHub
       Futurice.Integrations.Monad
-      Futurice.Integrations.Types
+      Futurice.Integrations.Serv
       Futurice.Integrations.TimereportKind
+      Futurice.Integrations.Types
