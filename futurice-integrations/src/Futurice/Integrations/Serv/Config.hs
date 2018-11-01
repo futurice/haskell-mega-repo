@@ -22,7 +22,6 @@ import Prelude ()
 
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
-import qualified Futurice.GitHub    as GH
 
 import Futurice.Integrations.Serv
 
@@ -32,14 +31,12 @@ data IntegrationsConfig :: [Serv] -> Type where
 
     IntCfgFlowdock
         :: FD.AuthToken
-        -> FD.ParamName FD.Organisation
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServFD ': ss)
 
     IntCfgFUM
         :: FUM.AuthToken
         -> FUM.BaseUrl
-        -> FUM.ListName
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServFUM ': ss)
 
@@ -50,7 +47,6 @@ data IntegrationsConfig :: [Serv] -> Type where
 
     IntCfgGitHub
         :: Request
-        -> GH.Name GH.Organization
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServGH ': ss)
 
@@ -76,16 +72,13 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
         cons :: SServ s -> ConfigParser (IntegrationsConfig ss' -> IntegrationsConfig (s : ss'))
         cons SServFD = IntCfgFlowdock
             <$> envVar "FD_AUTH_TOKEN"
-            <*> envVar "FD_ORGANISATION"
         cons SServFUM = IntCfgFUM
             <$> envVar "FUM_TOKEN"
             <*> envVar "FUM_BASEURL"
-            <*> envVar "FUM_LISTNAME"
         cons SServFUM6 = IntCfgFUM6
             <$> (f <$> envVar "FUMCARBON_HAXLURL")
         cons SServGH = IntCfgGitHub
             <$> (f <$> envVar "GITHUBPROXY_HAXLURL")
-            <*> envVar "GH_ORG"
         cons SServPE = IntCfgPersonio
             <$> (f <$> envVar "PERSONIOPROXY_REQUESTURL")
         cons SServPM = IntCfgPlanMill
@@ -96,6 +89,6 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
 -- | A helper useful in REPL.
 loadIntegrationConfig
     :: Logger
-    -> IO (IntegrationsConfig '[ ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM ])
+    -> IO (IntegrationsConfig AllServs)
 loadIntegrationConfig lgr =
     runLogT "loadIntegrationConfig" lgr $ getConfig "REPL"

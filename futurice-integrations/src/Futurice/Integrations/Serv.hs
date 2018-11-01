@@ -13,6 +13,7 @@
 module Futurice.Integrations.Serv (
     -- * Services
     Serv (..),
+    AllServs,
     ServNat,
     ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM,
     -- ** Singleton
@@ -113,6 +114,8 @@ data Serv
     | ServPE    -- ^ personio
     | ServPM    -- ^ planmill
   deriving (Show)
+
+type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM ]
 
 type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
@@ -239,23 +242,22 @@ instance
 -- | Fold over 'ServSet'.
 -- We don't use the set property here, as in some cases we don't need it on the value level: types have done their job.
 --
--- >>> withServSet (Proxy :: Proxy '[ ServFD, ServGH ]) (Const []) (\s (Const ss) -> Const (show s : ss))
+-- >>> withServSet  (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFD, ServGH ]
 -- Const ["SServFD","SServGH"]
 --
 -- Error case:
 --
--- >>> withServSet (Proxy :: Proxy '[ ServFD, ServFD ]) (Const []) (\s (Const ss) -> Const (show s : ss))
+-- >>> withServSet (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFD, ServFD ]
 -- ...
 -- ...error...
 -- ...
 --
 withServSet
     :: forall ss f. ServSet ss
-    => Proxy ss
-    -> f '[]
+    => f '[]
     -> (forall s zs. SServ s -> f zs -> f (s ': zs))
     -> f ss
-withServSet _ nil cons = go ssProof where
+withServSet nil cons = go ssProof where
     go :: ServSetProof zs -> f zs
     go SSEmpty        = nil
     go (SSSing s)     = cons s nil

@@ -16,6 +16,7 @@ module Futurice.Integrations.Serv.Contains (
     -- * Contains
     ContainsProof,
     withContainsProof,
+    IfContains,
     ) where
 
 import Data.Kind          (Type)

@@ -23,7 +23,7 @@ import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
 import Futurice.Cache            (Cache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
-import Futurice.Integrations     (IntegrationsConfig (..))
+import Futurice.Integrations     (IntegrationsConfig (..), integrationConfigToState)
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
 import Numeric.Interval.NonEmpty ((...))
@@ -65,17 +65,14 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
     now <- currentTime
     let env = Env now pmUser profilePic
     let haxl = runReaderT m env
-    let stateStore
-            = Haxl.stateSet (PMQ.initDataSourceBatch lgr mgr pmReq)
-            . Haxl.stateSet (PlanMillDataState lgr cache ws)
-            $ Haxl.stateEmpty
+    let Tagged stateStore0 = integrationConfigToState mgr lgr (ctxIntegrationsCfg ctx)
+    let stateStore = Haxl.stateSet (PlanMillDataState lgr cache ws) stateStore0
     haxlEnv <- Haxl.initEnv stateStore ()
     -- TODO: catch ServantErr
     Haxl.runHaxl haxlEnv haxl
   where
     lgr     = ctxLogger ctx
     mgr     = ctxManager ctx
-    I pmReq = integrCfgPlanmillProxyBaseRequest (ctxIntegrationsCfg ctx)
     cache   = ctxCache ctx
     ws      = ctxWorkers ctx
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
@@ -12,35 +13,30 @@ module Futurice.Integrations.Monad (
     Env,
     runIntegrations,
     runIntegrationsWithHaxlStore,
+    integrationConfigToState,
     runIntegrationsIO,
     IntegrationsConfig (..),
     loadIntegrationConfig,
-    -- * state morphisms
-    IntegrationStateMorphism (..),
-    pmIntegrationStateMorphism,
-    fumIntegrationStateMorphism,
-    fum6IntegrationStateMorphism,
-    fdIntegrationStateMorphism,
-    ghIntegrationStateMorphism,
-    peIntegrationStateMorphism,
+    -- * state setters
+    stateSetFlowdock,
+    stateSetFUM,
+    stateSetFUM6,
+    stateSetGitHub,
+    stateSetPersonio,
+    stateSetPlanMill,
     ) where
 
 import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
 import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
-import Futurice.EnvConfig
 import Futurice.Has              (FlipIn)
 import Futurice.Prelude
 import Futurice.TypeTag
-import Generics.SOP.Lens         (uni)
-import Network.HTTP.Client
-       (Request, responseTimeout, responseTimeoutMicro)
+import Network.HTTP.Client       (Request)
 import PlanMill.Queries.Haxl     (initDataSourceBatch)
 import Prelude ()
 
 import qualified Chat.Flowdock.REST           as FD
-import qualified Control.Category             as C
-import qualified Data.Type.Nat                as N
 import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
 import qualified FUM.Haxl
@@ -54,6 +50,9 @@ import qualified PlanMill.Types.Query         as Q
 
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
+import Futurice.Integrations.Serv
+import Futurice.Integrations.Serv.Config
+import Futurice.Integrations.Serv.Contains
 
 -------------------------------------------------------------------------------
 -- Environment
@@ -61,51 +60,14 @@ import Futurice.Integrations.Common
 
 -- | Opaque environment, exported for haddock
 --
--- Currently no PlanMill environment.
-data Env fum gh fd = Env
-    { _envFumEmployeeListName :: !(fum :$ FUM.ListName)
-    , _envFlowdockOrgName     :: !(fd :$ FD.ParamName FD.Organisation)
-    , _envGithubOrgName       :: !(gh :$ GH.Name GH.Organization)
-    , _envNow                 :: !UTCTime
+data Env = Env
+    { _envNow                 :: !UTCTime
+    , _envFumEmployeeListName :: !FUM.ListName
+    , _envFlowdockOrgName     :: !(FD.ParamName FD.Organisation)
+    , _envGithubOrgName       :: !(GH.Name GH.Organization)
     }
 
 makeLenses ''Env
-
--------------------------------------------------------------------------------
--- Type Families
--------------------------------------------------------------------------------
-
-type IdxPM   = N.Nat0
-type IdxFUM  = N.Nat1
-type IdxFUM6 = N.Nat2
-type IdxGH   = N.Nat3
-type IdxFD   = N.Nat4
-type IdxPE   = N.Nat5
-
-type family Nth (n :: N.Nat) (fs :: [* -> *]) :: * -> * where
-    Nth n        '[]       = Proxy
-    Nth 'N.Z     (f ': fs) = f
-    Nth ('N.S n) (f ': fs) = Nth n fs
-
-type NthPM   fs = Nth IdxPM   fs
-type NthFUM  fs = Nth IdxFUM  fs
-type NthFUM6 fs = Nth IdxFUM6 fs
-type NthGH   fs = Nth IdxGH   fs
-type NthFD   fs = Nth IdxFD   fs
-type NthPE   fs = Nth IdxPE   fs
-
-type family NthSet (n :: N.Nat) (g :: * -> *) (fs :: [* -> *]) :: [* -> *] where
-    NthSet 'N.Z     g '[]       = '[g]
-    NthSet ('N.S n) g '[]       = Proxy ': NthSet n g '[]
-    NthSet 'N.Z     g (f ': fs) = g ': fs
-    NthSet ('N.S n) g (f ': fs) = f ': NthSet n g fs
-
-type NthSetPM   g fs = NthSet IdxPM   g fs
-type NthSetFUM  g fs = NthSet IdxFUM  g fs
-type NthSetFUM6 g fs = NthSet IdxFUM6 g fs
-type NthSetGH   g fs = NthSet IdxGH   g fs
-type NthSetFD   g fs = NthSet IdxFD   g fs
-type NthSetPE   g fs = NthSet IdxPE   g fs
 
 -------------------------------------------------------------------------------
 -- Monad
@@ -113,136 +75,72 @@ type NthSetPE   g fs = NthSet IdxPE   g fs
 
 -- | Integrations monad
 --
--- type parameters indicate whether that integration is enabled:
--- 'I' yes, 'Proxy' no
+-- We fake type level set.
 --
--- We'd like to have row types in Haskell, but for now we use positional arguments.
-newtype Integrations idxs a
-    = Integr { unIntegr :: ReaderT (Env (NthFUM idxs) (NthGH idxs) (NthFD idxs)) (H.GenHaxl ()) a }
+newtype Integrations (ss :: [Serv]) a
+    = Integr { unIntegr :: ReaderT Env (H.GenHaxl ()) a }
 
 -- | Lift arbitrary haxl computations into 'Integrations'. This is potentially unsafe.
-liftHaxl :: H.GenHaxl () a -> Integrations idxs a
+liftHaxl :: H.GenHaxl () a -> Integrations ss a
 liftHaxl = Integr . lift
 
 -------------------------------------------------------------------------------
 -- Config
 -------------------------------------------------------------------------------
 
--- | TODO: Show instance
-data IntegrationsConfig idxs = MkIntegrationsConfig
-    -- Planmill
-    { integrCfgPlanmillProxyBaseRequest :: !(NthPM idxs Request)
-    -- FUM
-    , integrCfgFumAuthToken             :: !(NthFUM idxs FUM.AuthToken)
-    , integrCfgFumBaseUrl               :: !(NthFUM idxs FUM.BaseUrl)
-    , integrCfgFumEmployeeListName      :: !(NthFUM idxs FUM.ListName)
-    -- FUM Carbon
-    , integrCfgFumCarbonBaseRequest     :: !(NthFUM6 idxs Request)
-    -- GitHub
-    , integrCfgGithubProxyBaseRequest   :: !(NthGH idxs Request)
-    , integrCfgGithubOrgName            :: !(NthGH idxs :$ GH.Name GH.Organization)
-    -- Flowdock
-    , integrCfgFlowdockToken            :: !(NthFD idxs FD.AuthToken)
-    , integrCfgFlowdockOrgName          :: !(NthFD idxs :$ FD.ParamName FD.Organisation)
-    -- Personio
-    , integrCfgPersonioProxyBaseRequest :: !(NthPE idxs Request)
-    }
-
 runIntegrations
-    :: (SFunctorI pm, SFunctorI fum, SFunctorI fum6, SFunctorI gh, SFunctorI fd, SFunctorI pe)
+    :: forall ss a. ServSet ss
     => Manager -> Logger -> UTCTime
-    -> IntegrationsConfig '[pm, fum, fum6, gh, fd, pe]
-    -> Integrations '[pm, fum, fum6, gh, fd, pe] a
+    -> IntegrationsConfig ss
+    -> Integrations ss a
     -> IO a
 runIntegrations mgr lgr now cfg m =
-    runIntegrationsWithHaxlStore now stateMorphism cfg m
+    runIntegrationsWithHaxlStore now (integrationConfigToState mgr lgr cfg) m
+
+integrationConfigToState
+    :: ServSet ss
+    => Manager -> Logger
+    -> IntegrationsConfig ss -> Tagged ss H.StateStore
+integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
+    withServSet ctsEmpty $ \_ (CTS f) -> CTS $ \cfg1 -> case cfg1 of
+        IntCfgFlowdock token cfg2 -> stateSetFlowdock lgr mgr token (f cfg2)
+        IntCfgFUM token burl cfg2 -> stateSetFUM lgr mgr token burl (f cfg2)
+        IntCfgFUM6 req cfg2       -> stateSetFUM6 lgr mgr req (f cfg2)
+        IntCfgGitHub req cfg2     -> stateSetGitHub lgr mgr req (f cfg2)
+        IntCfgPersonio req cfg2   -> stateSetPersonio lgr mgr req (f cfg2)
+        IntCfgPlanMill req cfg2   -> stateSetPlanMill lgr mgr req (f cfg2)
   where
-    stateMorphism
-        = pmIntegrationStateMorphism     lgr mgr cfg
-        C.. fumIntegrationStateMorphism  lgr mgr cfg
-        C.. fum6IntegrationStateMorphism lgr mgr cfg
-        C.. fdIntegrationStateMorphism   lgr mgr cfg
-        C.. ghIntegrationStateMorphism   lgr mgr cfg
-        C.. peIntegrationStateMorphism   lgr mgr cfg
+    ctsEmpty :: ConfigToState '[]
+    ctsEmpty = CTS $ \IntCfgEmpty -> Tagged H.stateEmpty
+
+newtype ConfigToState ss = CTS { runCTS :: IntegrationsConfig ss -> Tagged ss H.StateStore }
 
 -- | Run 'Integrations' action using Haxl's 'H.StateStore'.
 -- This function is needed when one want to do un-orthodox integrations.
 runIntegrationsWithHaxlStore
     :: UTCTime
-    -> IntegrationStateMorphism '[] idxs
-    -> IntegrationsConfig idxs
-    -> Integrations idxs a
+    -> Tagged ss H.StateStore
+    -> Integrations ss a
     -> IO a
-runIntegrationsWithHaxlStore now (IntegrSM f) cfg (Integr m) = do
+runIntegrationsWithHaxlStore now (Tagged stateStore) (Integr m) = do
     let env = Env
-            { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
-            , _envNow                 = now
-            , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
-            , _envGithubOrgName       = integrCfgGithubOrgName cfg
+            { _envNow = now
+            -- HACK: this are hardcoded
+            , _envFumEmployeeListName = "employees"
+            , _envFlowdockOrgName     = FD.mkParamName "futurice"
+            , _envGithubOrgName       = "futurice"
             }
     let haxl = runReaderT m env
-    haxlEnv <- H.initEnv (f H.stateEmpty) ()
+    haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
 
 {-# DEPRECATED runIntegrationsIO "Only use this in repl" #-}
-runIntegrationsIO :: Integrations '[I, I, I, I, I, I] a -> IO a
+runIntegrationsIO :: Integrations AllServs a -> IO a
 runIntegrationsIO action = withStderrLogger $ \lgr -> do
     cfg <- loadIntegrationConfig lgr
     mgr <- newManager tlsManagerSettings
     now <- currentTime
     runIntegrations mgr lgr now cfg action
-
--------------------------------------------------------------------------------
--- env-config
--------------------------------------------------------------------------------
---
--- | A helper useful in REPL.
-loadIntegrationConfig :: Logger -> IO (IntegrationsConfig '[I, I, I, I, I, I])
-loadIntegrationConfig lgr =
-    runLogT "loadIntegrationConfig" lgr $ getConfig "REPL"
-
-instance
-    (SFunctorI pm, SFunctorI fum, SFunctorI fum6, SFunctorI gh, SFunctorI fd, SFunctorI pe)
-    => Configure (IntegrationsConfig '[pm, fum, fum6, gh, fd, pe])
-  where
-    configure = MkIntegrationsConfig
-        <$> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
-        <*> envVar' "FUM_TOKEN"
-        <*> envVar' "FUM_BASEURL"
-        <*> envVar' "FUM_LISTNAME"
-        <*> (f <$$> envVar' "FUMCARBON_HAXLURL")
-        <*> (f <$$> envVar' "GITHUBPROXY_HAXLURL")
-        <*> envVar' "GH_ORG"
-        <*> envVar' "FD_AUTH_TOKEN"
-        <*> envVar' "FD_ORGANISATION"
-        <*> (f <$$> envVar' "PERSONIOPROXY_REQUESTURL")
-      where
-        f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
-
-        envVar' :: forall f a. (FromEnvVar a, SFunctorI f) => String -> ConfigParser (f a)
-        envVar' name = case sfunctor :: SFunctor f of
-            SP -> pure Proxy
-            SI -> I <$> envVar name
-
--------------------------------------------------------------------------------S
--- Functor singletons
--------------------------------------------------------------------------------
-
-data SFunctor f where
-    SI :: SFunctor I
-    SP :: SFunctor Proxy
-
-class Applicative f => SFunctorI f     where sfunctor :: SFunctor f
-instance               SFunctorI I     where sfunctor = SI
-instance               SFunctorI Proxy where sfunctor = SP
-
-extractSEndo :: SFunctorI f => f (a -> a) -> a -> a
-extractSEndo = extractSFunctor id
-
-extractSFunctor :: forall f a. SFunctorI f => a -> f a -> a
-extractSFunctor def f = case sfunctor :: SFunctor f of
-    SP -> def
-    SI -> f ^. uni
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -265,18 +163,18 @@ instance Monad (Integrations idxs) where
 -- MonadTime
 -------------------------------------------------------------------------------
 
-instance MonadTime (Integrations idxs) where
+instance MonadTime (Integrations ss) where
     currentTime = view envNow
 
 -------------------------------------------------------------------------------
 -- MonadPlanMillQuery
 -------------------------------------------------------------------------------
 
-instance NthPM idxs ~ I => MonadPlanMillConstraint (Integrations idxs) where
-    type MonadPlanMillC (Integrations idxs) = Unit1
+instance Contains ServPM ss => MonadPlanMillConstraint (Integrations ss) where
+    type MonadPlanMillC (Integrations ss) = Unit1
     entailMonadPlanMillCVector _ _ = Sub Dict
 
-instance NthPM idxs ~ I => MonadPlanMillQuery (Integrations idxs) where
+instance Contains ServPM ss => MonadPlanMillQuery (Integrations ss) where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> liftHaxl (H.dataFetch q)
       where
@@ -287,14 +185,14 @@ instance NthPM idxs ~ I => MonadPlanMillQuery (Integrations idxs) where
 -- MonadFUM
 -------------------------------------------------------------------------------
 
-instance NthFUM idxs ~ I  => MonadFUM (Integrations idxs) where
+instance Contains ServFUM ss  => MonadFUM (Integrations ss) where
     fumAction = liftHaxl . FUM.Haxl.request
 
 -------------------------------------------------------------------------------
 -- MonadFlowdock
 -------------------------------------------------------------------------------
 
-instance NthFD idxs ~ I => MonadFlowdock (Integrations idxs) where
+instance Contains ServFD ss => MonadFlowdock (Integrations ss) where
     flowdockOrganisationReq = liftHaxl . FD.Haxl.organisation
     flowdockMessagesSinceReq org flow since = liftHaxl $
         FD.Haxl.messagesSince org flow since
@@ -303,15 +201,15 @@ instance NthFD idxs ~ I => MonadFlowdock (Integrations idxs) where
 -- MonadFUM6
 -------------------------------------------------------------------------------
 
-instance NthFUM6 idxs ~ I => FUM6.MonadFUM6 (Integrations idxs) where
+instance Contains ServFUM6 ss => FUM6.MonadFUM6 (Integrations ss) where
     fum6 = liftHaxl . FUM6.fumHaxlRequest
 
 -------------------------------------------------------------------------------
 -- MonadGitHub
 -------------------------------------------------------------------------------
 
-instance NthGH idxs ~ I => MonadGitHub (Integrations idxs) where
-    type MonadGitHubC (Integrations idxs) = FlipIn GH.GHTypes
+instance Contains ServGH ss => MonadGitHub (Integrations ss) where
+    type MonadGitHubC (Integrations ss) = FlipIn GH.GHTypes
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> liftHaxl (H.dataFetch $ GH.GHR tag req)
       where
@@ -323,7 +221,7 @@ instance NthGH idxs ~ I => MonadGitHub (Integrations idxs) where
 -- MonadPersonio
 -------------------------------------------------------------------------------
 
-instance NthPE idxs ~ I => MonadPersonio (Integrations idxs) where
+instance Contains ServPE ss => MonadPersonio (Integrations ss) where
     personio r = case (showDict, typeableDict) of
         (Dict, Dict) -> liftHaxl . Personio.Haxl.request $ r
       where
@@ -334,83 +232,78 @@ instance NthPE idxs ~ I => MonadPersonio (Integrations idxs) where
 -- Has* instances
 -------------------------------------------------------------------------------
 
-instance (NthFUM idxs ~ fum, NthGH idxs ~ gh, NthFD idxs ~ fd)
-    => MonadReader (Env fum gh fd) (Integrations idxs)
-  where
+instance MonadReader Env (Integrations ss) where
     ask = Integr ask
     local f = Integr . local f . unIntegr
 
-instance fum ~ I => HasFUMEmployeeListName (Env fum gh fd) where
-    fumEmployeeListName = envFumEmployeeListName . uni
+instance HasFUMEmployeeListName Env where
+    fumEmployeeListName = envFumEmployeeListName
 
-instance fd ~ I => HasFlowdockOrgName (Env fum gh fd) where
-    flowdockOrganisationName = envFlowdockOrgName . uni
+instance HasFlowdockOrgName Env where
+    flowdockOrganisationName = envFlowdockOrgName
 
-instance (gh ~ I) => HasGithubOrgName (Env fum gh fd) where
-    githubOrganisationName = envGithubOrgName . uni
+instance HasGithubOrgName Env where
+    githubOrganisationName = envGithubOrgName
 
 -------------------------------------------------------------------------------
 -- State Morphism
 -------------------------------------------------------------------------------
 
-newtype IntegrationStateMorphism (a :: [* -> *]) (b :: [* -> *])
-   = IntegrSM (H.StateStore -> H.StateStore)
+stateSetFlowdock
+    :: Logger -> Manager
+    -> FD.AuthToken
+    -> Tagged ss H.StateStore
+    -> Tagged (ServFD ': ss) H.StateStore
+stateSetFlowdock _lgr mgr token (Tagged store) = Tagged $
+    H.stateSet (FD.Haxl.initDataSource' mgr token) store
 
-instance C.Category IntegrationStateMorphism where
-    id = IntegrSM id
-    IntegrSM f . IntegrSM g = IntegrSM (f . g)
+stateSetFUM
+    :: Logger -> Manager
+    -> FUM.AuthToken
+    -> FUM.BaseUrl
+    -> Tagged ss H.StateStore
+    -> Tagged (ServFUM ': ss) H.StateStore
+stateSetFUM _lgr mgr token burl (Tagged store) = Tagged $
+    H.stateSet (FUM.Haxl.initDataSource' mgr token burl) store
 
-pmIntegrationStateMorphism
-    :: (SFunctorI f, NthPM idxs' ~ f)
-    => Logger -> Manager
-    -> IntegrationsConfig idxs'
-    -> IntegrationStateMorphism idxs (NthSetPM f idxs)
-pmIntegrationStateMorphism lgr mgr cfg =
-    IntegrSM $ extractSEndo $ fmap H.stateSet $ initDataSourceBatch lgr mgr
-        <$> integrCfgPlanmillProxyBaseRequest cfg
+stateSetFUM6
+    :: Logger -> Manager
+    -> Request
+    -> Tagged ss H.StateStore
+    -> Tagged (ServFUM6 ': ss) H.StateStore
+stateSetFUM6 lgr mgr req (Tagged store) = Tagged $
+    H.stateSet (FUM6.initDataSource lgr mgr req) store
 
-fumIntegrationStateMorphism
-    :: (SFunctorI f, NthFUM idxs' ~ f)
-    => Logger -> Manager
-    -> IntegrationsConfig idxs'
-    -> IntegrationStateMorphism idxs (NthSetFUM f idxs)
-fumIntegrationStateMorphism _lgr mgr cfg =
-    IntegrSM $ extractSEndo $ fmap H.stateSet $ FUM.Haxl.initDataSource' mgr
-        <$> integrCfgFumAuthToken cfg
-        <*> integrCfgFumBaseUrl cfg
+stateSetGitHub
+    :: Logger -> Manager
+    -> Request
+    -> Tagged ss H.StateStore
+    -> Tagged (ServGH ': ss) H.StateStore
+stateSetGitHub lgr mgr req (Tagged store) = Tagged $
+    H.stateSet (GH.initDataSource lgr mgr req) store
 
-fum6IntegrationStateMorphism
-    :: (SFunctorI f, NthFUM6 idxs' ~ f)
-    => Logger -> Manager
-    -> IntegrationsConfig idxs'
-    -> IntegrationStateMorphism idxs (NthSetFUM6 f idxs)
-fum6IntegrationStateMorphism lgr mgr cfg =
-    IntegrSM $ extractSEndo $ fmap H.stateSet $ FUM6.initDataSource lgr mgr
-        <$> integrCfgFumCarbonBaseRequest cfg
+stateSetPersonio
+    :: Logger -> Manager
+    -> Request
+    -> Tagged ss H.StateStore
+    -> Tagged (ServPE ': ss) H.StateStore
+stateSetPersonio lgr mgr req (Tagged store) = Tagged $
+    H.stateSet (Personio.Haxl.initDataSource lgr mgr req) store
 
-fdIntegrationStateMorphism
-    :: (SFunctorI f, NthFD idxs' ~ f)
-    => Logger -> Manager
-    -> IntegrationsConfig idxs'
-    -> IntegrationStateMorphism idxs (NthSetFD f idxs)
-fdIntegrationStateMorphism _lgr mgr cfg =
-    IntegrSM $ extractSEndo $ fmap H.stateSet $ FD.Haxl.initDataSource' mgr
-        <$> integrCfgFlowdockToken cfg
+stateSetPlanMill
+    :: Logger -> Manager
+    -> Request
+    -> Tagged ss H.StateStore
+    -> Tagged (ServPM ': ss) H.StateStore
+stateSetPlanMill lgr mgr req (Tagged store) = Tagged $
+    H.stateSet (initDataSourceBatch lgr mgr req) store
 
-ghIntegrationStateMorphism
-    :: (SFunctorI f, NthGH idxs' ~ f)
-    => Logger -> Manager
-    -> IntegrationsConfig idxs'
-    -> IntegrationStateMorphism idxs (NthSetGH f idxs)
-ghIntegrationStateMorphism lgr mgr cfg =
-    IntegrSM $ extractSEndo $ fmap H.stateSet $ GH.initDataSource lgr mgr
-        <$> integrCfgGithubProxyBaseRequest cfg
+-------------------------------------------------------------------------------
+-- Contains
+-------------------------------------------------------------------------------
 
-peIntegrationStateMorphism
-    :: (SFunctorI f, NthPE idxs' ~ f)
-    => Logger -> Manager
-    -> IntegrationsConfig idxs'
-    -> IntegrationStateMorphism idxs (NthSetPE f idxs)
-peIntegrationStateMorphism lgr mgr cfg =
-    IntegrSM $ extractSEndo $ fmap H.stateSet $ Personio.Haxl.initDataSource lgr mgr
-        <$> integrCfgPersonioProxyBaseRequest cfg
+data HasServ (s :: Serv)
+data NoServ (s :: Serv)
+
+type Contains (s :: Serv) (ss :: [Serv]) =
+    IfContains s ss (HasServ s) (NoServ s) ~ HasServ s
