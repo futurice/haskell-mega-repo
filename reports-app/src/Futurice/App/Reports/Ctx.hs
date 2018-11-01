@@ -34,7 +34,7 @@ instance HasPostgresPool Ctx where
 -- Run integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[ ServFD, ServFUM, ServGH, ServPE, ServPM ] a -> IO a
+runIntegrations' :: Ctx -> Integrations ReportIntegrations a -> IO a
 runIntegrations' ctx m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m

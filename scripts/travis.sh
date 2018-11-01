@@ -68,6 +68,10 @@ install)
 		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --symlink-bindir="$HOME/.local/bin") || exit 1
         doctest --version
 
+        # Generate cabal.project.local file, with -Werror
+        timed cabal new-build --enable-tests $CONCURRENCY --dry
+		sh ./scripts/local-werror.sh
+
         # Install some stuff already in install phase
         timed cabal new-build --enable-tests $CONCURRENCY futurice-prelude
         timed cabal new-build --enable-tests $CONCURRENCY servant-Chart

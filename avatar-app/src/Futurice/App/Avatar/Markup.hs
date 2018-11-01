@@ -19,7 +19,6 @@ import Futurice.Servant          (HTML, SSOUser)
 import Prelude ()
 import Servant.API
 import Servant.API.Generic
-import Servant.Multipart
 
 -------------------------------------------------------------------------------
 -- API

@@ -20,7 +20,6 @@ module Futurice.Chart.Histogram
   ) where
 
 import Control.Monad (when)
-import Data.Monoid
 import Data.Maybe (fromMaybe)
 import qualified Data.Foldable as F
 import qualified Data.Vector as V

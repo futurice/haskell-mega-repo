@@ -146,7 +146,7 @@ reports =
 {-
 serveTable
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
-    => Integrations '[I, I, Proxy, I, I, I] v
+    => Integrations ReportIntegrations v
     -> (v -> HtmlPage key)
     -> Ctx
     -> IO (HtmlPage key)
@@ -157,7 +157,7 @@ serveTable f g ctx = do
 
 serveData
     :: (Typeable v, NFData v)
-    => Integrations '[I, I, Proxy, I, I, I] v
+    => Integrations ReportIntegrations v
     -> Ctx
     -> IO v
 serveData f = serveData' () (const f) id
@@ -166,7 +166,7 @@ serveData f = serveData' () (const f) id
 serveDataParam
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k)
     => k
-    -> (k -> Integrations '[I, I, Proxy, I, I, I] v)
+    -> (k -> Integrations ReportIntegrations v)
     -> Ctx
     -> IO v
 serveDataParam k f = serveData' k f id
@@ -176,7 +176,7 @@ serveDataParam2
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k, Eq k', Hashable k', Typeable k')
     => k
     -> k'
-    -> (k -> k' -> Integrations '[I, I, Proxy, I, I, I] v)
+    -> (k -> k' -> Integrations ReportIntegrations v)
     -> Ctx
     -> IO v
 serveDataParam2 k k' f = serveData' (k, k') (uncurry f) id
@@ -184,7 +184,7 @@ serveDataParam2 k k' f = serveData' (k, k') (uncurry f) id
 serveData'
     :: (Typeable a, NFData a, Eq k, Hashable k, Typeable k)
     => k
-    -> (k -> Integrations '[I, I, Proxy, I, I, I] a)  -- ^ single cache
+    -> (k -> Integrations ReportIntegrations a)  -- ^ single cache
     -> (a -> b)                                       -- ^ multiple outputs?
     -> Ctx
     -> IO b
@@ -194,7 +194,7 @@ serveData' k f g ctx = do
 
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
-    => Integrations '[I, I, Proxy, I, I, I] v
+    => Integrations ReportIntegrations v
     -> (v -> Chart key)
     -> Ctx
     -> IO (Chart key)
@@ -214,14 +214,14 @@ serveChartIO f g ctx = do
 
 serveGraph
     :: (Typeable key, KnownSymbol key, Typeable a, NFData a)
-    => Integrations '[I, I, Proxy, I, I, I] (Graph a key)
+    => Integrations ReportIntegrations (Graph a key)
     -> Ctx
     -> IO (Graph a key)
 serveGraph m ctx = cachedIO' ctx () $ runIntegrations' ctx m
 
 missingHoursChartData'
     :: Ctx
-    -> Integrations '[I, I, Proxy, I, I, I] MissingHoursChartData
+    -> Integrations ReportIntegrations MissingHoursChartData
 missingHoursChartData' _ctx =
     missingHoursChartData missingHoursEmployeePredicate
 

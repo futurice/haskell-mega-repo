@@ -13,7 +13,6 @@ import Data.Aeson            (toJSON)
 import Data.Time             (diffUTCTime)
 import Data.Vec.Lazy         (Vec (..), mapWithVec)
 import Futurice.Integrations
-       (Integrations, githubOrganisationName, githubReq, runIntegrations)
 import Futurice.Prelude
 import Futurice.Servant      (Cache, cachedIO)
 import Lucid                 hiding (for_)

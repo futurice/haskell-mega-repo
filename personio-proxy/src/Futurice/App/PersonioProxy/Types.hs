@@ -2,7 +2,6 @@ module Futurice.App.PersonioProxy.Types where
 
 import Control.Concurrent.STM (TVar)
 import Futurice.Cache         (Cache)
-import Futurice.CareerLevel   (CareerLevel)
 import Futurice.IdMap         (IdMap)
 import Futurice.Postgres      (Connection, HasPostgresPool (..), Pool)
 import Futurice.Prelude
