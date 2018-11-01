@@ -86,8 +86,10 @@ library
       Futurice.Integrations.Common
       Futurice.Integrations.GitHub
       Futurice.Integrations.Monad
+      Futurice.Integrations.Monad.StateSet
       Futurice.Integrations.Serv
       Futurice.Integrations.Serv.Config
       Futurice.Integrations.Serv.Contains
+      Futurice.Integrations.Serv.FromList
       Futurice.Integrations.TimereportKind
       Futurice.Integrations.Types

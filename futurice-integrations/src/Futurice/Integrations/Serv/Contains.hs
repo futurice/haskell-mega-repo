@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE EmptyCase              #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -12,11 +13,13 @@
 {-# LANGUAGE UndecidableInstances   #-}
 -- | This module is not used.
 module Futurice.Integrations.Serv.Contains (
-    withServSetC,
     -- * Contains
+    Contains,
     ContainsProof,
     withContainsProof,
     IfContains,
+    -- * withServSetC
+    withServSetC,
     ) where
 
 import Data.Kind          (Type)
@@ -28,6 +31,18 @@ import Futurice.Integrations.Serv
 
 -------------------------------------------------------------------------------
 -- Contains
+-------------------------------------------------------------------------------
+
+-- These types will help in error messages.
+data HasServ (s :: Serv)
+data NoServ (ss :: [Serv])
+
+-- | Constraint htat tells that @s@ is in @ss@.
+type Contains (s :: Serv) (ss :: [Serv]) =
+    IfContains s ss (HasServ s) (NoServ ss) ~ HasServ s
+
+-------------------------------------------------------------------------------
+-- ContainsProof
 -------------------------------------------------------------------------------
 
 data ContainsProof (s :: Serv) (ss :: [Serv]) where
@@ -116,3 +131,7 @@ cmpReflServ SServGH   = Refl
 cmpReflServ SServPE   = Refl
 cmpReflServ SServPM   = Refl
 
+-- $setup
+--
+-- >>> :set -XDataKinds
+-- >>> import Data.Functor.Const (Const (..))

@@ -36,7 +36,6 @@ module Futurice.Integrations.Serv (
     ) where
 
 import Data.Kind          (Type)
-import Data.Proxy         (Proxy (..))
 import Data.Type.Equality
 
 import qualified Data.Type.Nat as N
