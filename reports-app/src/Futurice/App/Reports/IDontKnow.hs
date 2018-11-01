@@ -17,7 +17,7 @@ module Futurice.App.Reports.IDontKnow (
     Category (..),
     ) where
 
-import Control.Lens                         (alaf)
+import Control.Lens                         (filtered, sumOf)
 import Data.Aeson                           (Value)
 import Data.Fixed                           (Centi)
 import Data.Ord                             (comparing)
@@ -185,13 +185,14 @@ instance ToHtml IDontKnowData where
 
 renderIDontKnowData :: IDontKnowData -> HtmlPage "i-dont-know"
 renderIDontKnowData (IDK today month mtribe accNames xs) = page_ "I don't know..." $ do
-    fullRow_ $ h1_ $ "I don't know... "
+    fullRow_ $ h1_ $ "Possibly faulty hour markings: "
         <> monthToText month
-        <> maybe "" (\t -> " " <> tribeToText t)mtribe
+        <> maybe "" (\t -> " " <> tribeToText t) mtribe
 
-    fullRow_ $ p_ $ do
-        toHtml $ alaf Sum foldMap idkHours xs
-        " hours in total"
+    fullRow_ $ ul_ $ do
+        li_ $ toHtml (sumOf (folded . getter idkHours) xs) <> " hours in total"
+        li_ $ toHtml (sumOf (folded . filtered isCatIDontKnow . getter idkHours) xs) <> " hours as 'i don't know...'"
+        li_ $ toHtml (sumOf (folded . filtered isCatICantMark . getter idkHours) xs) <> " hours as 'i can't mark...'"
 
     form_ $ div_ [ class_ "row" ] $ do
         div_ [ class_ "columns medium-5" ] $ select_ [ name_ "month" ] $ do
@@ -229,3 +230,11 @@ renderIDontKnowData (IDK today month mtribe accNames xs) = page_ "I don't know..
     wordsToHtml (w:ws)
         | Set.member (T.toLower w) accNames = span_ [ class_ "label success" ] (toHtml w) <> " " <> wordsToHtml ws
         | otherwise                         = toHtml w <> " " <> wordsToHtml ws
+
+    isCatIDontKnow :: IDontKnow -> Bool
+    isCatIDontKnow IDontKnow { idkCategory = CatIDontKnow } = True
+    isCatIDontKnow _ = False
+
+    isCatICantMark :: IDontKnow -> Bool
+    isCatICantMark IDontKnow { idkCategory = CatICantMark } = True
+    isCatICantMark _ = False
