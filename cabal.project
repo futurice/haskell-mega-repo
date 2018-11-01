@@ -139,16 +139,19 @@ packages:
   vendor/amazonka/amazonka
 
 package theme-app
-  ghc-options: +RTS -M2G -RTS
+  ghc-options: -Werror +RTS -M2G -RTS
 
 package planmill-client
-  ghc-options: +RTS -M2G -RTS
+  ghc-options: -Werror +RTS -M2G -RTS
 
 package reports-app
-  ghc-options: +RTS -M2G -RTS
+  ghc-options: -Werror +RTS -M2G -RTS
 
 package fum-carbon-app
-  ghc-options: +RTS -M2G -RTS
+  ghc-options: -Werror +RTS -M2G -RTS
 
 package checklist-app
-  ghc-options: +RTS -M2G -RTS
+  ghc-options: -Werror +RTS -M2G -RTS
+
+package futurice-integrations
+  ghc-options: -Werror +RTS -M2G -RTS

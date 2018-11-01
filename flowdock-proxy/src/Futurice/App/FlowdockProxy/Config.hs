@@ -10,7 +10,7 @@ import Futurice.Postgres  (ConnectInfo)
 import Futurice.Integrations
 
 data Config = Config
-    { cfgIntegrationsConfig :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, I, I])
+    { cfgIntegrationsConfig :: !(IntegrationsConfig '[ ServFD, ServFUM6, ServPE])
     , cfgPostgresConnInfo   :: !ConnectInfo
     }
 

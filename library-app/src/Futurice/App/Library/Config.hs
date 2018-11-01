@@ -17,7 +17,7 @@ data Config = Config
     , cfgAmazonAssociateTag :: !Text
     , cfgAmazonSecretKey    :: !Text
     , cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[Proxy, Proxy, Proxy, Proxy, Proxy, I])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServPE ])
     }
 
 instance Configure Config where

@@ -11,7 +11,7 @@ import Prelude ()
 import Servant.Client             (BaseUrl)
 
 data Config = Config
-    { cfgIntegrationsCfg       :: !(IntegrationsConfig '[I, I, Proxy, I, I, I])
+    { cfgIntegrationsCfg       :: !(IntegrationsConfig '[ ServFD, ServFUM, ServGH, ServPE, ServPM ])
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgSmsProxyBaseurl       :: !BaseUrl
     , cfgPreferencesAppBaseurl :: !BaseUrl

@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 module Futurice.App.Checklist.Config (
     Config(..),
+    ChecklistIntegrations,
     ) where
 
 import Database.PostgreSQL.Simple (ConnectInfo)
@@ -12,10 +13,12 @@ import Prelude ()
 import qualified FUM.Types.GroupName as FUM
 import qualified FUM.Types.Login     as FUM
 
+type ChecklistIntegrations = '[ ServFUM6, ServGH, ServPE, ServPM ]
+
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[I, Proxy, I, I, Proxy, I])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig ChecklistIntegrations)
     -- ACL Groups
     , cfgFumITGroup         :: !FUM.GroupName
     , cfgFumHRGroup         :: !FUM.GroupName

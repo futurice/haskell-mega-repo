@@ -5,7 +5,7 @@ module Futurice.App.Reports.Ctx (
     ) where
 
 import Dashdo.Servant        (DashdoAPI)
-import Futurice.Integrations (Integrations, runIntegrations)
+import Futurice.Integrations
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant      (Cache)
@@ -34,7 +34,7 @@ instance HasPostgresPool Ctx where
 -- Run integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[I, I, Proxy, I, I, I] a -> IO a
+runIntegrations' :: Ctx -> Integrations '[ ServFD, ServFUM, ServGH, ServPE, ServPM ] a -> IO a
 runIntegrations' ctx m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
