@@ -104,7 +104,7 @@ makeCtx cfg lgr mgr cache _mq = do
 -- Integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[Proxy, Proxy, Proxy, Proxy, Proxy, I] a -> IO a
+runIntegrations' :: Ctx -> Integrations '[ ServPE ] a -> IO a
 runIntegrations' (Ctx cfg _ lgr mgr _cache) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m

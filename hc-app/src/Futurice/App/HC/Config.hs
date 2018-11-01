@@ -14,7 +14,7 @@ import qualified FUM.Types.GroupName as FUM
 import qualified FUM.Types.Login     as FUM
 
 data Config = Config
-    { cfgIntegrationsCfg       :: !(IntegrationsConfig '[I, Proxy, I, Proxy, Proxy, I])
+    { cfgIntegrationsCfg       :: !(IntegrationsConfig '[ ServFUM6, ServPE, ServPM ])
     , cfgMockUser              :: !(Maybe FUM.Login)
     , cfgAccessGroups          :: ![FUM.GroupName]
     , cfgEmailProxyBaseurl     :: !BaseUrl

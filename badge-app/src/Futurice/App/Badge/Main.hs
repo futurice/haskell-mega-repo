@@ -14,7 +14,8 @@ import Codec.Picture
 import Data.List                   (find)
 import Diagrams.Backend.Rasterific (rasterRgb8)
 import Diagrams.Prelude            (dims2D)
-import Futurice.Integrations       (Integrations, runIntegrations)
+import Futurice.Integrations
+       (Integrations, ServFUM6, ServPE, runIntegrations)
 import Futurice.Lucid.Foundation   (HtmlPage, fullRow_, h1_, page_)
 import Futurice.Prelude
 import Futurice.Servant
@@ -116,7 +117,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
 
 withAuthUser
     :: (MonadIO m, MonadTime m)
-    => (FUM.Login -> Integrations '[Proxy, Proxy, I, Proxy, Proxy, I] (HtmlPage a))
+    => (FUM.Login -> Integrations '[ServFUM6, ServPE] (HtmlPage a))
     -> Ctx -> Maybe FUM.Login
     -> m (HtmlPage a)
 withAuthUser impl = withAuthUser' page404 (fmap return . impl)
@@ -124,7 +125,7 @@ withAuthUser impl = withAuthUser' page404 (fmap return . impl)
 withAuthUser'
     :: (MonadIO m, MonadTime m)
     => a
-    -> (FUM.Login -> Integrations '[Proxy, Proxy, I, Proxy, Proxy, I] (m a))
+    -> (FUM.Login -> Integrations '[ServFUM6, ServPE] (m a))
     -> Ctx -> Maybe FUM.Login
     -> m a
 withAuthUser' def action ctx mfu = case mfu <|> cfgMockUser cfg of

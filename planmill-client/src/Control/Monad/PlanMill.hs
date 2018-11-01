@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                     #-}
 {-# LANGUAGE ConstraintKinds         #-}
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE FlexibleContexts        #-}
@@ -7,10 +6,8 @@
 {-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE TypeSynonymInstances    #-}
 {-# LANGUAGE UndecidableInstances    #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# OPTIONS_GHC -fconstraint-solver-iterations=10 #-}
-#endif
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3

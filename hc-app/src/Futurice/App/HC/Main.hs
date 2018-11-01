@@ -11,14 +11,14 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.HC.Main (defaultMain) where
 
+import Data.Time                      (addDays)
 import Futurice.App.EmailProxy.Client (sendEmail)
-import Data.Time (addDays)
 import Futurice.App.EmailProxy.Types
        (emptyReq, fromEmail, reqBody, reqCc, reqSubject)
 import Futurice.FUM.MachineAPI        (FUM6 (..), fum6)
 import Futurice.Integrations
-       (Integrations, beginningOfPrev2Month, personio, planmillEmployee,
-       runIntegrations)
+       (Integrations, ServFUM6, ServPE, ServPM, beginningOfPrev2Month,
+       personio, planmillEmployee, runIntegrations)
 import Futurice.Lucid.Foundation      (HtmlPage, fullRow_, h1_, page_)
 import Futurice.Prelude
 import Futurice.Servant
@@ -64,7 +64,7 @@ server ctx = genericServer $ Record
 
 withAuthUser
     :: (MonadIO m, MonadTime m)
-    => (FUM.Login -> Integrations '[I, Proxy, I, Proxy, Proxy, I] (HtmlPage a))
+    => (FUM.Login -> Integrations '[ ServFUM6, ServPE, ServPM ] (HtmlPage a))
     -> Ctx -> Maybe FUM.Login
     -> m (HtmlPage a)
 withAuthUser = withAuthUser' page404
@@ -72,7 +72,7 @@ withAuthUser = withAuthUser' page404
 withAuthUser'
     :: (MonadIO m, MonadTime m)
     => a
-    -> (FUM.Login -> Integrations '[I, Proxy, I, Proxy, Proxy, I] a)
+    -> (FUM.Login -> Integrations '[ ServFUM6, ServPE, ServPM ] a)
     -> Ctx -> Maybe FUM.Login
     -> m a
 withAuthUser' def action ctx mfu = case mfu <|> cfgMockUser cfg of

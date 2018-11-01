@@ -14,7 +14,7 @@ import qualified FUM.Types.Login     as FUM
 
 data Config = Config
     { cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsConfig :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, Proxy])
+    , cfgIntegrationsConfig :: !(IntegrationsConfig '[ ServFUM6 ])
     , cfgMockUser            :: !(Maybe FUM.Login)
     , cfgAccessGroup         :: !(FUM.GroupName)
     }

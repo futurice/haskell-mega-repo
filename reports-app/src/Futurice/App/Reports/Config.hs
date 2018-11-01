@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 module Futurice.App.Reports.Config (
     Config(..),
+    ReportIntegrations,
     ) where
 
 import Database.PostgreSQL.Simple (ConnectInfo)
@@ -10,8 +11,10 @@ import Futurice.Prelude
 import Prelude ()
 import Servant.Client             (BaseUrl)
 
+type ReportIntegrations = '[ ServFD, ServFUM, ServGH, ServPE, ServPM ]
+
 data Config = Config
-    { cfgIntegrationsCfg       :: !(IntegrationsConfig '[I, I, Proxy, I, I, I])
+    { cfgIntegrationsCfg       :: !(IntegrationsConfig ReportIntegrations)
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgSmsProxyBaseurl       :: !BaseUrl
     , cfgPreferencesAppBaseurl :: !BaseUrl

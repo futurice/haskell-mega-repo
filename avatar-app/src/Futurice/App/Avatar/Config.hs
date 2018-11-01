@@ -9,7 +9,7 @@ import Prelude ()
 import qualified Network.AWS as AWS
 
 data Config = Config
-    { cfgIntegrationCfg :: !(IntegrationsConfig '[Proxy, I, Proxy, Proxy, Proxy, Proxy])
+    { cfgIntegrationCfg :: !(IntegrationsConfig '[ServFUM])
     , cfgS3Bucket       :: !Text
     , cfgAwsCredentials :: !AWS.Credentials
     }

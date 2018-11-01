@@ -314,7 +314,7 @@ getEmployeeExternalData now ctx = liftIO $ do
       cfg = ctxIntegrationsCfg ctx
       cache = ctxCache ctx
 
-type M = Integrations '[I, Proxy, I, I, Proxy, I]
+type M = Integrations ChecklistIntegrations
 
 personioPlanmillPMuserMap :: [Personio.Employee] -> M (HashMap FUM.Login (Personio.Employee, PMUser))
 personioPlanmillPMuserMap ps = do
@@ -548,7 +548,7 @@ makeCtx Config {..} lgr mgr cache mq = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig '[I, Proxy, I, I, Proxy, I]
+    -> IntegrationsConfig ChecklistIntegrations
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do

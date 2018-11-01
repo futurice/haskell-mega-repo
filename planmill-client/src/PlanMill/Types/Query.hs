@@ -1,10 +1,8 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -460,9 +458,6 @@ queryTagVectorType QueryTagProject  = insertNS Refl
 queryTagVectorType QueryTagAbsence  = insertNS Refl
 queryTagVectorType QueryTagAccount  = insertNS Refl
 queryTagVectorType QueryTagCalendar = insertNS Refl
-#if __GLASGOW_HASKELL__ < 800
-queryTagVectorType _ = error "queryTagVectorType: panic!"
-#endif
 
 -- | Reflect the type of 'Query'.
 queryType

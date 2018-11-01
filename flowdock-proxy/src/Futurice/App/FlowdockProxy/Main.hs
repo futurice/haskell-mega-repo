@@ -289,7 +289,7 @@ updateRows ctx flowId flowSlug = do
 -- Misc
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[Proxy,Proxy, I, Proxy, I, I] a -> IO a
+runIntegrations' :: Ctx -> Integrations '[ ServFD, ServFUM6, ServPE] a -> IO a
 runIntegrations' ctx m = do
     -- ! New manager each run. Maybe this helps with timeouts, maybe not.
     mgr <- newManager tlsManagerSettings

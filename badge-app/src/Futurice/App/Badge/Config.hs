@@ -13,7 +13,7 @@ import Servant.Client        (BaseUrl)
 import qualified FUM.Types.Login     as FUM
 
 data Config = Config
-    { cfgIntegrationsCfg :: !(IntegrationsConfig '[Proxy, Proxy, I, Proxy, Proxy, I])
+    { cfgIntegrationsCfg :: !(IntegrationsConfig '[ServFUM6, ServPE])
     , cfgMockUser        :: !(Maybe FUM.Login)
     , cfgAvatarBaseurl   :: !BaseUrl
     -- , cfgAccessGroups    :: ![FUM.GroupName]

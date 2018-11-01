@@ -13,7 +13,7 @@ import qualified FUM.Types.Login as FUM
 import qualified PlanMill        as PM
 
 data Config = Config
-    { cfgIntegrationsCfg :: !(IntegrationsConfig '[I, Proxy, Proxy, Proxy, Proxy, I])
+    { cfgIntegrationsCfg :: !(IntegrationsConfig '[ ServPE, ServPM ])
     , cfgPlanmillCfg     :: !PM.Cfg
     , cfgMockUser        :: !(Maybe FUM.Login)
     }

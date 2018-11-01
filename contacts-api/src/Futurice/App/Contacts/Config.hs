@@ -4,7 +4,7 @@ module Futurice.App.Contacts.Config (
     ) where
 
 import Prelude ()
-import Futurice.Prelude
+import Futurice.Prelude ()
 import Futurice.Integrations
 
-type Config = IntegrationsConfig '[I, I, Proxy, I, I, I]
+type Config = IntegrationsConfig '[ ServFD, ServFUM, ServGH, ServPE, ServPM ]

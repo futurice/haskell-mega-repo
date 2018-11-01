@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                     #-}
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE DefaultSignatures       #-}
 {-# LANGUAGE FlexibleContexts        #-}
@@ -12,9 +11,7 @@
 {-# LANGUAGE TypeFamilies            #-}
 {-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE UndecidableInstances    #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
-#endif
 module Futurice.Report.Columns (
     -- * Report
     Report (..),
@@ -44,7 +41,7 @@ import Futurice.Prelude
 import Futurice.Time
        (AsScientific, IsTimeUnit (..), NDT (..), TimeUnit (..))
 import Futurice.Tribe            (Tribe)
-import Generics.SOP              ((:.:) (..), All, SListI (..))
+import Generics.SOP              ((:.:) (..), All, SListI)
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Prelude ()
 import Servant.API               (MimeRender (..))

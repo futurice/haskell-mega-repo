@@ -41,7 +41,7 @@ server ctx = indexPageAction ctx
 withAuthUser
     :: (MonadIO m, MonadTime m)
     => Ctx
-    -> (FUM.Login -> Integrations '[Proxy, Proxy, I, I, Proxy, I] (HtmlPage a))
+    -> (FUM.Login -> Integrations '[ ServFUM6, ServGH, ServPE ] (HtmlPage a))
     -> Maybe FUM.Login
     -> m (HtmlPage a)
 withAuthUser ctx f = withAuthUser' page404 f ctx
@@ -55,7 +55,7 @@ page404 = page_ "GitHub Sync - Unauthorised" $
 withAuthUser'
     :: (MonadIO m, MonadTime m)
     => a
-    -> (FUM.Login -> Integrations '[Proxy, Proxy, I, I, Proxy, I] a)
+    -> (FUM.Login -> Integrations '[ ServFUM6, ServGH, ServPE ] a)
     -> Ctx -> Maybe FUM.Login
     -> m a
 withAuthUser' def action ctx mfu = case mfu <|> cfgMockUser cfg of

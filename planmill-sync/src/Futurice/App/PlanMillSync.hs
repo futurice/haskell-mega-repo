@@ -108,7 +108,7 @@ withAuthorisedUser ctx mfu err action = do
     lgr   = ctxLogger ctx
     mgr   = ctxManager ctx
 
-type M = Integrations '[I, I, Proxy, Proxy, Proxy, I]
+type M = Integrations '[ ServFUM, ServPE, ServPM ]
 
 fetcher :: M ([PMUser], [P.Employee])
 fetcher = liftA2 (,) users (P.personio P.PersonioEmployees)

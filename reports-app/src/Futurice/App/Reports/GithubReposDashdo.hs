@@ -13,7 +13,6 @@ import Data.Aeson            (toJSON)
 import Data.Time             (diffUTCTime)
 import Data.Vec.Lazy         (Vec (..), mapWithVec)
 import Futurice.Integrations
-       (Integrations, githubOrganisationName, githubReq, runIntegrations)
 import Futurice.Prelude
 import Futurice.Servant      (Cache, cachedIO)
 import Lucid                 hiding (for_)
@@ -98,7 +97,7 @@ fetchValues ctx = cachedIO' ctx () $
         , vArchived  = GH.repoArchived r
         }
 
-runIntegrations' :: Ctx -> Integrations '[I, I, Proxy, I, I, I] a -> IO a
+runIntegrations' :: Ctx -> Integrations '[ ServFD, ServFUM, ServGH, ServPE, ServPM ] a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m

@@ -26,6 +26,7 @@ import qualified FUM.Types.Login            as FUM
 import qualified Personio
 
 import Futurice.App.Checklist.Command
+import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Types
 
@@ -33,7 +34,7 @@ data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxManager         :: !Manager
     , ctxCache           :: !Cache
-    , ctxIntegrationsCfg :: !(IntegrationsConfig '[I, Proxy, I, I, Proxy, I])
+    , ctxIntegrationsCfg :: !(IntegrationsConfig ChecklistIntegrations)
     , ctxWorld           :: TVar World
     , ctxOrigWorld       :: World
     , ctxPostgres        :: Pool Postgres.Connection
@@ -47,7 +48,7 @@ newCtx
     :: Logger
     -> Manager
     -> Cache
-    -> IntegrationsConfig '[I, Proxy, I, I, Proxy, I]
+    -> IntegrationsConfig ChecklistIntegrations
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World

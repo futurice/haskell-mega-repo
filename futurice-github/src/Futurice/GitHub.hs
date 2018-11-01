@@ -37,7 +37,7 @@ import Futurice.Has       (In, inj)
 import Futurice.List      (Append, TMap, splitAppend, tmapToNSComp)
 import Futurice.Prelude   hiding (Pair)
 import Futurice.TypeTag
-import Generics.SOP       ((:.:) (..), SListI (..), hcollapse, hcpure)
+import Generics.SOP       ((:.:) (..), SListI, hcollapse, hcpure)
 
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres

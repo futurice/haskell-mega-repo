@@ -1,9 +1,6 @@
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=0 #-}
-#endif
 module Futurice.App.PlanMillProxy.Logic.Common (
     module Futurice.Postgres,
     module Futurice.App.PlanMillProxy.Logic.Common,
