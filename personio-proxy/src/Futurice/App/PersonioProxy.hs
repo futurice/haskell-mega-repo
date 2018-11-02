@@ -46,7 +46,7 @@ server ctx = indexPage'
   where
     indexPage' = liftIO $ do
         ps <- readTVarIO (ctxPersonio ctx)
-        return (indexPage (toList ps))
+        return (indexPage ps)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

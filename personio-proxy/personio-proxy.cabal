@@ -46,6 +46,7 @@ library
     , futurice-tribes
     , github
     , lens
+    , lens-aeson
     , mtl
     , periocron
     , personio-client

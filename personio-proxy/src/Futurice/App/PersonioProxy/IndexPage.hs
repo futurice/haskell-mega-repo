@@ -3,12 +3,14 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.PersonioProxy.IndexPage (indexPage) where
 
+import Data.Aeson (Value (..))
 import FUM.Types.Login
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
+import Futurice.IdMap (IdMap)
 import Prelude ()
 
 import qualified Data.Aeson as Aeson
@@ -27,7 +29,7 @@ instance Navigation Nav where
     pageParams = pageParamsWithJS
         $(makeRelativeToProject "personio-proxy.js" >>= embedJS)
 
-indexPage :: [P.Employee] -> HtmlPage "index"
+indexPage :: IdMap P.Employee -> HtmlPage "index"
 indexPage ps = page_ "Personio Proxy" (Just NavHome) $ do
     fullRow_ $
         input_ [ id_ "cmd", type_ "text", placeholder_ "type :help to show help", autofocus_ ]
@@ -104,6 +106,7 @@ indexPage ps = page_ "Personio Proxy" (Just NavHome) $ do
                 tr_ $ td_ "Hire date"     >> td_ [ id_ "s-hire-date" ] "???"
                 tr_ $ td_ "Contract ends" >> td_ [ id_ "s-contract-ends" ] "???"
                 tr_ $ td_ "Cost center"   >> td_ [ id_ "s-cost-center" ] "???"
+                tr_ $ td_ "Supervisor"    >> td_ [ id_ "s-supervisor" ] "???"
                 tr_ $ td_ "Weekly hours"  >> td_ [ id_ "s-weekly-hours" ] "???"
                 tr_ $ td_ "Contract type" >> td_ [ id_ "s-contract-type" ] "???"
                 tr_ $ td_ "Salary type"   >> td_ [ id_ "s-salary-type" ] "???"
@@ -122,11 +125,18 @@ indexPage ps = page_ "Personio Proxy" (Just NavHome) $ do
             th_ "Status"
             th_ "Type"
 
-        tbody_ $ for_ (sortOn (view P.employeeLast) ps) $ \e ->
+        tbody_ $ for_ (sortOn (view P.employeeLast) (toList ps)) $ \e -> do
+            let addSupervisor :: Value -> Value
+                addSupervisor (Object hm)
+                    | Just supervisorName <-
+                        e ^. P.employeeSupervisorId >>= \sid -> ps ^? ix sid . P.employeeFullname
+                    = Object $ hm & at "supervisor" ?~ String supervisorName
+                addSupervisor value = value
+
             tr_
                 [ data_ "futu-keywords" $ decodeUtf8Lenient $ view strict $ Aeson.encode $ employeeKeywords e
                 , data_ "futu-words"    $ decodeUtf8Lenient $ view strict $ Aeson.encode $ employeeWords e
-                , data_ "futu-employee" $ decodeUtf8Lenient $ view strict $ Aeson.encode e
+                , data_ "futu-employee" $ decodeUtf8Lenient $ view strict $ Aeson.encode $ addSupervisor $ Aeson.toJSON e
                 ] $ do
             ----------
                 td_ $ toHtml $ e ^. P.employeeId

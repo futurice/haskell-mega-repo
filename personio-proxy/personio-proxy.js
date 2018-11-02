@@ -92,6 +92,7 @@ futu.onload(function () {
     setText($_("#s-hire-date"), e.hireDate);
     setText($_("#s-contract-ends"), e.endDate);
     setText($_("#s-cost-center"), e.costCenter);
+    setText($_("#s-supervisor"), e.supervisor);
     setText($_("#s-weekly-hours"), e.weeklyHours);
     setText($_("#s-contract-type"), e.contractType);
     setText($_("#s-salary-type"), e.salaryType);
