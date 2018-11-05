@@ -29,7 +29,6 @@ data Ctx = Ctx
     , ctxManager        :: !Manager
     , ctxConfig         :: !Config
     , ctxPersonio       :: !(TVar (IdMap Personio.Employee))
-    , ctxPersonioData   :: !(TVar Personio.PersonioAllData)
     , ctxWorld          :: !(TVar World)
     , ctxTransactorMVar :: !(MVar ())
     , ctxCommandChannel :: !(TChan SomeCommand)
@@ -48,9 +47,8 @@ newCtx
     -> Manager
     -> Config
     -> IdMap Personio.Employee
-    -> Personio.PersonioAllData
     -> IO Ctx
-newCtx lgr mgr cfg es vs = do
+newCtx lgr mgr cfg es = do
     pool <- createPostgresPool $ cfgPostgresConnInfo cfg
     cmds <- poolQuery_ pool selectQuery
     w <- case execStricterT (applyCommands cmds) emptyWorld of
@@ -60,7 +58,6 @@ newCtx lgr mgr cfg es vs = do
             fail err
     Ctx lgr mgr cfg
         <$> newTVarIO es
-        <*> newTVarIO vs
         <*> newTVarIO w
         <*> newMVar ()
         <*> newBroadcastTChanIO

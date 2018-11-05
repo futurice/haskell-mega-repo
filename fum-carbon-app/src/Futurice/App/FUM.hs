@@ -6,6 +6,7 @@
 module Futurice.App.FUM (defaultMain) where
 
 import Control.Concurrent.STM (atomically, writeTVar)
+import Futurice.Integrations  (runIntegrations)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
@@ -22,7 +23,7 @@ import Futurice.App.FUM.Pages.Server
 import Futurice.App.FUM.Report.CompareOldFum
 
 import qualified Futurice.IdMap as IdMap
-import qualified Personio
+import qualified Personio       as P
 
 -------------------------------------------------------------------------------
 -- Server
@@ -54,26 +55,29 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx           .~ "FUMAPP"
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx cfg@Config {..} lgr mgr _cache _mq = do
+makeCtx cfg@Config {..} lgr mgr _cache mq = do
     -- employees
-    let fetchData = Personio.evalPersonioReqIO mgr lgr cfgPersonioCfg Personio.PersonioAll
-    allData <- fetchData
-    let employees = Personio.paEmployees allData
+    let fetchEmployees = do
+            now <- currentTime
+            runIntegrations mgr lgr now cfgIntegrationsConfig P.personioEmployees
+    employees <- fetchEmployees
 
     -- context
     ctx <- newCtx lgr mgr cfg
         (IdMap.fromFoldable employees)
-        allData
 
     -- jobs
-    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchData) $ tail $ every 300
+    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every 300
+
+    -- listen to MQ, especially updated Personio
+    void $ forEachMessage mq $ \msg -> case msg of
+        PersonioUpdated -> updateJob ctx fetchEmployees
+        _               -> pure ()
 
     pure (ctx, [ employeesJob ])
   where
-    updateJob :: Ctx -> IO Personio.PersonioAllData -> IO ()
-    updateJob ctx fetchData = do
-        allData <- fetchData
-        let employees = Personio.paEmployees allData
+    updateJob :: Ctx -> IO [P.Employee] -> IO ()
+    updateJob ctx fetchEmployees = do
+        employees <- fetchEmployees
         atomically $ do
             writeTVar (ctxPersonio ctx) (IdMap.fromFoldable employees)
-            writeTVar (ctxPersonioData ctx) allData
