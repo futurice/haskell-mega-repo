@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool (defaultMain) where
 
-import Data.Aeson       (Value (Null), eitherDecodeStrict)
+import Data.Aeson       (Value (Null, String), eitherDecodeStrict)
+import Data.Char        (isAlphaNum)
 import Futurice.Prelude
 import Prelude ()
 
@@ -18,8 +19,8 @@ import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.CopyArtifacts
 import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Exec
-import Futurice.App.MegaRepoTool.GenPass
 import Futurice.App.MegaRepoTool.GenKeys
+import Futurice.App.MegaRepoTool.GenPass
 import Futurice.App.MegaRepoTool.Keys
 import Futurice.App.MegaRepoTool.Lambda
 import Futurice.App.MegaRepoTool.PatternCompleter
@@ -133,7 +134,15 @@ lambdaOptions = CmdLambda
         , O.help "Lambda input"
         ]
 
-    readValue s = eitherDecodeStrict $ TE.encodeUtf8 $ T.pack s
+    readValue :: String -> Either String Value
+    readValue s = case eitherDecodeStrict $ TE.encodeUtf8 t of
+        Right v -> Right v
+        Left err
+            -- if it's not valid JSON, but looks like an identifier
+            | T.all (\c -> isAlphaNum c || c == '-' || c == '_') t -> Right (String t)
+            | otherwise -> Left err
+      where
+        t = T.pack s
 
 copyArtifactsOptions :: O.Parser Cmd
 copyArtifactsOptions = CmdCopyArtifacts
