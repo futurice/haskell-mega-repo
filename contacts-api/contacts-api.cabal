@@ -68,6 +68,7 @@ library
     , periocron
     , personio-client
     , planmill-client
+    , power-client
     , rfc5051
     , servant
     , servant-cassava

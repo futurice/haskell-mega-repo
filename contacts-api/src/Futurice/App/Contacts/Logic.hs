@@ -23,6 +23,7 @@ import Prelude ()
 import Servant
 
 import qualified Data.HashMap.Strict     as HM
+import qualified Data.Map.Strict         as Map
 import qualified Data.Text               as T
 import qualified Futurice.App.Avatar.API as Avatar
 
@@ -31,6 +32,7 @@ import qualified Chat.Flowdock.REST as FD
 import qualified FUM.Types.Login    as FUM
 import qualified GitHub             as GH
 import qualified Personio
+import qualified Power
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -45,6 +47,7 @@ noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 -- | Get contacts data
 contacts
     :: ( MonadFlowdock m, MonadGitHub m, Personio.MonadPersonio m
+       , Power.MonadPower m
        , MonadTime m, MonadReader env m
        , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
        )
@@ -52,6 +55,7 @@ contacts
 contacts = contacts'
     <$> currentDay
     <*> Personio.personio Personio.PersonioEmployees
+    <*> Power.powerPeople
     <*> githubDetailedMembers
     <*> flowdockOrganisation
 
@@ -59,15 +63,17 @@ contacts = contacts'
 contacts'
     :: Day
     -> [Personio.Employee]
+    -> [Power.Person]
     -> Vector GH.User
     -> FD.Organisation
     -> [Contact Text]
-contacts' today employees githubMembers flowdockOrg =
+contacts' today employees powPeople githubMembers flowdockOrg =
     let employees' = filter (Personio.employeeIsActive today) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
-    in sortBy (compareUnicodeText `on` contactName) res2
+        res3 = addPowerInfo powPeople res2
+    in sortBy (compareUnicodeText `on` contactName) res3
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
@@ -91,6 +97,7 @@ employeeToContact e = Contact
     , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
     , contactHrnumber   = e ^. Personio.employeeHRNumber
     , contactPersonio   = e ^. Personio.employeeId
+    , contactUtzTarget  = 0 -- to be corrected
     }
   where
     fumLogin = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
@@ -181,3 +188,14 @@ addFlowdockInfo us = fmap add
 
 linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l
+
+addPowerInfo :: [Power.Person] -> [Contact Text] -> [Contact Text]
+addPowerInfo powerPeople = map add
+  where
+    fumMap :: Map FUM.Login Power.Person
+    fumMap = Map.fromList [ ( Power.personLogin p, p) | p <- powerPeople ]
+
+    add c = c
+        { contactUtzTarget = fromMaybe 0 $
+            fumMap ^? ix (contactLogin c) . getter Power.personUtzTarget
+        }
