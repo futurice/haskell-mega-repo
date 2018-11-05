@@ -24,9 +24,11 @@ library
   build-depends:
     , aeson
     , base
+    , free
     , fum-types
     , futurice-prelude
     , http-client
+    , http-types
     , servant
     , servant-client
     , servant-client-core

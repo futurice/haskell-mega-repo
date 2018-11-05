@@ -46,6 +46,8 @@ library
     , http-client-tls
     , parallel-io
     , personio-client
+    , power-client
+    , servant-client-core
     , tagged
     , text
     , vector
@@ -54,4 +56,5 @@ library
       FUM.Haxl
       Github.Haxl
       Personio.Haxl
+      Power.Haxl
   default-language: Haskell2010
