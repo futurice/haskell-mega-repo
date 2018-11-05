@@ -130,6 +130,7 @@ cmpReflServ SServFUM6 = Refl
 cmpReflServ SServGH   = Refl
 cmpReflServ SServPE   = Refl
 cmpReflServ SServPM   = Refl
+cmpReflServ SServPO   = Refl
 
 -- $setup
 --

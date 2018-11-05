@@ -13,6 +13,7 @@ module Futurice.Integrations.Monad.StateSet (
     stateSetGitHub,
     stateSetPersonio,
     stateSetPlanMill,
+    stateSetPower,
     ) where
 
 import Futurice.Prelude
@@ -28,6 +29,7 @@ import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.Integrations.GitHub as GH
 import qualified Haxl.Core                    as H
 import qualified Personio.Haxl
+import qualified Power.Haxl
 
 import Futurice.Integrations.Serv
 
@@ -79,3 +81,11 @@ stateSetPlanMill
     -> Tagged (ServPM ': ss) H.StateStore
 stateSetPlanMill lgr mgr req (Tagged store) = Tagged $
     H.stateSet (initDataSourceBatch lgr mgr req) store
+
+stateSetPower
+    :: Logger -> Manager
+    -> Request
+    -> Tagged ss H.StateStore
+    -> Tagged (ServPO ': ss) H.StateStore
+stateSetPower lgr mgr burl (Tagged store) = Tagged $
+    H.stateSet (Power.Haxl.initDataSource lgr mgr burl) store

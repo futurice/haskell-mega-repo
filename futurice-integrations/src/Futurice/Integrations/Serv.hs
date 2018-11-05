@@ -15,7 +15,7 @@ module Futurice.Integrations.Serv (
     Serv (..),
     AllServs,
     ServNat,
-    ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM,
+    ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM, ServPO,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -112,9 +112,10 @@ data Serv
     | ServGH    -- ^ github
     | ServPE    -- ^ personio
     | ServPM    -- ^ planmill
+    | ServPO    -- ^ power
   deriving (Show)
 
-type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM ]
+type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServPE, ServPM, ServPO ]
 
 type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
@@ -122,6 +123,7 @@ type ServFUM6 = 'ServFUM6
 type ServGH   = 'ServGH
 type ServPE   = 'ServPE
 type ServPM   = 'ServPM
+type ServPO   = 'ServPO
 
 -- | Serv to nat
 --
@@ -136,6 +138,7 @@ type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
     ServNat 'ServGH   = N.Nat3
     ServNat 'ServPE   = N.Nat4
     ServNat 'ServPM   = N.Nat5
+    ServNat 'ServPO   = N.Nat6
 
 -------------------------------------------------------------------------------
 -- Services Singleton
@@ -148,6 +151,7 @@ data SServ :: Serv -> Type where
     SServGH   :: SServ 'ServGH
     SServPE   :: SServ 'ServPE
     SServPM   :: SServ 'ServPM
+    SServPO   :: SServ 'ServPO
 
 deriving instance Show (SServ s)
 
@@ -163,6 +167,7 @@ instance ServI 'ServFUM6   where sserv = SServFUM6
 instance ServI 'ServGH     where sserv = SServGH
 instance ServI 'ServPE     where sserv = SServPE
 instance ServI 'ServPM     where sserv = SServPM
+instance ServI 'ServPO     where sserv = SServPO
 
 -------------------------------------------------------------------------------
 -- Services Set

@@ -43,6 +43,7 @@ import qualified Futurice.GitHub              as GH
 import qualified Futurice.Integrations.GitHub as GH
 import qualified Haxl.Core                    as H
 import qualified Personio
+import qualified Power.Haxl
 import qualified Personio.Haxl
 import qualified PlanMill.Types.Query         as Q
 
@@ -108,6 +109,7 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
         IntCfgGitHub req cfg2     -> stateSetGitHub lgr mgr req (f cfg2)
         IntCfgPersonio req cfg2   -> stateSetPersonio lgr mgr req (f cfg2)
         IntCfgPlanMill req cfg2   -> stateSetPlanMill lgr mgr req (f cfg2)
+        IntCfgPower req cfg2      -> stateSetPower lgr mgr req (f cfg2)
   where
     ctsEmpty :: ConfigToState '[]
     ctsEmpty = CTS $ \IntCfgEmpty -> Tagged H.stateEmpty
@@ -226,6 +228,13 @@ instance Contains ServPE ss => MonadPersonio (Integrations ss) where
       where
         showDict     = Personio.requestDict (Proxy :: Proxy Show) r
         typeableDict = Personio.requestDict (Proxy :: Proxy Typeable) r
+
+-------------------------------------------------------------------------------
+-- MonadPower
+-------------------------------------------------------------------------------
+
+instance Contains ServPO ss => MonadPower (Integrations ss) where
+    powerReq = liftHaxl . Power.Haxl.request
 
 -------------------------------------------------------------------------------
 -- Has* instances
