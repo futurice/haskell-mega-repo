@@ -12,7 +12,7 @@ import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
        (ConnectInfo, Connection, Pool, createPostgresPool, poolExecuteMany,
-       safePoolExecute, safePoolQuery, safePoolQuery_)
+       safePoolExecute, safePoolQuery)
 import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
@@ -51,7 +51,7 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
 
         if v == "without-timereports"
         then updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws
-        else updateAllTimereports ((lcRemainingTimeInMillis lc)) pool ws now
+        else updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now
 
         closeWorkers ws
 
@@ -91,7 +91,7 @@ updateWithoutTimereports remaining pool ws = for_ intervals $ \interval -> do
         Right allUsers -> do
             let allUidsSet = Set.fromList $ allUsers ^.. traverse . PM.identifier
 
-            uids <- Postgres.fromOnly <$$> safePoolQuery_ pool selectUsersQuery
+            uids <- Postgres.fromOnly <$$> safePoolQuery pool selectUsersQuery (dayMin, dayMax)
             let uidsSet = Set.fromList uids
             let uidsWithout = Set.difference allUidsSet uidsSet
 
@@ -101,7 +101,7 @@ updateWithoutTimereports remaining pool ws = for_ intervals $ \interval -> do
   where
     selectUsersQuery :: Postgres.Query
     selectUsersQuery = fromString $ unwords $
-        [ "SELECT uid FROM planmillproxy.timereports GROUP BY uid"
+        [ "SELECT uid FROM planmillproxy.timereports GROUP BY uid WHERE day >= ? AND day <= ?"
         ]
 
 -------------------------------------------------------------------------------
