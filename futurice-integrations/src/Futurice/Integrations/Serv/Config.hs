@@ -60,6 +60,11 @@ data IntegrationsConfig :: [Serv] -> Type where
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServPM ': ss)
 
+    IntCfgPower
+        :: Request
+        -> IntegrationsConfig ss
+        -> IntegrationsConfig (ServPO ': ss)
+
 -- ServSet is to fail early on error
 instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
     configure = go
@@ -83,6 +88,8 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
             <$> (f <$> envVar "PERSONIOPROXY_REQUESTURL")
         cons SServPM = IntCfgPlanMill
             <$> (f <$> envVar "PLANMILLPROXY_HAXLURL")
+        cons SServPO = IntCfgPower
+            <$> (f <$> envVar "POWER_API_BASEURL")
 
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
 

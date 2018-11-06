@@ -100,6 +100,7 @@ data Contact avatar = Contact
     , contactExternal   :: !Bool
     , contactHrnumber   :: !(Maybe Int)
     , contactPersonio   :: !P.EmployeeId
+    , contactUtzTarget  :: !Int
     }
   deriving stock
     ( Eq, Ord, Show, Generic, Typeable
@@ -134,4 +135,5 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "competence" $ toField contactCompetence
         , (,) "hrnumber"   $ toField contactHrnumber
         , (,) "personio"   $ toField contactPersonio
+        , (,) "targetutz"  $ toField contactUtzTarget
         ]

@@ -14,6 +14,7 @@ module Futurice.Integrations.Classes (
     MonadFlowdock(..),
     MonadGitHub(..),
     MonadPersonio(..),
+    MonadPower(..),
     MonadPlanMillQuery(..),
     MonadTime(..),
     ) where
@@ -25,6 +26,7 @@ import Data.Constraint        (Constraint)
 import Futurice.GitHub        (GHTypes)
 import Futurice.Prelude
 import Generics.SOP           (All)
+import Power                  (MonadPower (..))
 import Prelude ()
 
 import qualified Chat.Flowdock.REST as FD

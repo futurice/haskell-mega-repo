@@ -69,7 +69,9 @@ library
     , monad-time
     , personio-client
     , planmill-client
+    , power-client
     , regex-applicative-text
+    , servant-client-core
     , step-function
     , swagger2
     , text

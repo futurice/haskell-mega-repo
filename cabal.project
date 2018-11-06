@@ -110,6 +110,7 @@ packages:
   planmill-client/
   planmill-proxy/
   planmill-sync/
+  power-client/
   preferences-app/
   preferences-client/
   proxy-app/
