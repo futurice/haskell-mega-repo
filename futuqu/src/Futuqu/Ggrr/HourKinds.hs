@@ -90,7 +90,7 @@ hourKindsData month = do
             , hkUtz       =
                   if total == 0
                   then 0
-                  else realToFrac (unNDT billable) / realToFrac (unNDT total)
+                  else 100 * realToFrac (unNDT billable) / realToFrac (unNDT total)
             , hkUtzTarget = pUtz ^? ix uid . getter fromIntegral
             
             }
