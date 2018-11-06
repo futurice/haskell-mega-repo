@@ -45,9 +45,10 @@ evalIOReq baseReq mgr req = runExceptT $ case req of
         httpRes <- liftIO $ catchConnectionError $ HTTP.httpLbs httpReq mgr
         case httpRes of
             Left err -> throwError err
-            Right response -> do
+            Right response' -> do
                 let status = HTTP.responseStatus response
                     status_code = statusCode status
+                    response = response' { HTTP.responseHeaders = mapResHeaders (HTTP.responseHeaders response') }
                     ourResponse = clientResponseToResponse response
                 unless (status_code >= 200 && status_code < 300) $
                     throwError $ FailureResponse ourResponse
@@ -65,3 +66,7 @@ evalIOReq baseReq mgr req = runExceptT $ case req of
         { HTTP.requestHeaders = HTTP.requestHeaders r ++ HTTP.requestHeaders baseReq
         , HTTP.responseTimeout = HTTP.responseTimeout baseReq
         }
+
+    mapResHeaders = map f where
+        f (h@"Content-Type", _) = (h, "application/json;charset=utf-8")
+        f h = h

@@ -11,7 +11,7 @@ import Servant.API
 data PYJSON
 
 instance Accept PYJSON where
-    contentType _ = contentType (Proxy :: Proxy JSON)
+    contentTypes _ = contentTypes (Proxy :: Proxy JSON)
 
 instance PyJSON a => MimeUnrender PYJSON a where
     mimeUnrender _ = fmap unwrapPyJSON . mimeUnrender (Proxy :: Proxy JSON)
