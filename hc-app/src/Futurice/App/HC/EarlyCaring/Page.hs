@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, EarlyCaringPlanMill (..)) where
 
+import Data.Either               (isRight)
 import Data.Fixed                (Deci)
 import Data.Time                 (addDays)
 import FUM.Types.Login           (Login)
@@ -36,7 +37,7 @@ data EarlyCaringPlanMill = EarlyCaringPlanMill
   deriving Show
 
 earlyCaringPage
-    :: ByteString
+    :: Either Login ByteString
     -> Day
     -> Interval Day
     -> [P.Employee]
@@ -44,7 +45,7 @@ earlyCaringPage
     -> PM.Absences
     -> Map (PM.EnumValue PM.Absence "absenceType") Text
     -> HtmlPage "early-caring"
-earlyCaringPage secret today interval personioEmployees0 planmillData absences0 absenceTypes = page_ "Early caring report" (Just NavEarlyCaring) $ do
+earlyCaringPage esecret today interval personioEmployees0 planmillData absences0 absenceTypes = page_ "Early caring report" (Just NavEarlyCaring) $ do
     ul_ $ do
         li_ $ toHtml $ "To approximate missing hours the PlanMill hour making data from " ++ show interval ++ " is used"
         li_ "Externals are filtered from this report"
@@ -56,7 +57,7 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
         li_ "TODO: Sick days counts weekends and holidays days too"
         li_ "Monthly balances are emphasised if they are under -10 or over 20 hours"
 
-    fullRow_ $ div_ [ class_ "callout primary" ] $ do
+    when hasSecret $ fullRow_ $ div_ [ class_ "callout primary" ] $ do
         p_ "Send early caring emails to the supervisors"
         ul_ [ id_ "futu-early-caring-all-supervisors" ] mempty
         button_ [ id_ "futu-early-caring-send-all", class_ "button primary", disabled_ "disabled" ] "Send to all"
@@ -70,73 +71,82 @@ earlyCaringPage secret today interval personioEmployees0 planmillData absences0 
                 , ")"
                 ]
 
-        fullRow_ $ h2_ $ maybe "No supervisor" supervisorHeader ms
+        when (isSelfOrSecret ms) $ do
+            fullRow_ $ h2_ $ maybe "No supervisor" supervisorHeader ms
+            fullRow_ $ table_ $ do
+                thead_ $ tr_ $ do
+                    th_ "Name"
+                    th_ "Contract type"
+                    th_ "Flex balance"
+                    th_ "Missing hours"
+                    th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
+                    th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month1
+                    th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month2
+                    th_ [ dashedUnderline, title_ "Separate sickness absences in last 90 days (about 3 months)" ] "Sick. absences (3m)"
+                    th_ [ dashedUnderline, title_ "Sickness absences days in last 365 days (1 year)" ]            "Sick. days (1y)"
+                    th_ [ dashedUnderline, title_ "As marked in PlanMill, adjacent absenced not combined" ] "Sickess absences (1y)"
+
+                let showHighlight :: (Ord a, Show a, Monad m) => a -> a -> HtmlT m ()
+                    showHighlight m n
+                        | n < m     = toHtml $ show n
+                        | otherwise = b_ $ toHtml $ show  n
+
+                tbody_ $ for_ bs $ \b-> tr_ $ do
+                    let e = balanceEmployee b
+                    td_ $ toHtml $ e ^. P.employeeFullname
+                    td_ $ traverse_ toHtml $ e ^. P.employeeContractType
+                    td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b
+                    td_ [ style_ "text-align: right" ] $ toHtml $ balanceMissingHours b
+                    td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b + balanceMissingHours b
+                    td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month1
+                    td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
+                    td_ [ style_ "text-align: right" ] $ showHighlight 4  $ countAbsences today $ balanceAbsences b
+                    td_ [ style_ "text-align: right" ] $ showHighlight 20 $ countAbsenceDays today $ balanceAbsences b
+                    td_ $ forWith_ (br_ []) (balanceAbsences b) $ toHtml . show
+
+            for_ ms $ \s -> fullRow_ $ case s ^. P.employeeEmail of
+                Nothing -> div_ [ class_ "callout warning" ] "Supervisor don't have an email set"
+                Just a -> div_ [ class_ "callout secondary" ] $ do
+                    h3_ "Reminder mail"
+                    let email = EarlyCaringEmail a "Early caring email" $ renderTemplate
+                            (s ^. P.employeeFirst)
+                            today
+                            interval
+                            (toList bs)
+
+                    pre_ $ toHtml email
+                    for_ esecret $ \secret -> do
+                        hr_ []
+                        button_
+                            [ data_ "futu-early-caring-mail" (decodeUtf8Lenient (Aeson.encode (mkSignedBlob secret email) ^. strict))
+                            , data_ "futu-early-caring-name" $ s ^. P.employeeFullname
+                            , class_ "button primary"
+                            , disabled_ "disabled"
+                            ]
+                            "Send"
+
+    -- Show active in Personio only when there's secret:
+    when hasSecret $ do
+        fullRow_ $ h2_ "Active in Personio, cannot find PlanMill data"
         fullRow_ $ table_ $ do
             thead_ $ tr_ $ do
+                th_ "Personio"
                 th_ "Name"
-                th_ "Contract type"
-                th_ "Flex balance"
-                th_ "Missing hours"
-                th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
-                th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month1
-                th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month2
-                th_ [ dashedUnderline, title_ "Separate sickness absences in last 90 days (about 3 months)" ] "Sick. absences (3m)"
-                th_ [ dashedUnderline, title_ "Sickness absences days in last 365 days (1 year)" ]            "Sick. days (1y)"
-                th_ [ dashedUnderline, title_ "As marked in PlanMill, adjacent absenced not combined" ] "Sickess absences (1y)"
+                th_ "Supervisor"
+                th_ "Login"
 
-            let showHighlight :: (Ord a, Show a, Monad m) => a -> a -> HtmlT m ()
-                showHighlight m n
-                    | n < m     = toHtml $ show n
-                    | otherwise = b_ $ toHtml $ show  n
-
-            tbody_ $ for_ bs $ \b-> tr_ $ do
-                let e = balanceEmployee b
+            tbody_ $ for_ notInPlanMill $ \e -> tr_ $ do
+                td_ $ toHtml $ e ^. P.employeeId
                 td_ $ toHtml $ e ^. P.employeeFullname
-                td_ $ traverse_ toHtml $ e ^. P.employeeContractType
-                td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b
-                td_ [ style_ "text-align: right" ] $ toHtml $ balanceMissingHours b
-                td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b + balanceMissingHours b
-                td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month1
-                td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
-                td_ [ style_ "text-align: right" ] $ showHighlight 4  $ countAbsences today $ balanceAbsences b
-                td_ [ style_ "text-align: right" ] $ showHighlight 20 $ countAbsenceDays today $ balanceAbsences b
-                td_ $ forWith_ (br_ []) (balanceAbsences b) $ toHtml . show
-
-        for_ ms $ \s -> fullRow_ $ case s ^. P.employeeEmail of
-            Nothing -> div_ [ class_ "callout warning" ] "Supervisor don't have an email set"
-            Just a -> div_ [ class_ "callout secondary" ] $ do
-                h3_ "Reminder mail"
-                let email = EarlyCaringEmail a "Early caring email" $ renderTemplate
-                        (s ^. P.employeeFirst)
-                        today
-                        interval
-                        (toList bs)
-
-                pre_ $ toHtml email
-                hr_ []
-                button_
-                    [ data_ "futu-early-caring-mail" (decodeUtf8Lenient (Aeson.encode (mkSignedBlob secret email) ^. strict))
-                    , data_ "futu-early-caring-name" $ s ^. P.employeeFullname
-                    , class_ "button primary"
-                    , disabled_ "disabled"
-                    ]
-                    "Send"
-
-    fullRow_ $ h2_ "Active in Personio, cannot find PlanMill data"
-    fullRow_ $ table_ $ do
-        thead_ $ tr_ $ do
-            th_ "Personio"
-            th_ "Name"
-            th_ "Supervisor"
-            th_ "Login"
-
-        tbody_ $ for_ notInPlanMill $ \e -> tr_ $ do
-            td_ $ toHtml $ e ^. P.employeeId
-            td_ $ toHtml $ e ^. P.employeeFullname
-            td_ $ traverse_ (toHtml . view P.employeeFullname) $ supervisor e
-            td_ $ traverse_ toHtml $ e ^. P.employeeLogin
+                td_ $ traverse_ (toHtml . view P.employeeFullname) $ supervisor e
+                td_ $ traverse_ toHtml $ e ^. P.employeeLogin
 
   where
+    hasSecret = isRight esecret
+    isSelfOrSecret p = case esecret of
+        Right _    -> True
+        Left login -> Just login == p ^? _Just . P.employeeLogin . _Just
+
     month1 = dayToMonth $ inf interval
     month2 = succ month1
 

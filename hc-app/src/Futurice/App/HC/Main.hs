@@ -62,6 +62,10 @@ server ctx = genericServer $ Record
     , recAchooChart          = achooChartAction ctx
     }
 
+-------------------------------------------------------------------------------
+-- Auth
+-------------------------------------------------------------------------------
+
 withAuthUser
     :: (MonadIO m, MonadTime m)
     => (FUM.Login -> Integrations '[ ServFUM6, ServPE, ServPM ] (HtmlPage a))
@@ -88,6 +92,28 @@ withAuthUser' def action ctx mfu = case mfu <|> cfgMockUser cfg of
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
+
+withAuthUser''
+    :: (MonadIO m, MonadTime m)
+    => a
+    -> (FUM.Login -> Bool -> Integrations '[ ServFUM6, ServPE, ServPM ] a)
+    -> Ctx -> Maybe FUM.Login
+    -> m a
+withAuthUser'' def action ctx mfu = case mfu <|> cfgMockUser cfg of
+    Nothing -> return def
+    Just fu -> do
+        now <- currentTime
+        liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+            fus <- mconcat <$> traverse (fum6 . FUMGroupEmployees) (cfgAccessGroups cfg)
+            action fu (fu `Set.member` fus)
+  where
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+
+-------------------------------------------------------------------------------
+-- Actions
+-------------------------------------------------------------------------------
 
 indexPageAction
     :: Ctx
@@ -136,10 +162,10 @@ earlyCaringAction
     -> Handler (HtmlPage "early-caring")
 earlyCaringAction ctx = impl ctx
   where
-    impl = withAuthUser $ \_ -> do
+    impl = withAuthUser'' page404 $ \fu authed -> do
         today <- currentDay
         let interval = beginningOfPrev2Month today ... today
-        earlyCaringPage secret today interval
+        earlyCaringPage (if authed then Right secret else Left fu) today interval
             <$> personio P.PersonioEmployees
             <*> pmData interval
             <*> PMQ.absences
