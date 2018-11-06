@@ -44,6 +44,10 @@ import qualified Personio
 import qualified PlanMill.Types.Query                 as PM
                  (SomeQuery, SomeResponse)
 
+type Futuqu endpoint = ProxiedEndpoint 'ReportsService
+    ("futuqu" :> endpoint)
+    ("futuqu" :> endpoint)
+
 data Routes = Routes
     -- contacts
     { routeContacts :: ProxiedEndpoint 'ContactsApiService
@@ -67,6 +71,16 @@ data Routes = Routes
     , routeActiveAccounts :: ProxiedEndpoint 'ReportsService
         ("tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts)
         ("reports" :> "active-accounts" :> Get '[JSON] ActiveAccounts)
+
+    -- Futuqu: we could real types, but this way is simpler.
+    , routeFutuquPeople       :: Futuqu ("rada" :> "people" :> Get '[JSON] Value)
+    , routeFutuquAccount      :: Futuqu ("rada" :> "accounts" :> Get '[JSON] Value)
+    , routeFutuquProjects     :: Futuqu ("rada" :> "projects" :> Get '[JSON] Value)
+    , routeFutuquTasks        :: Futuqu ("rada" :> "tasks" :> Get '[JSON] Value)
+    , routeFutuquCapacities   :: Futuqu ("rada" :> "capacities" :> Capture "month" Month :> Get '[JSON] Value)
+    , routeFutuquTimereports  :: Futuqu ("rada" :> "timereports" :> Capture "month" Month :> Get '[JSON] Value)
+    , routeFutuquMissingHours :: Futuqu ("ggrr" :> "missing-hours" :> Capture "month" Month :> Get '[JSON] Value)
+    , routeFutuquHoursKinds   :: Futuqu ("ggrr" :> "hours-kinds" :> Capture "month" Month :> Get '[JSON] Value)
 
     -- Power
     , routePowerBi :: ProxiedEndpoint 'PowerService
