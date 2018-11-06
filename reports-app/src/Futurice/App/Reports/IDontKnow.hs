@@ -73,7 +73,13 @@ instance ToSchema IDontKnow where declareNamedSchema = sopDeclareNamedSchema
 deriveVia [t| ToJSON IDontKnow   `Via` Sopica IDontKnow |]
 deriveVia [t| FromJSON IDontKnow `Via` Sopica IDontKnow |]
 
-data IDontKnowData = IDK !Day !Month !(Maybe Tribe) (Set Text) [IDontKnow]
+data IDontKnowData = IDK 
+    { idkToday         :: !Day
+    , idkMonth         :: !Month
+    , idkSelectedTribe :: !(Maybe Tribe)
+    , idkExcludes      :: (Set Text)
+    , idkData          :: [IDontKnow]
+    }
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
 
