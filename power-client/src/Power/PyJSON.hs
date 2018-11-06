@@ -2,7 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Power.PyJSON (PYJSON, PyJSON (..)) where
 
-import Data.Aeson.Parser
 import Data.Aeson.Types  (FromJSON (..), Parser, Value, listParser, FromJSON1 (..))
 import Futurice.Prelude
 import Prelude ()
