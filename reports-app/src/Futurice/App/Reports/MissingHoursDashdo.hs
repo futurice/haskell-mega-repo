@@ -79,7 +79,7 @@ fetchValues ctx interval = cachedIO' ctx interval $
             , vMissingHours = realToFrac $ unNDT $ _missingHourCapacity mh
             }
 
-runIntegrations' :: Ctx -> Integrations '[ ServFD, ServFUM, ServGH, ServPE, ServPM ] a -> IO a
+runIntegrations' :: Ctx -> Integrations ReportIntegrations a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
