@@ -19,6 +19,7 @@ import Servant
 import Servant.Cached
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
+import Futuqu.API
 
 import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
 import Futurice.App.Reports.IDontKnow                 (IDontKnowData)
@@ -97,6 +98,8 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
     -- missing hours notification
     :<|> "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
+    -- futuqu
+    :<|> "futuqu" :> FutuquAPI
     -- dashdo
     :<|> "dashdo" :> DashdoAPI
 
