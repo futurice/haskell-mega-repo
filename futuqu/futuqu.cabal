@@ -1,0 +1,51 @@
+cabal-version: 2.2
+name: futuqu
+version: 0
+
+synopsis: FUTUrice QUery
+category: Integration
+description: Data to the people
+
+library
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   src
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+    StandaloneDeriving
+  build-depends:
+    , aeson
+    , base
+    , containers
+    , dynmap-cache
+    , fum-types
+    , futurice-constants
+    , futurice-integrations
+    , futurice-prelude
+    , futurice-tribes
+    , lens
+    , personio-client
+    , planmill-client
+    , power-client
+    , servant
+    , servant-server
+    , time
+  exposed-modules:
+    Futuqu
+    Futuqu.API
+    Futuqu.Ggrr.HourKinds
+    Futuqu.Ggrr.MissingHours
+    Futuqu.Rada.Accounts
+    Futuqu.Rada.Capacities
+    Futuqu.Rada.People
+    Futuqu.Rada.Projects
+    Futuqu.Rada.Tasks
+    Futuqu.Rada.Timereports

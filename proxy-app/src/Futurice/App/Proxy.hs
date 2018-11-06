@@ -75,6 +75,10 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             [ "Power reports" ]
 
         . Sw.applyTagsFor
+            (K.operationsMatching $ K.sym "futuqu" *> many K.anySym)
+            [ "futuqu" ]
+
+        . Sw.applyTagsFor
               (K.operationsMatching $ K.sym "personio-request" <|> K.psym (isSuffixOf "-haxl"))
               [ "Raw data access" ]
 

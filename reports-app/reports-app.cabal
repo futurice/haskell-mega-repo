@@ -67,6 +67,7 @@ library
     , folds
     , fum-client
     , fum-types
+    , futuqu
     , futurice-chart
     , futurice-constants
     , futurice-foundation

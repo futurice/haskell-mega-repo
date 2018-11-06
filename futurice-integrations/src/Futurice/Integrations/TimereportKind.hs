@@ -1,12 +1,23 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DeriveLift          #-}
+{-# LANGUAGE ImpredicativeTypes  #-}
+{-# LANGUAGE InstanceSigs        #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 module Futurice.Integrations.TimereportKind where
 
+import Futurice.Generics
+import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
-import Futurice.Integrations
 
-import qualified PlanMill as PM
+import qualified Data.Csv         as Csv
+import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
 data TimereportKind
@@ -16,8 +27,43 @@ data TimereportKind
     | KindAbsence         -- ^ absences: @project category = "Absence"@
     | KindSickLeave       -- ^ sick leave
     | KindBalanceAbsence  -- ^ balance absence
-  deriving (Eq, Ord, Show, Generic)
+  deriving (Eq, Ord, Enum, Bounded, Show, Generic, Lift)
   deriving anyclass (NFData)
+
+timereportKindIsAbsence :: TimereportKind -> Bool
+timereportKindIsAbsence KindAbsence        = True
+timereportKindIsAbsence KindSickLeave      = True
+timereportKindIsAbsence KindBalanceAbsence = True
+timereportKindIsAbsence _ = False
+
+-------------------------------------------------------------------------------
+-- More instances
+-------------------------------------------------------------------------------
+
+makePrisms ''TimereportKind
+deriveGeneric ''TimereportKind
+
+instance TextEnum TimereportKind where
+    type TextEnumNames TimereportKind =
+        '["billable", "non-billable", "internal"
+        , "absence", "sick-leave", "absence"
+        ]
+
+deriveVia [t| Arbitrary TimereportKind       `Via` Sopica TimereportKind  |]
+deriveVia [t| ToJSON TimereportKind          `Via` Enumica TimereportKind |]
+deriveVia [t| FromJSON TimereportKind        `Via` Enumica TimereportKind |]
+deriveVia [t| ToHttpApiData TimereportKind   `Via` Enumica TimereportKind |]
+deriveVia [t| FromHttpApiData TimereportKind `Via` Enumica TimereportKind |]
+deriveVia [t| Csv.ToField TimereportKind     `Via` Enumica TimereportKind |]
+deriveVia [t| Csv.FromField TimereportKind   `Via` Enumica TimereportKind |]
+deriveVia [t| ToHtml TimereportKind          `Via` Enumica TimereportKind |]
+
+instance ToParamSchema TimereportKind where toParamSchema = enumToParamSchema
+instance ToSchema TimereportKind where declareNamedSchema = enumDeclareNamedSchema
+
+-------------------------------------------------------------------------------
+-- Integrations
+-------------------------------------------------------------------------------
 
 timereportKind :: MonadPlanMillQuery m => PM.Timereport -> m TimereportKind
 timereportKind tr = do
@@ -36,7 +82,7 @@ timereportKind tr = do
 
     return $ kind mprojectCategory maccountType billableStatus dutyType
   where
-    kind 
+    kind
         :: Maybe Text  -- ^ project type
         -> Maybe Text  -- ^ account type
         -> Text        -- ^ billable status
@@ -57,7 +103,7 @@ projectKind p = do
 
     projectCategory  <- PMQ.enumerationValue (PM.pCategory p) "C?"
     maccountType     <- traverse (`PMQ.enumerationValue` "T?") (PM.saType <$> maccount)
-  
+
     return $ kind projectCategory maccountType
   where
     kind "Absence" _                   = KindAbsence

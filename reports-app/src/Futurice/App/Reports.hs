@@ -11,6 +11,7 @@ module Futurice.App.Reports (defaultMain) where
 
 import Control.Lens               (each)
 import Data.List                  (isSuffixOf)
+import Futuqu                     (futuquServer)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
 import Futurice.Metrics.RateMeter (mark)
@@ -273,12 +274,15 @@ server ctx = makeServer ctx reports
     :<|> liftIO . servePowerAbsencesReport ctx
     -- missing hours notifications
     :<|> liftIO (missingHoursNotifications ctx)
+    -- futuqu
+    :<|> futuquServer lgr (ctxManager ctx) (ctxCache ctx) (toFutuquCfg (cfgIntegrationsCfg cfg))
     -- dashdo
     :<|> ctxDashdo ctx
   where
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
+
     serveInventory = do
-        let lgr = ctxLogger ctx
-        let cfg = ctxConfig ctx
         pp <- createPostgresPool $ cfgPostgresConnInfoInv cfg
         xs <- runLogT "inventory-data" lgr $ inventorySummaryQuery pp
 
@@ -341,6 +345,9 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
           . Sw.applyTagsFor
                 (K.operationsMatching $ K.sym "missing-hours" *> many K.anySym)
                 [ "Missing hours" ]
+          . Sw.applyTagsFor
+                (K.operationsMatching $ K.sym "futuqu" *> many K.anySym)
+                [ "FUTUrice QUeries: RAw DAta and aGGRRegates" ]
           . Sw.applyTagsFor
                 (K.operationsMatching $ K.sym "tables" *> many K.anySym)
                 [ "Tables" ]
