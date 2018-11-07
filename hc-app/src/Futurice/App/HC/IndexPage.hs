@@ -18,7 +18,7 @@ indexPage _fu = page_ "HC app" (Just NavHome) $ do
             a_ [recordHref_ recPersonioValidations] "Personio validations"
             " - report about incorrect or missing data in Personio"
         li_ $
-            a_ [recordHref_ recEarlyCaring] "Early caring report"
+            a_ [recordHref_ recEarlyCaring False] "Early caring report"
         li_ $ do
             a_ [recordHref_ recAnniversaries] "Anniversaries"
             " - decades at Futurice or on Earth"

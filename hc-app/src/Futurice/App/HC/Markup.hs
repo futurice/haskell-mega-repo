@@ -27,7 +27,7 @@ instance Navigation Nav where
 
     navLink NavHome               = (recordHref_ recIndex,               "HC Home")
     navLink NavPersonioValidation = (recordHref_ recPersonioValidations, "Personio data validations")
-    navLink NavEarlyCaring        = (recordHref_ recEarlyCaring,         "Early caring")
+    navLink NavEarlyCaring        = (recordHref_ recEarlyCaring False,   "Early caring")
     navLink NavAchoo              = (recordHref_ recAchooReport Nothing Nothing Nothing, "Achoo report")
     navLink NavAnniversaries      = (recordHref_ recAnniversaries ,      "Anniversaries")
     navLink NavHrNumbers          = (recordHref_ recHrNumbers,           "HR Numbers")

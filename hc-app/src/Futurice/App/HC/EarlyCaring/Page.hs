@@ -4,14 +4,14 @@ module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, EarlyCaringPlanMill (.
 
 import Data.Either               (isRight)
 import Data.Fixed                (Deci)
-import Data.Time                 (addDays)
+import Data.Time                 (addDays, diffDays)
 import FUM.Types.Login           (Login)
 import Futurice.Integrations     (Employee (..))
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Time.Month
 import Futurice.Tribe            (tribeToText)
-import Numeric.Interval.NonEmpty (Interval, inf, (...))
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 import Web.HttpApiData           (toUrlPiece)
 
@@ -21,6 +21,7 @@ import qualified Data.Map.Strict    as Map
 import qualified Personio           as P
 import qualified PlanMill           as PM
 
+import Futurice.App.HC.API
 import Futurice.App.HC.EarlyCaring.Template
 import Futurice.App.HC.EarlyCaring.Types
 import Futurice.App.HC.Markup
@@ -54,8 +55,11 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
         li_ "Absences are counted in the last 90 days (around 3 months)"
         li_ "Adjacent absences are counted as one. (Weekends separate)"
         li_ "Absence days are counted in the last 365 days (a year)"
-        li_ "TODO: Sick days counts weekends and holidays days too"
+        li_ $ i_ "TODO" <> " Sick days counts weekends and holidays days too"
         li_ "Monthly balances are emphasised if they are under -10 or over 20 hours"
+
+    when hasSecret $ fullRow_ $ div_ [ class_ "callout primary" ] $ do
+        p_ $ a_ [ recordHref_ recEarlyCaring True ] "Supervisor view"
 
     when hasSecret $ fullRow_ $ div_ [ class_ "callout primary" ] $ do
         p_ "Send early caring emails to the supervisors"
@@ -94,11 +98,11 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
                     td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b
                     td_ [ style_ "text-align: right" ] $ toHtml $ balanceMissingHours b
                     td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b + balanceMissingHours b
-                    td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month1
-                    td_ $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
+                    td_ [ style_ "white-space: nowrap" ] $ monthFlexHtml $ balanceMonthFlex b ^. ix month1
+                    td_ [ style_ "white-space: nowrap" ] $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
                     td_ [ style_ "text-align: right" ] $ showHighlight 4  $ countAbsences today $ balanceAbsences b
                     td_ [ style_ "text-align: right" ] $ showHighlight 20 $ countAbsenceDays today $ balanceAbsences b
-                    td_ $ forWith_ (br_ []) (balanceAbsences b) $ toHtml . show
+                    td_ $ forWith_ (";" <> br_ []) (balanceAbsences b) intervalDayToHtml
 
             for_ ms $ \s -> fullRow_ $ case s ^. P.employeeEmail of
                 Nothing -> div_ [ class_ "callout warning" ] "Supervisor don't have an email set"
@@ -147,6 +151,7 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
                     td_ [ style_ "white-space: nowrap" ] $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
                     td_ [ style_ "text-align: right" ] $ showHighlight 4  $ countAbsences today $ balanceAbsences b
                     td_ [ style_ "text-align: right" ] $ showHighlight 20 $ countAbsenceDays today $ balanceAbsences b
+
 
     -- Show active in Personio only when there's secret:
     when hasSecret $ do
@@ -303,6 +308,17 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
         emph_
             | bal < -10 || bal > 20 = b_
             | otherwise             = id
+
+    intervalDayToHtml :: Monad m => Interval Day -> HtmlT m ()
+    intervalDayToHtml i
+        | mi == ma = toHtml (show mi)
+        | otherwise = span_ [ style_ "white-space: nowrap", title_ $ "length: " <> textShow (diffDays ma mi + 1) <> " days" ] $ do
+            toHtml $ show mi
+            toHtmlRaw ("&ndash;" :: String)
+            toHtml $ show ma
+      where
+        mi = inf i
+        ma = sup i
 
 missingHours :: PM.Timereports -> PM.UserCapacities -> NDT 'Hours Deci
 missingHours trs ucs =

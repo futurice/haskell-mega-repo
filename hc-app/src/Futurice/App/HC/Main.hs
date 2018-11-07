@@ -160,13 +160,14 @@ hrnumbersAction = withAuthUser $ \_ -> do
 earlyCaringAction
     :: Ctx
     -> Maybe FUM.Login
+    -> Bool
     -> Handler (HtmlPage "early-caring")
-earlyCaringAction ctx = impl ctx
+earlyCaringAction ctx mfu super = impl ctx mfu
   where
     impl = withAuthUser'' page404 $ \fu authed -> do
         today <- currentDay
         let interval = beginningOfPrev2Month today ... today
-        earlyCaringPage (if authed then Right secret else Left fu) today interval
+        earlyCaringPage (if authed && not super then Right secret else Left fu) today interval
             <$> personio P.PersonioEmployees
             <*> pmData interval
             <*> PMQ.absences

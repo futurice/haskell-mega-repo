@@ -30,6 +30,7 @@ data Record route = Record
         :> Get '[HTML] (HtmlPage "hr-numbers")
     , recEarlyCaring         :: route :- SSOUser
         :> "early-caring"
+        :> QueryFlag "supervisor"
         :> Get '[HTML] (HtmlPage "early-caring")
     , recEarlyCaringSubmit   :: route :- SSOUser
         :> "early-caring-submit"
