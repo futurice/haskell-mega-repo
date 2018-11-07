@@ -19,7 +19,8 @@ import Futurice.FUM.MachineAPI        (FUM6 (..), fum6)
 import Futurice.Integrations
        (Integrations, ServFUM6, ServPE, ServPM, beginningOfPrev2Month,
        personio, planmillEmployee, runIntegrations)
-import Futurice.Lucid.Foundation      (HtmlPage, fullRow_, h1_, page_)
+import Futurice.Lucid.Foundation
+       (HtmlPage, a_, fullRow_, h1_, href_, p_, page_)
 import Futurice.Prelude
 import Futurice.Servant
 import Numeric.Interval.NonEmpty      ((...))
@@ -246,7 +247,9 @@ page404 :: HtmlPage a
 page404 = page_ "HC - Unauthorised" $
     fullRow_ $ do
         h1_ "Unauthorised"
-        "Ask IT Team for access rights"
+        p_ $ do
+            "Ask IT Team for access rights. "
+            "Or try " <> a_ [ href_ "/early-caring" ] "/early-caring"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

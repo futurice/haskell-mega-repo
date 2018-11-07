@@ -86,10 +86,6 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
                     th_ [ dashedUnderline, title_ "Sickness absences days in last 365 days (1 year)" ]            "Sick. days (1y)"
                     th_ [ dashedUnderline, title_ "As marked in PlanMill, adjacent absenced not combined" ] "Sickess absences (1y)"
 
-                let showHighlight :: (Ord a, Show a, Monad m) => a -> a -> HtmlT m ()
-                    showHighlight m n
-                        | n < m     = toHtml $ show n
-                        | otherwise = b_ $ toHtml $ show  n
 
                 tbody_ $ for_ bs $ \b-> tr_ $ do
                     let e = balanceEmployee b
@@ -125,6 +121,33 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
                             ]
                             "Send"
 
+    forSelf_ esecret $ \self -> do
+        h2_ "Your all subordinates"
+        condensedTable_ $ do
+            thead_ $ tr_ $ do
+                th_ "Name"
+                th_ "Contract type"
+                th_ "Flex balance"
+                th_ "Missing hours"
+                th_ [ dashedUnderline, title_ "Sum of flex balance and missing hours, that's what the flex balance would be if all missing hours are marked" ] "Sum (flex + missing)"
+                th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month1
+                th_ [ dashedUnderline, title_ "Marked hours - Capacity = Month balance" ] $ toHtml $ "Balance in " <> toUrlPiece month2
+                th_ [ dashedUnderline, title_ "Separate sickness absences in last 90 days (about 3 months)" ] "Sick. absences (3m)"
+                th_ [ dashedUnderline, title_ "Sickness absences days in last 365 days (1 year)" ]            "Sick. days (1y)"
+
+            tbody_ $ for_ (sortOn (view P.employeeLast . balanceEmployee) rawBalances) $ \b -> do
+                let e = balanceEmployee b
+                when (Just self == balanceSupervisor b ^? _Just . P.employeeLogin . _Just) $ tr_ $ do
+                    td_ $ toHtml $ e ^. P.employeeFullname
+                    td_ $ traverse_ toHtml $ e ^. P.employeeContractType
+                    td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b
+                    td_ [ style_ "text-align: right" ] $ toHtml $ balanceMissingHours b
+                    td_ [ style_ "text-align: right" ] $ toHtml $ balanceHours b + balanceMissingHours b
+                    td_ [ style_ "white-space: nowrap" ] $ monthFlexHtml $ balanceMonthFlex b ^. ix month1
+                    td_ [ style_ "white-space: nowrap" ] $ monthFlexHtml $ balanceMonthFlex b ^. ix month2
+                    td_ [ style_ "text-align: right" ] $ showHighlight 4  $ countAbsences today $ balanceAbsences b
+                    td_ [ style_ "text-align: right" ] $ showHighlight 20 $ countAbsenceDays today $ balanceAbsences b
+
     -- Show active in Personio only when there's secret:
     when hasSecret $ do
         fullRow_ $ h2_ "Active in Personio, cannot find PlanMill data"
@@ -143,9 +166,14 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
 
   where
     hasSecret = isRight esecret
-    isSelfOrSecret p = case esecret of
-        Right _    -> True
+    isSelf p = case esecret of
+        Right _    -> False
         Left login -> Just login == p ^? _Just . P.employeeLogin . _Just
+
+    forSelf_ (Left e)  f = f e
+    forSelf_ (Right _) _ = pure ()
+
+    isSelfOrSecret p = isSelf p || hasSecret
 
     month1 = dayToMonth $ inf interval
     month2 = succ month1
@@ -201,9 +229,11 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
         $ filter (not . isHourly)
         $ filter (not . isPermanentAllIn)
         $ filter (not . balanceNormal today)
-        $ map (uncurry toBalance) inPlanMill
+        $ rawBalances
       where
         superId = fmap (view P.employeeId) . balanceSupervisor
+
+    rawBalances = map (uncurry toBalance) inPlanMill
 
     toBalance :: P.Employee -> EarlyCaringPlanMill -> Balance
     toBalance e pm = Balance
@@ -254,6 +284,11 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
                     | day <- [ PM.absenceStart a .. PM.absenceFinish a ]
                     ]
                 | otherwise = mempty
+
+    showHighlight :: (Ord a, Show a, Monad m) => a -> a -> HtmlT m ()
+    showHighlight m n
+        | n < m     = toHtml $ show n
+        | otherwise = b_ $ toHtml $ show  n
 
     monthFlexHtml :: Monad m => MonthFlex -> HtmlT m ()
     monthFlexHtml (MonthFlex marked capa) = do
