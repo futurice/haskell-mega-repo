@@ -40,7 +40,7 @@ data Timereport = Timereport
     , trStatus         :: !Text -- TODO: uset EnumTextValue
     , trBillableStatus :: !Text --
     -- Note: dutyType is left out
-  
+
     -- business knowledge
     , trKind   :: !TimereportKind
     }
