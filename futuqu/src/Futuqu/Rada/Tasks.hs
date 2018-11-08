@@ -33,8 +33,11 @@ data Task = Task
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON Task   `Via` Sopica Task |]
-deriveVia [t| FromJSON Task `Via` Sopica Task |]
+deriveVia [t| ToJSON Task         `Via` Sopica Task |]
+deriveVia [t| FromJSON Task       `Via` Sopica Task |]
+deriveVia [t| DefaultOrdered Task `Via` Sopica Task |]
+deriveVia [t| ToRecord Task       `Via` Sopica Task |]
+deriveVia [t| ToNamedRecord Task  `Via` Sopica Task |]
 
 instance ToSchema Task where declareNamedSchema = sopDeclareNamedSchema
 

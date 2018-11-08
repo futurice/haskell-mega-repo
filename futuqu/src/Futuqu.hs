@@ -66,3 +66,7 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     runIntegrations1 m k1 = liftIO $ cachedIO lgr cache 600 k1 $ do
         now <- currentTime
         runIntegrations mgr lgr now cfg (m k1)
+
+-- | This checks we have all instances.
+-- Otherwise we'll break only when compiling actual users, i.e .reports-app
+_ = serve futuquApi undefined

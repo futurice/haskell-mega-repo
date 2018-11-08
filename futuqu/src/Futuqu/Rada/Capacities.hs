@@ -35,8 +35,11 @@ data Capacity = Capacity
     deriving (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON Capacity   `Via` Sopica Capacity |]
-deriveVia [t| FromJSON Capacity `Via` Sopica Capacity |]
+deriveVia [t| ToJSON Capacity         `Via` Sopica Capacity |]
+deriveVia [t| FromJSON Capacity       `Via` Sopica Capacity |]
+deriveVia [t| DefaultOrdered Capacity `Via` Sopica Capacity |]
+deriveVia [t| ToRecord Capacity       `Via` Sopica Capacity |]
+deriveVia [t| ToNamedRecord Capacity  `Via` Sopica Capacity |]
 
 instance ToSchema Capacity where declareNamedSchema = sopDeclareNamedSchema
 

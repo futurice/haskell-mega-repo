@@ -62,8 +62,11 @@ data Person = Person
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON Person   `Via` Sopica Person |]
-deriveVia [t| FromJSON Person `Via` Sopica Person |]
+deriveVia [t| ToJSON Person         `Via` Sopica Person |]
+deriveVia [t| FromJSON Person       `Via` Sopica Person |]
+deriveVia [t| DefaultOrdered Person `Via` Sopica Person |]
+deriveVia [t| ToRecord Person       `Via` Sopica Person |]
+deriveVia [t| ToNamedRecord Person  `Via` Sopica Person |]
 
 instance ToSchema Person where declareNamedSchema = sopDeclareNamedSchema
 

@@ -44,8 +44,11 @@ data HourKind = HourKind
     deriving (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON HourKind   `Via` Sopica HourKind |]
-deriveVia [t| FromJSON HourKind `Via` Sopica HourKind |]
+deriveVia [t| ToJSON HourKind         `Via` Sopica HourKind |]
+deriveVia [t| FromJSON HourKind       `Via` Sopica HourKind |]
+deriveVia [t| DefaultOrdered HourKind `Via` Sopica HourKind |]
+deriveVia [t| ToRecord HourKind       `Via` Sopica HourKind |]
+deriveVia [t| ToNamedRecord HourKind  `Via` Sopica HourKind |]
 
 instance ToSchema HourKind where declareNamedSchema = sopDeclareNamedSchema
 
@@ -81,7 +84,7 @@ hourKindsData month = do
     return
         [ HourKind
             { hkUserId = uid
-            
+
             , hkBillableHours    = billable
             , hkNonBillableHours = nonBillable
             , hkInternalHours    = internal
@@ -92,7 +95,7 @@ hourKindsData month = do
                   then 0
                   else 100 * realToFrac (unNDT billable) / realToFrac (unNDT total)
             , hkUtzTarget = pUtz ^? ix uid . getter fromIntegral
-            
+
             }
 
         | uid <- toList uids

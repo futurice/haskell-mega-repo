@@ -47,8 +47,11 @@ data Timereport = Timereport
     deriving (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON Timereport   `Via` Sopica Timereport |]
-deriveVia [t| FromJSON Timereport `Via` Sopica Timereport |]
+deriveVia [t| ToJSON Timereport         `Via` Sopica Timereport |]
+deriveVia [t| FromJSON Timereport       `Via` Sopica Timereport |]
+deriveVia [t| DefaultOrdered Timereport `Via` Sopica Timereport |]
+deriveVia [t| ToRecord Timereport       `Via` Sopica Timereport |]
+deriveVia [t| ToNamedRecord Timereport  `Via` Sopica Timereport |]
 
 instance ToSchema Timereport where declareNamedSchema = sopDeclareNamedSchema
 

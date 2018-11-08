@@ -32,8 +32,11 @@ data Account = Account
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON Account   `Via` Sopica Account |]
-deriveVia [t| FromJSON Account `Via` Sopica Account |]
+deriveVia [t| ToJSON Account         `Via` Sopica Account |]
+deriveVia [t| FromJSON Account       `Via` Sopica Account |]
+deriveVia [t| DefaultOrdered Account `Via` Sopica Account |]
+deriveVia [t| ToRecord Account       `Via` Sopica Account |]
+deriveVia [t| ToNamedRecord Account  `Via` Sopica Account |]
 
 instance ToSchema Account where declareNamedSchema = sopDeclareNamedSchema
 

@@ -34,8 +34,11 @@ data Project = Project
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON Project   `Via` Sopica Project |]
-deriveVia [t| FromJSON Project `Via` Sopica Project |]
+deriveVia [t| ToJSON Project         `Via` Sopica Project |]
+deriveVia [t| FromJSON Project       `Via` Sopica Project |]
+deriveVia [t| DefaultOrdered Project `Via` Sopica Project |]
+deriveVia [t| ToRecord Project       `Via` Sopica Project |]
+deriveVia [t| ToNamedRecord Project  `Via` Sopica Project |]
 
 instance ToSchema Project where declareNamedSchema = sopDeclareNamedSchema
 

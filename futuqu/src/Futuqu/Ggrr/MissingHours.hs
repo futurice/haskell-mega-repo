@@ -35,8 +35,11 @@ data MissingHour = MissingHour
     deriving (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
 
-deriveVia [t| ToJSON MissingHour   `Via` Sopica MissingHour |]
-deriveVia [t| FromJSON MissingHour `Via` Sopica MissingHour |]
+deriveVia [t| ToJSON MissingHour         `Via` Sopica MissingHour |]
+deriveVia [t| FromJSON MissingHour       `Via` Sopica MissingHour |]
+deriveVia [t| DefaultOrdered MissingHour `Via` Sopica MissingHour |]
+deriveVia [t| ToRecord MissingHour       `Via` Sopica MissingHour |]
+deriveVia [t| ToNamedRecord MissingHour  `Via` Sopica MissingHour |]
 
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 

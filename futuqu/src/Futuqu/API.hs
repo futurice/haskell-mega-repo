@@ -1,21 +1,28 @@
 {-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeFamilies  #-}
 {-# LANGUAGE TypeOperators #-}
-module Futuqu.API where
+module Futuqu.API (
+    FutuquAPI,
+    futuquApi,
+    FutuquRoutes (..),
+    FutuquGet,
+    ) where
 
 import Futurice.Prelude
-import Prelude ()
 import Futurice.Time.Month (Month)
+import Prelude ()
 import Servant.API
 import Servant.API.Generic
+import Servant.CSV.Cassava (CSV)
 
+import Futuqu.Ggrr.HourKinds
+import Futuqu.Ggrr.MissingHours
 import Futuqu.Rada.Accounts
 import Futuqu.Rada.Capacities
 import Futuqu.Rada.People
 import Futuqu.Rada.Projects
 import Futuqu.Rada.Tasks
 import Futuqu.Rada.Timereports
-import Futuqu.Ggrr.MissingHours
-import Futuqu.Ggrr.HourKinds
 
 data FutuquRoutes route = FutuquRoutes
 
@@ -23,44 +30,46 @@ data FutuquRoutes route = FutuquRoutes
     { futuquRoutePeople :: route
         :- "rada" :> "people"
         :> Summary "List of all people"
-        :> Get '[JSON] [Person]
+        :> FutuquGet [Person]
     , futuquRouteAccounts :: route
         :- "rada" :> "accounts"
         :> Summary "List of all accounts"
-        :> Get '[JSON] [Account]
+        :> FutuquGet [Account]
     , futuquRouteProjects :: route
         :- "rada" :> "projects"
         :> Summary "List of all projects"
-        :> Get '[JSON] [Project]
+        :> FutuquGet [Project]
     , futuquRouteTasks :: route
         :- "rada" :> "tasks"
         :> Summary "List of all tasks"
-        :> Get '[JSON] [Task]
+        :> FutuquGet [Task]
     , futuquRouteCapacities :: route
         :- "rada" :> "capacities"
         :> Summary "(Non-zero) daily capacities for a month"
         :> Capture "month" Month
-        :> Get '[JSON] [Capacity] 
+        :> FutuquGet [Capacity]
     , futuquRouteTimereports :: route
         :- "rada" :> "timereports"
         :> Summary "Timereports for a month"
         :> Capture "month" Month
-        :> Get '[JSON] [Timereport] 
+        :> FutuquGet [Timereport]
 
     -- GGRR: aGGRegate Reports
     , futuquRouteMissingHours :: route
         :- "ggrr" :> "missing-hours"
         :> Summary "Example report: missing hours"
         :> Capture "month" Month
-        :> Get '[JSON] [MissingHour] 
+        :> FutuquGet [MissingHour]
 
     , futuquRouteHourKinds :: route
         :- "ggrr" :> "hours-kinds"
         :> Summary "Example report: People hours aggregated by kind: billable, non-billable etc"
         :> Capture "month" Month
-        :> Get '[JSON] [HourKind] 
+        :> FutuquGet [HourKind]
     }
   deriving Generic
+
+type FutuquGet res = Get '[JSON, CSV] res
 
 type FutuquAPI = ToServantApi FutuquRoutes
 

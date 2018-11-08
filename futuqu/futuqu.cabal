@@ -24,6 +24,7 @@ library
   build-depends:
     , aeson
     , base
+    , cassava
     , containers
     , dynmap-cache
     , fum-types
@@ -36,6 +37,7 @@ library
     , planmill-client
     , power-client
     , servant
+    , servant-cassava
     , servant-server
     , time
   exposed-modules:
