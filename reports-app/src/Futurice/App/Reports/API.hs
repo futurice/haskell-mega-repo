@@ -64,8 +64,6 @@ type family FoldReportsAPI rs :: * where
     FoldReportsAPI '[]       = Get '[HTML] (HtmlPage "index")
     FoldReportsAPI (r ': rs) =
         RPath r :> Get ReportTypes (RReport r) :<|>
-        RPath r :> "json" :> Get '[JSON] (RReport r) :<|>
-        RPath r :> "csv" :> Get '[CSV] (RReport r) :<|>
         FoldReportsAPI rs
 
 type ReportsAPI = FoldReportsAPI Reports

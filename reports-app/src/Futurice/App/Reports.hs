@@ -9,26 +9,27 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 -fprint-potential-instances #-}
 module Futurice.App.Reports (defaultMain) where
 
-import Control.Lens               (each)
-import Data.List                  (isSuffixOf)
-import Futuqu                     (futuquServer)
+import Control.Lens                   (each)
+import Data.List                      (isSuffixOf)
+import Futuqu                         (futuquServer)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
-import Futurice.Metrics.RateMeter (mark)
+import Futurice.Metrics.RateMeter     (mark)
 import Futurice.Periocron
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Report.Columns    (reportParams)
+import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
-import Futurice.Time              (unNDT)
-import Generics.SOP               (All, hcmap, hcollapse)
-import GHC.TypeLits               (KnownSymbol, symbolVal)
-import Numeric.Interval.NonEmpty  ((...))
+import Futurice.Time                  (unNDT)
+import Futurice.Wai.ContentMiddleware
+import Generics.SOP                   (All, hcmap, hcollapse)
+import GHC.TypeLits                   (KnownSymbol, symbolVal)
+import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
 import Servant
-import Servant.Cached             (mkCached)
-import Servant.Chart              (Chart (..))
-import Servant.Graph              (Graph (..))
+import Servant.Cached                 (mkCached)
+import Servant.Chart                  (Chart (..))
+import Servant.Graph                  (Graph (..))
 
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
@@ -229,10 +230,10 @@ missingHoursChartData' _ctx =
 makeServer
     :: All RClass reports
     => Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
-makeServer _   Nil       = pure indexPage
+makeServer _   Nil       = liftIO $ indexPage <$> currentDay
 makeServer ctx (r :* rs) =
     let s = handler r
-    in s :<|> s :<|> s :<|> makeServer ctx rs
+    in s :<|> makeServer ctx rs
   where
     handler :: forall r. RClass r => ReportEndpoint r -> Handler (RReport r)
     handler re@(ReportEndpoint re') = liftIO $ do
@@ -300,6 +301,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverColour         .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC3))
     & serverApp reportsApi .~ server
     & serverEnvPfx         .~ "REPORTSAPP"
+    & serverMiddleware     .~ const contentMiddleware
     & serverSwaggerMod     .~ swaggerMod
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])

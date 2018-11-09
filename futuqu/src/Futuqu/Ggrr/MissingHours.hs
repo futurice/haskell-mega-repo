@@ -52,6 +52,7 @@ missingHoursData
     => Month
     -> m [MissingHour]
 missingHoursData month = do
+    -- TODO: people, filter salary: monthly, employmentType: internal
     css <- capacitiesData month
     trs <- timereportsData month
 
