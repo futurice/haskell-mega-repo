@@ -14,7 +14,7 @@ import Servant
 
 type PreferencesAPI =
     Summary "Get preferences"
-        :> Description "Get preferneces"
+        :> Description "Get preferences"
         :> "api" :> "preferences" :> ReqBody '[JSON] [Login] :> Post '[JSON] (Map Login Preferences)
 
 preferencesApi :: Proxy PreferencesAPI
