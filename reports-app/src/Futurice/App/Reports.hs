@@ -233,7 +233,7 @@ makeServer
 makeServer _   Nil       = liftIO $ indexPage <$> currentDay
 makeServer ctx (r :* rs) =
     let s = handler r
-    in s :<|> s :<|> s :<|> makeServer ctx rs
+    in s :<|> makeServer ctx rs
   where
     handler :: forall r. RClass r => ReportEndpoint r -> Handler (RReport r)
     handler re@(ReportEndpoint re') = liftIO $ do
