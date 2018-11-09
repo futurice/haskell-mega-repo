@@ -2,12 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Reports.Markup (indexPage) where
 
+import Futuqu
+import Futurice.Constants        (servicePublicUrl)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
+import Futurice.Services         (Service (..))
+import Futurice.Time.Month
+import Generics.SOP              (hcmap, hpure, hsequenceK)
+import Lucid.Base                (Attribute (..))
+import Lucid.Servant             (linkAbsHref_)
 import Prelude ()
-import Generics.SOP (hpure, hsequenceK, hcmap)
-import Futurice.Services (Service (..))
-import Futurice.Constants (servicePublicUrl)
+import Servant.Links             (allFieldLinks')
 
 import Futurice.App.Reports.API
 
@@ -17,20 +22,43 @@ links = hpure Proxy
 makeLink :: forall r m. (RClass r, Monad m) => Proxy r -> K (HtmlT m ()) r
 makeLink _ = K $ li_ $ do
     a_ [ href_ $ "/" <> textVal ppath ] $ toHtml $ textVal pname
-    " ["
+    " ("
     -- TODO: we'd like to use ".json", but we need type-level sybmol concatenation
     -- https://ghc.haskell.org/trac/ghc/ticket/12162
-    a_ [ href_ $ "/" <> textVal ppath <> "/json" ] $ "JSON"
-    "] ["
-    a_ [ href_ $ "/" <> textVal ppath <> "/csv" ] $ "CSV"
-    "]"
+    a_ [ href_ $ "/" <> textVal ppath <> ".json" ] $ "json"
+    ", "
+    a_ [ href_ $ "/" <> textVal ppath <> ".csv" ] $ "csv"
+    ")"
   where
     ppath = Proxy :: Proxy (RPath r)
     pname = Proxy :: Proxy (RName r)
 
-indexPage :: HtmlPage "index"
-indexPage = page_ "Reports" $ do
+indexPage :: Day -> HtmlPage "index"
+indexPage today = page_ "Reports" $ do
+    let month = dayToMonth today
+
     row_ $ large_ 12 $ h1_ "Reports"
+
+    fullRow_ $ h2_ "Futurice queries"
+    fullRow_ $ ul_ $ do
+        let hrefs = allFieldLinks' linkAbsHref_
+        let makeLi :: Attribute -> Text -> Html ()
+            makeLi (Attribute ak av) desc = li_ $ do
+                a_ [ Attribute ak $ "/futuqu" <> av ] $ toHtml desc
+                " ("
+                a_ [ Attribute ak $ "/futuqu" <> av <> ".json" ] $ "json"
+                ", "
+                a_ [ Attribute ak $ "/futuqu" <> av <> ".csv" ] $ "csv"
+                ")"
+
+        makeLi (futuquRoutePeople hrefs) "List of all people"
+        makeLi (futuquRouteAccounts hrefs) "List of all accounts"
+        makeLi (futuquRouteProjects hrefs) "List of all projects"
+        makeLi (futuquRouteTasks hrefs) "List of all tasks"
+        makeLi (futuquRouteCapacities hrefs month) "(Non-zero) daily capacities for a month"
+        makeLi (futuquRouteTimereports hrefs month) "Timereports for a month"
+        makeLi (futuquRouteMissingHours hrefs month) "Example report: missing hours"
+        makeLi (futuquRouteHourKinds hrefs month) "Example report: People hours aggregated by kind: billable, non-billable etc"
 
     fullRow_ $ h2_ "Dashdo"
     fullRow_ $ do
