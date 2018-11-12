@@ -36,16 +36,16 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search library
           paginationLinks cd
           div_ $ do
               form_ [action_ $ linkToText $ fieldLink indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ do
-                  div_ [ class_ "input-group"] $ do
-                      input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
-                      div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
+                  row_ $ do
+                      onlyAvailableCheckbox
+                      div_ [ class_ "columns large-2", style_ "padding-right: 0px;"] $ librarySelect
+                      div_ [ class_ "columns large-8", style_ "padding-left: 0px;"] $ div_ [ class_ "input-group"] $ do
+                          input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
+                          div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
                   input_ [hidden_ "", name_ "criteria", value_ (toQueryParam (BookSort bookCriteria))]
                   input_ [hidden_ "", name_ "direction", value_ (toQueryParam direction)]
                   input_ [hidden_ "", name_ "limit", value_ (toQueryParam limit)]
                   for_ startBookInfoId $ \infoid -> input_ [hidden_ "", name_ "start-book", value_ (toQueryParam infoid)]
-                  fullRow_ $ do
-                      librarySelect
-                      onlyAvailableCheckbox
           fullRow_ $ table_ [id_ "main"] $ do
               thead_ $ tr_ $ do
                   th_ "Cover"
@@ -65,16 +65,15 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search library
           paginationLinks cd
           div_ $ do
               form_ [action_ $ linkToText $ fieldLink indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ do
-                  div_ [ class_ "input-group"] $ do
-                      input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
-                      div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
+                  row_ $ do
+                      div_ [ class_ "columns large-2"] $ librarySelect
+                      div_ [ class_ "columns large-10"] $ div_ [ class_ "input-group"] $ do
+                          input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
+                          div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
                   input_ [hidden_ "", name_ "criteria", value_ (toQueryParam (BoardGameSort boardgameCriteria))]
                   input_ [hidden_ "", name_ "direction", value_ (toQueryParam direction)]
                   input_ [hidden_ "", name_ "limit", value_ (toQueryParam limit)]
                   for_ startBoardGameInfoId $ \infoid -> input_ [hidden_ "", name_ "start-boardgame", value_ (toQueryParam infoid)]
-                  fullRow_ $ do
-                      librarySelect
-                      -- onlyAvailableCheckbox -- Removed for now as boardgames are not loanable
           fullRow_ $ table_ [id_ "main"] $ do
               thead_ $ tr_ $ do
                   th_ $ a_ [href_ $ linkToText $ boardgameIndexPageLink (BoardGameSort SortName)] "Name"
@@ -89,14 +88,18 @@ indexPage cd direction limit startBookInfoId startBoardGameInfoId search library
   where
       libraryCompare a = maybe False (\lib -> JustLibrary a == lib) library
       librarySelect =
-          select_ [data_ "futu-id" "filter-library-select", name_ "library", style_ "width: 15%; float: left;"] $ do
+          select_ [data_ "futu-id" "filter-library-select", name_ "library", style_ "float: left;"] $ do
               optionSelected_ (maybe True (const False) library)  [ value_ "all"] $ "All libraries"
               for_ usedLibraries $ \lib -> optionSelected_ (libraryCompare lib) [ value_ (libraryToText lib)] $ toHtml $ libraryToText lib
-      onlyAvailableCheckbox = div_ [class_ "column large-10"] $ do
-          case onlyAvailable of
-            Just _ -> input_ [type_ "checkbox", name_ "only-available", checked_ ]
-            Nothing -> input_ [type_ "checkbox", name_ "only-available"]
-          label_ "Show only available books"
+      onlyAvailableCheckbox = div_ [class_ "column large-2"] $ do
+          div_ [ class_ "column large-8 small-2", style_ "padding: 0px;"] $ span_ "Show only available items"
+          div_ [ class_ "column large-4 small-4", style_ "padding-left: 0px; float: left;"] $ div_ [ class_ "switch large"] $ do
+              case onlyAvailable of
+                Just _ -> input_ [class_ "switch-input", type_ "checkbox", name_ "only-available", id_ "testi", checked_ ]
+                Nothing -> input_ [class_ "switch-input", type_ "checkbox", name_ "only-available", id_ "testi"]
+              label_ [ class_ "switch-paddle", attrfor_ "testi"] $ do
+                  span_ [ class_ "switch-active"] $ "Yes"
+                  span_ [ class_ "switch-inactive"] $ "No"
       currentPage condition = case cd of
         BookCD _ _ -> if condition == Book then "" else "secondary "
         BoardGameCD _ _ -> if condition == BoardGame then "" else "secondary "
