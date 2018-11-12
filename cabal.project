@@ -1,9 +1,9 @@
-index-state: 2018-10-29T22:03:05Z
+index-state: 2018-11-13T23:49:51Z
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
 constraints:
-  aeson              ^>= 1.4.0.0,
+  aeson              ^>= 1.4.1.0,
   amazonka-core      ^>= 1.6.0,
   cabal-plan         ^>= 0.4.0.0,
   Chart              ^>= 1.9,
@@ -17,12 +17,12 @@ constraints:
   lens               ^>= 4.17,
   log-base           ^>= 0.7.4.0,
   semigroupoids      ^>= 5.3.1,
-  servant            ^>= 0.14.1,
+  servant            ^>= 0.15,
   postgresql-simple  ^>= 0.6,
-  servant-client     ^>= 0.14,
-  servant-client-core^>= 0.14.1,
+  servant-client     ^>= 0.15,
+  servant-client-core^>= 0.15,
   servant-lucid      ^>= 0.8,
-  servant-server     ^>= 0.14.1,
+  servant-server     ^>= 0.15,
   servant-swagger-ui ^>= 0.3.0.3.13.2,
   SVGFonts           ^>= 1.7,
   unix-time          ^>= 0.3.8,
