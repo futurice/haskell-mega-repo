@@ -73,7 +73,8 @@ instance FromJSON Task where
         <*> obj .:? "billableStatus"
         <*> obj .:? "description"
         <*> obj .:? "dutyType"
-        <*> (dayFromZ <$> obj .: "finish")
+        -- sometimes finish and start are missing :(
+        <*> (dayFromZ <$> obj .: "finish" <|> pure (ModifiedJulianDay 58849)) -- 2020-01-01
         <*> (getU <$$> obj .:? "finishOld")
         <*> (getU <$$> obj .:? "originalFinish")
         <*> (getU <$$> obj .:? "originalStart")
