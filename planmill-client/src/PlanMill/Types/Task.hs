@@ -87,5 +87,5 @@ instance FromJSON Task where
         <*> obj .:? "targetEffort"
         <*> (getU <$$> obj .:? "tempFinish")
         <*> obj .:? "type"
-        <*> obj .: "unitPrice"
-        <*> obj .: "wbs"
+        <*> obj .:? "unitPrice"
+        <*> obj .:? "wbs"
