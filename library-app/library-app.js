@@ -83,7 +83,8 @@ futu.onload(function () {
             var isbn = $("form[data-form-type=book] input[name='isbn']").value;
             var noErrors = isbnCheck(isbn);
             if (!$("form[data-futu-id=add-new-book] input[name='cover-file']").value
-                && !$("form[data-futu-id=add-new-book] input[name='bookinformationid']").value) {
+                && !$("form[data-futu-id=add-new-book] input[name='bookinformationid']").value
+                && !$("img#cover-image").style.display) {
                 var coverAlert = document.createElement("span");
                 coverAlert.className = 'alert label';
                 coverAlert.innerText = 'Cover picture must be added';
