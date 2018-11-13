@@ -33,6 +33,7 @@ data Record route = Record
     , loanGet              :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
     , returnPost           :: route :- "return" :> Capture "id" LoanId :> Post '[JSON] Bool
     , personalLoansGet     :: route :- SSOUser :> "user" :> "loan" :> Get '[JSON] [Loan]
+    , sendReminderEmails   :: route :- SSOUser :> "remainder" :> Get '[JSON] Bool
     } deriving (Generic)
 
 type LibraryAPI = ToServantApi Record

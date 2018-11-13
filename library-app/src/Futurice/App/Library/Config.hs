@@ -8,6 +8,7 @@ import Futurice.Integrations
 import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
+import Servant.Client        (BaseUrl)
 
 import qualified FUM.Types.Login as FUM
 
@@ -17,6 +18,7 @@ data Config = Config
     , cfgAmazonAssociateTag :: !Text
     , cfgAmazonSecretKey    :: !Text
     , cfgSisosotaUrl        :: !Text
+    , cfgEmailProxyUrl      :: !BaseUrl
     , cfgPostgresConnInfo   :: !ConnectInfo
     , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServPE ])
     }
@@ -28,5 +30,6 @@ instance Configure Config where
         <*> envVar "AMAZON_ASSOCIATETAG"
         <*> envVar "AMAZON_SECRETKEY"
         <*> envVar "SISOSOTA_BASEURL"
+        <*> envVar "EMAILPROXY_BASEURL"
         <*> envConnectInfo
         <*> configure

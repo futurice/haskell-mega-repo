@@ -38,6 +38,7 @@ import Futurice.App.Library.Pages.BookInformationPage
 import Futurice.App.Library.Pages.EditItemPage
 import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
+import Futurice.App.Library.Remainder
 import Futurice.App.Library.Types
 
 import qualified Data.ByteString        as BS
@@ -63,6 +64,7 @@ apiServer ctx = genericServer $ Record
     , loanGet              = getLoanImpl ctx
     , returnPost           = returnLoanImpl ctx
     , personalLoansGet     = personalLoansImpl ctx
+    , sendReminderEmails   = sendRemainderEmailsImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -455,6 +457,12 @@ addItemPostImpl ctx req = do
       (True, AddItemRequest _ (Just bookinfoid) _) -> editBookInformationPageImpl ctx bookinfoid
       (True, AddItemRequest _ _ (Just boardgameinformationId)) -> editBoardGameInformationPageImpl ctx boardgameinformationId
       _ -> throwError err404
+
+sendRemainderEmailsImpl :: Ctx -> Maybe Login -> Handler Bool
+sendRemainderEmailsImpl ctx login = withAuthUser ctx login $ (\l -> do
+    emps <- liftIO $ getPersonioData ctx
+    _ <- runLogT "loan-remainder" (ctxLogger ctx) $ sendRemainderEmails ctx emps
+    return True )
 
 withAuthUser :: Ctx -> Maybe Login -> (Login -> Handler a) -> Handler a
 withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of

@@ -131,11 +131,11 @@ borrowBook ctx eid (BorrowRequest binfoid library) = do
         freeBook <- MaybeT $ fetchItemsWithoutLoans ctx (filter (\b -> library == idLibrary b) books)
         MaybeT $ makeLoan ctx now freeBook eid
 
-loans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [LoanData]
-loans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
+fetchAllLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [LoanData]
+fetchAllLoans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
 
-loan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m (Maybe LoanData)
-loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
+fetchLoanWithLoanId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m (Maybe LoanData)
+fetchLoanWithLoanId ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
 
 fetchLoanIdWithItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe LoanData)
 fetchLoanIdWithItemId ctx itemId = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only itemId)
@@ -150,7 +150,7 @@ checkLoanStatus ctx itemid = do
 fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
 fetchLoan ctx emap lid = do
     runMaybeT $ do
-        l <- MaybeT $ loan ctx lid
+        l <- MaybeT $ fetchLoanWithLoanId ctx lid
         b <- MaybeT $ fetchItem ctx $ ldItemId l
         binfoid <- MaybeT $ pure $ bookInformation b
         binfo <- MaybeT $ fetchBookInformation ctx binfoid
@@ -165,12 +165,12 @@ fetchLoan ctx emap lid = do
 
 fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> m [Loan]
 fetchLoans ctx es = do
-    l <- loans ctx
-    loanDataToLoan ctx es l
+    loans <- fetchAllLoans ctx
+    loanDataToLoan ctx es loans
 
 returnItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m Bool
 returnItem ctx lid = do
-    l <- loan ctx lid
+    l <- fetchLoanWithLoanId ctx lid
     case l of
       Nothing -> pure False
       Just (LoanData _ date (P.EmployeeId pid) iid) -> do
