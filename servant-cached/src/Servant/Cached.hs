@@ -48,7 +48,7 @@ unsafeMkCached = Cached
 instance Accept ct => Accept (CACHED ct) where
     contentTypes _ = contentTypes (Proxy :: Proxy ct)
 
-instance (ct ~ ct', MimeRender ct a) => MimeRender (CACHED ct') (Cached ct a) where
+instance (ct ~ ct', Accept ct'{- , MimeRender ct a -}) => MimeRender (CACHED ct') (Cached ct a) where
     mimeRender _ = getCached
 
 instance (ct ~ ct', Accept ct) => MimeUnrender (CACHED ct') (Cached ct a) where
