@@ -8,8 +8,8 @@
 {-# LANGUAGE TypeOperators     #-}
 module Futuqu.Rada.Timereports where
 
+import Control.Lens                         (toListOf)
 import Data.Fixed                           (Centi)
-import Control.Lens (toListOf)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Integrations.TimereportKind
@@ -18,6 +18,7 @@ import Futurice.Time
 import Futurice.Time.Month
 import Prelude ()
 
+import qualified Data.Text        as T
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
@@ -67,9 +68,22 @@ timereportsData month = do
     let interval = monthInterval month
 
     users <- PMQ.users
-    sts <- PMQ.allEnumerationValues Proxy Proxy
-    bss <- PMQ.allEnumerationValues Proxy Proxy
+    sts <- fmap2 T.toLower $ PMQ.allEnumerationValues Proxy Proxy
+    bss <- fmap2 T.toLower $ PMQ.allEnumerationValues Proxy Proxy
 
+    timereportsData' interval users sts bss
+  where
+    fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
+    fmap2 = fmap . fmap
+
+timereportsData'
+    :: (MonadPlanMillQuery m, MonadPersonio m)
+    => PM.Interval Day
+    -> Vector PM.User
+    -> Map (PM.EnumValue PM.Timereport "status") Text
+    -> Map (PM.EnumValue PM.Timereport "billableStatus") Text
+    -> m [Timereport]
+timereportsData' interval users sts bss =
     fmap (toListOf $ folded . folded) $ for (toList users) $ \u -> do
         let uid = u ^. PM.identifier
 
@@ -107,3 +121,4 @@ timereportsData month = do
 
     unlessAbsence' ki _ | timereportKindIsAbsence ki = Nothing
     unlessAbsence' _  x = x
+

@@ -26,6 +26,7 @@ import Futuqu.Rada.People
 import Futuqu.Rada.Projects
 import Futuqu.Rada.Tasks
 import Futuqu.Rada.Timereports
+import Futuqu.Strm.Timereports
 
 -- | Integrations used by /Futuqu/.
 type FutuquIntegrations = '[ ServPE, ServPM, ServPO ]
@@ -44,6 +45,8 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     , futuquRouteTasks       = runIntegrations0 tasksData
     , futuquRouteCapacities  = runIntegrations1 capacitiesData
     , futuquRouteTimereports = runIntegrations1 timereportsData
+    -- strm
+    , futuquRouteTimereportsStream = liftIO $ timereportsStrm runIntegrations0'
     -- ggrr
     , futuquRouteMissingHours = runIntegrations1 missingHoursData
     , futuquRouteHourKinds    = runIntegrations1 hourKindsData
@@ -53,7 +56,15 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
         :: (MonadIO m, Typeable a, NFData a)
         => Integrations FutuquIntegrations a
         -> m a
-    runIntegrations0 m = liftIO $ cachedIO lgr cache 600 () $ do
+    runIntegrations0 m = liftIO $ cachedIO lgr cache 600 () $
+        runIntegrations0' m
+
+    -- TODO: implement runIntegrations which returns environment;
+    -- thus some things may be "cached"
+    runIntegrations0'
+        :: Integrations FutuquIntegrations a
+        -> IO a
+    runIntegrations0' m = do
         now <- currentTime
         runIntegrations mgr lgr now cfg m
 

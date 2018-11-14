@@ -24,6 +24,7 @@ library
   build-depends:
     , aeson
     , base
+    , bytestring
     , cassava
     , containers
     , dynmap-cache
@@ -39,6 +40,7 @@ library
     , servant
     , servant-cassava
     , servant-server
+    , text
     , time
   exposed-modules:
     Futuqu
@@ -51,3 +53,5 @@ library
     Futuqu.Rada.Projects
     Futuqu.Rada.Tasks
     Futuqu.Rada.Timereports
+    Futuqu.Strm.Timereports
+    Futuqu.Servant.CSV
