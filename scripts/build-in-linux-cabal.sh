@@ -81,8 +81,12 @@ echo_cyan "Building Haskell stuff"
 run cabal new-build "-j$CONCURRENCY" -w "$HC" --builddir="$BUILDDIR" all:exes all:flibs
 
 echo_cyan "Copying artifacts to build/"
+LAMBDAS_ARG=""
+if [ "x$PACKAGE_LAMBDAS" = "xNO" ]; then
+	LAMBDAS_ARG="--no-lambdas"
+fi
 # We put binaries in separate directories to speed-up docker image creation
-run cabal new-run -w "$HC" --builddir="$BUILDDIR" mega-repo-tool -- copy-artifacts --rootdir "$ROOTDIR" --builddir "$BUILDDIR"
+run cabal new-run -w "$HC" --builddir="$BUILDDIR" mega-repo-tool -- copy-artifacts $LAMBDAS_ARG --rootdir "$ROOTDIR" --builddir "$BUILDDIR"
 
 echo_cyan "Writing git-hash.txt"
 echo "$GITHASH" > "$ROOTDIR/build/git-hash.txt"

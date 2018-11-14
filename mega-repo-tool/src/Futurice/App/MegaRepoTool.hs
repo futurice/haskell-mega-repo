@@ -29,7 +29,7 @@ import Futurice.App.MegaRepoTool.Stats
 
 data Cmd
     = CmdBuildDocker [AppName]
-    | CmdBuildCommand
+    | CmdBuildCommand !Bool
     | CmdAction (IO ())
     | CmdViewConfig
     | CmdGenPass
@@ -42,7 +42,7 @@ data Cmd
     | CmdDeleteKey !Text
     | CmdExec !(NonEmpty String)
     | CmdLambda !Text !(Maybe Value)
-    | CmdCopyArtifacts FilePath FilePath
+    | CmdCopyArtifacts !Bool !FilePath !FilePath
 
 buildDockerOptions :: O.Parser Cmd
 buildDockerOptions = CmdBuildDocker
@@ -58,7 +58,8 @@ buildDockerOptions = CmdBuildDocker
     mk = map (view unpacked) . Map.keys . _mrtApps
 
 buildCommandOptions :: O.Parser Cmd
-buildCommandOptions = pure CmdBuildCommand
+buildCommandOptions = CmdBuildCommand
+    <$> flag True False [ O.long "no-lambdas", O.help "Don't package AWS Lambdas" ]
 
 statsOptions :: O.Parser Cmd
 statsOptions = pure $ CmdAction stats
@@ -146,11 +147,15 @@ lambdaOptions = CmdLambda
 
 copyArtifactsOptions :: O.Parser Cmd
 copyArtifactsOptions = CmdCopyArtifacts
-    <$> O.strOption (O.long "rootdir"  <> O.metavar ":dir" <> O.help "The root directory")
+    <$> flag True False [ O.long "no-lambdas", O.help "Don't package AWS Lambdas" ]
+    <*> O.strOption (O.long "rootdir"  <> O.metavar ":dir" <> O.help "The root directory")
     <*> O.strOption (O.long "builddir" <> O.metavar ":dir" <> O.help "The directory where Cabal put build files")
 
 strArgument :: IsString a => [O.Mod O.ArgumentFields a] -> O.Parser a
 strArgument = O.strArgument . mconcat
+
+flag :: a -> a -> [O.Mod O.FlagFields a] -> O.Parser a
+flag x y = O.flag x y . mconcat
 
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
@@ -178,23 +183,23 @@ optsParser = O.subparser $ mconcat
          O.command cmd $ O.info (O.helper <*> parser) $ O.progDesc desc
 
 main' :: Cmd -> IO ()
-main' (CmdBuildDocker imgs)    = cmdBuildDocker imgs
-main' CmdBuildCommand          = cmdBuildCommand
-main' (CmdAction x)            = x
-main' CmdGenPass               = cmdGenPass
-main' CmdGenKeys               = cmdGenKeys
-main' CmdStackYaml             = stackYaml
-main' CmdViewConfig            = do
+main' (CmdBuildDocker imgs)          = cmdBuildDocker imgs
+main' (CmdBuildCommand buildLambdas) = cmdBuildCommand buildLambdas
+main' (CmdAction x)                  = x
+main' CmdGenPass                     = cmdGenPass
+main' CmdGenKeys                     = cmdGenKeys
+main' CmdStackYaml                   = stackYaml
+main' CmdViewConfig                  = do
     cfg <- readConfig
     print $ ansiPretty $ flip M.renderMustache Null <$> cfg
-main' (CmdListKeys b)          = listKeys b
-main' (CmdAddKey k v)          = addKey True k v
-main' (CmdAddOwnKey k v)       = addKey False k v
-main' (CmdUpdateKey k v)       = updateKey k v
-main' (CmdDeleteKey k)         = deleteKey k
-main' (CmdExec args)           = cmdExec args
-main' (CmdLambda flib payload) = cmdLambda flib payload
-main' (CmdCopyArtifacts rd bd) = cmdCopyArtifacts rd bd
+main' (CmdListKeys b)                = listKeys b
+main' (CmdAddKey k v)                = addKey True k v
+main' (CmdAddOwnKey k v)             = addKey False k v
+main' (CmdUpdateKey k v)             = updateKey k v
+main' (CmdDeleteKey k)               = deleteKey k
+main' (CmdExec args)                 = cmdExec args
+main' (CmdLambda flib payload)       = cmdLambda flib payload
+main' (CmdCopyArtifacts bl rd bd)    = cmdCopyArtifacts (CAO rd bd bl)
 
 defaultMain :: IO ()
 defaultMain = O.execParser opts >>= main'

@@ -30,13 +30,14 @@ import Futurice.App.MegaRepoTool.Config
 -- Constants
 -------------------------------------------------------------------------------
 
-buildCmd :: Text -> Cmd
-buildCmd buildImage = cmdUnwords
+buildCmd :: Bool -> Text -> Cmd
+buildCmd buildLambdas buildImage = cmdUnwords
     [ "docker run"
     , "--rm"
     , "-ti"
     , "-e DOCKER=YES" -- tell script we are in docker
     , "-e ORIGINAL_UID=" <> cmdUid
+    , "-e PACKAGE_LAMBDAS=" <> (if buildLambdas then "YES" else "NO")
     , "-v " <> cmdPwd <> ":/app/src" -- cannot _yet- have ":ro".
     , "-v haskell-mega-repo-cabal:/root/.cabal"
     , "-v haskell-mega-repo-dist:/app/src/dist-newstyle-prod"
@@ -105,10 +106,10 @@ cmdExpand (Cmd frags) = do
 -- Build command
 -------------------------------------------------------------------------------
 
-cmdBuildCommand :: IO ()
-cmdBuildCommand = do
+cmdBuildCommand :: Bool -> IO ()
+cmdBuildCommand buildLambdas = do
     cfg <- readConfig
-    cmd <- cmdExpand $ buildCmd $ _mrtDockerBaseImage cfg
+    cmd <- cmdExpand $ buildCmd buildLambdas $ _mrtDockerBaseImage cfg
     T.putStrLn cmd
 
 -------------------------------------------------------------------------------
@@ -155,7 +156,7 @@ cmdBuildDocker appnames = do
         ANSI.setSGR []
         T.putStrLn "  or"
         ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Blue]
-        T.putStrLn $ "    " <> cmdToText (buildCmd $ _mrtDockerBaseImage cfg)
+        T.putStrLn $ "    " <> cmdToText (buildCmd True $ _mrtDockerBaseImage cfg)
         ANSI.setSGR []
         exitFailure
 

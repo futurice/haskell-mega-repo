@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool.CopyArtifacts (
+    CopyArtifactsOpts (..),
     cmdCopyArtifacts
     ) where
 
@@ -22,13 +23,19 @@ import qualified Data.Map             as Map
 
 import Futurice.App.MegaRepoTool.Config
 
-cmdCopyArtifacts :: FilePath -> FilePath -> IO ()
-cmdCopyArtifacts rootDir buildDir = withTempDirectory "/tmp" "copy-artifacts" $ \tmpDir -> do
+data CopyArtifactsOpts = CAO
+    { caoRootDir  :: !FilePath
+    , caoBuildDir :: !FilePath
+    , caoLambda   :: !Bool
+    }
+  deriving (Eq, Ord)
+
+cmdCopyArtifacts :: CopyArtifactsOpts -> IO ()
+cmdCopyArtifacts (CAO rootDir buildDir buildLambdas) = withTempDirectory "/tmp" "copy-artifacts" $ \tmpDir -> do
     cfg <- readConfig
 
     -- lambdas
-    {-
-    iforOf_ (mrtLambdas . ifolded) cfg $ \lambdaName lambdaDef -> do
+    when buildLambdas $ iforOf_ (mrtLambdas . ifolded) cfg $ \lambdaName lambdaDef -> do
         flibPath <- maybe
             (hPutStrLn stderr ("Cannot find flib for " ++ show lambdaName) >> exitFailure)
             return
@@ -88,7 +95,6 @@ cmdCopyArtifacts rootDir buildDir = withTempDirectory "/tmp" "copy-artifacts" $ 
         let dir = rootDir </> "build" </> "Lambdas"
         createDirectoryIfMissing True dir
         BSL.writeFile (dir </> lambdaName' -<.> "zip") bsl
-    -}
 
     -- executables
     plan <- findAndDecodePlanJson (InBuildDir buildDir)
