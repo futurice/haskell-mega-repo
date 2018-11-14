@@ -21,15 +21,16 @@ module Futurice.App.Proxy.Endpoint (
     proxyEndpoints',
     )where
 
-import Data.Kind         (Type)
+import Data.Kind                (Type)
 import Futurice.Prelude
 import Futurice.Services
 import GHC.Generics
 import Prelude ()
 import Servant
-import Servant.Client
+import Servant.Client.Streaming
 
-import qualified Data.Set as Set
+import qualified Data.Set              as Set
+import qualified Servant.Types.SourceT as S
 
 -------------------------------------------------------------------------------
 -- Proxy
@@ -56,11 +57,18 @@ class Convertible client server | client -> server, server -> client where
 instance Convertible pub priv => Convertible (a -> pub) (a -> priv) where
     convert env cli x = convert env (cli x)
 
-instance Convertible (ClientM a) (Handler a) where
-    convert env cli = mk $ runClientM cli env
+instance {-# OVERLAPPABLE #-} Convertible (ClientM a) (Handler a) where
+    convert env cli = mk $ withClientM cli env return
       where
         mk action = liftIO action >>= either (throwError . transformError) pure
         transformError err = err504 { errBody = fromString $ show err }
+
+-- | Overlapping instance to make scoping proper.
+instance {-# OVERLAPPING #-} Convertible (ClientM (S.SourceT IO a)) (Handler (S.SourceT IO a)) where
+    convert env cli = return $ S.SourceT $ \kont ->
+        withClientM cli env $ \e -> case e of
+            Left err                -> kont (S.Error (show err))
+            Right (S.SourceT steps) -> steps kont
 
 -------------------------------------------------------------------------------
 -- Few helper optic classes
@@ -160,7 +168,10 @@ class HasPrefix api where
 instance (KnownSymbol sym, HasPrefix api) => HasPrefix (sym :> api) where
     endpointPrefix _ = textVal (Proxy :: Proxy sym) : endpointPrefix (Proxy :: Proxy api)
 
-instance HasPrefix (Verb m s ct a) where
+instance HasPrefix (Verb m s cts a) where
+    endpointPrefix _ = []
+
+instance HasPrefix (Stream m s ft ct a) where
     endpointPrefix _ = []
 
 instance HasPrefix api => HasPrefix (Summary d :> api) where
