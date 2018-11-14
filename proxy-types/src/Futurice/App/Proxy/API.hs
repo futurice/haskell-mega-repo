@@ -20,6 +20,7 @@ import Futurice.Prelude
 import Futurice.Services
 import Prelude ()
 import Servant.API
+import Servant.Cached              (CACHED, Cached)
 import Servant.CSV.Cassava         (CSV)
 
 -- Integrations
@@ -73,14 +74,17 @@ data Routes = Routes
         ("reports" :> "active-accounts" :> Get '[JSON] ActiveAccounts)
 
     -- Futuqu: we could real types, but this way is simpler.
-    , routeFutuquPeople       :: Futuqu ("rada" :> "people" :> Get '[JSON] Value)
-    , routeFutuquAccount      :: Futuqu ("rada" :> "accounts" :> Get '[JSON] Value)
-    , routeFutuquProjects     :: Futuqu ("rada" :> "projects" :> Get '[JSON] Value)
-    , routeFutuquTasks        :: Futuqu ("rada" :> "tasks" :> Get '[JSON] Value)
-    , routeFutuquCapacities   :: Futuqu ("rada" :> "capacities" :> Capture "month" Month :> Get '[JSON] Value)
-    , routeFutuquTimereports  :: Futuqu ("rada" :> "timereports" :> Capture "month" Month :> Get '[JSON] Value)
-    , routeFutuquMissingHours :: Futuqu ("ggrr" :> "missing-hours" :> Capture "month" Month :> Get '[JSON] Value)
-    , routeFutuquHoursKinds   :: Futuqu ("ggrr" :> "hours-kinds" :> Capture "month" Month :> Get '[JSON] Value)
+    , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquAccount      :: Futuqu ("rada" :> "accounts"                               :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquProjects     :: Futuqu ("rada" :> "projects"                               :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquTasks        :: Futuqu ("rada" :> "tasks"                                  :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquCapacities   :: Futuqu ("rada" :> "capacities"    :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquTimereports  :: Futuqu ("rada" :> "timereports"   :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquMissingHours :: Futuqu ("ggrr" :> "missing-hours" :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquHoursKinds   :: Futuqu ("ggrr" :> "hours-kinds"   :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
+
+    -- streaming futuqu
+    , routeFutuquTimreportsStream :: Futuqu ("strm" :> "timereports.csv" :> StreamGet NoFraming (CACHED CSV) (SourceIO (Cached CSV Text)))
 
     -- Power
     , routePowerBi :: ProxiedEndpoint 'PowerService
