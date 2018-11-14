@@ -27,6 +27,7 @@ cmdCopyArtifacts rootDir buildDir = withTempDirectory "/tmp" "copy-artifacts" $ 
     cfg <- readConfig
 
     -- lambdas
+    {-
     iforOf_ (mrtLambdas . ifolded) cfg $ \lambdaName lambdaDef -> do
         flibPath <- maybe
             (hPutStrLn stderr ("Cannot find flib for " ++ show lambdaName) >> exitFailure)
@@ -87,6 +88,7 @@ cmdCopyArtifacts rootDir buildDir = withTempDirectory "/tmp" "copy-artifacts" $ 
         let dir = rootDir </> "build" </> "Lambdas"
         createDirectoryIfMissing True dir
         BSL.writeFile (dir </> lambdaName' -<.> "zip") bsl
+    -}
 
     -- executables
     plan <- findAndDecodePlanJson (InBuildDir buildDir)
