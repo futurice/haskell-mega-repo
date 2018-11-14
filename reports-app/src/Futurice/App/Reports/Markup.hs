@@ -33,6 +33,9 @@ makeLink _ = K $ li_ $ do
     ppath = Proxy :: Proxy (RPath r)
     pname = Proxy :: Proxy (RName r)
 
+attrValue :: Functor f => LensLike' f Attribute Text
+attrValue f (Attribute ak av) = Attribute ak <$> f av
+
 indexPage :: Day -> HtmlPage "index"
 indexPage today = page_ "Reports" $ do
     let month = dayToMonth today
@@ -43,12 +46,12 @@ indexPage today = page_ "Reports" $ do
     fullRow_ $ ul_ $ do
         let hrefs = allFieldLinks' linkAbsHref_
         let makeLi :: Attribute -> Text -> Html ()
-            makeLi (Attribute ak av) desc = li_ $ do
-                a_ [ Attribute ak $ "/futuqu" <> av ] $ toHtml desc
+            makeLi attr desc = li_ $ do
+                a_ [ attr & attrValue %~ \av -> "/futuqu" <> av ] $ toHtml desc
                 " ("
-                a_ [ Attribute ak $ "/futuqu" <> av <> ".json" ] $ "json"
+                a_ [ attr & attrValue %~ \av -> "/futuqu" <> av <> ".json" ] $ "json"
                 ", "
-                a_ [ Attribute ak $ "/futuqu" <> av <> ".csv" ] $ "csv"
+                a_ [ attr & attrValue %~ \av -> "/futuqu" <> av <> ".csv" ] $ "csv"
                 ")"
 
         makeLi (futuquRoutePeople hrefs) "List of all people"
@@ -59,7 +62,7 @@ indexPage today = page_ "Reports" $ do
         makeLi (futuquRouteTimereports hrefs month) "Timereports for a month"
         makeLi (futuquRouteMissingHours hrefs month) "Example report: missing hours"
         makeLi (futuquRouteHourKinds hrefs month) "Example report: People hours aggregated by kind: billable, non-billable etc"
-        li_ $ a_ [ futuquRouteTimereportsStream hrefs ] "Streaming: all timereports csv"
+        li_ $ a_ [ futuquRouteTimereportsStream hrefs & attrValue %~ \av -> "/futuqu" <> av ] "Streaming: all timereports csv"
 
     fullRow_ $ h2_ "Dashdo"
     fullRow_ $ ul_ $ do
