@@ -33,7 +33,9 @@ library
     , futurice-integrations
     , futurice-prelude
     , futurice-tribes
+    , haxl
     , lens
+    , natural-transformation
     , personio-client
     , planmill-client
     , power-client

@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE RankNTypes    #-}
+{-# LANGUAGE TypeOperators #-}
 module Futuqu.Strm.Timereports (timereportsStrm) where
 
 import Futurice.Integrations
@@ -24,6 +25,8 @@ timereportsStrm runIn = do
         users <- PMQ.users
         sts <- fmap2 T.toLower $ PMQ.allEnumerationValues Proxy Proxy
         bss <- fmap2 T.toLower $ PMQ.allEnumerationValues Proxy Proxy
+        -- we could ask for all tasks in advance, but
+        -- that we'll delay initial response
         return (currMonth, users, sts, bss)
 
     -- we process one month at the time; streaming the response
