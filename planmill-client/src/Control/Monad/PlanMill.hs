@@ -25,6 +25,7 @@ module Control.Monad.PlanMill (
 import Prelude ()
 import PlanMill.Internal.Prelude
 
+import Control.Monad.Memoize            (MonadMemoize)
 import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Futurice.Trans.PureT
@@ -33,7 +34,7 @@ import PlanMill.Classes
 import PlanMill.Eval
 import PlanMill.Test        (evalPlanMillIO)
 import PlanMill.Types
-import PlanMill.Types.Query (Query, queryToRequest)
+import PlanMill.Types.Query (Query)
 
 -- | Types 'MonadPlanMillC' should be satisfied to define 'MonadPlanMill' instance.
 --
@@ -98,7 +99,7 @@ planmillVectorAction = planmillAction \\  -- hello CPP
 
 -- | Class of monads capable to do planmill queries (i.e. serialisable
 -- read-only operations).
-class MonadPlanMillConstraint m => MonadPlanMillQuery m where
+class (MonadPlanMillConstraint m, MonadMemoize m) => MonadPlanMillQuery m where
     -- | "Lift" planmill queries to monad action
     planmillQuery :: MonadPlanMillC m a => Query a -> m a
 
@@ -124,11 +125,6 @@ instance (MonadIO m, HasPlanMillCfg env)
     planmillAction planmill = do
         cfg <- view planmillCfg
         liftIO $ evalPlanMillIO cfg planmill
-
-instance (MonadIO m , HasPlanMillCfg env)
-    => MonadPlanMillQuery (ReaderT env m)
-  where
-    planmillQuery = planmillAction . queryToRequest
 
 -------------------------------------------------------------------------------
 -- Fancier instance for "PureT"

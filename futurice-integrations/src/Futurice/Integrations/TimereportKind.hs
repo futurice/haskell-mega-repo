@@ -65,7 +65,7 @@ instance ToSchema TimereportKind where declareNamedSchema = enumDeclareNamedSche
 -- Integrations
 -------------------------------------------------------------------------------
 
-timereportKind :: MonadPlanMillQuery m => PM.Timereport -> m TimereportKind
+timereportKind :: (MonadPlanMillQuery m, MonadMemoize m) => PM.Timereport -> m TimereportKind
 timereportKind tr = do
     billableStatus <- PMQ.enumerationValue (PM.trBillableStatus tr) "Non-billable"
     dutyType <- traverse (`PMQ.enumerationValue` "D") (PM.trDutyType tr)
@@ -97,7 +97,7 @@ timereportKind tr = do
     kind _                _                   _              _                                          = KindBillable
 
 -- | This is not precise: All absences are smashed.
-projectKind :: MonadPlanMillQuery m => PM.Project -> m TimereportKind
+projectKind :: (MonadPlanMillQuery m, MonadMemoize m) => PM.Project -> m TimereportKind
 projectKind p = do
     maccount <- traverse PMQ.account (PM.pAccount p)
 

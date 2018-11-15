@@ -15,7 +15,7 @@ import qualified Servant.Types.SourceT as SourceT
 import Futuqu.Rada.Timereports
 
 timereportsStrm
-    :: ( MonadPlanMillQuery m, MonadPersonio m, MonadTime m
+    :: ( MonadPlanMillQuery m, MonadPersonio m, MonadTime m, MonadMemoize m
        , Monad n)
     => (forall a. m a -> n a)
     -> n (SourceT.SourceT n Timereport)

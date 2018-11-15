@@ -57,7 +57,7 @@ instance ToSchema HourKind where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 hourKindsData
-    :: forall m. (MonadTime m, MonadPlanMillQuery m, MonadPersonio m, MonadPower m)
+    :: forall m. (MonadTime m, MonadPlanMillQuery m, MonadPersonio m, MonadPower m, MonadMemoize m)
     => Month
     -> m [HourKind]
 hourKindsData month = do

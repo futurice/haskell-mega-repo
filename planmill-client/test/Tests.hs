@@ -4,10 +4,11 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Main (main) where
 
-import Prelude ()
-import PlanMill.Internal.Prelude
+import Control.Monad.Memoize     (MonadMemoize (..))
 import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
+import PlanMill.Internal.Prelude
+import Prelude ()
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
@@ -202,6 +203,9 @@ instance MonadPlanMillConstraint PseudoPMQ where
 
 instance MonadPlanMillQuery PseudoPMQ where
     planmillQuery q = PseudoPMQ [SomeQuery q]
+
+-- Do not memoize
+instance MonadMemoize PseudoPMQ where memo _  = id
 
 -------------------------------------------------------------------------------
 -- Utils

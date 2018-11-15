@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 -- | High-level query api
@@ -33,10 +35,11 @@ module PlanMill.Queries (
 
 import PlanMill.Internal.Prelude
 
-import Control.Lens    (alongside, withIndex)
-import Data.Constraint (Dict (..))
-import Data.Reflection (reifySymbol)
-import GHC.TypeLits    (KnownSymbol, symbolVal)
+import Control.Lens          (alongside, withIndex)
+import Control.Monad.Memoize (MonadMemoize (memo))
+import Data.Constraint       (Dict (..))
+import Data.Reflection       (reifySymbol)
+import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
@@ -72,7 +75,7 @@ enumerationValue
     :: forall entity field m.
         ( HasMeta entity
         , KnownSymbol field
-        , MonadPlanMillQuery m
+        , MonadPlanMillQuery m, MonadMemoize m
         )
     => EnumValue entity field
     -> Text  -- ^ Default text
@@ -86,7 +89,7 @@ enumerationValue (EnumValue value) defaultText = do
             Just textValue -> return textValue
 
 allEnumerationValues
-    :: (HasMeta entity , KnownSymbol field , MonadPlanMillQuery m)
+    :: (HasMeta entity , KnownSymbol field , MonadPlanMillQuery m, MonadMemoize m)
     => Proxy entity -> Proxy field
     -> m (Map (EnumValue entity field) Text)
 allEnumerationValues pe pf = mk <$> enumerationForField pe pf
@@ -101,11 +104,11 @@ enumerationForField
     :: forall entity field m.
         ( HasMeta entity
         , KnownSymbol field
-        , MonadPlanMillQuery m
+        , MonadPlanMillQuery m, MonadMemoize m
         )
     => Proxy entity -> Proxy field
     -> m (Maybe SomeEnumDesc)
-enumerationForField entityProxy fieldNameProxy = do
+enumerationForField entityProxy fieldNameProxy = memo (EVM :: EVM entity field ) $ do
     m <- meta entityProxy
     case lookupFieldEnum m (symbolVal fieldNameProxy ^. packed) of
         Nothing -> return Nothing -- TODO: Throw an unknown field exception?
@@ -116,6 +119,11 @@ enumerationForField entityProxy fieldNameProxy = do
         Dict -> do
             desc <- enumerations enumProxy
             return $ Just $ MkSomeEnumDesc desc
+
+-- enumerationValue memo key
+data EVM (entity :: *) (field :: Symbol) = EVM
+  deriving stock (Eq, Generic)
+  deriving anyclass (Hashable)
 
 -- | View details of single enumeration.
 --
@@ -255,7 +263,7 @@ capacitycalendars = planmillVectorQuery
 -- Duplication from PlanMill.Enumerations
 -------------------------------------------------------------------------------
 
-class HasMeta entity where
+class Typeable entity => HasMeta entity where
     metaPath :: Proxy entity -> UrlParts
 
 instance HasMeta User where

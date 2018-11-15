@@ -23,7 +23,8 @@ import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
 import Futurice.Cache            (Cache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
-import Futurice.Integrations     (IntegrationsConfig (..), integrationConfigToState)
+import Futurice.Integrations
+       (IntegrationsConfig (..), MonadMemoize, integrationConfigToState)
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
 import Numeric.Interval.NonEmpty ((...))
@@ -57,7 +58,7 @@ makeLenses ''Env
 -- /TODO:/ :)
 --
 newtype Hours a = Hours { _unHours :: ReaderT Env (Haxl.GenHaxl ()) a }
-  deriving (Functor, Applicative, Monad)
+  deriving (Functor, Applicative, Monad, MonadMemoize)
 
 runHours :: Ctx -> PM.User -> Text -> Hours a -> Handler a
 runHours ctx pmUser profilePic (Hours m) = liftIO $ do

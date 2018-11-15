@@ -3,9 +3,7 @@
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE TypeFamilies            #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
-#endif
 -- | Different monad classes
 --
 -- /TODO:/ add error handling to classes
@@ -17,9 +15,11 @@ module Futurice.Integrations.Classes (
     MonadPower(..),
     MonadPlanMillQuery(..),
     MonadTime(..),
+    MonadMemoize(..),
     ) where
 
 import Control.Monad.FUM      (MonadFUM (..))
+import Control.Monad.Memoize  (MonadMemoize (..))
 import Control.Monad.Personio (MonadPersonio (..))
 import Control.Monad.PlanMill (MonadPlanMillQuery (..))
 import Data.Constraint        (Constraint)

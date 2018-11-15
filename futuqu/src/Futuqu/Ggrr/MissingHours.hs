@@ -48,7 +48,7 @@ instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 missingHoursData
-    :: forall m. (MonadPlanMillQuery m, MonadPersonio m)
+    :: forall m. (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m)
     => Month
     -> m [MissingHour]
 missingHoursData month = do

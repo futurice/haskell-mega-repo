@@ -202,6 +202,13 @@ instance MonadTime (Integrations ss) where
     currentTime = view envNow
 
 -------------------------------------------------------------------------------
+-- MonadMemoize
+-------------------------------------------------------------------------------
+
+instance MonadMemoize (Integrations ss) where
+    memo k (Integr (ReaderT m)) = Integr $ ReaderT $ \env -> H.memo k (m env)
+
+-------------------------------------------------------------------------------
 -- MonadPlanMillQuery
 -------------------------------------------------------------------------------
 
