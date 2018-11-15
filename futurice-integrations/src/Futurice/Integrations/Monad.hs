@@ -17,6 +17,9 @@ module Futurice.Integrations.Monad (
     runIntegrationsIO,
     IntegrationsConfig (..),
     loadIntegrationConfig,
+    -- * Granular
+    runIntegrationsWithEnv,
+    makeIntegrationsEnv,
     -- * state setters
     stateSetFlowdock,
     stateSetFUM,
@@ -97,6 +100,52 @@ runIntegrations
 runIntegrations mgr lgr now cfg m =
     runIntegrationsWithHaxlStore now (integrationConfigToState mgr lgr cfg) m
 
+data IntegrationsEnv (ss :: [Serv]) = IE Env (H.Env ())
+
+makeIntegrationsEnv
+    :: ServSet ss
+    => Manager -> Logger -> UTCTime
+    -> IntegrationsConfig ss
+    -> IO (IntegrationsEnv ss)
+makeIntegrationsEnv mgr lgr now cfg = do
+    let env = mkReaderEnv now
+    let Tagged stateStore = integrationConfigToState mgr lgr cfg
+    haxlEnv <- H.initEnv stateStore ()
+    return (IE env haxlEnv)
+
+runIntegrationsWithEnv
+    :: IntegrationsEnv ss
+    -> Integrations ss a
+    -> IO a
+runIntegrationsWithEnv (IE env haxlEnv) (Integr m) =
+    H.runHaxl haxlEnv (runReaderT m env)
+
+-- | Run 'Integrations' action using Haxl's 'H.StateStore'.
+-- This function is needed when one want to do un-orthodox integrations.
+runIntegrationsWithHaxlStore
+    :: UTCTime
+    -> Tagged ss H.StateStore
+    -> Integrations ss a
+    -> IO a
+runIntegrationsWithHaxlStore now (Tagged stateStore) (Integr m) = do
+    let env = mkReaderEnv now
+    let haxl = runReaderT m env
+    haxlEnv <- H.initEnv stateStore ()
+    H.runHaxl haxlEnv haxl
+
+-------------------------------------------------------------------------------
+-- Pure transformations of environment / configs
+-------------------------------------------------------------------------------
+
+mkReaderEnv :: UTCTime -> Env
+mkReaderEnv now = Env
+    { _envNow = now
+    -- HACK: these are hardcoded
+    , _envFumEmployeeListName = "employees"
+    , _envFlowdockOrgName     = FD.mkParamName "futurice"
+    , _envGithubOrgName       = "futurice"
+    }
+
 integrationConfigToState
     :: ServSet ss
     => Manager -> Logger
@@ -116,24 +165,9 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
 
 newtype ConfigToState ss = CTS { runCTS :: IntegrationsConfig ss -> Tagged ss H.StateStore }
 
--- | Run 'Integrations' action using Haxl's 'H.StateStore'.
--- This function is needed when one want to do un-orthodox integrations.
-runIntegrationsWithHaxlStore
-    :: UTCTime
-    -> Tagged ss H.StateStore
-    -> Integrations ss a
-    -> IO a
-runIntegrationsWithHaxlStore now (Tagged stateStore) (Integr m) = do
-    let env = Env
-            { _envNow = now
-            -- HACK: these are hardcoded
-            , _envFumEmployeeListName = "employees"
-            , _envFlowdockOrgName     = FD.mkParamName "futurice"
-            , _envGithubOrgName       = "futurice"
-            }
-    let haxl = runReaderT m env
-    haxlEnv <- H.initEnv stateStore ()
-    H.runHaxl haxlEnv haxl
+-------------------------------------------------------------------------------
+-- REPL
+-------------------------------------------------------------------------------
 
 {-# DEPRECATED runIntegrationsIO "Only use this in repl" #-}
 runIntegrationsIO :: Integrations AllServs a -> IO a
@@ -168,6 +202,13 @@ instance MonadTime (Integrations ss) where
     currentTime = view envNow
 
 -------------------------------------------------------------------------------
+-- MonadMemoize
+-------------------------------------------------------------------------------
+
+instance MonadMemoize (Integrations ss) where
+    memo k (Integr (ReaderT m)) = Integr $ ReaderT $ \env -> H.memo k (m env)
+
+-------------------------------------------------------------------------------
 -- MonadPlanMillQuery
 -------------------------------------------------------------------------------
 
@@ -176,8 +217,14 @@ instance Contains ServPM ss => MonadPlanMillConstraint (Integrations ss) where
     entailMonadPlanMillCVector _ _ = Sub Dict
 
 instance Contains ServPM ss => MonadPlanMillQuery (Integrations ss) where
-    planmillQuery q = case (showDict, typeableDict) of
-        (Dict, Dict) -> liftHaxl (H.dataFetch q)
+    planmillQuery q = case (q, showDict, typeableDict) of
+        -- we don't cache queries for timereports or capacities
+        -- the cache won't work anyway properly (i.e. overlapping intervals)
+        -- ( we can fix that with engineering though, asking each day in separation:
+        --   not worth for us)
+        (Q.QueryTimereports _ _, Dict, Dict) -> liftHaxl (H.uncachedRequest q)
+        (Q.QueryCapacities _ _,  Dict, Dict) -> liftHaxl (H.uncachedRequest q)
+        (_,                      Dict, Dict) -> liftHaxl (H.dataFetch q)
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q

@@ -6,10 +6,11 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Main (main) where
 
-import Prelude ()
 import PlanMill.Internal.Prelude
+import Prelude ()
 
 import Control.Monad.Http                      (evalHttpT)
+import Control.Monad.Memoize                   (MonadMemoize (..))
 import Data.Constraint
 import Data.Maybe                              (isJust)
 import Futurice.Constraint.Unit1
@@ -142,6 +143,9 @@ instance MonadPlanMillQuery H where
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
+
+instance MonadMemoize H where
+    memo k (H m) = H (H.memo k m)
 
 runH :: Cfg -> H a -> IO a
 runH cfg (H haxl) = withStderrLogger $ \logger ->  do

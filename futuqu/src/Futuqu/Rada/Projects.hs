@@ -47,7 +47,7 @@ instance ToSchema Project where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 projectsData
-    :: (MonadPlanMillQuery m)
+    :: (MonadPlanMillQuery m, MonadMemoize m)
     => m [Project]
 projectsData = do
     prjs <- PMQ.projects

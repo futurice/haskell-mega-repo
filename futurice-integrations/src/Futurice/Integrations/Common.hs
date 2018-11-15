@@ -163,7 +163,7 @@ personioPlanmillMap' = flip combine <$> users
 
 -- | Get information about employee from planmill
 planmillEmployee
-    :: (MonadPlanMillQuery m, MonadPersonio m)
+    :: (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m)
     => PM.UserId
     -> m Employee
 planmillEmployee uid = do

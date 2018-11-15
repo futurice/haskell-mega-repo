@@ -61,7 +61,7 @@ instance ToSchema Timereport where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 timereportsData
-    :: (MonadPlanMillQuery m, MonadPersonio m)
+    :: (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m)
     => Month
     -> m [Timereport]
 timereportsData month = do
@@ -77,7 +77,7 @@ timereportsData month = do
     fmap2 = fmap . fmap
 
 timereportsData'
-    :: (MonadPlanMillQuery m, MonadPersonio m)
+    :: (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m)
     => PM.Interval Day
     -> Vector PM.User
     -> Map (PM.EnumValue PM.Timereport "status") Text

@@ -1,4 +1,5 @@
 index-state: 2018-11-13T23:49:51Z
+tests: True
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
@@ -104,6 +105,7 @@ packages:
   log-cloudwatch/
   mega-repo-tool/
   monad-http/
+  monad-memoize/
   optparse-sop/
   periocron/
   personio-client/

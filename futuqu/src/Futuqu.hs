@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
 module Futuqu (
     futuquServer,
     FutuquIntegrations,
@@ -10,6 +11,7 @@ module Futuqu (
     module Futuqu.Rada.Tasks,
     ) where
 
+import Control.Natural        ((:~>) (..))
 import Futurice.Cache         (Cache, cachedIO)
 import Futurice.Integrations
 import Futurice.Prelude
@@ -46,7 +48,9 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     , futuquRouteCapacities  = runIntegrations1 capacitiesData
     , futuquRouteTimereports = runIntegrations1 timereportsData
     -- strm
-    , futuquRouteTimereportsStream = liftIO $ timereportsStrm runIntegrations0'
+    , futuquRouteTimereportsStream = liftIO $ do
+          NT run <- runIntegrationsCached
+          timereportsStrm run
     -- ggrr
     , futuquRouteMissingHours = runIntegrations1 missingHoursData
     , futuquRouteHourKinds    = runIntegrations1 hourKindsData
@@ -56,17 +60,15 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
         :: (MonadIO m, Typeable a, NFData a)
         => Integrations FutuquIntegrations a
         -> m a
-    runIntegrations0 m = liftIO $ cachedIO lgr cache 600 () $
-        runIntegrations0' m
-
-    -- TODO: implement runIntegrations which returns environment;
-    -- thus some things may be "cached"
-    runIntegrations0'
-        :: Integrations FutuquIntegrations a
-        -> IO a
-    runIntegrations0' m = do
+    runIntegrations0 m = liftIO $ cachedIO lgr cache 600 () $ do
         now <- currentTime
         runIntegrations mgr lgr now cfg m
+
+    runIntegrationsCached :: IO (Integrations FutuquIntegrations :~> IO)
+    runIntegrationsCached = do
+        now <- currentTime
+        env <- makeIntegrationsEnv mgr lgr now cfg
+        return $ NT $ runIntegrationsWithEnv env
 
     runIntegrations1
         :: ( MonadIO m, Typeable a, NFData a

@@ -65,7 +65,7 @@ library
     , intervals
     , lens
     , lucid
-    , monad-logger
+    , monad-memoize
     , monad-time
     , personio-client
     , planmill-client
