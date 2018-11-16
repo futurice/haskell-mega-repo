@@ -57,7 +57,7 @@ indexPage org flows mneedle muid mflow rows = page_ "Flowdock text search" (Just
                 tbody_ $ for_ rows $ \(flowId, row) ->
                     tr_ $ do
                         td_ $ do
-                              let stamp = formatHumanHelsinkiTime $ rowCreatedAt row
+                              let stamp = formatHumanHelsinkiTime $ epochTimeToUtcTime $ rowCreatedAt row
                               span_ [ class_ "nowrap", title_ stamp ] $ toHtml $ T.take 10 stamp
                         when (isNothing mflow) $ td_ $ case flows ^? ix flowId of
                             Nothing         -> shorten $ T.pack $ FD.getIdentifier flowId

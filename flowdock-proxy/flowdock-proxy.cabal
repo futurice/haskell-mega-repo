@@ -20,14 +20,15 @@ library
   hs-source-dirs:
       src
   default-extensions:
+    DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
     DeriveTraversable
-    ScopedTypeVariables
     DerivingStrategies
-    DeriveAnyClass
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
       aeson,

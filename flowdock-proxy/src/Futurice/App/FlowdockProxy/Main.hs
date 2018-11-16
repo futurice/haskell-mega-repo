@@ -87,7 +87,7 @@ activityChartAction ctx = do
             , let xs = Map.fromListWith (+)
                     [ (todHour (localTimeOfDay lt), 1)
                     | row <- rows
-                    , let lt = utcToHelsinkiTime (rowCreatedAt row)
+                    , let lt = utcToHelsinkiTime $ epochTimeToUtcTime $ rowCreatedAt row
                     , fromDay < localDay lt
                     ]
             ]
