@@ -2,7 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FlowdockProxy.DB where
 
-import Data.Text.Short  (ShortText)
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
+import Futurice.Generics
+import Futurice.Generics.SOP (sopParseJSON, sopToEncoding, sopToJSON)
 import Futurice.Prelude
 import Prelude ()
 
@@ -12,15 +14,45 @@ import qualified GHC.Compact as C
 import Control.DeepSeq (force)
 #endif
 
-import qualified Chat.Flowdock.REST                 as FD
-import qualified Data.Text                          as T
-import qualified Data.Text.Short                    as TS
-import qualified Data.TextSet.Unboxed               as TextSet
-import qualified Database.PostgreSQL.Simple.FromRow as PQ
-import qualified Database.PostgreSQL.Simple.ToField as PQ
-import qualified Database.PostgreSQL.Simple.ToRow   as PQ
-import qualified Database.PostgreSQL.Simple.Types   as PQ
-import qualified Futurice.Postgres                  as PQ
+import qualified Chat.Flowdock.REST                   as FD
+import qualified Data.Text                            as T
+import qualified Data.Text.Short                      as TS
+import qualified Data.TextSet.Unboxed                 as TextSet
+import qualified Database.PostgreSQL.Simple.FromField as PQ
+import qualified Database.PostgreSQL.Simple.FromRow   as PQ
+import qualified Database.PostgreSQL.Simple.ToField   as PQ
+import qualified Database.PostgreSQL.Simple.ToRow     as PQ
+import qualified Database.PostgreSQL.Simple.Types     as PQ
+import qualified Futurice.Postgres                    as PQ
+
+-------------------------------------------------------------------------------
+-- EpochTime'
+-------------------------------------------------------------------------------
+
+newtype EpochTime' = EpochTime' { getEpochTime' :: Int64 }
+  deriving newtype (Eq, Ord,  Show, NFData)
+
+epochTimeToUtcTime :: EpochTime' -> UTCTime
+epochTimeToUtcTime = posixSecondsToUTCTime . realToFrac . getEpochTime'
+
+utcTimeToEpochTime :: UTCTime -> EpochTime'
+utcTimeToEpochTime = EpochTime' . truncate . utcTimeToPOSIXSeconds
+
+instance ToJSON EpochTime' where
+    toJSON     = toJSON     . epochTimeToUtcTime
+    toEncoding = toEncoding . epochTimeToUtcTime
+
+instance FromJSON EpochTime' where
+    parseJSON = fmap utcTimeToEpochTime . parseJSON
+
+instance ToSchema EpochTime' where
+    declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy UTCTime)
+
+instance PQ.ToField EpochTime' where
+    toField = PQ.toField . epochTimeToUtcTime
+
+instance PQ.FromField EpochTime' where
+    fromField x y = fmap utcTimeToEpochTime (PQ.fromField x y)
 
 -------------------------------------------------------------------------------
 -- Data
@@ -29,12 +61,21 @@ import qualified Futurice.Postgres                  as PQ
 data Row = Row
     { rowMessageId :: !FD.MessageId
     , rowUser      :: !FD.UserId
-    , rowCreatedAt :: !UTCTime
+    , rowCreatedAt :: !EpochTime'
     , rowTags      :: !TextSet.TextSet
     , rowText      :: !ShortText
     }
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (NFData)
+  deriving stock (Eq, Ord, Show, GhcGeneric)
+  deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
+
+instance ToJSON Row where
+    toJSON     = sopToJSON
+    toEncoding = sopToEncoding
+
+instance FromJSON Row where
+    parseJSON = sopParseJSON
+
+instance ToSchema Row where declareNamedSchema = sopDeclareNamedSchema
 
 instance PQ.FromRow Row where
     fromRow = Row
@@ -57,7 +98,7 @@ messageToRow :: FD.Message -> Maybe Row
 messageToRow msg = Row
     (msg ^. FD.msgId)
     (msg ^. FD.msgUser)
-    (msg ^. FD.msgCreatedAt)
+    (utcTimeToEpochTime $ msg ^. FD.msgCreatedAt)
     (filterTags $ msg ^. FD.msgTags)
     <$> messageContentToRow (msg ^. FD.msgContent)
   where
