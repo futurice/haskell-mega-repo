@@ -138,6 +138,8 @@ packages:
 
   -- and we need a release https://github.com/brendanhay/gogol/pull/105
   vendor/gogol/core
+  vendor/gogol/gogol
+  vendor/gogol/gogol-people
 
 package theme-app
   ghc-options: +RTS -M2G -RTS
