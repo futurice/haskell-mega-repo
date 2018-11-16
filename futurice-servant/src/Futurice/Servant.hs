@@ -20,6 +20,8 @@ module Futurice.Servant (
     CSV,
     -- * LZMA
     LZMA,
+    -- * JSONFraming
+    JSONFraming,
     -- * Swagger
     -- | These are useful for defining empty schemas
     --
@@ -127,6 +129,7 @@ import qualified Network.HTTP.Types        as H
 import qualified Network.HTTP.Types.Status as HTTP
 import qualified Network.Wai.Handler.Warp  as Warp
 import qualified Options.Applicative       as O
+import qualified Servant.Types.SourceT     as S
 
 -- For performGC
 -- import qualified System.Mem                as Mem
@@ -152,6 +155,27 @@ instance MimeRender ct a => MimeRender (LZMA ct) a where
 
 instance MimeUnrender ct a => MimeUnrender (LZMA ct) a where
     mimeUnrender _ = mimeUnrender (Proxy :: Proxy ct) . LZMA.decompress
+
+-------------------------------------------------------------------------------
+-- JSONFraming
+-------------------------------------------------------------------------------
+
+-- |  https://github.com/haskell-servant/servant/pull/1080
+data JSONFraming
+
+instance FramingRender JSONFraming where
+    framingRender _ f = S.mapStepT (S.Yield "[" . go0) where
+        go0 S.Stop        = S.Yield "]" S.Stop
+        go0 (S.Error err) = S.Error err
+        go0 (S.Skip s)    = S.Skip (go0 s)
+        go0 (S.Yield x s) = S.Yield (f x) (go s)
+        go0 (S.Effect ms) = S.Effect (fmap go0 ms)
+
+        go S.Stop        = S.Yield "]" S.Stop
+        go (S.Error err) = S.Error err
+        go (S.Yield x s) = S.Yield ("," <> f x) (go s)
+        go (S.Skip s)    = S.Skip (go s)
+        go (S.Effect ms) = S.Effect (fmap go ms)
 
 -------------------------------------------------------------------------------
 -- FuturiceAPI
