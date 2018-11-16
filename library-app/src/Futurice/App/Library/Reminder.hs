@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Library.Remainder where
+module Futurice.App.Library.Reminder where
 
 import Data.Maybe
 import Data.Text                      (Text, intercalate, pack)
@@ -26,8 +26,8 @@ getAllOldLoans ctx = do
   where
       oldLoansWithDayInterval n (LoanData _ loanDay _ _) = diffDays n loanDay >= 30 && diffDays n loanDay `mod` 30 == 0
 
-remainderTemplate :: Text -> Integer -> Text -> Text
-remainderTemplate loanerName days bookName = intercalate "\n"
+reminderTemplate :: Text -> Integer -> Text -> Text
+reminderTemplate loanerName days bookName = intercalate "\n"
     ["Hello " <> loanerName <> "!"
     , "You've had the following book loaned for more than "<> pack (show days) <> " days"
     , "- " <> bookName
@@ -35,8 +35,8 @@ remainderTemplate loanerName days bookName = intercalate "\n"
     , "https://library.app.futurice.com/user/page"
     , "~Friendly Futurice Library Assistant"]
 
-sendRemainderEmails :: (MonadIO m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee ->  m ()
-sendRemainderEmails ctx emps = do
+sendReminderEmails :: (MonadIO m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Ctx -> IdMap P.Employee ->  m ()
+sendReminderEmails ctx emps = do
     now <- currentDay
     oldLoans <- getAllOldLoans ctx
     reqs <- for oldLoans $ \l -> runMaybeT $ do
@@ -62,5 +62,5 @@ sendRemainderEmails ctx emps = do
           , _reqBcc = Nothing
           , _reqReplyTo = Nothing
           , _reqSubject = "LIBRARY: Reminder"
-          , _reqBody = remainderTemplate loanerId days iName
+          , _reqBody = reminderTemplate loanerId days iName
           }

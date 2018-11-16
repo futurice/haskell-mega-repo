@@ -38,7 +38,7 @@ import Futurice.App.Library.Pages.BookInformationPage
 import Futurice.App.Library.Pages.EditItemPage
 import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
-import Futurice.App.Library.Remainder
+import Futurice.App.Library.Reminder
 import Futurice.App.Library.Types
 
 import qualified Data.ByteString        as BS
@@ -53,18 +53,18 @@ import qualified Xeno.DOM               as X
 
 apiServer :: Ctx -> Server LibraryAPI
 apiServer ctx = genericServer $ Record
-    { booksGet             = getBooksImpl ctx
-    , bookGet              = getBookImpl ctx
-    , bookByISBNGet        = getBookByISBNImpl ctx
-    , bookCoverGet         = getBookCoverImpl ctx
-    , borrowPost           = borrowBookImpl ctx
-    , itemDelete           = itemDeleteImpl ctx
-    , snatchPost           = snatchBookImpl ctx
-    , loansGet             = getLoansImpl ctx
-    , loanGet              = getLoanImpl ctx
-    , returnPost           = returnLoanImpl ctx
-    , personalLoansGet     = personalLoansImpl ctx
-    , sendReminderEmails   = sendRemainderEmailsImpl ctx
+    { booksGet               = getBooksImpl ctx
+    , bookGet                = getBookImpl ctx
+    , bookByISBNGet          = getBookByISBNImpl ctx
+    , bookCoverGet           = getBookCoverImpl ctx
+    , borrowPost             = borrowBookImpl ctx
+    , itemDelete             = itemDeleteImpl ctx
+    , snatchPost             = snatchBookImpl ctx
+    , loansGet               = getLoansImpl ctx
+    , loanGet                = getLoanImpl ctx
+    , returnPost             = returnLoanImpl ctx
+    , personalLoansGet       = personalLoansImpl ctx
+    , sendReminderEmailsGet  = sendReminderEmailsImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -458,10 +458,10 @@ addItemPostImpl ctx req = do
       (True, AddItemRequest _ _ (Just boardgameinformationId)) -> editBoardGameInformationPageImpl ctx boardgameinformationId
       _ -> throwError err404
 
-sendRemainderEmailsImpl :: Ctx -> Maybe Login -> Handler Bool
-sendRemainderEmailsImpl ctx login = withAuthUser ctx login $ (\l -> do
+sendReminderEmailsImpl :: Ctx -> Maybe Login -> Handler Bool
+sendReminderEmailsImpl ctx login = withAuthUser ctx login $ (\l -> do
     emps <- liftIO $ getPersonioData ctx
-    _ <- runLogT "loan-remainder" (ctxLogger ctx) $ sendRemainderEmails ctx emps
+    _ <- runLogT "loan-remainder" (ctxLogger ctx) $ sendReminderEmails ctx emps
     return True )
 
 withAuthUser :: Ctx -> Maybe Login -> (Login -> Handler a) -> Handler a

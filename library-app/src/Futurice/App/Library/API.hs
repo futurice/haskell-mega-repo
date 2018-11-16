@@ -22,18 +22,18 @@ import Futurice.App.Library.Types
 ----------------------------
 
 data Record route = Record
-    { booksGet             :: route :- "book" :> Get '[JSON] [BookInformationResponse]
-    , bookGet              :: route :- "book" :> Capture "id" BookInformationId :> Get '[JSON] BookInformationResponse
-    , bookByISBNGet        :: route :- "book" :> "isbn" :> Capture "isbn" Text :> Get '[JSON] BookInformationByISBNResponse
-    , bookCoverGet         :: route :- BookCoverEndpoint
-    , borrowPost           :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
-    , itemDelete           :: route :- "item"  :> Capture "id" ItemId :> Delete '[JSON] Text
-    , snatchPost           :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan
-    , loansGet             :: route :- "loan" :> Get '[JSON] [Loan]
-    , loanGet              :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
-    , returnPost           :: route :- "return" :> Capture "id" LoanId :> Post '[JSON] Bool
-    , personalLoansGet     :: route :- SSOUser :> "user" :> "loan" :> Get '[JSON] [Loan]
-    , sendReminderEmails   :: route :- SSOUser :> "remainder" :> Get '[JSON] Bool
+    { booksGet              :: route :- "book" :> Get '[JSON] [BookInformationResponse]
+    , bookGet               :: route :- "book" :> Capture "id" BookInformationId :> Get '[JSON] BookInformationResponse
+    , bookByISBNGet         :: route :- "book" :> "isbn" :> Capture "isbn" Text :> Get '[JSON] BookInformationByISBNResponse
+    , bookCoverGet          :: route :- BookCoverEndpoint
+    , borrowPost            :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
+    , itemDelete            :: route :- "item"  :> Capture "id" ItemId :> Delete '[JSON] Text
+    , snatchPost            :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan
+    , loansGet              :: route :- "loan" :> Get '[JSON] [Loan]
+    , loanGet               :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
+    , returnPost            :: route :- "return" :> Capture "id" LoanId :> Post '[JSON] Bool
+    , personalLoansGet      :: route :- SSOUser :> "user" :> "loan" :> Get '[JSON] [Loan]
+    , sendReminderEmailsGet :: route :- SSOUser :> "reminder" :> Get '[JSON] Bool
     } deriving (Generic)
 
 type LibraryAPI = ToServantApi Record
