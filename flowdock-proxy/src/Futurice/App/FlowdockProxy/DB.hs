@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FlowdockProxy.DB where
 
-import Data.Text.Short  (ShortText)
+import Futurice.Generics
+import Futurice.Generics.SOP (sopParseJSON, sopToEncoding, sopToJSON)
 import Futurice.Prelude
 import Prelude ()
 
@@ -33,8 +34,17 @@ data Row = Row
     , rowTags      :: !TextSet.TextSet
     , rowText      :: !ShortText
     }
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (NFData)
+  deriving stock (Eq, Ord, Show, GhcGeneric)
+  deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
+
+instance ToJSON Row where
+    toJSON     = sopToJSON
+    toEncoding = sopToEncoding
+
+instance FromJSON Row where
+    parseJSON = sopParseJSON
+
+instance ToSchema Row where declareNamedSchema = sopDeclareNamedSchema
 
 instance PQ.FromRow Row where
     fromRow = Row

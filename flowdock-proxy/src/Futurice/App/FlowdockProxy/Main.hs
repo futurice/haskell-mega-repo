@@ -31,13 +31,14 @@ import Servant.Cached            (mkCached)
 import Servant.Chart             (Chart)
 import Servant.Server.Generic
 
-import qualified Chat.Flowdock.REST as FD
-import qualified Data.List          as L
-import qualified Data.Map.Strict    as Map
-import qualified Data.Text          as T
-import qualified Data.Text.Short    as TS
-import qualified Futurice.Postgres  as PQ
-import qualified Personio           as P
+import qualified Chat.Flowdock.REST    as FD
+import qualified Data.List             as L
+import qualified Data.Map.Strict       as Map
+import qualified Data.Text             as T
+import qualified Data.Text.Short       as TS
+import qualified Futurice.Postgres     as PQ
+import qualified Personio              as P
+import qualified Servant.Types.SourceT as S
 
 import Futurice.App.FlowdockProxy.API
 import Futurice.App.FlowdockProxy.Charts
@@ -57,6 +58,10 @@ server ctx = genericServer $ Record
         $ cachedIO (ctxLogger ctx) (ctxCache ctx) 600 ()
         $ fmap mkCached
         $ activityChartAction ctx
+
+    -- API
+    , recApiFlows    = apiFlowsAction ctx
+    , recApiMessages = apiMessagesAction ctx
     }
 
 -------------------------------------------------------------------------------
@@ -184,6 +189,24 @@ usersPageAction ctx _ = do
   where
     lgr = ctxLogger ctx
     cch = ctxCache ctx
+
+-------------------------------------------------------------------------------
+-- API: flows
+-------------------------------------------------------------------------------
+
+apiFlowsAction :: Ctx -> Handler [FD.FlowId]
+apiFlowsAction ctx = do
+    flows <- liftIO (readTVarIO (ctxFlowMap ctx))
+    return $ Map.keys flows
+
+apiMessagesAction :: Ctx -> FD.FlowId -> Handler (S.SourceT IO Row)
+apiMessagesAction ctx flowName = do
+    mrows <- liftIO (readTVarIO (ctxFlowRows ctx))
+    case mrows ^? ix flowName of
+        Nothing       -> throwError err404
+        Just rowsTVar -> do
+            rows <- liftIO (readTVarIO rowsTVar)
+            return (S.source rows)
 
 -------------------------------------------------------------------------------
 -- Main
