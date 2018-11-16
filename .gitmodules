@@ -20,3 +20,6 @@
 [submodule "vendor/amazonka"]
 	path = vendor/amazonka
 	url = https://github.com/brendanhay/amazonka.git
+[submodule "vendor/gogol"]
+	path = vendor/gogol
+	url = https://github.com/futurice/gogol.git
