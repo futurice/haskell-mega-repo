@@ -30,6 +30,7 @@ import Servant
 import Servant.Cached            (mkCached)
 import Servant.Chart             (Chart)
 import Servant.Server.Generic
+import System.Mem                (performGC)
 
 import qualified Chat.Flowdock.REST    as FD
 import qualified Data.List             as L
@@ -290,6 +291,10 @@ updateRows ctx flowId flowSlug = do
 
     -- cache in memory
     when new $ readRows ctx flowId flowSlug
+
+    -- Finally, perform GC.
+    -- This should reduce "staircases" in memory profile
+    liftIO performGC
   where
     org = ctxFlowOrg ctx
 
