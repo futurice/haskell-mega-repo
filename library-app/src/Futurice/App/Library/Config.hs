@@ -16,6 +16,7 @@ data Config = Config
     , cfgAmazonAccessKey    :: !Text
     , cfgAmazonAssociateTag :: !Text
     , cfgAmazonSecretKey    :: !Text
+    , cfgSisosotaUrl        :: !Text
     , cfgPostgresConnInfo   :: !ConnectInfo
     , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServPE ])
     }
@@ -26,5 +27,6 @@ instance Configure Config where
         <*> envVar "AMAZON_ACCESSKEY"
         <*> envVar "AMAZON_ASSOCIATETAG"
         <*> envVar "AMAZON_SECRETKEY"
+        <*> envVar "SISOSOTA_BASEURL"
         <*> envConnectInfo
         <*> configure

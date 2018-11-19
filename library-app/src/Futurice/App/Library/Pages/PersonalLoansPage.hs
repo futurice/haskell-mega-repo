@@ -14,7 +14,10 @@ import qualified Data.Text as T
 personalLoansPage :: [Loan] -> HtmlPage ("personalinformation")
 personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
     let (bookLoans, boardgameLoans) = loanSorter loans
-    unless (null bookLoans && null boardgameLoans) $ fullRow_ $ do
+    if null bookLoans && null boardgameLoans then
+      "No loans"
+    else do
+      fullRow_ $ do
         unless (null bookLoans) $ do
             h2_ $ "Books"
             table_ $ do

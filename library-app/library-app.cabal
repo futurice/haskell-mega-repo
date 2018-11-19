@@ -39,7 +39,6 @@ library
       , cryptohash-sha256
       , env-config
       , fum-types
-      , futurice-constants
       , futurice-foundation
       , futurice-integrations
       , futurice-postgres
