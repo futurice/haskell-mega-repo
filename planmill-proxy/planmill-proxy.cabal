@@ -26,7 +26,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.7   && <4.12
+      base
     , constraints
     , env-config
     , futurice-prelude
@@ -88,7 +88,7 @@ foreign-library planmill-proxy-capacity-lambda
     Futurice.Lambda.PlanMillProxy.Capacity
 
   build-depends:
-    , base ^>=4.10 || ^>= 4.11
+    , base
     , aeson
     , binary-tagged
     , bytestring
@@ -110,7 +110,7 @@ foreign-library planmill-proxy-timereports-lambda
     Futurice.Lambda.PlanMillProxy.Timereports
 
   build-depends:
-    , base ^>=4.10 || ^>= 4.11
+    , base
     , aeson
     , binary-tagged
     , bytestring
@@ -135,7 +135,7 @@ foreign-library planmill-proxy-cache-lambda
     Futurice.Lambda.PlanMillProxy.Cache
 
   build-depends:
-    , base ^>=4.10 || ^>=4.11
+    , base
     , aeson
     , binary-tagged
     , bytestring
@@ -155,6 +155,6 @@ executable planmill-proxy-server
       srv
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      base >=4.7   && <4.12
+      base
     , planmill-proxy
   default-language: Haskell2010

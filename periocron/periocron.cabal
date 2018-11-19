@@ -1,5 +1,7 @@
+cabal-version:  2.2
 name:           periocron
 version:        0
+
 synopsis:       Periodical cron
 description:    ...
 category:       Web
@@ -7,11 +9,10 @@ homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
 author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
 build-type:     Simple
-cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
@@ -26,7 +27,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7   && <4.12
+    , base
     , async
     , base-compat
     , clock
@@ -36,7 +37,7 @@ library
     , lifted-base
     , mtl
     , nf
-    , stm >=2.5
+    , stm
     , text
     , time
     , transformers

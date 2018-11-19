@@ -1,5 +1,7 @@
+cabal-version:  2.2
 name:           servant-Chart
 version:        0
+
 synopsis:       Servant support for Chart
 description:    Servant support for Chart
 category:       Web
@@ -7,11 +9,10 @@ homepage:       https://github.com/phadej/servant-Chart-svg#readme
 bug-reports:    https://github.com/phadej/servant-Chart-svg/issues
 author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.2
 build-type:     Simple
-cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
@@ -25,7 +26,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base           >=4.7      && <4.12
+      base           >=4.7      && <4.13
     , Chart
     , Chart-diagrams
     , deepseq
@@ -43,7 +44,7 @@ library
     adjunctions, futurice-prelude, mtl
 
   if impl(ghc >= 8.4.4)
-    build-depends: compact
+    build-depends: ghc-compact ^>=0.1.0.0
 
   exposed-modules:
       Servant.Chart

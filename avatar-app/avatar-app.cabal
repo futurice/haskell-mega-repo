@@ -32,7 +32,7 @@ library
     DeriveTraversable
     ScopedTypeVariables
   build-depends:
-      base                  >=4.7   && <4.12
+    , base
     , aeson-compat
     , amazonka
     , amazonka-lambda
@@ -95,7 +95,7 @@ library avatar-internal
   exposed-modules:
       Futurice.App.Avatar.Types
   build-depends:
-    , base ^>=4.10 || ^>=4.11
+    , base
     , base64-bytestring
     , binary
     , cryptohash-sha256
@@ -110,7 +110,7 @@ foreign-library avatar-process-lambda
     Futurice.Lambda.Avatar.Process
 
   build-depends:
-    , base ^>=4.10 || ^>=4.11
+    , base
     , amazonka
     , amazonka-s3
     , avatar-internal

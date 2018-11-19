@@ -41,7 +41,7 @@ library
     DeriveTraversable
     ScopedTypeVariables
   build-depends:
-    base >=4.8 && <4.12,
+    base >=4.8 && <4.13,
     ansi-pretty,
     futurice-prelude,
     generics-sop,

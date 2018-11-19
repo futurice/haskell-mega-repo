@@ -22,7 +22,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.12
+      base >= 4.7 && <4.13
     , clay >= 0.11
     , env-config
     , file-embed-lzma
@@ -52,7 +52,7 @@ executable theme-app-server
       srv
   ghc-options: -Wall -Wall -threaded -rtsopts
   build-depends:
-      base >= 4.7 && <4.12
+      base >= 4.7 && <4.13
     , clay >= 0.11
     , env-config
     , JuicyPixels

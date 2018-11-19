@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DeriveAnyClass       #-}
 {-# LANGUAGE DerivingStrategies   #-}
 {-# LANGUAGE FlexibleInstances    #-}
@@ -9,17 +10,21 @@ module PlanMill.Worker where
 import Control.Concurrent             (ThreadId, forkFinally, killThread)
 import Control.Concurrent.STM         (atomically)
 import Control.Concurrent.STM.TBQueue
-       (TBQueue, isFullTBQueue, lengthTBQueue, newTBQueue, readTBQueue,
-       writeTBQueue)
+       (TBQueue, isFullTBQueue, newTBQueue, readTBQueue, writeTBQueue)
 import Control.Concurrent.STM.TMVar
        (TMVar, newEmptyTMVar, putTMVar, readTMVar)
 import Control.Exception
        (AsyncException (..), asyncExceptionFromException, throwIO)
 import Control.Monad.Http             (runHttpT)
-import Data.Aeson.Compat              (FromJSON, object, (.=))
+import Data.Aeson.Compat              (FromJSON)
 import Futurice.CryptoRandom          (mkCryptoGen, runCRandTThrow')
 import Futurice.Prelude
 import Prelude ()
+
+#if MIN_VERSION_stm(2,5,0)
+import Control.Concurrent.STM.TBQueue (lengthTBQueue)
+import Data.Aeson.Compat              (object, (.=))
+#endif
 
 import PlanMill.Eval  (evalPlanMill)
 import PlanMill.Types
@@ -105,11 +110,13 @@ workers lgr mgr cfg names = do
                 loop name q g'
 
 closeWorkers :: Workers -> LogT IO ()
-closeWorkers (Workers q tids) = do
+closeWorkers (Workers _q tids) = do
     logInfo_ "Closing workers"
 
-    n <- lift $ atomically $ lengthTBQueue q
+#if MIN_VERSION_stm(2,5,0)
+    n <- lift $ atomically $ lengthTBQueue _q
     logInfoI "Length of the work queue $n" $ object [ "n" .= n ]
+#endif
 
     for_ tids $ \tid -> do
         lift (killThread tid)

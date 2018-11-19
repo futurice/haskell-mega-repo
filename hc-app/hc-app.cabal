@@ -30,7 +30,7 @@ library
     DeriveAnyClass
   ghc-options: -Wall
   build-depends:
-      base >= 4.9 && <4.12,
+      base >= 4.9 && <4.13,
       aeson,
       base16-bytestring,
       base64-bytestring-type,
