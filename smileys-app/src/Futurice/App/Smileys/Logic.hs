@@ -6,11 +6,12 @@ module Futurice.App.Smileys.Logic (
     postOwnSmileys,
     ) where
 
-import FUM.Types.Login  (Login)
+import FUM.Types.Login              (Login)
+import Futurice.Postgres
+import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
 import Prelude ()
-import Servant          (Handler, err403)
-import Futurice.Postgres
+import Servant                      (Handler, err403)
 
 import Futurice.App.Smileys.Ctx
 import Futurice.App.Smileys.Types
@@ -45,12 +46,13 @@ getSmileysImpl
     -> Day
     -> Maybe Login
     -> LogT IO [Smileys]
-getSmileysImpl ctx s e Nothing = safePoolQuery ctx
-    "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?;"
-    (s, e)
-getSmileysImpl ctx s e (Just fumUsername) = safePoolQuery ctx
-    "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ? AND username = ?;"
-    (s, e, fumUsername)
+getSmileysImpl ctx s e mfu = safePoolQueryM ctx "smileys" $ do
+    trail <- from_ "trail"
+    fields_ trail [ "entries", "username", "smiley", "day" ]
+    where_ trail "day" $ \day -> param1_ s [ day, ">= ?" ]
+    where_ trail "day" $ \day -> param1_ e [ day, "<= ?" ]
+    for_  mfu $ \fu ->
+        where_ trail "username" $ \username -> param1_ fu [ username, " = ?" ]
 
 postOwnSmileys
     :: Ctx
