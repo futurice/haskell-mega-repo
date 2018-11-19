@@ -99,9 +99,19 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx           .~ "LIBRARYAPP"
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx cfg lgr mgr cache _mq = do
+makeCtx cfg lgr mgr cache mq = do
     pp <- createPostgresPool $ cfgPostgresConnInfo cfg
-    return (Ctx cfg pp lgr mgr cache, [])
+
+    let ctx = Ctx cfg pp lgr mgr cache
+
+    -- listen to MQ, especially for library reminder requests
+    void $ forEachMessage mq $ \msg -> case msg of
+      LibraryReminderPing -> void $ do
+          emps <- getPersonioData ctx
+          runLogT "send-reminder" (ctxLogger ctx) $ sendReminderEmails ctx emps
+      _                   -> pure ()
+
+    return (ctx, [])
 
 -------------------------------------------------------------------------------
 -- Integrations
