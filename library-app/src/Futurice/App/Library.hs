@@ -13,6 +13,7 @@ import Data.Time
 import FUM.Types.Login
 import Futurice.App.Sisosota.Client
 import Futurice.App.Sisosota.Types  (ContentHash)
+import Futurice.FUM.MachineAPI      (FUM6 (..), fum6)
 import Futurice.IdMap               (IdMap, fromFoldable)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation    (HtmlPage)
@@ -46,6 +47,7 @@ import qualified Data.ByteString.Base64 as Base64
 import qualified Data.ByteString.Char8  as BS8
 import qualified Data.ByteString.Lazy   as LBS
 import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 import qualified Data.Text              as T
 import qualified Network.HTTP.Client    as HTTP
 import qualified Personio               as P
@@ -64,7 +66,7 @@ apiServer ctx = genericServer $ Record
     , loanGet                = getLoanImpl ctx
     , returnPost             = returnLoanImpl ctx
     , personalLoansGet       = personalLoansImpl ctx
-    , sendReminderEmailsGet  = sendReminderEmailsImpl ctx
+    , sendReminderEmailsPost = sendReminderEmailsImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -105,7 +107,7 @@ makeCtx cfg lgr mgr cache _mq = do
 -- Integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[ ServPE ] a -> IO a
+runIntegrations' :: Ctx -> Integrations '[ ServFUM6, ServPE ] a -> IO a
 runIntegrations' (Ctx cfg _ lgr mgr _cache) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
@@ -266,28 +268,28 @@ indexPageImpl ctx criteria direction limit startBookId startBoardGameId search l
         lim = fromMaybe 10 limit
     case crit of
       (BookSort bookCrit) -> do
-          bookInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBookInformation (ctxPostgres ctx) x) startBookId
-          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BookCS bookCrit bookInfo) dir lim cleanedSearch lib onlyAvailable
+          bookInfo <- maybe (pure Nothing) (runLogT "fetch-information" (ctxLogger ctx) . fetchBookInformation ctx) startBookId
+          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx (BookCS bookCrit bookInfo) dir lim cleanedSearch lib onlyAvailable
           pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
       (BoardGameSort boardgameCrit) -> do
-          boardGameInfo <- maybe (pure Nothing) (\x -> runLogT "fetch-information" (ctxLogger ctx) $ fetchBoardGameInformation (ctxPostgres ctx) x) startBoardGameId
-          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria (ctxPostgres ctx) (BoardGameCS boardgameCrit boardGameInfo) dir lim cleanedSearch lib onlyAvailable
+          boardGameInfo <- maybe (pure Nothing) (runLogT "fetch-information" (ctxLogger ctx) . fetchBoardGameInformation ctx) startBoardGameId
+          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx (BoardGameCS boardgameCrit boardGameInfo) dir lim cleanedSearch lib onlyAvailable
           pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
     book <- getBookImpl ctx binfoid
     es <- liftIO $ getPersonioData ctx
-    ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoansWithItemIds (ctxPostgres ctx) (_booksBookId <$> _books book)
+    ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_booksBookId <$> _books book)
     pure $ bookInformationPage book ls es
 
 boardGameInformationPageImpl :: Ctx -> BoardGameInformationId -> Handler (HtmlPage "boardgameinformation")
 boardGameInformationPageImpl ctx boardgameInfoId = do
-    boardgameResponse <- runLogT "fetch-boardgame-response" (ctxLogger ctx) $ fetchBoardGameResponse (ctxPostgres ctx) boardgameInfoId
+    boardgameResponse <- runLogT "fetch-boardgame-response" (ctxLogger ctx) $ fetchBoardGameResponse ctx boardgameInfoId
     case boardgameResponse of
       Just response -> do
           es <- liftIO $ getPersonioData ctx
-          ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoansWithItemIds (ctxPostgres ctx) (_boardGamesBoardGameId <$> response ^. boardGameResponseGames)
+          ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_boardGamesBoardGameId <$> response ^. boardGameResponseGames)
           pure $ boardGameInformationPage response ls es
       Nothing -> throwError err404
 
@@ -302,7 +304,7 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
     case emap ^.at l of
       Nothing -> throwError err403
       Just es -> do
-          loanData <- runLogT "borrow-book" (ctxLogger ctx) (borrowBook (ctxPostgres ctx) (es ^. P.employeeId) req)
+          loanData <- runLogT "borrow-book" (ctxLogger ctx) (borrowBook ctx (es ^. P.employeeId) req)
           case loanData of
             Nothing -> throwError $ err404 { errBody = "Loan data is not available" }
             Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
@@ -311,34 +313,34 @@ snatchBookImpl :: Ctx -> Maybe Login -> ItemId -> Handler Loan
 snatchBookImpl ctx login iid = withAuthUser ctx login $ (\l -> do
     emap <- liftIO $ getPersonioDataMap ctx
     newLoan <- runLogT "snatch" (ctxLogger ctx) $ runMaybeT $ do
-        loanData <- MaybeT $ fetchLoanIdWithItemId (ctxPostgres ctx) iid
-        _ <- returnItem (ctxPostgres ctx) (ldLoanId loanData)
-        itemData <- MaybeT $ fetchItem (ctxPostgres ctx) iid
+        loanData <- MaybeT $ fetchLoanIdWithItemId ctx iid
+        _ <- returnItem ctx (ldLoanId loanData)
+        itemData <- MaybeT $ fetchItem ctx iid
         es <- MaybeT $ pure $ emap ^.at l
         newLoanData <- case itemData of
-           ItemData _ library (BookInfoId binfoid) -> MaybeT $ borrowBook (ctxPostgres ctx) (es ^. P.employeeId) (BorrowRequest binfoid library)
+           ItemData _ library (BookInfoId binfoid) -> MaybeT $ borrowBook ctx (es ^. P.employeeId) (BorrowRequest binfoid library)
            _ -> throwError err403
         pure $ getLoanImpl ctx (ldLoanId newLoanData)
     fromMaybe (throwError err403 { errBody = "Couldn't make forced loan"}) newLoan)
 
 returnLoanImpl :: Ctx -> LoanId -> Handler Bool
-returnLoanImpl ctx lid = runLogT "return-loan" (ctxLogger ctx) $ returnItem (ctxPostgres ctx) lid
+returnLoanImpl ctx lid = runLogT "return-loan" (ctxLogger ctx) $ returnItem ctx lid
 
 getBooksImpl :: Ctx -> Handler [BookInformationResponse]
 getBooksImpl ctx = do
-    bookInfos <- runLogT "fetch-book" (ctxLogger ctx) $ fetchBookInformations (ctxPostgres ctx)
-    runLogT "fetch-book-response" (ctxLogger ctx) $ fetchBooksResponse (ctxPostgres ctx) bookInfos
+    bookInfos <- runLogT "fetch-book" (ctxLogger ctx) $ fetchBookInformations ctx
+    runLogT "fetch-book-response" (ctxLogger ctx) $ fetchBooksResponse ctx bookInfos
 
 getBookImpl :: Ctx -> BookInformationId -> Handler BookInformationResponse
 getBookImpl ctx lid = do
-    infos <- runLogT "fetch-book-response" (ctxLogger ctx) $ fetchBookResponse (ctxPostgres ctx) lid
+    infos <- runLogT "fetch-book-response" (ctxLogger ctx) $ fetchBookResponse ctx lid
     case listToMaybe infos of
       Just info -> pure info
       Nothing -> throwError $ err404 { errBody = "No bookinformation found"}
 
 getBookByISBNImpl :: Ctx -> Text -> Handler BookInformationByISBNResponse
 getBookByISBNImpl ctx isbn = do
-    info <- runLogT "fetch-by-isbn" (ctxLogger ctx) $ fetchBookInformationByISBN (ctxPostgres ctx) cleanedISBN
+    info <- runLogT "fetch-by-isbn" (ctxLogger ctx) $ fetchBookInformationByISBN ctx cleanedISBN
     amazonInfo <- liftIO $ fetchBookInformationFromAmazon ctx cleanedISBN
     case (bookInformationToISBNresponse <$> info) <|> amazonInfo of
       Just i -> pure i
@@ -359,12 +361,12 @@ getBookByISBNImpl ctx isbn = do
 getLoansImpl :: Ctx -> Handler [Loan]
 getLoansImpl ctx = do
     es <- liftIO $ getPersonioData ctx
-    runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoans (ctxPostgres ctx) es
+    runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoans ctx es
 
 getLoanImpl :: Ctx -> LoanId -> Handler Loan
 getLoanImpl ctx lid = do
     es <- liftIO $ getPersonioData ctx
-    loanInfo <- runLogT "fetch-loan" (ctxLogger ctx) $ fetchLoan (ctxPostgres ctx) es lid
+    loanInfo <- runLogT "fetch-loan" (ctxLogger ctx) $ fetchLoan ctx es lid
     case loanInfo of
       Just loan' -> pure loan'
       Nothing -> throwError $ err404 { errBody = "No loan information found"}
@@ -375,17 +377,17 @@ personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
     eidmap <- liftIO $ getPersonioData ctx
     case emap ^.at l of
       Nothing -> throwError err403
-      Just es -> runLogT "fetch-personal-loans" (ctxLogger ctx) $ fetchPersonalLoans (ctxPostgres ctx) eidmap (es ^. P.employeeId))
+      Just es -> runLogT "fetch-personal-loans" (ctxLogger ctx) $ fetchPersonalLoans ctx eidmap (es ^. P.employeeId))
 
 addBookPostImpl :: Ctx -> AddBookInformation -> Handler (HtmlPage "additempage")
 addBookPostImpl ctx addBook@AddBookInformation{..} = do
-    existingBook <- runLogT "check-existing-book" (ctxLogger ctx) $ checkIfExistingBook (ctxPostgres ctx) _addBookInformationId _addBookISBN
+    existingBook <- runLogT "check-existing-book" (ctxLogger ctx) $ checkIfExistingBook ctx _addBookInformationId _addBookISBN
     contentHash <- case existingBook of
       Nothing -> liftIO $ Just <$> case _addBookCover of
         CoverData coverData -> addNewCover ctx (fdPayload coverData)
         CoverUrl url -> fetchImageFromAmazon ctx url >>= addNewCover ctx
       Just _binfoid -> pure Nothing
-    res <- runLogT "add-book" (ctxLogger ctx) $ addNewBook (ctxPostgres ctx) addBook contentHash
+    res <- runLogT "add-book" (ctxLogger ctx) $ addNewBook ctx addBook contentHash
     if res then
       addItemPageGetImpl ctx
     else
@@ -393,7 +395,7 @@ addBookPostImpl ctx addBook@AddBookInformation{..} = do
 
 addBoardGamePostImpl :: Ctx -> AddBoardGameInformation -> Handler (HtmlPage "additempage")
 addBoardGamePostImpl ctx addBoardGame = do
-    res <- runLogT "add-boardgame" (ctxLogger ctx) $ addNewBoardGame (ctxPostgres ctx) addBoardGame
+    res <- runLogT "add-boardgame" (ctxLogger ctx) $ addNewBoardGame ctx addBoardGame
     if res then
       addItemPageGetImpl ctx
     else
@@ -401,10 +403,10 @@ addBoardGamePostImpl ctx addBoardGame = do
 
 editBookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "edititempage")
 editBookInformationPageImpl ctx infoId = runLogT "edit-bookinformation" (ctxLogger ctx) $ do
-    info <- fetchBookInformation (ctxPostgres ctx) infoId
-    books <- fetchItemsByBookInformation (ctxPostgres ctx) infoId
+    info <- fetchBookInformation ctx infoId
+    books <- fetchItemsByBookInformation ctx infoId
     b <- for books $ \(ItemData itemid library _) -> do
-        status <- checkLoanStatus (ctxPostgres ctx) itemid
+        status <- checkLoanStatus ctx itemid
         pure (itemid, status, library)
     case info of
       Just i -> pure $ editItemPage (Left (i, b))
@@ -412,10 +414,10 @@ editBookInformationPageImpl ctx infoId = runLogT "edit-bookinformation" (ctxLogg
 
 editBoardGameInformationPageImpl :: Ctx -> BoardGameInformationId -> Handler (HtmlPage "edititempage")
 editBoardGameInformationPageImpl ctx infoId = runLogT "edit-boardgameinformation" (ctxLogger ctx) $ do
-    info <- fetchBoardGameInformation (ctxPostgres ctx) infoId
-    boardgames <- fetchItemsByBoardGameInformationId (ctxPostgres ctx) infoId
+    info <- fetchBoardGameInformation ctx infoId
+    boardgames <- fetchItemsByBoardGameInformationId ctx infoId
     b <- for boardgames $ \(ItemData itemid library _) -> do
-        status <- checkLoanStatus (ctxPostgres ctx) itemid
+        status <- checkLoanStatus ctx itemid
         pure (itemid, status, library)
     case info of
       Just i -> pure $ editItemPage (Right (i, b))
@@ -423,12 +425,12 @@ editBoardGameInformationPageImpl ctx infoId = runLogT "edit-boardgameinformation
 
 editBookInformationImpl :: Ctx -> EditBookInformation -> Handler (HtmlPage "bookinformation")
 editBookInformationImpl ctx info = do
-    _ <- runLogT "update-book-information" (ctxLogger ctx) $ updateBookInformation (ctxPostgres ctx) info
+    _ <- runLogT "update-book-information" (ctxLogger ctx) $ updateBookInformation ctx info
     bookInformationPageImpl ctx (info ^. editBookInformationId)
 
 editBoardGameInformationImpl :: Ctx -> EditBoardGameInformation -> Handler (HtmlPage "boardgameinformation")
 editBoardGameInformationImpl ctx info = do
-    _ <- runLogT "update-boardgame-information" (ctxLogger ctx) $ updateBoardGameInformation (ctxPostgres ctx) info
+    _ <- runLogT "update-boardgame-information" (ctxLogger ctx) $ updateBoardGameInformation ctx info
     boardGameInformationPageImpl ctx (info ^. editBoardGameInformationId)
 
 addItemPageGetImpl :: Ctx -> Handler (HtmlPage "additempage")
@@ -436,12 +438,12 @@ addItemPageGetImpl _ = pure addItemPage
 
 itemDeleteImpl :: Ctx -> ItemId -> Handler Text
 itemDeleteImpl ctx itemid = runLogT "delete-item" (ctxLogger ctx) $ do
-    loanData <- fetchLoanByItemId (ctxPostgres ctx) itemid --don't delete item that is loaned
+    loanData <- fetchLoanByItemId ctx itemid --don't delete item that is loaned
     case loanData of
       Just _ -> throwError err405 { errBody = "Item is loaned"}
       Nothing -> do
-          itemData <- fetchItem (ctxPostgres ctx) itemid
-          res <- deleteItem (ctxPostgres ctx) itemid
+          itemData <- fetchItem ctx itemid
+          res <- deleteItem ctx itemid
           if res then
             case itemData of
               Just (ItemData _ _ (BookInfoId infoid)) -> pure (linkToText $ fieldLink editBookPageGet infoid)
@@ -452,17 +454,17 @@ itemDeleteImpl ctx itemid = runLogT "delete-item" (ctxLogger ctx) $ do
 
 addItemPostImpl :: Ctx -> AddItemRequest -> Handler (HtmlPage "edititempage")
 addItemPostImpl ctx req = do
-    res <- runLogT "add-item" (ctxLogger ctx) $ addItem (ctxPostgres ctx) req
+    res <- runLogT "add-item" (ctxLogger ctx) $ addItem ctx req
     case (res, req) of
       (True, AddItemRequest _ (Just bookinfoid) _) -> editBookInformationPageImpl ctx bookinfoid
       (True, AddItemRequest _ _ (Just boardgameinformationId)) -> editBoardGameInformationPageImpl ctx boardgameinformationId
       _ -> throwError err404
 
 sendReminderEmailsImpl :: Ctx -> Maybe Login -> Handler Bool
-sendReminderEmailsImpl ctx login = withAuthUser ctx login $ (\l -> do
+sendReminderEmailsImpl ctx login = withAuthUser' ctx login $ \_ -> do
     emps <- liftIO $ getPersonioData ctx
     _ <- runLogT "loan-remainder" (ctxLogger ctx) $ sendReminderEmails ctx emps
-    return True )
+    return True
 
 withAuthUser :: Ctx -> Maybe Login -> (Login -> Handler a) -> Handler a
 withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of
@@ -470,3 +472,21 @@ withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of
     Just login -> f login
   where
     cfg = ctxConfig ctx
+
+withAuthUser'
+    :: Ctx
+    -> Maybe Login
+    -> (Login -> Handler a)
+    -> Handler a
+withAuthUser' ctx loc f = case loc <|> cfgMockUser cfg of
+    Nothing -> throwError err403
+    Just login -> do
+        now <- currentTime
+        notMember <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+            fus <- mconcat <$> traverse (fum6 . FUMGroupEmployees) (cfgAccessGroups cfg)
+            pure $ login `Set.notMember` fus
+        if notMember then throwError err403 else f login
+  where
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx

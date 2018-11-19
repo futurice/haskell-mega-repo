@@ -10,7 +10,8 @@ import Futurice.Prelude
 import Prelude ()
 import Servant.Client        (BaseUrl)
 
-import qualified FUM.Types.Login as FUM
+import qualified FUM.Types.GroupName as FUM
+import qualified FUM.Types.Login     as FUM
 
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
@@ -19,8 +20,9 @@ data Config = Config
     , cfgAmazonSecretKey    :: !Text
     , cfgSisosotaUrl        :: !Text
     , cfgEmailProxyUrl      :: !BaseUrl
+    , cfgAccessGroups       :: ![FUM.GroupName]
     , cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServPE ])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServPE ])
     }
 
 instance Configure Config where
@@ -31,5 +33,6 @@ instance Configure Config where
         <*> envVar "AMAZON_SECRETKEY"
         <*> envVar "SISOSOTA_BASEURL"
         <*> envVar "EMAILPROXY_BASEURL"
+        <*> envVar "REMINDER_ACCESS_GROUPS"
         <*> envConnectInfo
         <*> configure

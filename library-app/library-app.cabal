@@ -40,7 +40,9 @@ library
       , cryptohash-sha256
       , email-proxy-client
       , env-config
+      , fum-api
       , fum-types
+      , futurice-constants
       , futurice-foundation
       , futurice-integrations
       , futurice-postgres
