@@ -49,9 +49,13 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
         ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
         now <- currentTime
 
-        if v == "without-timereports"
-        then updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws
-        else updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now
+        case v of
+            "without-timereports" ->
+                updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (take 2 $ toList intervals)
+            "without-timereports-all" ->
+                updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList intervals)
+            _ ->
+                updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now
 
         closeWorkers ws
 
@@ -75,8 +79,8 @@ intervals =
 
 -- | Update timereports for people without any timereports
 updateWithoutTimereports
-    :: IO Int -> Pool Connection -> Workers -> LogT IO ()
-updateWithoutTimereports remaining pool ws = for_ intervals $ \interval -> do
+    :: IO Int -> Pool Connection -> Workers -> [PM.Interval Day] -> LogT IO ()
+updateWithoutTimereports remaining pool ws is = for_ is $ \interval -> do
     let dayMin = inf interval
     let dayMax = sup interval
 
