@@ -132,9 +132,3 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
               a_ [class_ "button", href_ "javascript:history.back()"] $ toHtml ("prev" :: Text)
           unless (null infos) $
               a_ [class_ "button", recordHref_ indexPageGet (Just $ MkSome $ BoardGameSort criteria) (Just direction) (Just limit) Nothing (lastBoardGameInfoId infos) search library onlyAvailable] $ toHtml ("next" :: Text)
-
-fromItemBook :: ItemInfo 'Book -> BookInformation
-fromItemBook (ItemBook bookInfo) = bookInfo
-
-fromItemBoardGame :: ItemInfo 'BoardGame -> BoardGameInformation
-fromItemBoardGame (ItemBoardGame bookInfo) = bookInfo

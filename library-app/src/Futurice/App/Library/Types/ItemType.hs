@@ -60,3 +60,29 @@ class ToHttpApiDataP (f :: ItemType -> *) where
 
 instance ToHttpApiDataP f => ToHttpApiData (Some f) where
     toUrlPiece (MkSome fa) = toUrlPieceP fa
+
+-------------------------------------------------------------------------------
+-- Buckets
+-------------------------------------------------------------------------------
+
+class HasItemType f where
+    itemType :: f ty -> SItemType ty
+
+instance HasItemType SItemType where
+    itemType = id
+
+data ItemBuckets f = ItemBuckets
+    { bookBucket      :: [f 'Book]
+    , boardGameBucket :: [f 'BoardGame]
+    }
+
+-- | Fancy 'partitionEithers'.
+partitionItems :: HasItemType f => (a -> Some f) -> [a] -> ItemBuckets f
+partitionItems g = go where
+    go []       = ItemBuckets [] []
+    go (x : xs) = case g x of
+        MkSome f -> case itemType f of
+            SBook      -> ItemBuckets (f : fs0) fs1
+            SBoardGame -> ItemBuckets fs0 (f : fs1)
+      where
+        ~(ItemBuckets fs0 fs1) = go xs

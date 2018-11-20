@@ -45,10 +45,20 @@ data ItemInfo ty where
 deriving instance Show (ItemInfo ty)
 instance ShowP ItemInfo where showsPrecP = showsPrec
 
+instance HasItemType ItemInfo where
+    itemType (ItemBook _)       = SBook
+    itemType (ItemBoardGame _ ) = SBoardGame
+
 instance SItemTypeI ty => PQ.FromRow (ItemInfo ty) where
     fromRow = case sitemType :: SItemType ty of
         SBook      -> ItemBook <$> PQ.fromRow
         SBoardGame -> ItemBoardGame <$> PQ.fromRow
+
+fromItemBook :: ItemInfo 'Book -> BookInformation
+fromItemBook (ItemBook bookInfo) = bookInfo
+
+fromItemBoardGame :: ItemInfo 'BoardGame -> BoardGameInformation
+fromItemBoardGame (ItemBoardGame bookInfo) = bookInfo
 
 -------------------------------------------------------------------------------
 -- Item

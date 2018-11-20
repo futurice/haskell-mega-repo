@@ -63,6 +63,8 @@ module Futurice.App.Library.Types (
     itemInfo,
     ItemId,
     ItemInfo (..),
+    fromItemBook,
+    fromItemBoardGame,
     Some (..),
     ItemType (..),
     SItemType (..),
@@ -77,7 +79,10 @@ module Futurice.App.Library.Types (
     BookSortCriteria (..),
     BoardGameSortCriteria (..),
     SortCriteria (..),
-    SortDirection (..)
+    SortDirection (..),
+    ItemBuckets (..),
+    partitionItems,
+    HasItemType (..),
     ) where
 
 import Futurice.App.Library.Types.AddItemRequest
