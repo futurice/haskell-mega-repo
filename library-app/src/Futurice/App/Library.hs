@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.Library (defaultMain) where
@@ -259,7 +260,7 @@ getBookCoverImpl ctx picture = do
       Left _err -> throwError $ err404 { errBody = "Fetching cover failed" }
 
 indexPageImpl :: Ctx
-              -> Maybe SortCriteria
+              -> Maybe (Some SortCriteria)
               -> Maybe SortDirection
               -> Maybe Int
               -> Maybe BookInformationId
@@ -268,23 +269,32 @@ indexPageImpl :: Ctx
               -> Maybe LibraryOrAll
               -> Maybe Text
               -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx criteria direction limit startBookId startBoardGameId search library onlyAvailableText = do
+indexPageImpl ctx mcriteria direction limit startBookId startBoardGameId search library onlyAvailableText =
+    case criteria of
+        MkSome crit@(BookSort _)      -> do
+            mii <- maybe (pure Nothing) (runLogT "fetch-information" (ctxLogger ctx) . fmap2 ItemBook . fetchBookInformation ctx) startBookId
+            go crit mii
+        MkSome crit@(BoardGameSort _) -> do
+            mii <- maybe (pure Nothing) (runLogT "fetch-information" (ctxLogger ctx) . fmap2 ItemBoardGame . fetchBoardGameInformation ctx) startBoardGameId
+            go crit mii
+  where
+    -- the rest of the block is in separate function, as we want
+    -- this to be in the `case ... of`, where we now the value of `ty`
+    go :: SItemTypeI ty => SortCriteria ty -> Maybe (ItemInfo ty) ->  Handler (HtmlPage "indexpage")
+    go crit mii = do
+        -- items to show
+        itemInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx crit mii dir lim cleanedSearch lib onlyAvailable
+        pure $ indexPage crit itemInfos dir lim startBookId startBoardGameId search library onlyAvailableText
+
+    fmap2 f = fmap (fmap f)
+    
     -- default values
-    let lib = fromMaybe AllLibraries library
-        onlyAvailable = isJust onlyAvailableText
-        cleanedSearch = search >>= (\s -> if s == "" then Nothing else Just s)
-        crit = fromMaybe (BookSort SortTitle) criteria
-        dir = fromMaybe SortAsc direction
-        lim = fromMaybe 10 limit
-    case crit of
-      (BookSort bookCrit) -> do
-          bookInfo <- maybe (pure Nothing) (runLogT "fetch-information" (ctxLogger ctx) . fetchBookInformation ctx) startBookId
-          bookInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx (BookCS bookCrit bookInfo) dir lim cleanedSearch lib onlyAvailable
-          pure $ indexPage (BookCD bookCrit bookInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
-      (BoardGameSort boardgameCrit) -> do
-          boardGameInfo <- maybe (pure Nothing) (runLogT "fetch-information" (ctxLogger ctx) . fetchBoardGameInformation ctx) startBoardGameId
-          boardGameInfos <- runLogT "fetch-information-with-criteria" (ctxLogger ctx) $ fetchInformationsWithCriteria ctx (BoardGameCS boardgameCrit boardGameInfo) dir lim cleanedSearch lib onlyAvailable
-          pure $ indexPage (BoardGameCD boardgameCrit boardGameInfos) dir lim startBookId startBoardGameId search library onlyAvailableText
+    criteria      = fromMaybe (MkSome (BookSort SortTitle)) mcriteria
+    lib           = fromMaybe AllLibraries library
+    dir           = fromMaybe SortAsc direction
+    lim           = fromMaybe 10 limit
+    onlyAvailable = isJust onlyAvailableText
+    cleanedSearch = search >>= (\s -> if s == "" then Nothing else Just s)
 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do

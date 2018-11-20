@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Library.Pages.PersonalLoansPage where
 
@@ -60,6 +61,7 @@ personalLoansPage loans = page_ "My loans" (Just NavUser) $ do
                             td_ $ button_ [class_ "button", data_ "futu-id" "return-loan", data_ "loan-id" (T.pack $ show lid)] $ toHtml ("Return" :: Text)
   where
     loanSorter :: [Loan] -> ([(LoanId, BookInformation)], [(LoanId, BoardGameInformation)])
-    loanSorter ls = let sortLoan (lid, ItemBook book) = Left (lid, book)
-                        sortLoan (lid, ItemBoardGame boardgame) = Right (lid, boardgame)
-                    in partitionEithers $ sortLoan <$> (\l -> (l ^. loanId, l ^. loanInformation ^. itemInfo)) <$> ls
+    loanSorter ls = let sortLoan :: (LoanId, Some ItemInfo) -> Either (LoanId, BookInformation) (LoanId, BoardGameInformation)
+                        sortLoan (lid, MkSome (ItemBook book)) = Left (lid, book)
+                        sortLoan (lid, MkSome (ItemBoardGame boardgame)) = Right (lid, boardgame)
+                    in partitionEithers $ sortLoan <$> (\l -> (l ^. loanId, l ^. loanInformation . itemInfo)) <$> ls

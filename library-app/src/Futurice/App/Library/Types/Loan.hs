@@ -14,13 +14,30 @@ import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.Library.Types.Item
+import Futurice.App.Library.Types.ItemType
 
 import qualified Personio as P
 
-newtype LoanId   = LoanId Int32
-    deriving newtype (Eq, Ord, Show, ToJSON, FromHttpApiData, ToHttpApiData, FromField, ToField)
+-------------------------------------------------------------------------------
+-- LoanId
+-------------------------------------------------------------------------------
+
+newtype LoanId = LoanId Int32
+  deriving newtype (Eq, Ord, Show, ToJSON, FromHttpApiData, ToHttpApiData, FromField, ToField)
+
+deriveGeneric ''LoanId
+instance ToParamSchema LoanId where toParamSchema = newtypeToParamSchema
+instance ToSchema LoanId where declareNamedSchema = newtypeDeclareNamedSchema
+
+-------------------------------------------------------------------------------
+-- LoanStatus
+-------------------------------------------------------------------------------
 
 data LoanStatus = Loaned | NotLoaned
+
+-------------------------------------------------------------------------------
+-- Loan
+-------------------------------------------------------------------------------
 
 data Loan = Loan
     { _loanId            :: !LoanId
@@ -30,29 +47,32 @@ data Loan = Loan
     }
     deriving (Show, Typeable, Generic)
 
-data ReturnedLoan = ReturnedLoan
-    { _returnedLoan :: !Loan
-    , _returnedDate :: !Day
-    }
-
 makeLenses ''Loan
-
-deriveGeneric ''LoanId
 deriveGeneric ''Loan
 
 instance ToJSON Loan where
     toJSON (Loan lid date item person) = object
         ["id"       .= lid
         , "loaned"  .= date
-        , case _itemInfo item of
-            ItemBook bookinfo            -> "book"      .= bookinfo
-            ItemBoardGame boardgameinfo  -> "boardgame" .= boardgameinfo
+        , case item ^. itemInfo of
+            MkSome (ItemBook bookinfo)            -> "book"      .= bookinfo
+            MkSome (ItemBoardGame boardgameinfo)  -> "boardgame" .= boardgameinfo
         , "loaner"  .= case person of
             Just p -> (p ^. P.employeeFirst) <> " " <> (p ^. P.employeeLast)
             Nothing -> ""
         , "library" .= _itemLibrary item
         ]
 
-instance ToParamSchema LoanId where toParamSchema = newtypeToParamSchema
-instance ToSchema LoanId where declareNamedSchema = newtypeDeclareNamedSchema
+-- | Not correct instance.
 instance ToSchema Loan
+
+-------------------------------------------------------------------------------
+-- ReturnedLoan
+-------------------------------------------------------------------------------
+
+data ReturnedLoan = ReturnedLoan
+    { _returnedLoan :: !Loan
+    , _returnedDate :: !Day
+    }
+
+

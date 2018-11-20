@@ -63,6 +63,10 @@ module Futurice.App.Library.Types (
     itemInfo,
     ItemId,
     ItemInfo (..),
+    Some (..),
+    ItemType (..),
+    SItemType (..),
+    SItemTypeI (..),
     LoanId,
     Library (..),
     LibraryOrAll (..),
@@ -72,9 +76,7 @@ module Futurice.App.Library.Types (
     librarySelectSortOrder,
     BookSortCriteria (..),
     BoardGameSortCriteria (..),
-    CriteriaAndData (..),
     SortCriteria (..),
-    SortCriteriaAndStart (..),
     SortDirection (..)
     ) where
 
@@ -87,6 +89,7 @@ import Futurice.App.Library.Types.BookInformationResponse
 import Futurice.App.Library.Types.BorrowRequest
 import Futurice.App.Library.Types.EditItemRequest
 import Futurice.App.Library.Types.Item
+import Futurice.App.Library.Types.ItemType
 import Futurice.App.Library.Types.Library
 import Futurice.App.Library.Types.Loan
 import Futurice.App.Library.Types.Search
