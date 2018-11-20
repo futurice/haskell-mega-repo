@@ -95,13 +95,18 @@ updateWithoutTimereports remaining pool ws = for_ intervals $ \interval -> do
             let uidsSet = Set.fromList uids
             let uidsWithout = Set.difference allUidsSet uidsSet
 
-            logInfo "Users without timereports" uidsWithout
+            logInfoI "Users without timereports: $count in $min ... $max" $ object
+                [ "uids"  .= uidsWithout
+                , "count" .= length uidsWithout
+                , "min"   .= dayMin
+                , "max"   .= dayMax
+                ]
 
             for_ uidsWithout (updateTimereportsForUser remaining pool ws dayMin dayMax)
   where
     selectUsersQuery :: Postgres.Query
     selectUsersQuery = fromString $ unwords $
-        [ "SELECT uid FROM planmillproxy.timereports GROUP BY uid WHERE day >= ? AND day <= ?"
+        [ "SELECT uid FROM planmillproxy.timereports WHERE day >= ? AND day <= ? GROUP BY uid"
         ]
 
 -------------------------------------------------------------------------------
