@@ -69,6 +69,7 @@ library
       Futurice.App.Library.Ctx
       Futurice.App.Library.Config
       Futurice.App.Library.Logic
+      Futurice.App.Library.Logic.Informations
       Futurice.App.Library.Markup
       Futurice.App.Library.Pages.AddItemPage
       Futurice.App.Library.Pages.BoardGameInformationPage
