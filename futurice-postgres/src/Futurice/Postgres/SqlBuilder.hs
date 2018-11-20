@@ -222,8 +222,6 @@ orderby_ tbl cl sd = QueryM $ \st ->
 -- Plain "-100"
 -- Plain "100"
 --
--- /TODO:/ add @whereMany_@ to make where clauses involving multiple columns. Use 'Each' from @lens@.
---
 where_
     :: [Expr]
     -> QueryM ()
