@@ -15,15 +15,18 @@
 --     where_ [ eparam_ (-100 :: Int),  " < ", ecolumn_ tbl "c3" ]
 --     where_ [ ecolumn_ tbl "c3",      " < ", eparam_ (100 :: Int)  ]
 --     where_ [ ecolumn_ tbl "c4",      " = ", eparam_ ("foo" :: String) ]
+--     limit_ 10
 -- :}
 -- SELECT t.c1, t.c2
 -- FROM sch.table1 t
 -- WHERE (? < t.c3) AND (t.c3 < ?) AND (t.c4 = ?)
 -- ORDER BY t.c2 ASC, t.c1 DESC
+-- LIMIT 10
 -- ---
 -- Plain "-100"
 -- Plain "100"
 -- Escape "foo"
+--
 module Futurice.Postgres.SqlBuilder (
     -- * Running queries
     poolQueryM,
@@ -35,6 +38,7 @@ module Futurice.Postgres.SqlBuilder (
     fields_,
     orderby_,
     where_,
+    limit_,
     -- ** Expressions
     Expr,
     ecolumn_,
@@ -52,6 +56,7 @@ module Futurice.Postgres.SqlBuilder (
 import Control.Monad          (ap)
 import Data.Char              (isAlphaNum)
 import Data.Semigroup.Generic (gmappend, gmempty)
+import Data.Monoid (Last (..))
 import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
@@ -104,6 +109,7 @@ data SelectQuery = SelectQuery
     , sqFields  :: [(TableAbbr, ColumnName)]
     , sqOrderBy :: [(TableAbbr, ColumnName, SortDirection)]
     , sqWhere   :: [Expr]
+    , sqLimit   :: Last Int
     }
   deriving (Show, Generic)
 
@@ -224,6 +230,10 @@ where_
 where_  expr = QueryM $ \st ->
     (mempty { sqWhere = [ mconcat expr ] }, st, ())
 
+limit_ :: Int -> QueryM ()
+limit_ l = QueryM $ \st ->
+    (mempty { sqLimit = Last (Just l) }, st, ())
+
 -------------------------------------------------------------------------------
 -- Expression
 -------------------------------------------------------------------------------
@@ -294,6 +304,8 @@ ppQuery schema sq = PP.sep $
     , if null (sqOrderBy sq)
       then Nothing
       else Just $ PP.hang 4 (PP.text "ORDER BY") $ ppOrderBy $ sqOrderBy sq
+    , getLast (sqLimit sq) <&> \limit ->
+      PP.text "LIMIT" PP.<+> PP.int limit
     ]
   where
     ppFields :: [(TableAbbr, ColumnName)] -> PP.Doc ()
