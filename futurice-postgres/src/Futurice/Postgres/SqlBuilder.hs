@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes                 #-}
 -- | This small library helps with building complex queries:
@@ -12,14 +11,15 @@
 --     tbl <- from_ "table1"
 --     fields_ tbl [ "c1", "c2"]
 --     orderby_ tbl "c2" ASC
---     where_ tbl "c3" $ \c3 -> param1_ (-100 :: Int)     [ "? < ",  c3 ]
---     where_ tbl "c3" $ \c3 -> param1_ (100 :: Int)      [ c3, " < ?" ]
---     where_ tbl "c4" $ \c4 -> param1_ ("foo" :: String) [ c4, " = ?" ]
+--     orderby_ tbl "c1" DESC
+--     where_ [ eparam_ (-100 :: Int),  " < ", ecolumn_ tbl "c3" ]
+--     where_ [ ecolumn_ tbl "c3",      " < ", eparam_ (100 :: Int)  ]
+--     where_ [ ecolumn_ tbl "c4",      " = ", eparam_ ("foo" :: String) ]
 -- :}
 -- SELECT t.c1, t.c2
 -- FROM sch.table1 t
 -- WHERE (? < t.c3) AND (t.c3 < ?) AND (t.c4 = ?)
--- ORDER BY t.c2 ASC
+-- ORDER BY t.c2 ASC, t.c1 DESC
 -- ---
 -- Plain "-100"
 -- Plain "100"
@@ -35,17 +35,16 @@ module Futurice.Postgres.SqlBuilder (
     fields_,
     orderby_,
     where_,
+    -- ** Expressions
+    Expr,
+    ecolumn_,
+    eparam_,
     -- ** Types
     QueryM,
     TableName,
     TableAbbr,
     ColumnName,
     SortDirection (..),
-    -- * Utilities
-    ToExpression,
-    noParam_,
-    param1_,
-    params_,
     -- * Debug
     renderQuery,
     ) where
@@ -60,7 +59,6 @@ import Prelude ()
 import qualified Data.Set                           as Set
 import qualified Database.PostgreSQL.Simple         as PQ
 import qualified Database.PostgreSQL.Simple.ToField as PQ
-import qualified Database.PostgreSQL.Simple.ToRow   as PQ
 import qualified Text.PrettyPrint.Compact           as PP
 
 -------------------------------------------------------------------------------
@@ -105,7 +103,7 @@ data SelectQuery = SelectQuery
     { sqTables  :: [(Either SelectQuery TableName, TableAbbr)]
     , sqFields  :: [(TableAbbr, ColumnName)]
     , sqOrderBy :: [(TableAbbr, ColumnName, SortDirection)]
-    , sqWhere   :: [ToExpr]
+    , sqWhere   :: [Expr]
     }
   deriving (Show, Generic)
 
@@ -209,10 +207,10 @@ orderby_ tbl cl sd = QueryM $ \st ->
 --
 -- Where clauses referencing single column.
 --
--- >>> demo $ from_ "table1" >>= \tbl -> fields_ tbl [ "c1", "c2"] >> where_ tbl "c3" (\c3 -> noParam_ [ c3, " < 42" ])
+-- >>> demo $ from_ "table1" >>= \tbl -> fields_ tbl [ "c1", "c2"] >> where_ [ ecolumn_ tbl "c3", " < 42" ]
 -- SELECT t.c1, t.c2 FROM sch.table1 t WHERE (t.c3 < 42)
 --
--- >>> demo $ from_ "table1" >>= \tbl -> fields_ tbl [ "c1", "c2"] >> where_ tbl "c3" (\c3 -> params_ (-100 :: Int, 100 :: Int) [ "? < ", c3, " AND ", c3, " < ?" ])
+-- >>> demo $ from_ "table1" >>= \tbl -> fields_ tbl [ "c1", "c2"] >> let c3 = ecolumn_ tbl "c3" in where_ [ eparam_ (-100 :: Int) ," < ", c3, " AND ", c3, " < ", eparam_ (100 :: Int) ]
 -- SELECT t.c1, t.c2 FROM sch.table1 t WHERE (? < t.c3 AND t.c3 < ?)
 -- ---
 -- Plain "-100"
@@ -221,33 +219,39 @@ orderby_ tbl cl sd = QueryM $ \st ->
 -- /TODO:/ add @whereMany_@ to make where clauses involving multiple columns. Use 'Each' from @lens@.
 --
 where_
-    :: TableAbbr -> ColumnName
-    -> (forall col expr. ToExpression col expr => col -> expr)
+    :: [Expr]
     -> QueryM ()
-where_ tbl cl f = QueryM $ \st ->
-    (mempty { sqWhere = [ f $ escapeTableColumn tbl cl ] }, st, ())
+where_  expr = QueryM $ \st ->
+    (mempty { sqWhere = [ mconcat expr ] }, st, ())
 
--- | Class for building expressions, e.g. in 'where_' clauses.
-class IsString col => ToExpression col expr | expr -> col where
-    noParam_ :: [col] -> expr
-    param1_  :: PQ.ToField f => f  -> [col] -> expr
-    params_  :: PQ.ToRow fs  => fs -> [col] -> expr
+-------------------------------------------------------------------------------
+-- Expression
+-------------------------------------------------------------------------------
 
-data ToExpr = ToExpr String [PQ.Action]
+-- | SQL "Expressions".
+--
+-- Possible future developments: make a GADT?
+newtype Expr = Expr [ExprPiece]
+  deriving (Show, Semigroup, Monoid)
+
+ecolumn_ :: TableAbbr -> ColumnName -> Expr
+ecolumn_ tbl cl = Expr $ pure $ EPColumn tbl cl
+
+eparam_ :: PQ.ToField f => f -> Expr
+eparam_ = Expr . pure . EPAction . PQ.toField
+
+-- inquery :: TableAbbr -> ColumnName -> Expr
+-- inquery tbl cl q
+
+instance IsString Expr where
+    fromString = Expr . pure . EPString
+
+data ExprPiece
+    = EPColumn TableAbbr ColumnName
+    | EPAction PQ.Action
+    | EPString String
+--    | EPQuery SelectQuery
   deriving Show
-
--- | This "smart" constructor checks that length of actions equals
--- the '?' signs in a query part.
---
--- Otherwise 'error's early.
---
-toExpr :: String -> [PQ.Action] -> ToExpr
-toExpr = ToExpr
-
-instance ToExpression [Char] ToExpr where
-    noParam_ cols   = toExpr (mconcat cols) []
-    param1_ f  cols = toExpr (mconcat cols) [PQ.toField f]
-    params_ fs cols = toExpr (mconcat cols) (PQ.toRow fs)
 
 -------------------------------------------------------------------------------
 -- Escaping table column names
@@ -315,11 +319,16 @@ ppQuery schema sq = PP.sep $
         | (tbl, cl, sd) <- xs
         ]
 
-    ppWhere :: [ToExpr] -> PP.Doc ()
+    ppWhere :: [Expr] -> PP.Doc ()
     ppWhere xs = PP.sep $ PP.punctuate (PP.text " AND")
-        [ PP.parens $  PP.text str
-        | ToExpr str _ <- xs
+        [ PP.parens $  PP.hcat $ map ppExprPiece pieces
+        | Expr pieces <- xs
         ]
+
+    ppExprPiece :: ExprPiece -> PP.Doc ()
+    ppExprPiece (EPAction _)      = PP.char '?'
+    ppExprPiece (EPString str)    = PP.text str
+    ppExprPiece (EPColumn tbl cl) = ppTableColumn tbl cl
 
 -- | Note: be careful to produce actions in the same order as in 'ppQuery'.
 queryActions :: SelectQuery -> [PQ.Action]
@@ -327,7 +336,9 @@ queryActions sq = mconcat
     [ concatMap whereAction (sqWhere sq)
     ]
   where
-    whereAction (ToExpr _ acts) = acts
+    whereAction (Expr pieces) = mapMaybe pieceAction pieces
+    pieceAction (EPAction act) = Just act
+    pieceAction _              = Nothing
 
 -------------------------------------------------------------------------------
 -- ...

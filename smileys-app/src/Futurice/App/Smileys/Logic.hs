@@ -49,10 +49,11 @@ getSmileysImpl
 getSmileysImpl ctx s e mfu = safePoolQueryM ctx "smileys" $ do
     trail <- from_ "trail"
     fields_ trail [ "entries", "username", "smiley", "day" ]
-    where_ trail "day" $ \day -> param1_ s [ day, ">= ?" ]
-    where_ trail "day" $ \day -> param1_ e [ day, "<= ?" ]
-    for_  mfu $ \fu ->
-        where_ trail "username" $ \username -> param1_ fu [ username, " = ?" ]
+    let day = ecolumn_ trail "day"
+    where_ [ day, " >= ", eparam_ s ]
+    where_ [ day, " <= ", eparam_ e ]
+    for_ mfu $ \fu ->
+        where_ [ ecolumn_ trail "username", " = ",  eparam_ fu ]
 
 postOwnSmileys
     :: Ctx
