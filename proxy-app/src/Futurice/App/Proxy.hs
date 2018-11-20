@@ -16,10 +16,10 @@ module Futurice.App.Proxy (
 import Data.Aeson.Compat               (object, (.=))
 import Data.List                       (isSuffixOf)
 import Data.Maybe                      (isNothing)
-import Data.Pool                       (withResource)
 import Data.Text.Encoding              (decodeLatin1)
 import Futurice.Metrics.RateMeter      (mark)
-import Futurice.Postgres               (createPostgresPool)
+import Futurice.Postgres               (createPostgresPool, safePoolExecute)
+import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
 import Futurice.Servant
 import Network.Wai                     (Request, rawPathInfo)
@@ -28,10 +28,9 @@ import Prelude ()
 import Servant
 import Text.Regex.Applicative.Text     (RE', anySym, match, string)
 
-import qualified Data.Swagger               as Sw
-import qualified Data.Text                  as T
-import qualified Database.PostgreSQL.Simple as PQ
-import qualified Futurice.KleeneSwagger     as K
+import qualified Data.Swagger           as Sw
+import qualified Data.Text              as T
+import qualified Futurice.KleeneSwagger as K
 
 import Futurice.App.Proxy.API
 import Futurice.App.Proxy.Config
@@ -83,45 +82,54 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
               [ "Raw data access" ]
 
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
-checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
+checkCreds ctx req u p = do
     let u' = decodeLatin1 u
         p' = decodeLatin1 p
         endpoint = decodeLatin1 $ rawPathInfo req
-    case match isDocumentationRegexp endpoint of
-        Nothing -> regularCheck conn u' p' endpoint
-        Just _  -> swaggerCheck conn u' p' endpoint
-  where
-    regularCheck :: PQ.Connection -> Text -> Text -> Text -> IO Bool
-    regularCheck conn u' p' endpoint = do
-        res <- PQ.query conn (fromString credentialAndEndpointCheck)
-            (u', p', endpoint) :: IO [PQ.Only Int]
-        case res of
-            []    -> logInvalidLogin u' endpoint >> pure False
-            _ : _ -> logAccess conn u' endpoint >> pure True
 
-    swaggerCheck :: PQ.Connection -> Text -> Text -> Text -> IO Bool
-    swaggerCheck conn u' p' endpoint = do
-        res <- PQ.query conn (fromString credentialCheck)
-            (u', p') :: IO [PQ.Only Int]
-        case res of
+    runLogT "check-creds" (ctxLogger ctx) $ case match isDocumentationRegexp endpoint of
+        Nothing -> regularCheck u' p' endpoint
+        Just _  -> swaggerCheck u' p' endpoint
+  where
+    regularCheck :: Text -> Text -> Text -> LogT IO Bool
+    regularCheck u' p' endpoint = do
+        res <- safePoolQueryM ctx "proxyapp" $ do
+            creds <- from_ "credentials"
+            where_ [ ecolumn_ creds "username", " = ", eparam_ u' ]
+            where_ [ ecolumn_ creds "passtext", " = crypt(", eparam_ p', ", ", ecolumn_ creds "passtext", ")" ]
+            endpoints <- from_ "policy_endpoint"
+            where_ [ ecolumn_ creds "policyname", " = ", ecolumn_ endpoints "policyname" ]
+            where_ [ eparam_ endpoint, " LIKE ", ecolumn_ endpoints "endpoint", " || '%'" ]
+
+        case res :: [Only Int] of
+            []    -> logInvalidLogin u' endpoint >> pure False
+            _ : _ -> logAccess u' endpoint >> pure True
+
+    swaggerCheck :: Text -> Text -> Text -> LogT IO Bool
+    swaggerCheck u' p' endpoint = do
+        res <- safePoolQueryM ctx "proxyapp" $ do
+            creds <- from_ "credentials"
+            where_ [ ecolumn_ creds "username", " = ", eparam_ u' ]
+            where_ [ ecolumn_ creds "passtext", " = crypt(", eparam_ p', ", ", ecolumn_ creds "passtext", ")" ]
+
+        case res :: [Only Int] of
             []    -> logInvalidLogin u' endpoint >> pure False
             _ : _ -> pure True
 
-    logInvalidLogin :: Text -> Text -> IO ()
+    logInvalidLogin :: Text -> Text -> LogT IO ()
     logInvalidLogin u' endpoint = do
-        mark $ "Invalid login"
-        runLogT "checkCreds" (ctxLogger ctx) $ do
-            logAttention "Invalid login with " $ object
-                [ "username" .= u'
-                , "endpoint" .= endpoint
-                ]
+        liftIO $ mark $ "Invalid login"
+        logAttention "Invalid login with " $ object
+            [ "username" .= u'
+            , "endpoint" .= endpoint
+            ]
 
     -- | Logs user, and requested endpoint if endpoint is not swagger-related.
-    logAccess :: PQ.Connection -> Text -> Text -> IO ()
-    logAccess conn user endpoint =
+    logAccess :: Text -> Text -> LogT IO ()
+    logAccess user endpoint =
         when (isNothing $ match isDocumentationRegexp endpoint) $ void $ do
-            mark $ "endpoint " <> endpoint
-            PQ.execute conn
+            liftIO $ mark $ "endpoint " <> endpoint
+            safePoolExecute ctx
                 "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
                 (user, endpoint)
 
@@ -135,19 +143,3 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         ]
 
     choice = foldr (<|>) empty
-
-    credentialCheck :: String
-    credentialCheck = unwords
-        [ "SELECT 1 FROM proxyapp.credentials"
-        , "WHERE username = ? AND passtext = crypt(?, passtext)"
-        , ";"
-        ]
-
-    credentialAndEndpointCheck :: String
-    credentialAndEndpointCheck = unwords
-        [ "SELECT 1 from proxyapp.credentials c, proxyapp.policy_endpoint pe"
-        , "WHERE c.policyname = pe.policyname"
-        , "AND c.username = ? AND passtext = crypt(?, passtext)"
-        , "AND ? LIKE pe.endpoint || '%'"
-        , ";"
-        ]

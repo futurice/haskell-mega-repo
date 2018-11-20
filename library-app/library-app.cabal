@@ -1,5 +1,7 @@
+cabal-version:  2.2
 name:           library-app
 version:        0
+
 synopsis:       Book catalogy and loaning service
 description:    ...
 category:       Web
@@ -7,10 +9,9 @@ homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
 author:         Toni Okuogume <toni.okuogume@futurice.com>
 maintainer:     Toni Okuogume <toni.okuogume@futurice.com>
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 
 source-repository head
   type: git
@@ -31,7 +32,7 @@ library
     DerivingStrategies
     ScopedTypeVariables
   build-depends:
-      base >= 4.7 && <4.13
+      , base
       , aeson
       , base64-bytestring
       , bytestring
@@ -61,6 +62,7 @@ library
       , text
       , time
       , xeno
+
   exposed-modules:
       Futurice.App.Library
       Futurice.App.Library.API

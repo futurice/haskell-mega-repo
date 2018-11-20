@@ -3,8 +3,7 @@
 {-# LANGUAGE TemplateHaskell       #-}
 module Futurice.App.Proxy.Ctx where
 
-import Data.Pool                  (Pool)
-import Database.PostgreSQL.Simple (Connection)
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Services          (Service (..))
 import Prelude ()
@@ -20,6 +19,9 @@ data Ctx = Ctx
     -- Base URLS
     , _ctxConfig              :: !Config
     }
+
+instance HasPostgresPool Ctx where
+    postgresPool = ctxPostgresPool
 
 makeLenses ''Ctx
 
