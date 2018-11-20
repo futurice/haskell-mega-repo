@@ -21,7 +21,7 @@ source-repository head
 
 library
   build-depends:
-    base >= 4.9 && <4.12,
+    base >= 4.9 && <4.13,
     bytestring,
     containers,
     colour,

@@ -37,7 +37,7 @@ library
     ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base            >=4.7      && <4.12
+      base            >=4.7      && <4.13
     , adjunctions
     , aeson-compat
     , containers

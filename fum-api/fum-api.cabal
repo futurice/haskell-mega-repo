@@ -26,7 +26,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.8   && <4.12
+      base >=4.8   && <4.13
     , aeson
     , aeson-compat
     , async

@@ -16,7 +16,7 @@
 [submodule "vendor/chart"]
 	path = vendor/chart
 	# url = https://github.com/timbod7/haskell-chart.git
-	url = https://github.com/phadej/haskell-chart.git
+	url = https://github.com/futurice/haskell-chart.git
 [submodule "vendor/diffusionkinetics-open"]
 	path = vendor/diffusionkinetics-open
 	url = https://github.com/futurice/diffusionkinetics-open.git

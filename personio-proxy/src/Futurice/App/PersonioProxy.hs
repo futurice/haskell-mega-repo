@@ -27,8 +27,8 @@ import qualified Futurice.IdMap    as IdMap
 import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
 
-#if __GLASGOW_HASKELL__ >= 804
-import Data.Compact
+#ifdef MIN_VERSION_ghc_compact
+import GHC.Compact
        (compactAddWithSharing, compactSize, compactWithSharing, getCompact)
 #else
 import Control.DeepSeq (force)

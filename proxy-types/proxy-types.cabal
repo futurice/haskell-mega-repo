@@ -34,7 +34,7 @@ library
     ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base                  >=4.10   && <4.12
+      base                  >=4.10   && <4.13
     , avatar-client
     , containers
     , fum-api

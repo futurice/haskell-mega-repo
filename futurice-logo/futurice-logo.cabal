@@ -29,7 +29,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7      && <4.12
+      base                  >=4.7      && <4.13
     , futurice-prelude
     , JuicyPixels           >=3.2.7    && <3.4
     , base-compat           >=0.6      && <0.11

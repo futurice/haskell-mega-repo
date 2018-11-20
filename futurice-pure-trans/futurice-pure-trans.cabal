@@ -30,7 +30,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7   && <4.12
+      base                  >=4.7   && <4.13
     , aeson
     , futurice-prelude
     , http-client

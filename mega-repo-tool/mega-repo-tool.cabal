@@ -43,7 +43,7 @@ library
     , ansi-wl-pprint
     , array
     , async
-    , base >=4.7   && <4.12
+    , base >=4.7   && <4.13
     , base-compat
     , base16-bytestring
     , base64-bytestring

@@ -26,7 +26,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base                      >=4.7 && <4.12
+      base                      >=4.7 && <4.13
     , amazonka                 ^>=1.5.0 || ^>=1.6.0
     , amazonka-cloudwatch-logs ^>=1.5.0 || ^>=1.6.0
     , base-compat-batteries    ^>=0.10.1

@@ -37,7 +37,7 @@ library
     ScopedTypeVariables
   ghc-options: -Wall -fprint-potential-instances
   build-depends:
-      base >= 4.8 && <4.12
+      base >= 4.8 && <4.13
     , base-compat
     , adjunctions
     , aeson

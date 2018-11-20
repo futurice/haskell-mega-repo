@@ -28,7 +28,7 @@ library
   build-depends:
       algebraic-graphs ^>= 0.2
 
-    , base           >=4.9   && <4.12
+    , base           >=4.9   && <4.13
     , bytestring
     , deepseq
     , http-media     >=0.6.2

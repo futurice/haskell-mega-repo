@@ -34,7 +34,7 @@ library
     ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.12
+      base
     , aeson
     , aeson-compat
     , aeson-extra
@@ -90,7 +90,7 @@ library
     , scientific
     , semigroups
     , singleton-bool >= 0.1.2.0
-    , stm >= 2.5.0.0
+    , stm
     , swagger2
     , text
     , time
@@ -155,7 +155,7 @@ executable planmill-client
       cli
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.12
+      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -238,7 +238,7 @@ executable pm-cli
       cli2
   ghc-options: -Wall -rtsopts -threaded
   build-depends:
-      base >=4.8 && <4.12
+      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -321,7 +321,7 @@ test-suite integration
       integration
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.12
+      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -400,7 +400,7 @@ test-suite test
       test
   ghc-options: -Wall
   build-depends:
-      base >=4.8 && <4.12
+      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra

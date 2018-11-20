@@ -41,8 +41,8 @@ import qualified Network.HTTP.Media               as M
 
 import System.IO.Unsafe (unsafePerformIO)
 
-#ifdef MIN_VERSION_compact
-import           Data.Compact
+#ifdef MIN_VERSION_ghc_compact
+import           GHC.Compact
                  (compactAddWithSharing, compactSize, compactWithSharing,
                  getCompact)
 import qualified Data.Vector  as V
@@ -102,7 +102,7 @@ loadSansSerifFontsIO = do
         sansRI' :: F.PreparedFont Double
         sansRI'  = snd $ F.loadFont' "SourceSansPro_RI"  $ sureLookup "/SourceSansPro_RI.svg"   fontsDir
 
-#ifdef MIN_VERSION_compact
+#ifdef MIN_VERSION_ghc_compact
     regionR   <- compactWithSharing              (forceFontData $ fst sansR')
     regionRB  <- compactAddWithSharing regionR   (forceFontData $ fst sansRB')
     regionRBI <- compactAddWithSharing regionRB  (forceFontData $ fst sansRBI')
@@ -125,7 +125,7 @@ loadSansSerifFontsIO = do
   where
     fontsDir = $(makeRelativeToProject "fonts" >>= embedDir)
 
-#ifdef MIN_VERSION_compact
+#ifdef MIN_VERSION_ghc_compact
     forceFontData :: F.FontData Double -> F.FontData Double
     forceFontData fd = fd { F.fontDataKerning = kern' } where
         kern = F.fontDataKerning fd

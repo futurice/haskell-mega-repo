@@ -126,7 +126,7 @@ mergeJobs now jobs = mergeOrdered $ mk <$> jobs
 spawnPeriocron :: Options -> [Job] -> IO ThreadId
 spawnPeriocron options jobs = do
     now   <- getMonotonicClock
-    tsem  <- atomically $ newTSem (_optionsConcurrentJobs options)
+    tsem  <- atomically $ newTSem $ fromInteger $ _optionsConcurrentJobs options
     jobs' <- for jobs $ \job -> do
         tsem' <- atomically $ newTSem 1
         pure (job, tsem')

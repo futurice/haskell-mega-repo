@@ -25,7 +25,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base            >=4.9      && <4.12
+      base            >=4.9      && <4.13
     , async
     , base-compat
     , bytestring
@@ -59,7 +59,7 @@ test-suite unit-tests
       test
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      base            >=4.9      && <4.12
+      base            >=4.9      && <4.13
     , dynmap-cache
     , async
     , stm
