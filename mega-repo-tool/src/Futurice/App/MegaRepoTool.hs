@@ -41,7 +41,7 @@ data Cmd
     | CmdUpdateKey !Text !Text
     | CmdDeleteKey !Text
     | CmdExec !(NonEmpty String)
-    | CmdLambda !Text !(Maybe Value)
+    | CmdLambda !Text !(Maybe Value) !(Maybe Int)
     | CmdCopyArtifacts !Bool !FilePath !FilePath
 
 buildDockerOptions :: O.Parser Cmd
@@ -129,10 +129,18 @@ lambdaOptions = CmdLambda
         , O.completer lambdaCompleter
         ]
     <*> optional payload
+    <*> optional limit
   where
     payload = O.argument (O.eitherReader readValue) $ mconcat
         [ O.metavar ":json"
         , O.help "Lambda input"
+        ]
+
+    limit = O.option O.auto $ mconcat
+        [ O.metavar ":secs"
+        , O.long "timelimit"
+        , O.short 'l'
+        , O.help "Time limit"
         ]
 
     readValue :: String -> Either String Value
@@ -183,23 +191,23 @@ optsParser = O.subparser $ mconcat
          O.command cmd $ O.info (O.helper <*> parser) $ O.progDesc desc
 
 main' :: Cmd -> IO ()
-main' (CmdBuildDocker imgs)          = cmdBuildDocker imgs
-main' (CmdBuildCommand buildLambdas) = cmdBuildCommand buildLambdas
-main' (CmdAction x)                  = x
-main' CmdGenPass                     = cmdGenPass
-main' CmdGenKeys                     = cmdGenKeys
-main' CmdStackYaml                   = stackYaml
-main' CmdViewConfig                  = do
+main' (CmdBuildDocker imgs)           = cmdBuildDocker imgs
+main' (CmdBuildCommand buildLambdas)  = cmdBuildCommand buildLambdas
+main' (CmdAction x)                   = x
+main' CmdGenPass                      = cmdGenPass
+main' CmdGenKeys                      = cmdGenKeys
+main' CmdStackYaml                    = stackYaml
+main' CmdViewConfig                   = do
     cfg <- readConfig
     print $ ansiPretty $ flip M.renderMustache Null <$> cfg
-main' (CmdListKeys b)                = listKeys b
-main' (CmdAddKey k v)                = addKey True k v
-main' (CmdAddOwnKey k v)             = addKey False k v
-main' (CmdUpdateKey k v)             = updateKey k v
-main' (CmdDeleteKey k)               = deleteKey k
-main' (CmdExec args)                 = cmdExec args
-main' (CmdLambda flib payload)       = cmdLambda flib payload
-main' (CmdCopyArtifacts bl rd bd)    = cmdCopyArtifacts (CAO rd bd bl)
+main' (CmdListKeys b)                 = listKeys b
+main' (CmdAddKey k v)                 = addKey True k v
+main' (CmdAddOwnKey k v)              = addKey False k v
+main' (CmdUpdateKey k v)              = updateKey k v
+main' (CmdDeleteKey k)                = deleteKey k
+main' (CmdExec args)                  = cmdExec args
+main' (CmdLambda flib payload mlimit) = cmdLambda flib payload mlimit
+main' (CmdCopyArtifacts bl rd bd)     = cmdCopyArtifacts (CAO rd bd bl)
 
 defaultMain :: IO ()
 defaultMain = O.execParser opts >>= main'

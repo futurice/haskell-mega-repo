@@ -27,8 +27,8 @@ import qualified Text.RawString.QQ        as QQ
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
 
-cmdLambda :: Text -> Maybe Value -> IO ()
-cmdLambda lambdaName mpayload = do
+cmdLambda :: Text -> Maybe Value -> Maybe Int -> IO ()
+cmdLambda lambdaName mpayload mtimelimit = do
     cfg <- readConfig
 
     lambdaDef <- maybe
@@ -68,7 +68,7 @@ cmdLambda lambdaName mpayload = do
     withTempDirectory "/tmp" "aws-lambda-py" $ \tmpDir -> do
         pySo <- compilePython tmpDir conf
         let pyPath = tmpDir </> "Lambda.py"
-        BS.writeFile pyPath $ pyModule lambdaName mpayload
+        BS.writeFile pyPath $ pyModule lambdaName mpayload (fromMaybe 180 mtimelimit)
         let env = Map.toList $ env' <> procEnv
                 <> Map.singleton "PYTHONPATH" (takeDirectory pySo)
                 <> Map.singleton "LD_LIBRARY_PATH" tmpDir
@@ -89,14 +89,15 @@ drain m = runT_ $ sink <~ m where
             BS.putStr bs
             hFlush stdout
 
-pyModule :: Text -> Maybe Value -> ByteString
-pyModule n v
+pyModule :: Text -> Maybe Value -> Int -> ByteString
+pyModule n v l
     = encodeUtf8
     $ view strict
     $ MS.renderMustache lambdaPyTemplate
     $ object
         [ "name" .= n
         , "value" .= decodeUtf8Lenient (view strict (encode v))
+        , "timelimit" .= l
         ]
 
 lambdaPyTemplate :: MS.Template
@@ -109,7 +110,7 @@ import time
 import Lambda_native
 
 startClock = time.time()
-timeLimit = 180  # seconds
+timeLimit = {{{timelimit}}}  # seconds
 
 class LambdaContext:
     function_name = '''{{{name}}}'''
