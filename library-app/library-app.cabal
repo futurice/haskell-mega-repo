@@ -38,8 +38,11 @@ library
       , bytestring
       , containers
       , cryptohash-sha256
+      , email-proxy-client
       , env-config
+      , fum-api
       , fum-types
+      , futurice-constants
       , futurice-foundation
       , futurice-integrations
       , futurice-postgres
@@ -71,6 +74,7 @@ library
       Futurice.App.Library.Logic
       Futurice.App.Library.Logic.Informations
       Futurice.App.Library.Markup
+      Futurice.App.Library.Reminder
       Futurice.App.Library.Pages.AddItemPage
       Futurice.App.Library.Pages.BoardGameInformationPage
       Futurice.App.Library.Pages.BookInformationPage

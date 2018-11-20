@@ -18,8 +18,8 @@ import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.Library.Types
 import Futurice.App.Library.Logic.Informations
+import Futurice.App.Library.Types
 
 import qualified Data.Map  as Map
 import qualified Data.Text as T
@@ -82,48 +82,48 @@ itemArrayToMap = Map.fromList . fmap (\(ItemData iid lib infoid) -> (iid, (infoi
 fetchItemsWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [ItemId] -> m [ItemData]
 fetchItemsWithItemIds ctx iids = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE item_id in ?;" (Only (In iids))
 
-fetchItemsWithoutLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [ItemData] -> m (Maybe ItemId)
+fetchItemsWithoutLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> [ItemData] -> m (Maybe ItemId)
 fetchItemsWithoutLoans ctx items = do
     ls <- fetchLoansWithItemIds ctx iids
     pure $ listToMaybe $ iids \\ (ldItemId <$> ls)
   where
     iids = idItemId <$> items
 
-fetchItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe ItemData)
+fetchItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m (Maybe ItemData)
 fetchItem ctx iid = listToMaybe <$> (safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE item_id = ?" $ Only iid)
 
-fetchItems :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [ItemData]
+fetchItems :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [ItemData]
 fetchItems ctx = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item " ()
 
-deleteItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m Bool
+deleteItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m Bool
 deleteItem ctx iid = (1 ==) <$> safePoolExecute ctx "DELETE FROM library.item WHERE item_id = ?" (Only iid)
 
-addItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> AddItemRequest -> m Bool
+addItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> AddItemRequest -> m Bool
 addItem ctx (AddItemRequest lib bookinfo_id boardgameinfo_id) =
     (1 ==) <$> safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id, boardgameinfo_id) VALUES (?,?,?)" (lib, bookinfo_id, boardgameinfo_id)
 
-fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m [ItemData]
+fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BookInformationId -> m [ItemData]
 fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE bookinfo_id = ?" (Only binfoid)
 
-fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m [ItemData]
+fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BoardGameInformationId -> m [ItemData]
 fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE boardgameinfo_id = ?" (Only binfoid)
 
 -------------------------------------------------------------------------------
 -- Loan functions
 -------------------------------------------------------------------------------
 
-fetchLoanByItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe LoanData)
+fetchLoanByItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m (Maybe LoanData)
 fetchLoanByItemId ctx iid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only iid)
 
-makeLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> Day -> ItemId -> P.EmployeeId -> m (Maybe LoanData)
+makeLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> Day -> ItemId -> P.EmployeeId -> m (Maybe LoanData)
 makeLoan ctx date iid (P.EmployeeId eid) = do
     _ <- safePoolExecute ctx "INSERT INTO library.loan (date_loaned, personio_id, item_id) VALUES (?,?,?)" (date, toInteger eid, iid)
     listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only iid)
 
-fetchLoansWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [ItemId] -> m [LoanData]
+fetchLoansWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> [ItemId] -> m [LoanData]
 fetchLoansWithItemIds ctx iids = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id in ?;" (Only (In iids))
 
-borrowBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> P.EmployeeId -> BorrowRequest -> m (Maybe LoanData)
+borrowBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> P.EmployeeId -> BorrowRequest -> m (Maybe LoanData)
 borrowBook ctx eid (BorrowRequest binfoid library) = do
     now <- currentDay
     books <- fetchItemsByBookInformation ctx binfoid
@@ -131,26 +131,26 @@ borrowBook ctx eid (BorrowRequest binfoid library) = do
         freeBook <- MaybeT $ fetchItemsWithoutLoans ctx (filter (\b -> library == idLibrary b) books)
         MaybeT $ makeLoan ctx now freeBook eid
 
-loans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [LoanData]
-loans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
+fetchAllLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [LoanData]
+fetchAllLoans ctx = safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan" ()
 
-loan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m (Maybe LoanData)
-loan ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
+fetchLoanWithLoanId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> LoanId -> m (Maybe LoanData)
+fetchLoanWithLoanId ctx lid = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where loan_id = ?" (Only lid)
 
-fetchLoanIdWithItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m (Maybe LoanData)
+fetchLoanIdWithItemId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m (Maybe LoanData)
 fetchLoanIdWithItemId ctx itemId = listToMaybe <$> safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan where item_id = ?" (Only itemId)
 
-checkLoanStatus :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> ItemId -> m LoanStatus
+checkLoanStatus :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m LoanStatus
 checkLoanStatus ctx itemid = do
     loandata <- fetchLoanIdWithItemId ctx itemid
     case loandata of
       Just _ -> pure Loaned
       Nothing -> pure NotLoaned
 
-fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
+fetchLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> IdMap P.Employee -> LoanId -> m (Maybe Loan)
 fetchLoan ctx emap lid = do
     runMaybeT $ do
-        l <- MaybeT $ loan ctx lid
+        l <- MaybeT $ fetchLoanWithLoanId ctx lid
         b <- MaybeT $ fetchItem ctx $ ldItemId l
         binfoid <- MaybeT $ pure $ bookInformation b
         binfo <- MaybeT $ fetchBookInformation ctx binfoid
@@ -163,14 +163,14 @@ fetchLoan ctx emap lid = do
       loan' (LoanData _ date personio_id itemId) bookInfo lib =
           Loan lid (T.pack $ show date) (Item itemId lib $ ItemBook bookInfo) (emap ^.at personio_id)
 
-fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> m [Loan]
+fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> IdMap P.Employee -> m [Loan]
 fetchLoans ctx es = do
-    l <- loans ctx
-    loanDataToLoan ctx es l
+    loans <- fetchAllLoans ctx
+    loanDataToLoan ctx es loans
 
-returnItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> LoanId -> m Bool
+returnItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> LoanId -> m Bool
 returnItem ctx lid = do
-    l <- loan ctx lid
+    l <- fetchLoanWithLoanId ctx lid
     case l of
       Nothing -> pure False
       Just (LoanData _ date (P.EmployeeId pid) iid) -> do
@@ -178,12 +178,12 @@ returnItem ctx lid = do
           result <- safePoolExecute ctx "DELETE FROM library.loan WHERE loan_id = ?" (Only lid)
           if result == 1 then pure True else pure False
 
-fetchPersonalLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> IdMap P.Employee -> P.EmployeeId -> m [Loan]
+fetchPersonalLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> IdMap P.Employee -> P.EmployeeId -> m [Loan]
 fetchPersonalLoans ctx es (P.EmployeeId eid) = do
     ldatas <- safePoolQuery ctx "SELECT loan_id, date_loaned, personio_id, item_id FROM library.loan WHERE personio_id = ?" (Only eid)
     loanDataToLoan ctx es ldatas
 
-loanDataToLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => (Pool Connection) -> IdMap P.Employee -> [LoanData] -> m [Loan]
+loanDataToLoan :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> IdMap P.Employee -> [LoanData] -> m [Loan]
 loanDataToLoan ctx es ldatas = do
     catMaybes <$> for ldatas (\ldata -> do
         runMaybeT $ do
@@ -202,23 +202,23 @@ loanDataToLoan ctx es ldatas = do
 -- Book functions
 -------------------------------------------------------------------------------
 
-fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [BookInformation]
+fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [BookInformation]
 fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
 
-fetchCoverInformationsAsText :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [(BookInformationId, Text)]
+fetchCoverInformationsAsText :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [(BookInformationId, Text)]
 fetchCoverInformationsAsText ctx = safePoolQuery ctx "SELECT bookinfo_id, cover FROM library.bookinformation" ()
 
-fetchBookInformationByISBN :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> Text -> m (Maybe BookInformationResponse)
+fetchBookInformationByISBN :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> Text -> m (Maybe BookInformationResponse)
 fetchBookInformationByISBN ctx isbn = do
     binfoid <- safePoolQuery ctx "SELECT bookinfo_id FROM library.bookinformation WHERE isbn = ?" (Only isbn)
     case listToMaybe binfoid of
       Just infoid -> listToMaybe <$> fetchBookResponse ctx infoid
       Nothing -> pure Nothing
 
-fetchBookInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m (Maybe BookInformation)
+fetchBookInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BookInformationId -> m (Maybe BookInformation)
 fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE bookinfo_id = ?" (Only binfoid)
 
-fetchBookResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> m [BookInformationResponse]
+fetchBookResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BookInformationId -> m [BookInformationResponse]
 fetchBookResponse ctx binfoid = do
     books <- fetchItemsByBookInformation ctx binfoid
     binfo <- fetchBookInformation ctx binfoid
@@ -230,7 +230,7 @@ fetchBookResponse ctx binfoid = do
       toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover amazonLink) =
           BookInformationResponse infoid title isbn author publisher published cover amazonLink books
 
-fetchBoardGameResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m (Maybe BoardGameInformationResponse)
+fetchBoardGameResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BoardGameInformationId -> m (Maybe BoardGameInformationResponse)
 fetchBoardGameResponse ctx infoid = do
     boardgames <- fetchItemsByBoardGameInformationId ctx infoid
     binfo <- fetchBoardGameInformation ctx infoid
@@ -249,7 +249,7 @@ fetchBoardGameResponse ctx infoid = do
         , _boardGameResponseGames          = boardgames
         }
 
-fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [BookInformation] -> m [BookInformationResponse]
+fetchBooksResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> [BookInformation] -> m [BookInformationResponse]
 fetchBooksResponse ctx bookInfos = do
     books <- fetchItems ctx
     pure $ (toBookInformationResponse (bookInformationMap books)) <$> bookInfos
@@ -268,13 +268,13 @@ bookIdToInformation iid bookidmap bookinfomap = do
     binfoid <- bookinfoid
     bookinfomap ^.at binfoid
 
-checkIfExistingBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> Maybe BookInformationId -> Text -> m (Maybe BookInformationId)
+checkIfExistingBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> Maybe BookInformationId -> Text -> m (Maybe BookInformationId)
 checkIfExistingBook ctx binfoid isbn = runMaybeT $ do
     info <- MaybeT $ pure binfoid
     bookInformation <- MaybeT $ fetchBookInformation ctx info
     if bookInformation ^. bookISBN == isbn then pure $ bookInformation ^. bookInformationId else MaybeT $ pure Nothing
 
-addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> AddBookInformation -> Maybe ContentHash -> m Bool
+addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> AddBookInformation -> Maybe ContentHash -> m Bool
 addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) contentHash = do
     checkedInfoId <- checkIfExistingBook ctx binfoid isbn
     bookInfoId <- case checkedInfoId of
@@ -295,7 +295,7 @@ addNewBook ctx (AddBookInformation title isbn author publisher published amazonL
 updateBookCover :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BookInformationId -> ContentHash -> m Int64
 updateBookCover ctx binfoid contentHash = safePoolExecute ctx "UPDATE library.bookinformation SET cover = ? where bookinfo_id = ?" (contentHash, binfoid)
 
-updateBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> EditBookInformation -> m Int64
+updateBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> EditBookInformation -> m Int64
 updateBookInformation ctx info = safePoolExecute ctx "UPDATE library.bookinformation SET title = ?, isbn = ?, author = ?, publisher = ?, publishedyear = ?, amazon_link = ? where bookinfo_id = ?" (info ^. editBookTitle, info ^. editBookISBN, info ^. editBookAuthor, info ^. editBookPublisher, info ^. editBookPublished, info ^. editBookAmazonLink, info ^. editBookInformationId)
 
 -------------------------------------------------------------------------------
@@ -305,10 +305,10 @@ updateBookInformation ctx info = safePoolExecute ctx "UPDATE library.bookinforma
 fetchBoardGameInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> m [BoardGameInformation]
 fetchBoardGameInformations ctx = safePoolQuery ctx "SELECT boardgameinfo_id, name, publisher, publishedYear, designer, artist FROM library.boardgameinformation" ()
 
-fetchBoardGameInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> BoardGameInformationId -> m (Maybe BoardGameInformation)
+fetchBoardGameInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BoardGameInformationId -> m (Maybe BoardGameInformation)
 fetchBoardGameInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT boardgameinfo_id, name, publisher, publishedYear, designer, artist FROM library.boardgameinformation WHERE boardgameinfo_id = ?" (Only binfoid)
 
-addNewBoardGame :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> AddBoardGameInformation -> m Bool
+addNewBoardGame :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> AddBoardGameInformation -> m Bool
 addNewBoardGame ctx (AddBoardGameInformation name publisher published designer artist libraryBoardgames) = do
     boardgameInfoId <- listToMaybe <$> safePoolQuery
                        ctx
@@ -321,5 +321,5 @@ addNewBoardGame ctx (AddBoardGameInformation name publisher published designer a
           pure True
       Nothing -> pure False
 
-updateBoardGameInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> EditBoardGameInformation -> m Int64
+updateBoardGameInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> EditBoardGameInformation -> m Int64
 updateBoardGameInformation ctx info = safePoolExecute ctx "UPDATE library.boardgameinformation SET name = ?, publisher = ?, publishedyear = ?, designer = ?, artist = ? WHERE boardgameinfo_id = ?" (info ^. editBoardGameName, info ^. editBoardGamePublisher, info ^. editBoardGamePublished, info ^. editBoardGameDesigner, info ^. editBoardGameArtist, info ^. editBoardGameInformationId)

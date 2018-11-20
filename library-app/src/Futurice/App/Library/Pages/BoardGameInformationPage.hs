@@ -22,13 +22,13 @@ boardGameInformationPage :: BoardGameInformationResponse -> [LoanData] -> IdMap 
 boardGameInformationPage boardGameResponse ls employees = page_ "Board Game details" (Nothing :: Maybe Nav) $ do
     fullRow_ $ do
         div_ [] $ do
-            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBoardGamePageGet (boardGameResponse ^. boardGameResponseInformationId)] "Edit board game information"
             table_ $ do
                 vertRow_ "Name" $ toHtml $ boardGameResponse ^. boardGameResponseName
                 vertRow_ "Publisher" $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponsePublisher
                 vertRow_ "Published" $ toHtml $ maybe "" show $ boardGameResponse ^. boardGameResponsePublished
                 vertRow_ "Designer" $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseDesigner
                 vertRow_ "Artist" $ toHtml $ fromMaybe "" $ boardGameResponse ^. boardGameResponseArtist
+            a_ [class_ "button small", href_ $ linkToText $ fieldLink editBoardGamePageGet (boardGameResponse ^. boardGameResponseInformationId)] "Edit board game information"
     fullRow_ $ do
         h2_ "Board games"
         for_ officeMap $ \(lib, bs) -> do
