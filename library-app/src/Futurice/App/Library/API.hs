@@ -60,15 +60,17 @@ data HtmlRecord route = HtmlRecord
     , personalLoansPageGet :: route :- SSOUser :> "user" :> "page" :> Get '[HTML] (HtmlPage "personalinformation")
     } deriving (Generic)
 
-type IndexPageEndpoint = QueryParam "criteria" SortCriteria
-                         :> QueryParam "direction" SortDirection
-                         :> QueryParam "limit" Int
-                         :> QueryParam "start-book" BookInformationId
-                         :> QueryParam "start-boardgame" BoardGameInformationId
-                         :> QueryParam "search" Text
-                         :> QueryParam "library" LibraryOrAll
-                         :> QueryParam "only-available" Text
-                         :> Get '[HTML] (HtmlPage "indexpage")
+type IndexPageEndpoint = Summary "Index page, include search"
+    :> QueryParam "criteria" (Some SortCriteria)
+    :> QueryParam "direction" SortDirection
+    :> QueryParam "limit" Int
+    :> QueryParam "start-book" BookInformationId
+    :> QueryParam "start-boardgame" BoardGameInformationId
+    :> QueryParam "search" Text
+    :> QueryParam "library" LibraryOrAll
+    :> QueryParam "only-available" Text
+    :> Get '[HTML] (HtmlPage "indexpage")
+
 type BookCoverEndpoint = "book" :> "cover" :> Capture "picture" ContentHash :> Get '[PNG] (Headers '[Header "Cache-Control" Text] (DynamicImage))
 type BookInformationPageEndpoint = "book" :> "page" :> Capture "id" BookInformationId :> Get '[HTML] (HtmlPage "bookinformation")
 type BoardGameInformationPageEndpoint = "boardgame" :> "page" :> Capture "id" BoardGameInformationId :> Get '[HTML] (HtmlPage "boardgameinformation")

@@ -161,7 +161,7 @@ fetchLoan ctx emap lid = do
               BookInfoId info -> Just info
               _               -> Nothing
       loan' (LoanData _ date personio_id itemId) bookInfo lib =
-          Loan lid (T.pack $ show date) (Item itemId lib $ ItemBook bookInfo) (emap ^.at personio_id)
+          Loan lid (T.pack $ show date) (Item itemId lib $ MkSome $ ItemBook bookInfo) (emap ^.at personio_id)
 
 fetchLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> IdMap P.Employee -> m [Loan]
 fetchLoans ctx es = do
@@ -191,11 +191,11 @@ loanDataToLoan ctx es ldatas = do
             case idInfoId itemData of
               BookInfoId infoid -> do
                   i <- fetchBookInformation ctx infoid
-                  item <- MaybeT $ pure $ (Item (idItemId itemData) (idLibrary itemData) . ItemBook) <$> i
+                  item <- MaybeT $ pure $ (Item (idItemId itemData) (idLibrary itemData) . MkSome . ItemBook) <$> i
                   pure $ Loan (ldLoanId ldata) (T.pack $ show $ ldDateLoaned ldata) item (es ^.at (ldPersonioId ldata))
               BoardGameInfoId infoid -> do
                   i <- fetchBoardGameInformation ctx infoid
-                  item <- MaybeT $ pure $ (Item (idItemId itemData) (idLibrary itemData) . ItemBoardGame) <$> i
+                  item <- MaybeT $ pure $ (Item (idItemId itemData) (idLibrary itemData) . MkSome . ItemBoardGame) <$> i
                   pure $ Loan (ldLoanId ldata) (T.pack $ show $ ldDateLoaned ldata) item (es ^.at (ldPersonioId ldata)))
 
 -------------------------------------------------------------------------------
