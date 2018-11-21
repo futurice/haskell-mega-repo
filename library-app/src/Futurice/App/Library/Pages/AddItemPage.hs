@@ -69,7 +69,7 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                 td_ $ input_ [ name_ "designer", type_ "text"]
             tr_ $ do
                 th_ "Artist"
-                td_ $ input_ [ name_ "artist", type_ "test"]
+                td_ $ input_ [ name_ "artist", type_ "text"]
             tr_ $ do
                 th_ "Library"
                 td_ $ libraryInput

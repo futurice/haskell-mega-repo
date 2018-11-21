@@ -7,6 +7,18 @@ futu.onload(function () {
   var assert = futu.assert;
   var buttonOnClick = futu.buttonOnClick;
 
+  $$("table#book-index-table tbody tr").forEach(function (row) {
+      row.addEventListener("click", function () {
+          window.location.href = this.children[1].children[0].href; //fetch address from title link
+      });
+  });
+
+  $$("table#boardgame-index-table tbody tr").forEach(function (row) {
+      row.addEventListener("click", function () {
+          window.location.href = this.children[0].children[0].href; //fetch address from title link
+      });
+  });
+
   $$("button[data-futu-id=delete-item]").forEach(function (btn) {
       buttonOnClick(btn, function () {
           // prevent dbl-click

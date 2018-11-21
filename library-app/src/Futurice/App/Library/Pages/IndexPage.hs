@@ -4,8 +4,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Library.Pages.IndexPage where
 
-import Control.Lens              (_last)
-import Futurice.Lucid.Foundation hiding (page_)
+import Control.Lens                (_last)
+import Futurice.App.Sisosota.Types (contentHashToText)
+import Futurice.Lucid.Foundation   hiding (page_)
 import Futurice.Prelude
 import Prelude ()
 import Servant
@@ -46,7 +47,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   input_ [hidden_ "", name_ "direction", value_ $ toQueryParam direction ]
                   input_ [hidden_ "", name_ "limit",     value_ $ toQueryParam limit ]
                   for_ startBookInfoId $ \infoid -> input_ [hidden_ "", name_ "start-book", value_ (toQueryParam infoid)]
-          fullRow_ $ table_ [id_ "main"] $ do
+          fullRow_ $ table_ [id_ "book-index-table"] $ do
               thead_ $ tr_ $ do
                   th_ "Cover"
                   th_ $ a_ [ indexPageLink (BookSort SortTitle)] "Title"
@@ -54,8 +55,10 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   th_ $ a_ [ indexPageLink (BookSort SortPublished)] "Published"
                   th_ $ a_ [ indexPageLink (BookSort SortISBN)] "ISBN"
               tbody_ $ for_ books $ \(BookInformation binfoid title isbn author _publisher published cover _amazonLink) -> tr_ $ do
-                  td_ $ img_ [height_ "160", width_ "128", src_ $ toUrlPiece $ fieldLink bookCoverGet cover ]
-                  td_ $ a_ [href_ $ linkToText $ fieldLink bookPageGet binfoid] $ toHtml title
+                  td_ $ case contentHashToText cover of
+                    "" -> "No cover image available"
+                    _  -> img_ [height_ "160", width_ "128", src_ $ toUrlPiece $ fieldLink bookCoverGet cover ]
+                  td_ $ a_ [style_ "display: block", href_ $ linkToText $ fieldLink bookPageGet binfoid] $ toHtml title
                   td_ $ toHtml $ author
                   td_ $ toHtml $ show published
                   td_ $ toHtml $ isbn
@@ -73,7 +76,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   input_ [hidden_ "", name_ "direction", value_ $ toQueryParam direction ]
                   input_ [hidden_ "", name_ "limit",     value_ $ toQueryParam limit ]
                   for_ startBoardGameInfoId $ \infoid -> input_ [hidden_ "", name_ "start-boardgame", value_ (toQueryParam infoid)]
-          fullRow_ $ table_ [id_ "main"] $ do
+          fullRow_ $ table_ [id_ "boardgame-index-table"] $ do
               thead_ $ tr_ $ do
                   th_ $ a_ [ indexPageLink (BoardGameSort SortName)] "Name"
                   th_ $ a_ [ indexPageLink (BoardGameSort SortDesigner)] "Designer"
