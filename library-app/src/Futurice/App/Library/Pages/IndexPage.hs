@@ -58,7 +58,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   td_ $ case contentHashToText cover of
                     "" -> "No cover image available"
                     _  -> img_ [height_ "160", width_ "128", src_ $ toUrlPiece $ fieldLink bookCoverGet cover ]
-                  td_ $ a_ [style_ "display: block", href_ $ linkToText $ fieldLink bookPageGet binfoid] $ toHtml title
+                  td_ $ a_ [ data_ "futu-row-link" "true", style_ "display: block", recordHref_ bookPageGet binfoid] $ toHtml title
                   td_ $ toHtml $ author
                   td_ $ toHtml $ show published
                   td_ $ toHtml $ isbn
@@ -82,7 +82,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   th_ $ a_ [ indexPageLink (BoardGameSort SortDesigner)] "Designer"
                   th_ $ "Published"
               tbody_ $ for_ boardgames $ \(BoardGameInformation binfoid name _publisher published designer _artist) -> tr_ $ do
-                  td_ $ a_ [href_ $ linkToText $ fieldLink boardGamePageGet binfoid] $ toHtml name
+                  td_ $ a_ [ data_ "futu-row-link" "true", recordHref_ boardGamePageGet binfoid] $ toHtml name
                   td_ $ toHtml $ fromMaybe "" designer
                   td_ $ toHtml $ maybe "" show published
           paginationLinks crit itemInfos

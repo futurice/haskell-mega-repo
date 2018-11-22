@@ -7,17 +7,20 @@ futu.onload(function () {
   var assert = futu.assert;
   var buttonOnClick = futu.buttonOnClick;
 
-  $$("table#book-index-table tbody tr").forEach(function (row) {
-      row.addEventListener("click", function () {
-          window.location.href = this.children[1].children[0].href; //fetch address from title link
-      });
-  });
+  function makeRowLink(row) {
+      var rowLink = $("a[data-futu-row-link=true]", row);
+      if (rowLink) {
+          row.addEventListener("click", function () {
+              window.location.href = rowLink.href;
+          });
 
-  $$("table#boardgame-index-table tbody tr").forEach(function (row) {
-      row.addEventListener("click", function () {
-          window.location.href = this.children[0].children[0].href; //fetch address from title link
-      });
-  });
+          // make mouse cursor look like a link
+          row.style.cursor = "pointer";
+      }
+  }
+
+  $$("table#book-index-table tbody tr").forEach(makeRowLink);
+  $$("table#boardgame-index-table tbody tr").forEach(makeRowLink);
 
   $$("button[data-futu-id=delete-item]").forEach(function (btn) {
       buttonOnClick(btn, function () {
