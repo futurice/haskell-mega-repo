@@ -38,7 +38,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
               OfficeLibrary library -> do
                   h3_ $ T.pack $ show $ toHtml library
                   unless (null $ (snd . partitionByLoan) bs) $ do
-                      span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (show . length . snd . partitionByLoan) bs <> " books available"
+                      span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (availabilityText . snd . partitionByLoan) bs
                       button_ [class_ "button tiny",
                                data_ "futu-id" "loan-item",
                                data_ "item-id" (T.pack $ show binfoid),
@@ -52,7 +52,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                               div_ [ style_ "float: left;"] $ toHtml $ T.pack $ show day
                               button_ [class_ "button tiny",
                                           data_ "futu-id" "snatch-item",
-                                          data_ "item-id" (T.pack $ show (_booksBookId b))] $ toHtml ("Snatch" :: Text)
+                                          data_ "item-id" (T.pack $ show (_booksBookId b))] $ toHtml ("Take over" :: Text)
               _ -> pure ()
     where
       idT :: Text -> Text
@@ -60,3 +60,5 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
       officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_booksLibrary x, [x])) <$> books
       loanMap = M.fromList $ (\(LoanData lid day person iid) -> (iid, (lid, day, person))) <$> ls
       partitionByLoan = partition (\x -> isJust (loanMap ^.at (_booksBookId x)))
+      availabilityText bs | length bs > 1 = (show . length) bs <> " books available"
+                          | otherwise     = "1 book available"

@@ -7,6 +7,21 @@ futu.onload(function () {
   var assert = futu.assert;
   var buttonOnClick = futu.buttonOnClick;
 
+  function makeRowLink(row) {
+      var rowLink = $("a[data-futu-row-link=true]", row);
+      if (rowLink) {
+          row.addEventListener("click", function () {
+              window.location.href = rowLink.href;
+          });
+
+          // make mouse cursor look like a link
+          row.style.cursor = "pointer";
+      }
+  }
+
+  $$("table#book-index-table tbody tr").forEach(makeRowLink);
+  $$("table#boardgame-index-table tbody tr").forEach(makeRowLink);
+
   $$("button[data-futu-id=delete-item]").forEach(function (btn) {
       buttonOnClick(btn, function () {
           // prevent dbl-click

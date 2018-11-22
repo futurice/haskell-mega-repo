@@ -36,7 +36,7 @@ boardGameInformationPage boardGameResponse ls employees = page_ "Board Game deta
               OfficeLibrary library -> do
                   h3_ $ T.pack $ show $ toHtml library
                   unless (null $ (snd . partitionByLoan) bs) $ do
-                      span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (show . length . snd . partitionByLoan) bs <> " board games available"
+                      span_ [style_ "padding-left: 10px; padding-right: 10px;"] $ toHtml $ (availabilityText . snd . partitionByLoan) bs
                       -- HOX! We currently don't want to loan boardgames, but this can be opened up later
                       -- button_ [class_ "button tiny",
                       --          data_ "futu-id" "loan-item",
@@ -55,3 +55,5 @@ boardGameInformationPage boardGameResponse ls employees = page_ "Board Game deta
     officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_boardGamesLibrary x, [x])) <$> (boardGameResponse ^. boardGameResponseGames)
     loanMap = M.fromList $ (\(LoanData lid day person iid) -> (iid, (lid, day, person))) <$> ls
     partitionByLoan = partition (\x -> isJust (loanMap ^.at (_boardGamesBoardGameId x)))
+    availabilityText bs | length bs > 1 = (show . length) bs <> " board games available"
+                        | otherwise     = "1 board game available"
