@@ -15,6 +15,7 @@ import Database.PostgreSQL.Simple.Types
 import Futurice.App.Sisosota.Types        (ContentHash)
 import Futurice.IdMap                     (IdMap)
 import Futurice.Postgres
+import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
 import Prelude ()
 
@@ -79,8 +80,16 @@ itemArrayToMap = Map.fromList . fmap (\(ItemData iid lib infoid) -> (iid, (infoi
 -- Item functions
 -------------------------------------------------------------------------------
 
+itemsQuery :: QueryM TableAbbr
+itemsQuery = do
+    tbl <- from_ "item"
+    fields_ tbl [ "item_id", "library", "bookinfo_id", "boardgameinfo_id" ]
+    return tbl
+
 fetchItemsWithItemIds :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Connection -> [ItemId] -> m [ItemData]
-fetchItemsWithItemIds ctx iids = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE item_id in ?;" (Only (In iids))
+fetchItemsWithItemIds ctx iids = safePoolQueryM ctx "library" $ do
+    tbl <- itemsQuery
+    where_ [ ecolumn_ tbl "item_id", " IN ", eparam_ $ In iids ]
 
 fetchItemsWithoutLoans :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> [ItemData] -> m (Maybe ItemId)
 fetchItemsWithoutLoans ctx items = do
@@ -90,10 +99,12 @@ fetchItemsWithoutLoans ctx items = do
     iids = idItemId <$> items
 
 fetchItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m (Maybe ItemData)
-fetchItem ctx iid = listToMaybe <$> (safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE item_id = ?" $ Only iid)
+fetchItem ctx iid = fmap listToMaybe $ safePoolQueryM ctx "library" $ do
+    tbl <- itemsQuery
+    where_ [ ecolumn_ tbl "item_id", " = ", eparam_ $ iid ]
 
 fetchItems :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [ItemData]
-fetchItems ctx = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item " ()
+fetchItems ctx = safePoolQueryM ctx "library" $ void itemsQuery
 
 deleteItem :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> ItemId -> m Bool
 deleteItem ctx iid = (1 ==) <$> safePoolExecute ctx "DELETE FROM library.item WHERE item_id = ?" (Only iid)
@@ -103,10 +114,14 @@ addItem ctx (AddItemRequest lib bookinfo_id boardgameinfo_id) =
     (1 ==) <$> safePoolExecute ctx "INSERT INTO library.item (library, bookinfo_id, boardgameinfo_id) VALUES (?,?,?)" (lib, bookinfo_id, boardgameinfo_id)
 
 fetchItemsByBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BookInformationId -> m [ItemData]
-fetchItemsByBookInformation ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE bookinfo_id = ?" (Only binfoid)
+fetchItemsByBookInformation ctx binfoid = safePoolQueryM ctx "library" $ do
+    tbl <- itemsQuery
+    where_ [ ecolumn_ tbl "bookinfo_id", " = ", eparam_ binfoid ]
 
 fetchItemsByBoardGameInformationId :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BoardGameInformationId -> m [ItemData]
-fetchItemsByBoardGameInformationId ctx binfoid = safePoolQuery ctx "SELECT item_id, library, bookinfo_id, boardgameinfo_id FROM library.item WHERE boardgameinfo_id = ?" (Only binfoid)
+fetchItemsByBoardGameInformationId ctx binfoid = safePoolQueryM ctx "library" $ do
+    tbl <- itemsQuery
+    where_ [ ecolumn_ tbl "boardgameinfo_id", " = ", eparam_ binfoid ]
 
 -------------------------------------------------------------------------------
 -- Loan functions
