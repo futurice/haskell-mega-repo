@@ -33,7 +33,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
             a_ [class_ (currentPage Book      <> "button"), recordHref_ indexPageGet (Just $ MkSome $ BookSort SortTitle)     Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ "Books"
             a_ [class_ (currentPage BoardGame <> "button"), recordHref_ indexPageGet (Just $ MkSome $ BoardGameSort SortName) Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ "Boardgames"
     case crit of
-      BookSort bookCriteria | books <- map fromItemBook itemInfos -> do
+      BookSort _ | books <- map fromItemBook itemInfos -> do
           paginationLinks crit itemInfos
           div_ $ do
               form_ [ recordAction_ indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ do
@@ -43,7 +43,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                       div_ [ class_ "columns large-8", style_ "padding-left: 0px;"] $ div_ [ class_ "input-group"] $ do
                           input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
                           div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
-                  input_ [hidden_ "", name_ "criteria",  value_ $ toQueryParam bookCriteria ]
+                  input_ [hidden_ "", name_ "criteria",  value_ $ toQueryParam $ MkSome crit ]
                   input_ [hidden_ "", name_ "direction", value_ $ toQueryParam direction ]
                   input_ [hidden_ "", name_ "limit",     value_ $ toQueryParam limit ]
                   for_ startBookInfoId $ \infoid -> input_ [hidden_ "", name_ "start-book", value_ (toQueryParam infoid)]
@@ -63,7 +63,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   td_ $ toHtml $ show published
                   td_ $ toHtml $ isbn
           paginationLinks crit itemInfos
-      BoardGameSort boardgameCriteria | boardgames <- map fromItemBoardGame itemInfos -> do
+      BoardGameSort _ | boardgames <- map fromItemBoardGame itemInfos -> do
           paginationLinks crit itemInfos
           div_ $ do
               form_ [action_ $ linkToText $ fieldLink indexPageGet Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing] $ do
@@ -72,7 +72,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                       div_ [ class_ "columns large-10"] $ div_ [ class_ "input-group"] $ do
                           input_ [class_ "input-group-field", size_ "50", type_ "text", id_ "search-box", placeholder_ "Search...", value_ $ fromMaybe "" search, name_ "search"]
                           div_ [ class_ "input-group-button"] $ button_ [class_ "button", type_ "submit"] "Submit"
-                  input_ [hidden_ "", name_ "criteria",  value_ $ toQueryParam boardgameCriteria ]
+                  input_ [hidden_ "", name_ "criteria",  value_ $ toQueryParam $ MkSome crit ]
                   input_ [hidden_ "", name_ "direction", value_ $ toQueryParam direction ]
                   input_ [hidden_ "", name_ "limit",     value_ $ toQueryParam limit ]
                   for_ startBoardGameInfoId $ \infoid -> input_ [hidden_ "", name_ "start-boardgame", value_ (toQueryParam infoid)]
