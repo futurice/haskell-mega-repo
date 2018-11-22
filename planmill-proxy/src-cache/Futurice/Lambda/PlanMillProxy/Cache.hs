@@ -6,17 +6,20 @@ module Futurice.Lambda.PlanMillProxy.Cache (
     planMillProxyCacheLambda,
     ) where
 
-import Data.Aeson         (FromJSON, Value, object, (.=))
-import Data.Binary.Tagged (HasSemanticVersion, HasStructuralInfo, taggedEncode)
-import Data.Constraint    (Dict (..))
-import Data.Time          (addDays)
+import Data.Aeson                   (FromJSON, Value, object, parseJSON, (.=))
+import Data.Aeson.Types             (parseMaybe)
+import Data.Binary.Tagged
+       (HasSemanticVersion, HasStructuralInfo, taggedEncode)
+import Data.Constraint              (Dict (..))
+import Data.Time                    (addDays)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
        (ConnectInfo, HasPostgresPool, createPostgresPool, safePoolExecute,
-       safePoolExecute_, safePoolQuery)
+       safePoolExecute_)
+import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
-import PlanMill.Worker    (Workers, submitPlanMill, workers)
+import PlanMill.Worker              (Workers, submitPlanMill, workers)
 import Prelude ()
 
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -41,7 +44,7 @@ planMillProxyCacheLambda :: AwsLambdaHandler
 planMillProxyCacheLambda = makeAwsLambda impl
   where
     impl :: LambdaContext -> AWSEnv -> Config -> Logger -> Manager -> Value -> LogT IO ()
-    impl _ _ Config {..} lgr mgr _ = do
+    impl lc _ Config {..} lgr mgr value = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
         ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
@@ -56,16 +59,41 @@ planMillProxyCacheLambda = makeAwsLambda impl
               | offset < 7200 = UTCTime (addDays (-1) today) 7200
               | otherwise     = UTCTime today 7200
 
-        logInfo "Fetching outdated queries" stamp
-        qs <- safePoolQuery pool selectQuery (Only stamp)
+        -- limit
+        let limit = maybe 200 (max 1) $ parseMaybe parseJSON value
+
+        logInfoI "Fetching outdated queries, limit $limit" $ object
+            [ "older-than" .= stamp
+            , "limit"      .= limit
+            ]
+
+        qs <- safePoolQueryM pool "planmillproxy" $  do
+            tbl <- from_ "cache"
+            fields_ tbl ["query"]
+            where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
+            orderby_ tbl "updated" ASC
+            limit_ limit
+
         logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
-        for_ qs $ \(Only (PM.SomeQuery q)) -> do
-            res <- fetch ws pool q
-            case res of
-                Right () -> pure ()
-                Left exc -> do
-                    logAttention "Update failed" $ object [ "query" .= q, "exc" .= show exc ]
-                    void $ safePoolExecute pool deleteQuery (Postgres.Only q)
+
+        void $ runExceptT $ for_ qs $ \(Only (PM.SomeQuery q)) -> do
+            remaining <- liftIO $ lcRemainingTimeInMillis lc
+            if remaining < 35 * 1000  -- PlanMill may take 30 seconds to answer
+            then do
+                logAttentionI "Aborting rest jobs: $remaining ms remaining" $ object
+                    [ "remaining" .= remaining
+                    ]
+                throwError () -- stop the whole job here
+            else do
+                res <- lift $ fetch ws pool q
+                case res of
+                    Right () -> pure ()
+                    Left exc -> do
+                        logAttention "Update failed" $ object
+                            [ "query" .= q
+                            , "exc"   .= show exc
+                            ]
+                        void $ safePoolExecute pool deleteQuery (Postgres.Only q)
 
     fetch :: HasPostgresPool ctx => Workers -> ctx -> PM.Query a -> LogT IO (Either SomeException ())
     fetch ws ctx q = case (binaryDict, semVerDict, structDict, nfdataDict, fromJsonDict) of
@@ -99,15 +127,6 @@ planMillProxyCacheLambda = makeAwsLambda impl
             , "WHERE viewed < -4" -- -4 makes data survive over the weekends
             , ";"
             ]
-
-selectQuery :: Postgres.Query
-selectQuery = fromString $ unwords
-    [ "SELECT (query) FROM planmillproxy.cache"
-    , "WHERE updated < ?"
-    , "ORDER BY updated"
-    , "LIMIT 200" -- cannot be much larger, we are slow to process some requsts
-    , ";"
-    ]
 
 deleteQuery :: Postgres.Query
 deleteQuery = "DELETE FROM planmillproxy.cache WHERE query = ?;"
