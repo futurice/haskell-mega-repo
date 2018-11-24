@@ -17,7 +17,7 @@ import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
 import PlanMill.Worker
-       (Workers, closeWorkers, submitPlanMillE, workers)
+       (Workers, withWorkers, submitPlanMillE)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -46,18 +46,15 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
     impl lc _ Config {..} lgr mgr v = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
-        ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
         now <- currentTime
-
-        case v of
-            "without-timereports" ->
-                updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (take 2 $ toList intervals)
-            "without-timereports-all" ->
-                updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList intervals)
-            _ ->
-                updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now
-
-        closeWorkers ws
+        withWorkers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"] $ \ws ->
+            case v of
+                "without-timereports" ->
+                    updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (take 2 $ toList intervals)
+                "without-timereports-all" ->
+                    updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList intervals)
+                _ ->
+                    updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now
 
 -------------------------------------------------------------------------------
 -- Intervals

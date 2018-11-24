@@ -13,7 +13,7 @@ import Futurice.Postgres
        (ConnectInfo, Query, createPostgresPool, safePoolExecuteMany,
        safePoolQuery)
 import Futurice.Prelude
-import PlanMill.Worker    (submitPlanMill, workers)
+import PlanMill.Worker    (withWorkers, submitPlanMill)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -41,30 +41,30 @@ planMillProxyCapacityLambda = makeAwsLambda impl where
     impl _ _ Config {..} lgr mgr _ = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
-        ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
         now <- currentTime
         today <- currentDay
 
-        -- Find older than 12h capacities to update
-        let stamp = addUTCTime (-43200) now
-        logInfo "Selecting old data in cache" stamp
-        res <- safePoolQuery pool selectQuery (Only stamp)
+        withWorkers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"] $ \ws -> do
+            -- Find older than 12h capacities to update
+            let stamp = addUTCTime (-43200) now
+            logInfo "Selecting old data in cache" stamp
+            res <- safePoolQuery pool selectQuery (Only stamp)
 
-        for_ res $ \(pmUid, mi, ma) -> do
-            let interval = mi PM.... max ma (addDays 30 today)
-            logInfo "Updating employees capacities" $ object
-                [ "pm-uid"   .= pmUid
-                , "interval" .= interval
-                ]
-            ecapacities <- liftIO $ tryDeep $ submitPlanMill ws $ PM.queryToRequest $
-                PM.QueryCapacities interval pmUid
-            case ecapacities of
-                Left err -> logAttention "PM failed" (show err)
-                Right capacities -> do
-                    logTrace "Got results from PM" (length capacities)
-                    _ <- safePoolExecuteMany pool insertQuery $
-                        transformForInsert pmUid capacities
-                    return ()
+            for_ res $ \(pmUid, mi, ma) -> do
+                let interval = mi PM.... max ma (addDays 30 today)
+                logInfo "Updating employees capacities" $ object
+                    [ "pm-uid"   .= pmUid
+                    , "interval" .= interval
+                    ]
+                ecapacities <- liftIO $ tryDeep $ submitPlanMill ws $ PM.queryToRequest $
+                    PM.QueryCapacities interval pmUid
+                case ecapacities of
+                    Left err -> logAttention "PM failed" (show err)
+                    Right capacities -> do
+                        logTrace "Got results from PM" (length capacities)
+                        _ <- safePoolExecuteMany pool insertQuery $
+                            transformForInsert pmUid capacities
+                        return ()
 
 transformForInsert
     :: PM.UserId

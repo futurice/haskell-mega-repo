@@ -15,6 +15,7 @@ import Control.Concurrent.STM.TMVar
        (TMVar, newEmptyTMVar, putTMVar, readTMVar)
 import Control.Exception
        (AsyncException (..), asyncExceptionFromException, throwIO)
+import Control.Monad.Catch            (bracket)
 import Control.Monad.Http             (runHttpT)
 import Data.Aeson.Compat              (FromJSON)
 import Futurice.CryptoRandom          (mkCryptoGen, runCRandTThrow')
@@ -120,3 +121,14 @@ closeWorkers (Workers _q tids) = do
 
     for_ tids $ \tid -> do
         lift (killThread tid)
+
+-- | 'bracket' pattern
+withWorkers
+    :: Logger
+    -> Manager
+    -> Cfg
+    -> [Text]   -- ^ names
+    -> (Workers -> LogT IO r)
+    -> LogT IO r
+withWorkers lgr mgr cfg names f =
+    bracket (liftIO $ workers lgr mgr cfg names) closeWorkers f

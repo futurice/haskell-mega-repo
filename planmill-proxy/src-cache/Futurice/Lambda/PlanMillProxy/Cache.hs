@@ -19,7 +19,7 @@ import Futurice.Postgres
        safePoolExecute_)
 import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
-import PlanMill.Worker              (Workers, submitPlanMill, workers)
+import PlanMill.Worker              (Workers, submitPlanMill, withWorkers)
 import Prelude ()
 
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -47,13 +47,12 @@ planMillProxyCacheLambda = makeAwsLambda impl
     impl lc _ Config {..} lgr mgr value = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
-        ws <- liftIO $ workers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"]
         now <- currentTime
 
         -- cleanup cache
         cleanupCache pool
 
-        -- We want a UTC 02:00 point before `now`.
+       -- We want a UTC 02:00 point before `now`.
         let UTCTime today offset = now
         let stamp
               | offset < 7200 = UTCTime (addDays (-1) today) 7200
@@ -62,38 +61,39 @@ planMillProxyCacheLambda = makeAwsLambda impl
         -- limit
         let limit = maybe 200 (max 1) $ parseMaybe parseJSON value
 
-        logInfoI "Fetching outdated queries, limit $limit" $ object
-            [ "older-than" .= stamp
-            , "limit"      .= limit
-            ]
+        withWorkers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"] $ \ws -> do
+            logInfoI "Fetching outdated queries, limit $limit" $ object
+                [ "older-than" .= stamp
+                , "limit"      .= limit
+                ]
 
-        qs <- safePoolQueryM pool "planmillproxy" $  do
-            tbl <- from_ "cache"
-            fields_ tbl ["query"]
-            where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
-            orderby_ tbl "updated" ASC
-            limit_ limit
+            qs <- safePoolQueryM pool "planmillproxy" $  do
+                tbl <- from_ "cache"
+                fields_ tbl ["query"]
+                where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
+                orderby_ tbl "updated" ASC
+                limit_ limit
 
-        logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
+            logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
 
-        void $ runExceptT $ for_ qs $ \(Only (PM.SomeQuery q)) -> do
-            remaining <- liftIO $ lcRemainingTimeInMillis lc
-            if remaining < 35 * 1000  -- PlanMill may take 30 seconds to answer
-            then do
-                logAttentionI "Aborting rest jobs: $remaining ms remaining" $ object
-                    [ "remaining" .= remaining
-                    ]
-                throwError () -- stop the whole job here
-            else do
-                res <- lift $ fetch ws pool q
-                case res of
-                    Right () -> pure ()
-                    Left exc -> do
-                        logAttention "Update failed" $ object
-                            [ "query" .= q
-                            , "exc"   .= show exc
-                            ]
-                        void $ safePoolExecute pool deleteQuery (Postgres.Only q)
+            void $ runExceptT $ for_ qs $ \(Only (PM.SomeQuery q)) -> do
+                remaining <- liftIO $ lcRemainingTimeInMillis lc
+                if remaining < 35 * 1000  -- PlanMill may take 30 seconds to answer
+                then do
+                    logAttentionI "Aborting rest jobs: $remaining ms remaining" $ object
+                        [ "remaining" .= remaining
+                        ]
+                    throwError () -- stop the whole job here
+                else do
+                    res <- lift $ fetch ws pool q
+                    case res of
+                        Right () -> pure ()
+                        Left exc -> do
+                            logAttention "Update failed" $ object
+                                [ "query" .= q
+                                , "exc"   .= show exc
+                                ]
+                            void $ safePoolExecute pool deleteQuery (Postgres.Only q)
 
     fetch :: HasPostgresPool ctx => Workers -> ctx -> PM.Query a -> LogT IO (Either SomeException ())
     fetch ws ctx q = case (binaryDict, semVerDict, structDict, nfdataDict, fromJsonDict) of
