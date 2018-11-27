@@ -18,8 +18,8 @@ module Futurice.Servant (
     HTML,
     -- * CSV (cassava)
     CSV,
-    -- * LZMA
-    LZMA,
+    -- * Compression
+    LZMA, GZIP,
     -- * JSONFraming
     JSONFraming,
     -- * Swagger
@@ -119,6 +119,7 @@ import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
 
+import qualified Codec.Compression.GZip    as GZIP
 import qualified Codec.Compression.Lzma    as LZMA
 import qualified Data.Aeson                as Aeson
 import qualified Data.Map.Strict           as Map
@@ -155,6 +156,22 @@ instance MimeRender ct a => MimeRender (LZMA ct) a where
 
 instance MimeUnrender ct a => MimeUnrender (LZMA ct) a where
     mimeUnrender _ = mimeUnrender (Proxy :: Proxy ct) . LZMA.decompress
+
+-------------------------------------------------------------------------------
+-- GZIP
+-------------------------------------------------------------------------------
+
+data GZIP a
+
+-- | @application/x-gzip@
+instance Accept (GZIP ct) where
+    contentType _ = "application/x-gzip"
+
+instance MimeRender ct a => MimeRender (GZIP ct) a where
+    mimeRender _ = GZIP.compress . mimeRender (Proxy :: Proxy ct)
+
+instance MimeUnrender ct a => MimeUnrender (GZIP ct) a where
+    mimeUnrender _ = mimeUnrender (Proxy :: Proxy ct) . GZIP.decompress
 
 -------------------------------------------------------------------------------
 -- JSONFraming
