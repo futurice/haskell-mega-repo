@@ -48,9 +48,9 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     , futuquRouteCapacities  = runIntegrations1 capacitiesData
     , futuquRouteTimereports = runIntegrations1 timereportsData
     -- strm
-    , futuquRouteTimereportsStream = liftIO $ do
+    , futuquRouteTimereportsStream = \arg1 -> liftIO $ do
           NT run <- runIntegrationsCached
-          timereportsStrm run
+          timereportsStrm arg1 run
     -- ggrr
     , futuquRouteMissingHours = runIntegrations1 missingHoursData
     , futuquRouteHourKinds    = runIntegrations1 hourKindsData

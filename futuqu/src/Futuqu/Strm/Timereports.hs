@@ -17,9 +17,10 @@ import Futuqu.Rada.Timereports
 timereportsStrm
     :: ( MonadPlanMillQuery m, MonadPersonio m, MonadTime m, MonadMemoize m
        , Monad n)
-    => (forall a. m a -> n a)
+    => Maybe Month
+    -> (forall a. m a -> n a)
     -> n (SourceT.SourceT n Timereport)
-timereportsStrm runIn = do
+timereportsStrm startingMonth' runIn = do
     (currMonth, users, sts, bss) <- runIn $ do
         currMonth <- dayToMonth <$> currentDay
         users <- PMQ.users
@@ -36,7 +37,11 @@ timereportsStrm runIn = do
             trs <- runIn $ timereportsData' interval users sts bss
             return $ foldr SourceT.Yield (go ms) trs
 
-    return $ SourceT.fromStepT $ go [ Month 2015 January .. currMonth ]
+    return $ SourceT.fromStepT $ go [ startingMonth .. currMonth ]
   where
+    startingMonth = maybe jan2015 (max jan2015) startingMonth'
+    jan2015 = Month 2015 January
+
+
     fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
     fmap2 = fmap . fmap

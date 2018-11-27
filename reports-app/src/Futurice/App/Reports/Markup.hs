@@ -62,7 +62,7 @@ indexPage today = page_ "Reports" $ do
         makeLi (futuquRouteTimereports hrefs month) "Timereports for a month"
         makeLi (futuquRouteMissingHours hrefs month) "Example report: missing hours"
         makeLi (futuquRouteHourKinds hrefs month) "Example report: People hours aggregated by kind: billable, non-billable etc"
-        li_ $ a_ [ futuquRouteTimereportsStream hrefs & attrValue %~ \av -> "/futuqu" <> av ] "Streaming: all timereports csv"
+        li_ $ a_ [ futuquRouteTimereportsStream hrefs Nothing & attrValue %~ \av -> "/futuqu" <> av ] "Streaming: all timereports csv"
 
     fullRow_ $ h2_ "Dashdo"
     fullRow_ $ ul_ $ do

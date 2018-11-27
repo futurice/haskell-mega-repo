@@ -59,11 +59,11 @@ data FutuquRoutes route = FutuquRoutes
     , futuquRouteTimereportsStream :: route
         :- "strm" :> "timereports.csv"
         :> Summary "All timereports"
+        :> QueryParam "since-month" Month
         -- TODO: technically we should be fine with SourceIO Timereport;
         -- but then we'll need to define own content type
         -- yet we need one to get header.
         :> StreamGet (CSVFraming Timereport) CSVStreaming (SourceIO Timereport)
-
 
     -- GGRR: aGGRegate Reports
     , futuquRouteMissingHours :: route

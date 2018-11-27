@@ -41,6 +41,7 @@ library
     , fum-types
     , futurice-constants
     , futurice-prelude
+    , futurice-servant
     , futurice-signed
     , postgresql-simple
     , servant
