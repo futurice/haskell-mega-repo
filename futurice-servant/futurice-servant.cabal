@@ -41,6 +41,7 @@ library
     , amazonka-sns
     , amazonka-sqs
     , base-compat
+    , bytestring
     , containers
     , distributive
     , dlist
@@ -80,6 +81,7 @@ library
     , wai
     , wai-extra
     , warp >= 3.2.11.1
+    , zlib
 
     , resourcet
   exposed-modules:

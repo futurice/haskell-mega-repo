@@ -17,6 +17,7 @@ module Futurice.App.Proxy.API (
 import Futurice.App.Proxy.Endpoint
 import Futurice.Generics
 import Futurice.Prelude
+import Futurice.Servant            (GZIP)
 import Futurice.Services
 import Prelude ()
 import Servant.API
@@ -84,7 +85,7 @@ data Routes = Routes
     , routeFutuquHoursKinds   :: Futuqu ("ggrr" :> "hours-kinds"   :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
 
     -- streaming futuqu
-    , routeFutuquTimreportsStream :: Futuqu ("strm" :> "timereports.csv" :> StreamGet NoFraming (CACHED CSV) (SourceIO (Cached CSV Text)))
+    , routeFutuquTimreportsStream :: Futuqu ("strm" :> "timereports.csv.gz" :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
 
     -- Power
     , routePowerBi :: ProxiedEndpoint 'PowerService

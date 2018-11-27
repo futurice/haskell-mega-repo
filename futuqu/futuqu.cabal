@@ -47,6 +47,7 @@ library
   exposed-modules:
     Futuqu
     Futuqu.API
+    Futuqu.NT
     Futuqu.Ggrr.HourKinds
     Futuqu.Ggrr.MissingHours
     Futuqu.Rada.Accounts
