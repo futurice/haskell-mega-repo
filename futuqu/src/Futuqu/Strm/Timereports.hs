@@ -12,16 +12,17 @@ import qualified Data.Text             as T
 import qualified PlanMill.Queries      as PMQ
 import qualified Servant.Types.SourceT as SourceT
 
+import Futuqu.NT
 import Futuqu.Rada.Timereports
 
 timereportsStrm
     :: ( MonadPlanMillQuery m, MonadPersonio m, MonadTime m, MonadMemoize m
        , Monad n)
     => Maybe Month
-    -> (forall a. m a -> n a)
+    -> (m :~> n)
     -> n (SourceT.SourceT n Timereport)
-timereportsStrm startingMonth' runIn = do
-    (currMonth, users, sts, bss) <- runIn $ do
+timereportsStrm startingMonth' (NT runIn) = do
+    (currMonth, users, sts, bss) <- runIn (Nothing :: Maybe ()) $ do
         currMonth <- dayToMonth <$> currentDay
         users <- PMQ.users
         sts <- fmap2 T.toLower $ PMQ.allEnumerationValues Proxy Proxy
@@ -30,11 +31,16 @@ timereportsStrm startingMonth' runIn = do
         -- that we'll delay initial response
         return (currMonth, users, sts, bss)
 
+    -- a month below which we don't cache
+    let cacheCutoffMonth = case currMonth of Month y _ -> Month (pred y) January
+
     -- we process one month at the time; streaming the response
     let go []         = SourceT.Stop
         go (month:ms) = SourceT.Effect $ do
             let interval = monthInterval month
-            trs <- runIn $ timereportsData' interval users sts bss
+            let cacheKey | month >= cacheCutoffMonth = Just month
+                         | otherwise                 = Nothing
+            trs <- runIn cacheKey $ timereportsData' interval users sts bss
             return $ foldr SourceT.Yield (go ms) trs
 
     return $ SourceT.fromStepT $ go [ startingMonth .. currMonth ]

@@ -11,7 +11,6 @@ module Futuqu (
     module Futuqu.Rada.Tasks,
     ) where
 
-import Control.Natural        ((:~>) (..))
 import Futurice.Cache         (Cache, cachedIO)
 import Futurice.Integrations
 import Futurice.Prelude
@@ -22,6 +21,7 @@ import Servant.Server.Generic
 import Futuqu.API
 import Futuqu.Ggrr.HourKinds
 import Futuqu.Ggrr.MissingHours
+import Futuqu.NT
 import Futuqu.Rada.Accounts
 import Futuqu.Rada.Capacities
 import Futuqu.Rada.People
@@ -49,7 +49,7 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     , futuquRouteTimereports = runIntegrations1 timereportsData
     -- strm
     , futuquRouteTimereportsStream = \arg1 -> liftIO $ do
-          NT run <- runIntegrationsCached
+          run <- runIntegrationsCached
           timereportsStrm arg1 run
     -- ggrr
     , futuquRouteMissingHours = runIntegrations1 missingHoursData
@@ -68,7 +68,12 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     runIntegrationsCached = do
         now <- currentTime
         env <- makeIntegrationsEnv mgr lgr now cfg
-        return $ NT $ runIntegrationsWithEnv env
+
+        let runner :: Integrations FutuquIntegrations ~> IO
+            runner Nothing  m = runIntegrationsWithEnv env m
+            runner (Just k) m = cachedIO lgr cache 600 k $ runIntegrationsWithEnv env m
+
+        return $ NT runner
 
     runIntegrations1
         :: ( MonadIO m, Typeable a, NFData a
