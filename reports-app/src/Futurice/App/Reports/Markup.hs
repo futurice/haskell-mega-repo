@@ -56,8 +56,8 @@ indexPage today = page_ "Reports" $ do
 
         makeLi (futuquRoutePeople hrefs) "List of all people"
         makeLi (futuquRouteAccounts hrefs) "List of all accounts"
-        makeLi (futuquRouteProjects hrefs) "List of all projects"
-        makeLi (futuquRouteTasks hrefs) "List of all tasks"
+        makeLi (futuquRouteProjects hrefs []) "List of all projects"
+        makeLi (futuquRouteTasks hrefs [] []) "List of all tasks"
         makeLi (futuquRouteCapacities hrefs month) "(Non-zero) daily capacities for a month"
         makeLi (futuquRouteTimereports hrefs month) "Timereports for a month"
         makeLi (futuquRouteMissingHours hrefs month) "Example report: missing hours"

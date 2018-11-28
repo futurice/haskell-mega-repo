@@ -183,6 +183,9 @@ instance HasPrefix api => HasPrefix (Capture' mods n a :> api) where
 instance HasPrefix api => HasPrefix (QueryParam' mods n a :> api) where
     endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
 
+instance HasPrefix api => HasPrefix (QueryParams n a :> api) where
+    endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
+
 instance HasPrefix api => HasPrefix (QueryFlag n :> api) where
     endpointPrefix _ = endpointPrefix (Proxy :: Proxy api)
 

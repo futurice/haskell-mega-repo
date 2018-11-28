@@ -15,10 +15,12 @@ import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
 
-import qualified Data.Map.Strict  as Map
-import qualified PlanMill         as PM
+import qualified Data.Map.Strict as Map
+import qualified Personio        as P
+import qualified PlanMill        as PM
 
 import Futuqu.Rada.Capacities
+import Futuqu.Rada.People
 import Futuqu.Rada.Timereports
 
 -------------------------------------------------------------------------------
@@ -48,13 +50,20 @@ instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 missingHoursData
-    :: forall m. (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m)
+    :: forall m. (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m, MonadTime m, MonadPower m)
     => Month
     -> m [MissingHour]
 missingHoursData month = do
-    -- TODO: people, filter salary: monthly, employmentType: internal
     css <- capacitiesData month
     trs <- timereportsData month
+
+    people <- peopleData
+    let peopleMap :: Map PM.UserId Person
+        peopleMap = Map.fromList
+            [ (uid, p)
+            | p <- people
+            , uid <- toList $ pPlanmill p
+            ]
 
     -- aggregate both capacities and timereports by user, day
     let css' :: Map (PM.UserId, Day) (NDT 'Hours Centi)
@@ -76,4 +85,17 @@ missingHoursData month = do
     let diff :: Map (PM.UserId, Day) (NDT 'Hours Centi)
         diff = Map.difference css' trs'
 
-    return [ MissingHour uid d h | ((uid, d), h) <- Map.toList diff ]
+    return
+        [ MissingHour uid d h
+        | ((uid, d), h) <- Map.toList diff
+        , p <- toList $ Map.lookup uid peopleMap
+        -- internal, monthly salary (not hours), and active on that day
+        , pEmploymentType p == Just P.Internal
+        , pSalaryType p == Just P.Monthly
+        , isBetween d (pHireDate p) (pEndDate p)
+        ]
+  where
+    isBetween :: Day -> Maybe Day -> Maybe Day -> Bool
+    isBetween _ Nothing   _         = False -- no hire date
+    isBetween d (Just mi) Nothing   = mi <= d
+    isBetween d (Just mi) (Just ma) = mi <= d && d <= ma

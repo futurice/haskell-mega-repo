@@ -13,6 +13,7 @@ import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Data.Set         as Set
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
@@ -47,16 +48,21 @@ instance ToSchema Task where declareNamedSchema = sopDeclareNamedSchema
 
 tasksData
     :: (MonadPlanMillQuery m, MonadMemoize m)
-    => m [Task]
-tasksData = do
+    => [PM.AccountId]
+    -> [PM.ProjectId]
+    -> m [Task]
+tasksData fAccIds fProjIds = do
     prjs  <- PMQ.projects
     let ids :: [(PM.ProjectId, PM.AccountId)]
         ids = mapMaybe (\p -> (p ^. PM.identifier,) <$> PM.pAccount p) (toList prjs)
     mconcat <$> traverse fetch ids
   where
-    fetch (prjId, accId) = do
-        tasks <- PMQ.projectTasks prjId
-        return $ map (convert prjId accId) (toList tasks)
+    fetch (prjId, accId)
+        | not (predAccount accId && predProject prjId) =
+            return []
+        | otherwise = do
+            tasks <- PMQ.projectTasks prjId
+            return $ map (convert prjId accId) (toList tasks)
 
     convert prjId accId t = Task
         { tTaskId    = t ^. PM.identifier
@@ -66,3 +72,11 @@ tasksData = do
         , tStart     = PM.taskStart t
         , tFinish    = PM.taskFinish t
         }
+
+    predAccount accId = case fAccIds of
+        [] -> True
+        xs -> accId `elem` Set.fromList xs
+
+    predProject projId = case fProjIds of
+        [] -> True
+        xs -> projId `elem` Set.fromList xs

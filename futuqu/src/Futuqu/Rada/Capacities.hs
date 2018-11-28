@@ -53,16 +53,24 @@ capacitiesData
     -> m [Capacity]
 capacitiesData month = do
     let interval = monthInterval month
-
     ppm <- personioPlanmillMap
-    toListOf (folded . folded) <$> traverse (fetch interval) ppm
+    capacitiesData' interval ppm
+
+capacitiesData'
+    :: forall m f. (MonadPlanMillQuery m, MonadPersonio m, Traversable f)
+    => PM.Interval Day
+    -> f (P.Employee, PM.User)
+    -> m [Capacity]
+capacitiesData' interval ppm = do
+    toListOf (folded . folded) <$> traverse fetch ppm
   where
-    fetch :: PM.Interval Day -> (P.Employee, PM.User) -> m [Capacity]
-    fetch interval (pe, pm) = do
+    fetch :: (P.Employee, PM.User) -> m [Capacity]
+    fetch (pe, pm) = do
         let pmId = pm ^. PM.identifier
         caps <- PMQ.capacities interval pmId
 
-        return $ flip mapMaybe (toList caps) $ \uc -> do
+        -- planmill proxy may return capacities in any order
+        return $ flip mapMaybe (sortOn PM.userCapacityDate $ toList caps) $ \uc -> do
             let day = PM.userCapacityDate uc
 
             guard $ PM.userCapacityAmount uc > 0
