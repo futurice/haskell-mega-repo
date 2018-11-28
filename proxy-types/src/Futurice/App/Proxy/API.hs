@@ -91,7 +91,8 @@ data Routes = Routes
     , routeFutuquHoursKinds   :: Futuqu ("ggrr" :> "hours-kinds"   :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
 
     -- streaming futuqu
-    , routeFutuquTimreportsStream :: Futuqu ("strm" :> "timereports.csv.gz" :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
+    , routeFutuquTimereportsStream :: Futuqu ("strm" :> "timereports.csv.gz" :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
+    , routeFutuquCapacitiesStream  :: Futuqu ("strm" :> "capacities.csv.gz"  :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
 
     -- Power
     , routePowerBi :: ProxiedEndpoint 'PowerService

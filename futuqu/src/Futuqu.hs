@@ -28,6 +28,7 @@ import Futuqu.Rada.People
 import Futuqu.Rada.Projects
 import Futuqu.Rada.Tasks
 import Futuqu.Rada.Timereports
+import Futuqu.Strm.Capacities
 import Futuqu.Strm.Timereports
 
 -- | Integrations used by /Futuqu/.
@@ -51,6 +52,9 @@ futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
     , futuquRouteTimereportsStream = \arg1 -> liftIO $ do
           run <- runIntegrationsCached
           timereportsStrm arg1 run
+    , futuquRouteCapacitiesStream = \arg1 -> liftIO $ do
+          run <- runIntegrationsCached
+          capacitiesStrm arg1 run
     -- ggrr
     , futuquRouteMissingHours = runIntegrations1 missingHoursData
     , futuquRouteHourKinds    = runIntegrations1 hourKindsData

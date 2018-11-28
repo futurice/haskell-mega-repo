@@ -56,5 +56,6 @@ library
     Futuqu.Rada.Projects
     Futuqu.Rada.Tasks
     Futuqu.Rada.Timereports
+    Futuqu.Strm.Capacities
     Futuqu.Strm.Timereports
     Futuqu.Servant.CSV

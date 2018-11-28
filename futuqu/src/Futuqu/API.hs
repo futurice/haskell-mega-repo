@@ -69,6 +69,11 @@ data FutuquRoutes route = FutuquRoutes
         -- but then we'll need to define own content type
         -- yet we need one to get header.
         :> StreamGet (CSVFraming Timereport) CSVStreaming (SourceIO Timereport)
+    , futuquRouteCapacitiesStream :: route
+        :- "strm" :> "capacities.csv"
+        :> Summary "All user capacities"
+        :> QueryParam "since-month" Month
+        :> StreamGet (CSVFraming Timereport) CSVStreaming (SourceIO Capacity)
 
     -- GGRR: aGGRegate Reports
     , futuquRouteMissingHours :: route
