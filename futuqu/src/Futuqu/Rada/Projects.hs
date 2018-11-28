@@ -12,6 +12,7 @@ import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Data.Set         as Set
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
@@ -48,17 +49,23 @@ instance ToSchema Project where declareNamedSchema = sopDeclareNamedSchema
 
 projectsData
     :: (MonadPlanMillQuery m, MonadMemoize m)
-    => m [Project]
-projectsData = do
+    => [PM.AccountId]
+    -> m [Project]
+projectsData fAccIds = do
     prjs <- PMQ.projects
     cats <- PMQ.allEnumerationValues Proxy Proxy
     return $ sortOn prjName $ mapMaybe (convert cats) (toList prjs)
   where
     convert cats p = do
         accId <- PM.pAccount p
+        guard (predAccount accId)
         return Project
             { prjProjectId = p ^. PM.identifier
             , prjAccountId = accId
             , prjName      = PM.pName p
             , prjCategory  = fromMaybe "-" $ cats ^? ix (PM.pCategory p)
             }
+
+    predAccount accId = case fAccIds of
+        [] -> True
+        xs -> accId `elem` Set.fromList xs

@@ -43,6 +43,7 @@ import qualified Futurice.FUM.MachineAPI              as FUM6
 import qualified Futurice.GitHub                      as GH
                  (SomeRequest, SomeResponse)
 import qualified Personio
+import qualified PlanMill                             as PM
 import qualified PlanMill.Types.Query                 as PM
                  (SomeQuery, SomeResponse)
 
@@ -77,8 +78,13 @@ data Routes = Routes
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquAccount      :: Futuqu ("rada" :> "accounts"                               :> Get '[CACHED CSV] (Cached CSV [Text]))
-    , routeFutuquProjects     :: Futuqu ("rada" :> "projects"                               :> Get '[CACHED CSV] (Cached CSV [Text]))
-    , routeFutuquTasks        :: Futuqu ("rada" :> "tasks"                                  :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquProjects     :: Futuqu ("rada" :> "projects"
+        :> QueryParams "account" PM.AccountId
+        :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquTasks        :: Futuqu ("rada" :> "tasks"
+        :> QueryParams "account" PM.AccountId
+        :> QueryParams "project" PM.ProjectId
+        :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquCapacities   :: Futuqu ("rada" :> "capacities"    :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquTimereports  :: Futuqu ("rada" :> "timereports"   :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquMissingHours :: Futuqu ("ggrr" :> "missing-hours" :> Capture "month" Month :> Get '[CACHED CSV] (Cached CSV [Text]))

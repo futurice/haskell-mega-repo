@@ -15,6 +15,8 @@ import Servant.API
 import Servant.API.Generic
 import Servant.CSV.Cassava (CSV)
 
+import qualified PlanMill as PM
+
 import Futuqu.Ggrr.HourKinds
 import Futuqu.Ggrr.MissingHours
 import Futuqu.Rada.Accounts
@@ -39,10 +41,13 @@ data FutuquRoutes route = FutuquRoutes
     , futuquRouteProjects :: route
         :- "rada" :> "projects"
         :> Summary "List of all projects"
+        :> QueryParams "account" PM.AccountId
         :> FutuquGet [Project]
     , futuquRouteTasks :: route
         :- "rada" :> "tasks"
         :> Summary "List of all tasks"
+        :> QueryParams "account" PM.AccountId
+        :> QueryParams "project" PM.ProjectId
         :> FutuquGet [Task]
     , futuquRouteCapacities :: route
         :- "rada" :> "capacities"
