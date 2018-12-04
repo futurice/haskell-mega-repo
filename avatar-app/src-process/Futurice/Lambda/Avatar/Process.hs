@@ -31,9 +31,6 @@ import qualified Network.HTTP.Client          as HTTP
 
 import Futurice.App.Avatar.Types
 
--- export handler
-foreign export ccall avatarProcessLambda :: AwsLambdaHandler
-
 newtype Config = Config
     { cfgS3Bucket :: Text
     }

@@ -78,7 +78,7 @@ echo_cyan "Update cabal"
 run cabal update
 
 echo_cyan "Building Haskell stuff"
-run cabal new-build "-j$CONCURRENCY" -w "$HC" --builddir="$BUILDDIR" all:exes all:flibs
+run cabal new-build "-j$CONCURRENCY" -w "$HC" --builddir="$BUILDDIR" all:exes
 
 echo_cyan "Copying artifacts to build/"
 LAMBDAS_ARG=""

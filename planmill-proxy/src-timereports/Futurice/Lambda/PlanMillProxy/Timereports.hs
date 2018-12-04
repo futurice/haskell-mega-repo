@@ -26,9 +26,6 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified PlanMill                   as PM
 import qualified PlanMill.Types.Query       as PM
 
--- export handler
-foreign export ccall planMillProxyTimereportsLambda :: AwsLambdaHandler
-
 data Config = Config
     { cfgPmCfg            :: !PM.Cfg
     , cfgPostgresConnInfo :: !ConnectInfo
@@ -40,7 +37,7 @@ instance Configure Config where
         <$> configure
         <*> envConnectInfo
 
-planMillProxyTimereportsLambda :: AwsLambdaHandler
+planMillProxyTimereportsLambda :: IO ()
 planMillProxyTimereportsLambda = makeAwsLambda impl where
     impl :: LambdaContext -> AWSEnv -> Config -> Logger -> Manager -> Value -> LogT IO ()
     impl lc _ Config {..} lgr mgr v = do

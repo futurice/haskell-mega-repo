@@ -34,8 +34,7 @@ instance AnsiPretty ImageDefinition
 makeLenses ''ImageDefinition
 
 data LambdaDefinition = LambdaDefinition
-    { _ldHandler :: !Text
-    , _ldFlib    :: !Text
+    { _ldExecutable :: !Text
     }
   deriving (Show, Generic)
 
@@ -43,7 +42,7 @@ instance AnsiPretty LambdaDefinition
 makeLenses ''LambdaDefinition
 
 emptyLambdaDefinition :: LambdaDefinition
-emptyLambdaDefinition = LambdaDefinition "" ""
+emptyLambdaDefinition = LambdaDefinition ""
 
 data MRTConfig' a = MRTConfig
     { _mrtDockerBaseImage :: !Text
@@ -136,8 +135,7 @@ parseConfig contents config = do
     lambda (P.Section (P.Name pos name) _ _) =
         throwError $ "unexpected sub-section in lambda section " ++ show name ++ " at " ++ P.showPos pos
     lambda (P.Field (P.Name pos name) fls)
-        | name == "handler"     = ldHandler .= fls'
-        | name == "foreign-lib" = ldFlib .= fls'
+        | name == "executable" = ldExecutable .= fls'
         | otherwise =
             throwError $ "unknown lambda field " ++ show name ++ " at " ++ P.showPos pos
       where

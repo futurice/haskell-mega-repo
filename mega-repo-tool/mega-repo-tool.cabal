@@ -43,6 +43,7 @@ library
     , ansi-wl-pprint
     , array
     , async
+    , aws-lambda-runtime
     , base >=4.7   && <4.13
     , base-compat
     , base16-bytestring
@@ -66,7 +67,6 @@ library
     , machines-directory >= 0.2.1.0
     , microstache
     , optparse-applicative
-    , package-aws-lambda
     , parsec
     , process
     , process-extras
