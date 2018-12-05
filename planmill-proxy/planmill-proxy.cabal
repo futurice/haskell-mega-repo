@@ -79,10 +79,10 @@ library
     Futurice.App.PlanMillProxy.Types
   default-language: Haskell2010
 
-foreign-library planmill-proxy-capacity-lambda
-  type:             native-shared
+executable planmill-proxy-capacity-lambda
   ghc-options:      -Wall
-  hs-source-dirs:   src-capacity
+  hs-source-dirs:   src-capacity lambdas
+  main-is:          CapacityLambda.hs
   default-language: Haskell2010
   other-modules:
     Futurice.Lambda.PlanMillProxy.Capacity
@@ -101,10 +101,10 @@ foreign-library planmill-proxy-capacity-lambda
     , postgresql-simple
     , time
 
-foreign-library planmill-proxy-timereports-lambda
-  type:             native-shared
+executable planmill-proxy-timereports-lambda
   ghc-options:      -Wall
-  hs-source-dirs:   src-timereports
+  hs-source-dirs:   src-timereports lambdas
+  main-is:          TimereportLambda.hs
   default-language: Haskell2010
   other-modules:
     Futurice.Lambda.PlanMillProxy.Timereports
@@ -126,10 +126,10 @@ foreign-library planmill-proxy-timereports-lambda
     , text
     , time
 
-foreign-library planmill-proxy-cache-lambda
-  type:             native-shared
+executable planmill-proxy-cache-lambda
   ghc-options:      -Wall
-  hs-source-dirs:   src-cache
+  hs-source-dirs:   src-cache lambdas
+  main-is:          CacheLambda.hs
   default-language: Haskell2010
   other-modules:
     Futurice.Lambda.PlanMillProxy.Cache

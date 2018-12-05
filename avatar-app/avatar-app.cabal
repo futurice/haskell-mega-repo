@@ -101,10 +101,10 @@ library avatar-internal
     , cryptohash-sha256
     , futurice-prelude
 
-foreign-library avatar-process-lambda
-  type:             native-shared
+executable avatar-process-lambda
   ghc-options:      -Wall
-  hs-source-dirs:   src-process
+  hs-source-dirs:   src-process lambdas
+  main-is:          ProcessLambda.hs
   default-language: Haskell2010
   other-modules:
     Futurice.Lambda.Avatar.Process

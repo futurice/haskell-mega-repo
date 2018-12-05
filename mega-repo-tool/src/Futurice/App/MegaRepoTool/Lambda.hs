@@ -1,18 +1,16 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
 module Futurice.App.MegaRepoTool.Lambda (cmdLambda) where
 
-import Data.Aeson         (encode, object, (.=))
+import Cabal.Plan
+import Control.Lens       (firstOf)
+import Data.Aeson         (encode)
 import Data.Machine
        (MachineT (..), Step (..), await, repeatedly, runT_, (<~))
 import Futurice.Clock     (clocked, timeSpecToSecondsD)
 import Futurice.Prelude
-import PackageAwsLambda   (compilePython, findForeignLib, mkConf')
 import Prelude ()
 import System.Directory   (doesFileExist)
 import System.Environment (getEnvironment)
 import System.Exit        (ExitCode (..), exitFailure, exitWith)
-import System.FilePath    (takeDirectory, (</>))
 import System.IO          (Handle, hFlush, hIsEOF, stdout)
 import System.IO.Temp     (withTempDirectory)
 import Text.Printf        (printf)
@@ -21,8 +19,6 @@ import qualified Control.Concurrent.Async as A
 import qualified Data.ByteString          as BS
 import qualified Data.Map                 as Map
 import qualified System.Process           as Process
-import qualified Text.Microstache         as MS
-import qualified Text.RawString.QQ        as QQ
 
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
@@ -30,27 +26,31 @@ import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
 cmdLambda :: Text -> Maybe Value -> Maybe Int -> IO ()
 cmdLambda lambdaName mpayload mtimelimit = do
     cfg <- readConfig
+    plan <- findAndDecodePlanJson (InBuildDir "dist-newstyle")
+
+    let timelimit = maybe 10 (max 1) mtimelimit
+    let payload = maybe "null" (view unpacked . decodeUtf8Lenient . view strict . encode) mpayload
 
     lambdaDef <- maybe
         (putStrLn ("Unknown AWS Lambda " ++ show lambdaName) >> exitFailure)
         return
         (cfg ^. mrtLambdas . at lambdaName)
 
-    (ecBuild, ()) <- readProcessMachines "cabal" ["new-build", lambdaDef ^. ldFlib . unpacked] $ \mout merr ->
+    (ecBuild, ()) <- readProcessMachines "cabal" ["new-build", lambdaDef ^. ldExecutable . unpacked] $ \mout merr ->
         A.runConcurrently $
             A.Concurrently (drain mout) *>
             A.Concurrently (drain merr)
 
     guard (ecBuild == ExitSuccess)
 
-    flibPath <- maybe
-        (putStrLn ("Cannot find shared library" ++ show (lambdaDef ^. ldFlib)) >> exitFailure)
+    exePath <- maybe
+        (putStrLn ("Cannot find executable for " ++ show (lambdaDef ^. ldExecutable)) >> exitFailure)
         return
-        =<< findForeignLib Nothing (lambdaDef ^. ldFlib)
+        (findExe plan $ lambdaDef ^. ldExecutable)
 
-    exists <- doesFileExist flibPath
+    exists <- doesFileExist exePath
     unless exists $ do
-        putStrLn $ "File doesn't exist " ++ flibPath
+        putStrLn $ "File doesn't exist " ++ exePath
         exitFailure
 
     storage <- readStorage
@@ -61,20 +61,12 @@ cmdLambda lambdaName mpayload mtimelimit = do
         value (Right v) = v ^. unpacked
         value (Left k)  = maybe "" (view unpacked) (secrets ^? ix k)
     procEnv <- Map.fromList <$> getEnvironment
-    let env' = Map.mapKeys (view unpacked) $ fmap value (cfg ^. mrtEnvVars)
+    let env = Map.mapKeys (view unpacked) $ fmap value (cfg ^. mrtEnvVars)
 
-    let conf = mkConf' flibPath "Lambda" (lambdaDef ^. ldHandler) "handler"
-
-    withTempDirectory "/tmp" "aws-lambda-py" $ \tmpDir -> do
-        pySo <- compilePython tmpDir conf
-        let pyPath = tmpDir </> "Lambda.py"
-        BS.writeFile pyPath $ pyModule lambdaName mpayload (fromMaybe 180 mtimelimit)
-        let env = Map.toList $ env' <> procEnv
-                <> Map.singleton "PYTHONPATH" (takeDirectory pySo)
-                <> Map.singleton "LD_LIBRARY_PATH" tmpDir
-        let proc = (Process.proc "python2.7" ["Lambda.py"])
+    withTempDirectory "/tmp" "aws-lambda" $ \tmpDir -> do
+        let proc = (Process.proc exePath [show timelimit, payload])
               { Process.cwd = Just tmpDir
-              , Process.env = Just env
+              , Process.env = Just $ Map.toList $ env <> procEnv
               }
         (ts, (ec, ())) <- clocked $ readCreateProcessMachines proc $ \mout merr ->
             A.runConcurrently $ A.Concurrently (drain mout) *> A.Concurrently (drain merr)
@@ -89,43 +81,13 @@ drain m = runT_ $ sink <~ m where
             BS.putStr bs
             hFlush stdout
 
-pyModule :: Text -> Maybe Value -> Int -> ByteString
-pyModule n v l
-    = encodeUtf8
-    $ view strict
-    $ MS.renderMustache lambdaPyTemplate
-    $ object
-        [ "name" .= n
-        , "value" .= decodeUtf8Lenient (view strict (encode v))
-        , "timelimit" .= l
-        ]
-
-lambdaPyTemplate :: MS.Template
-Right lambdaPyTemplate = MS.compileMustacheText "lambda" [QQ.r|
-from __future__ import print_function
-import json
-import pprint
-import sys
-import time
-import Lambda_native
-
-startClock = time.time()
-timeLimit = {{{timelimit}}}  # seconds
-
-class LambdaContext:
-    function_name = '''{{{name}}}'''
-
-    def get_remaining_time_in_millis(self):
-        currClock = time.time();
-        return int((timeLimit - (currClock - startClock)) * 1000)
-
-def log(*args):
-   print(*args)
-   sys.stdout.flush()
-
-Lambda_native.hs_init(['tmpLambda', '+RTS', '-T'])
-pprint.pprint(json.loads(Lambda_native.handler('''{{{value}}}''', LambdaContext(), log)), indent=2)
-|]
+findExe :: PlanJson -> Text -> Maybe FilePath
+findExe plan exe = firstOf (folded . _Just)
+    [ ciBinFile ci
+    | u <- Map.elems (pjUnits plan)
+    , (CompNameExe exe', ci) <- Map.toList (uComps u)
+    , exe == exe'
+    ]
 
 -------------------------------------------------------------------------------
 -- "machines-process"

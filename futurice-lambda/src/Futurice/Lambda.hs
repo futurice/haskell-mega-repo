@@ -3,16 +3,23 @@
 module Futurice.Lambda (
     makeAwsLambda,
     AwsLambdaHandler,
-    LambdaContext (..),
+    -- * LambdaContext
+    LambdaContext,
+    lcRemainingTimeInMillis,
     -- * Re-exports
     AWSEnv,
     ) where
 
+import AWS.Lambda.RuntimeAPI
+       (GenRequest (..), Response (..), defaultMain, getTimeRemaining,
+       jsonResponse, makeMockRequest)
+import Control.Exception          (displayException)
 import Data.Aeson
        (FromJSON, ToJSON, Value, eitherDecodeStrict, encode, object, (.=))
 import Data.Aeson.Types           (emptyObject)
 import Data.Char                  (toUpper)
-import Foreign.C                  (CLong (..), CString, peekCString, withCString)
+import Foreign.C
+       (CLong (..), CString, peekCString, withCString)
 import Foreign.Ptr                (Ptr)
 import Futurice.EnvConfig         (Configure, getConfig)
 import Futurice.Metrics.RateMeter (values)
@@ -22,9 +29,11 @@ import Log                        (LogMessage (..), LogT, runLogT, showLogLevel)
 import Log.Internal.Logger        (Logger (..))
 import Log.Monad                  (LogT (..))
 import Prelude ()
-import System.Environment         (getArgs)
+import System.Environment         (lookupEnv, getArgs)
+import System.IO                  (hFlush, stdout)
 
 import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Char8                as BS8
 import qualified Data.ByteString.Lazy                 as LBS
 import qualified Data.Map                             as Map
 import qualified Data.Text                            as T
@@ -34,48 +43,40 @@ import qualified Network.AWS.CloudWatch.PutMetricData as AWS
 import qualified Network.AWS.CloudWatch.Types         as AWS
 import qualified Network.AWS.Env                      as AWS
 
--- | A type for AWS Lambda Handler.
-type AwsLambdaHandler = CString -> Ptr LambdaContextC -> Ptr LoggingFunc -> IO CString
-
 type AWSEnv = AWS.Env
 
--- import some Python utilities
-foreign import ccall "PyObject_CallFunction" logC :: Ptr LoggingFunc -> CString -> CString -> IO (Ptr PyObject)
-foreign import ccall "Py_DecRef" pyDecRef :: Ptr PyObject -> IO ()
+-- | Essentially: get remaining time
+type LambdaContext = IO Int64
+type AwsLambdaHandler = IO ()
 
-foreign import ccall "futuriceLambdaFunctionName" futuriceLambdaFunctionName :: Ptr LambdaContextC -> IO CString
-foreign import ccall "futuriceLambdaTimeRemainingInMillis" fituriceLambdaTimeRemainingInMillis :: Ptr LambdaContextC -> IO CLong
-
--- LambdaContext
--- https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html#python-context-object-methods
---
--- Currently unused.
-data LambdaContextC
-
-data LambdaContext = LambdaContext
-    { lcName                  :: !Text
-    , lcRemainingTimeInMillis :: !(IO Int)
-    }
-
--- | A special type for (callable) logging function.
-data LoggingFunc
-
--- | Generic Python objects.
-data PyObject
+lcRemainingTimeInMillis :: IO Int64 -> IO Int
+lcRemainingTimeInMillis = fmap fromIntegral
 
 -- | Make an AWS Lambda handler.
 makeAwsLambda
     :: (FromJSON a, ToJSON b, NFData b, Configure cfg)
     => (LambdaContext -> AWS.Env -> cfg -> Logger -> Manager -> a -> LogT IO b)
     -> AwsLambdaHandler
-makeAwsLambda handler input lc lf = do
-    -- LambdaContext
-    fnNameC <- futuriceLambdaFunctionName lc
-    fnName <- peekCString fnNameC
+makeAwsLambda handler = do
+    e <- lookupEnv "AWS_LAMBDA_RUNTIME_API"
+    case e of
+        Just _  -> awsLambda handler
+        Nothing ->  localLambda handler
+
+localLambda
+    :: (FromJSON a, ToJSON b, NFData b, Configure cfg)
+    => (LambdaContext -> AWS.Env -> cfg -> Logger -> Manager -> a -> LogT IO b)
+    -> IO ()
+localLambda handler = do
+    let fnName = "LAMBDA"
     let fnNameT = fnName ^. packed
 
-    let timeRemainingInMillis = fromIntegral <$> fituriceLambdaTimeRemainingInMillis lc
-    let lambdaContext = LambdaContext fnNameT timeRemainingInMillis
+    args <- getArgs
+    let (timeout, input) = case args of
+            (t:i:_) | Just t' <- readMaybe t -> (t', T.pack i)
+            -- default timeout: 3 minutes
+            -- default input: null JSON value
+            _                                -> (180, "null")
 
     -- HTTP Manager
     mgr <- newManager tlsManagerSettings
@@ -84,24 +85,58 @@ makeAwsLambda handler input lc lf = do
     env' <- AWS.newEnvWith AWS.Discover Nothing mgr
     let env = env' & AWS.envRegion .~ AWS.Frankfurt
 
-    inputBS  <- BS.packCString input
+    withStderrLogger $ \lgr -> runLogT fnNameT lgr $ do
+        logInfoI "Lambda $name started" $ object [ "name" .= fnNameT ]
+
+        cfg <- getConfig (map toUpper fnName)
+        case eitherDecodeStrict $ encodeUtf8 input of
+            Left err -> do
+                logAttention "Invalid JSON" err
+            Right x  -> do
+                req <- liftIO $ makeMockRequest () timeout
+                res <- tryDeep' $ handler (getTimeRemaining req) env cfg lgr mgr x
+                case res of
+                    Left exc -> do
+                        logAttention "Exception" $ show exc
+                    Right x  -> do
+                        logInfo "Success" x
+
+                remaining <- liftIO (getTimeRemaining req)
+                logInfoI "Lambda $name ending. Remaining $remaining ms" $
+                    object [ "name" .= fnNameT, "remaining" .= remaining ]
+
+awsLambda
+    :: (FromJSON a, ToJSON b, NFData b, Configure cfg)
+    => (LambdaContext -> AWS.Env -> cfg -> Logger -> Manager -> a -> LogT IO b)
+    -> IO ()
+awsLambda handler = defaultMain $ \req -> do
+    let fnName = "LAMBDA"
+    let fnNameT = fnName ^. packed
+
+    -- HTTP Manager
+    mgr <- newManager tlsManagerSettings
+
+    -- AWS environment
+    env' <- AWS.newEnvWith AWS.Discover Nothing mgr
+    let env = env' & AWS.envRegion .~ AWS.Frankfurt
+
     output <- runLogT fnNameT lgr $ do
         logInfoI "Lambda $name started" $ object [ "name" .= fnNameT ]
 
         cfg <- getConfig (map toUpper fnName)
-        res <- case eitherDecodeStrict inputBS of
+        res <- case eitherDecodeStrict (requestPayload req) of
             Left err -> do
                 logAttention "Invalid JSON" err
-                encodeErr err
+                return $ FailureResponse "decode" (T.pack err)
             Right x  -> do
-                res <- tryDeep' $ handler lambdaContext env cfg lgr mgr x
+                res <- tryDeep' $ handler (getTimeRemaining req) env cfg lgr mgr x
                 case res of
                     Left exc -> do
                         logAttention "Exception" $ show exc
-                        encodeErr $ show exc
-                    Right x  -> return $ LBS.toStrict $ encode x
+                        return $ FailureResponse "decode" (T.pack $ displayException exc)
+                    Right x  -> return $ jsonResponse x
 
-        remaining <- liftIO timeRemainingInMillis
+        remaining <- liftIO (getTimeRemaining req)
         logInfoI "Lambda $name ending. Remaining $remaining ms" $
             object [ "name" .= fnNameT, "remaining" .= remaining ]
 
@@ -120,26 +155,13 @@ makeAwsLambda handler input lc lf = do
             void $ AWS.send $ AWS.putMetricData "Lambda"
                     & AWS.pmdMetricData .~ meterDatums
 
-    BS.useAsCString output return
+    return output
   where
-    encodeErr err = return $ LBS.toStrict $ encode $ object
-        [ "error" .= err
-        ]
-
-    logString :: String -> IO ()
-    logString s =
-        withCString "s" $ \fmt ->
-        withCString s   $ \s' -> do
-            res <- logC lf fmt s'
-            -- PyObject_CallFunction returns new reference, so we dereference it
-            -- Manual memory management: duh.
-            pyDecRef res
-
     lgr :: Logger
     lgr = Logger
-        { loggerWriteMessage = logString . T.unpack . showLogMessage
+        { loggerWriteMessage = \msg -> BS8.putStrLn (encodeUtf8 $ showLogMessage msg) >> hFlush stdout
         , loggerWaitForWrite = return ()
-        , loggerShutdown     = return ()
+        , loggerShutdown     = hFlush stdout
         }
 
 tryDeep' :: NFData a => LogT IO a -> LogT IO (Either SomeException a)

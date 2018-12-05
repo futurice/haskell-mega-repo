@@ -7,10 +7,8 @@ module Futurice.App.MegaRepoTool.CopyArtifacts (
 import Cabal.Plan
 import Control.Lens          (firstOf, iforOf_)
 import Futurice.Prelude
-import PackageAwsLambda
-       (confAdditionalLibs, confReadSo, confRtsFlags, findForeignLib, mkConf',
-       packageAwsLambda)
 import Prelude ()
+import AWS.Lambda.RuntimeAPI.Package
 import System.Directory      (copyFile, createDirectoryIfMissing)
 import System.Exit           (exitFailure)
 import System.FilePath.Posix (takeFileName, (-<.>), (</>))
@@ -33,18 +31,17 @@ data CopyArtifactsOpts = CAO
 cmdCopyArtifacts :: CopyArtifactsOpts -> IO ()
 cmdCopyArtifacts (CAO rootDir buildDir buildLambdas) = withTempDirectory "/tmp" "copy-artifacts" $ \tmpDir -> do
     cfg <- readConfig
+    plan <- findAndDecodePlanJson (InBuildDir buildDir)
 
     -- lambdas
     when buildLambdas $ iforOf_ (mrtLambdas . ifolded) cfg $ \lambdaName lambdaDef -> do
-        flibPath <- maybe
-            (hPutStrLn stderr ("Cannot find flib for " ++ show lambdaName) >> exitFailure)
+        fp <- maybe
+            (hPutStrLn stderr ("Cannot find exe for " ++ show lambdaName) >> exitFailure)
             return
-            =<< findForeignLib (Just buildDir) (lambdaDef ^. ldFlib)
+            (findExe plan $ lambdaDef ^. ldExecutable)
 
-        -- lambda_function.lambda_handler is aws lambda "default" handler for Python 2.7
-        let conf = mkConf' flibPath "lambda_function" (lambdaDef ^. ldHandler) "lambda_handler"
-                & confReadSo         .~ readSoWithStrip tmpDir
-                & confRtsFlags       .~ [ "-M2G", "-T" ]
+        let conf = defaultConf
+                & confReadFile       .~ readSoWithStrip tmpDir
                 & confAdditionalLibs .~
                     -- PQ, and its deps (OpenSSL)
                     [ "libpq"
@@ -90,14 +87,13 @@ cmdCopyArtifacts (CAO rootDir buildDir buildLambdas) = withTempDirectory "/tmp" 
         let lambdaName' = lambdaName ^. unpacked
         hPutStrLn stderr $ "Packaging " ++ lambdaName'
 
-        bsl <- packageAwsLambda conf
+        bsl <- packageAwsLambda conf fp
 
         let dir = rootDir </> "build" </> "Lambdas"
         createDirectoryIfMissing True dir
         BSL.writeFile (dir </> lambdaName' -<.> "zip") bsl
 
     -- executables
-    plan <- findAndDecodePlanJson (InBuildDir buildDir)
     iforOf_ (mrtApps . ifolded) cfg $ \appName imgDef -> do
         fp <- maybe
             (hPutStrLn stderr ("Cannot find exe for " ++ show appName) >> exitFailure)
