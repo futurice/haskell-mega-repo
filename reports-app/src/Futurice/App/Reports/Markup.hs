@@ -92,6 +92,7 @@ indexPage today = page_ "Reports" $ do
         li_ $ a_ [ href_ "/tables/inventory-summary" ] "Mobile budget stats"
         li_ $ a_ [ href_ "/tables/project-hours" ] "Hours by project and type"
         li_ $ a_ [ href_ "/tables/i-dont-know" ] "I don't know... report"
+        li_ $ a_ [ href_ "/tables/do-we-study" ] "Learning hours report"
 
     fullRow_ $ h2_ "Integrations for Power"
     fullRow_ $ ul_ $ do
