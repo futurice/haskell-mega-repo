@@ -7,9 +7,6 @@
 [submodule "flowdock-cli"]
 	path = flowdock-cli
 	url = https://github.com/futurice/haskell-flowdock-cli.git
-[submodule "monad-http"]
-	path = monad-http
-	url = https://github.com/futurice/haskell-monad-http.git
 [submodule "futurice-prelude"]
 	path = futurice-prelude
 	url = https://github.com/futurice/haskell-futurice-prelude.git

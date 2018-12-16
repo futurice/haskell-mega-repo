@@ -96,7 +96,6 @@ packages:
   library-app/
   log-cloudwatch/
   mega-repo-tool/
-  monad-http/
   monad-memoize/
   optparse-sop/
   periocron/
@@ -123,6 +122,8 @@ packages:
   sms-proxy-client/
   sms-proxy/
   theme-app/
+
+  vendor/monad-http/
 
   vendor/chart/chart
   vendor/chart/chart-diagrams

@@ -1,0 +1,52 @@
+name:           monad-http
+version:        0.2.0.0
+synopsis:       A class of monads which can do http requests
+description:    A class of monads which can do http requests.
+category:       Web
+homepage:       https://github.com/futurice/haskell-monad-http#readme
+bug-reports:    https://github.com/futurice/haskell-monad-http/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.2
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    CHANGELOG.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-monad-http
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base                >=4.8      && <4.13
+    , base-compat         >=0.6.0    && <0.11
+    , bytestring          >=0.10.0.4 && <0.12
+    , exceptions          >=0.10.0   && <0.11
+    , http-client         >=0.4.18.1 && <0.6
+    , http-client-tls     >=0.2.2    && <0.4
+    , http-types          >=0.8.6    && <0.13
+    , log-base            >=0.7      && <0.8
+    , monad-logger        >=0.3.13.2 && <0.4
+    , monad-control       >=1.0.0.4  && <1.1
+    , monadcryptorandom   >=0.6.1    && <0.8
+    , MonadRandom         >=0.3.0.2  && <0.6
+    , operational         >=0.2.3.2  && <0.3
+    , mtl                 >=2.1.3.1  && <2.3
+    , text                >=1.2.0.6  && <1.3
+    , transformers        >=0.3.0.0  && <0.6
+    , transformers-base   >=0.4.4    && <0.5
+    , transformers-compat >=0.4.0.3  && <0.7
+  exposed-modules:
+      Control.Monad.Http
+      Control.Monad.Http.Class
+      Control.Monad.Http.Operational
+      Control.Monad.Trans.Http
+  default-language: Haskell2010
