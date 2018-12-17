@@ -7,8 +7,7 @@
 module Futurice.App.Reports.DoWeStudy (
     DoWeStudy (..),
     DoWeStudyData (..),
-    doWeStudyData
-                                      ) where
+    doWeStudyData) where
 
 import Control.Lens              (filtered, sumOf)
 import Data.Fixed                (Centi)
@@ -131,6 +130,12 @@ doWeStudyData mmonth mtribe = do
 
     return $ DWS today month mtribe (dwss ^.. folded . folded . _Just)
 
+instance ToHtml TrainingType where
+    toHtmlRaw = toHtml
+    toHtml Jedi = toHtml ("Jedi" :: Text)
+    toHtml OtherTraining = toHtml ("General training" :: Text)
+    toHtml Test = toHtml ("Test" :: Text)
+
 instance ToHtml DoWeStudyData where
     toHtmlRaw = toHtml
     toHtml = toHtml . renderDoWeStudyData
@@ -170,10 +175,7 @@ renderDoWeStudyData (DWS today month mtribe xs) = page_ "Do we study..." $ do
             td_ [ class_ "nowrap" ] $ toHtml $ textShow dwsDate
             td_  [ class_ "nowrap" ] $ toHtml dwsName
             td_ $ toHtml dwsTribe
-            td_ $ case dwsCategory of
-              Jedi -> toHtml ("Jedi" :: Text)
-              OtherTraining -> toHtml ("General training" :: Text)
-              Test -> toHtml ("Test" :: Text)
+            td_ $ toHtml dwsCategory
             td_ $ toHtml dwsProject
             td_ $ toHtml dwsHours
             td_ $ wordsToHtml (T.words dwsDesc)
