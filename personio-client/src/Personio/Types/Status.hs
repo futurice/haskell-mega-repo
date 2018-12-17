@@ -1,12 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE ImpredicativeTypes  #-}
-{-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
 module Personio.Types.Status (
     Status(..),
     statusToText,
@@ -27,12 +21,10 @@ data Status
     | Inactive
     | Onboarding
     | Leave
-  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
-  deriving anyclass (NFData, Hashable, Binary)
-
--- makePrisms ''Status
-deriveGeneric ''Status
-deriveLift ''Status
+  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, GhcGeneric, Lift)
+  deriving anyclass (NFData, Hashable, Binary, SopGeneric, HasDatatypeInfo)
+  deriving (Arbitrary) via (Sopica Status)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, Csv.ToField, Csv.FromField, ToHtml) via (Enumica Status)
 
 instance TextEnum Status where
     type TextEnumNames Status = '["Active", "Inactive", "Onboarding", "Leave"]
@@ -49,15 +41,6 @@ statusFromText = enumFromText
 
 _Status :: Prism' Text Status
 _Status = enumPrism
-
-deriveVia [t| Arbitrary Status       `Via` Sopica Status  |]
-deriveVia [t| ToJSON Status          `Via` Enumica Status |]
-deriveVia [t| FromJSON Status        `Via` Enumica Status |]
-deriveVia [t| ToHttpApiData Status   `Via` Enumica Status |]
-deriveVia [t| FromHttpApiData Status `Via` Enumica Status |]
-deriveVia [t| Csv.ToField Status     `Via` Enumica Status |]
-deriveVia [t| Csv.FromField Status   `Via` Enumica Status |]
-deriveVia [t| ToHtml Status          `Via` Enumica Status |]
 
 instance ToParamSchema Status where toParamSchema = enumToParamSchema
 instance ToSchema Status where declareNamedSchema = enumDeclareNamedSchema
