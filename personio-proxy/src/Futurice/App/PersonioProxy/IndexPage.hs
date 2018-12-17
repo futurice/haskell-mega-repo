@@ -3,14 +3,14 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.PersonioProxy.IndexPage (indexPage) where
 
-import Data.Aeson (Value (..))
+import Data.Aeson                (Value (..))
 import FUM.Types.Login
+import Futurice.IdMap            (IdMap)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
-import Futurice.IdMap (IdMap)
 import Prelude ()
 
 import qualified Data.Aeson as Aeson
@@ -113,7 +113,7 @@ indexPage ps = page_ "Personio Proxy" (Just NavHome) $ do
                 tr_ $ td_ "HR Number"     >> td_ [ id_ "s-hr-number" ] "???"
                 tr_ $ td_ "Expat"         >> td_ [ id_ "s-expat" ] "???"
 
-    div_ [ id_ "table", class_ "row" ] $ div_ [ class_ "columns" ] $ table_ $ do
+    div_ [ id_ "table", class_ "row" ] $ div_ [ class_ "columns" ] $ sortableTable_ $ do
         thead_ $ do
             th_ "#"
             th_ "Login"
