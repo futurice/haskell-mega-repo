@@ -1,28 +1,25 @@
-name:           proxy-mgmt-app
-version:        0
-synopsis:       Proxy conf management
-description:    Proxy conf management
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-rpo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-rpo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               proxy-mgmt-app
+version:            0
+synopsis:           Proxy conf management
+description:        Proxy conf management
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-rpo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-rpo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
-  location: https://github.com/futurice/haskell-mega-rpo
+  type:     git
+  location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -34,9 +31,9 @@ library
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
   build-depends:
-      base                  >=4.7   && <4.13
     , aeson
     , aeson-compat
+    , base
     , base-compat
     , base64-bytestring
     , clay
@@ -70,31 +67,28 @@ library
     , time
     , vector
   exposed-modules:
-      Futurice.App.ProxyMgmt.API
-      Futurice.App.ProxyMgmt.Config
-      Futurice.App.ProxyMgmt.Ctx
-      Futurice.App.ProxyMgmt.Commands.AddEndpoint
-      Futurice.App.ProxyMgmt.Commands.AddToken
-      Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
-      Futurice.App.ProxyMgmt.Commands.RegenerateToken
-      Futurice.App.ProxyMgmt.Dashdo
-      Futurice.App.ProxyMgmt.Main
-      Futurice.App.ProxyMgmt.Markup
-      Futurice.App.ProxyMgmt.Pages.Audit
-      Futurice.App.ProxyMgmt.Pages.Index
-      Futurice.App.ProxyMgmt.Pages.Policies
-      Futurice.App.ProxyMgmt.Pages.Tokens
-      Futurice.App.ProxyMgmt.Types
-      Futurice.App.ProxyMgmt.Utils
-  default-language: Haskell2010
+    Futurice.App.ProxyMgmt.API
+    Futurice.App.ProxyMgmt.Commands.AddEndpoint
+    Futurice.App.ProxyMgmt.Commands.AddToken
+    Futurice.App.ProxyMgmt.Commands.RegenerateToken
+    Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
+    Futurice.App.ProxyMgmt.Config
+    Futurice.App.ProxyMgmt.Ctx
+    Futurice.App.ProxyMgmt.Dashdo
+    Futurice.App.ProxyMgmt.Main
+    Futurice.App.ProxyMgmt.Markup
+    Futurice.App.ProxyMgmt.Pages.Audit
+    Futurice.App.ProxyMgmt.Pages.Index
+    Futurice.App.ProxyMgmt.Pages.Policies
+    Futurice.App.ProxyMgmt.Pages.Tokens
+    Futurice.App.ProxyMgmt.Types
+    Futurice.App.ProxyMgmt.Utils
 
 executable proxy-mgmt-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded -rtsopts
-  build-depends:
-      base
-    , proxy-mgmt-app
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -threaded -rtsopts
+  build-depends:
+    , base
+    , proxy-mgmt-app

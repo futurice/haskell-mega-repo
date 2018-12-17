@@ -1,55 +1,55 @@
-name:           github-proxy
-version:        0
-synopsis:       GitHub proxy
-description:    New and fancy
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               github-proxy
+version:            0
+synopsis:           GitHub proxy
+description:        New and fancy
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall
+  hs-source-dirs:     src
+  ghc-options:        -Wall -freduction-depth=30
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base >=4.7   && <4.13
+    , aeson
+    , base
+    , binary
+    , binary-tagged
+    , bytestring
     , constraints
+    , containers
     , env-config
+    , exceptions
     , futurice-github
     , futurice-integrations
     , futurice-metrics
     , futurice-postgres
     , futurice-prelude
+    , futurice-servant
     , github
     , http-client
     , http-client-tls
     , intervals
-    , operational
-    , time-parsers >=0.1.1.0
-    , aeson
-    , binary
-    , binary-tagged
-    , bytestring
-    , containers
-    , exceptions
-    , futurice-servant
-    , intervals
     , lens
     , monad-logger
+    , operational
     , periocron
     , postgresql-simple
     , postgresql-simple-url
@@ -60,29 +60,32 @@ library
     , swagger2
     , text
     , time
+    , time-parsers           >=0.1.1.0
     , unordered-containers
     , vector
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=30
-  else
-    ghc-options: -fcontext-stack=30
   exposed-modules:
-      Futurice.App.GitHubProxy
-      Futurice.App.GitHubProxy.API
-      Futurice.App.GitHubProxy.Config
-      Futurice.App.GitHubProxy.H
-      Futurice.App.GitHubProxy.Logic
-      Futurice.App.GitHubProxy.Types
-  default-language: Haskell2010
+    Futurice.App.GitHubProxy
+    Futurice.App.GitHubProxy.API
+    Futurice.App.GitHubProxy.Config
+    Futurice.App.GitHubProxy.H
+    Futurice.App.GitHubProxy.Logic
+    Futurice.App.GitHubProxy.Types
+  default-language:   Haskell2010
 
 executable github-proxy-client
-  main-is: Main.hs
-  hs-source-dirs:
-      cli
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall -threaded -rtsopts
+  default-language:   Haskell2010
+  main-is:            Main.hs
+  ghc-options:        -Wall -threaded -rtsopts
+  hs-source-dirs:     cli
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base >=4.7   && <4.13
+    , base
     , constraints
     , env-config
     , futurice-github
@@ -90,42 +93,25 @@ executable github-proxy-client
     , futurice-metrics
     , futurice-prelude
     , github
+    , haxl
     , http-client
     , http-client-tls
     , intervals
     , operational
-    , time-parsers >=0.1.1.0
-    , haxl
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=30
-  else
-    ghc-options: -fcontext-stack=30
-  default-language: Haskell2010
+    , time-parsers
 
 executable github-proxy-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall -threaded -rtsopts
+  default-language:   Haskell2010
+  main-is:            Main.hs
+  hs-source-dirs:     srv
+  ghc-options:        -Wall -threaded -rtsopts
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base >=4.7   && <4.13
-    , constraints
-    , env-config
-    , futurice-github
-    , futurice-integrations
-    , futurice-metrics
-    , futurice-postgres
-    , futurice-prelude
-    , github
-    , http-client
-    , http-client-tls
-    , intervals
-    , operational
-    , time-parsers >=0.1.1.0
+    , base
     , github-proxy
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=30
-  else
-    ghc-options: -fcontext-stack=30
-  default-language: Haskell2010

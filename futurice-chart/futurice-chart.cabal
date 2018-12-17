@@ -1,23 +1,29 @@
-cabal-version:  2.2
-name:           futurice-chart
-version:        0
-
-synopsis:       Chart futurice extras
-description:    Chart futurice extras: stacked, histogram, ...
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
+cabal-version: 2.2
+name:          futurice-chart
+version:       0
+synopsis:      Chart futurice extras
+description:   Chart futurice extras: stacked, histogram, ...
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveFunctor
+    DeriveGeneric
+    ScopedTypeVariables
   build-depends:
     , adjunctions
     , base
@@ -28,14 +34,7 @@ library
     , lens
     , mtl
     , vector
-  default-extensions:
-      DeriveGeneric
-      DeriveFunctor
-      ScopedTypeVariables
   exposed-modules:
-      Futurice.Chart.Enum
-      Futurice.Chart.Stacked
-      Futurice.Chart.Histogram
-  ghc-options: -Wall
-  hs-source-dirs: src
-  default-language: Haskell2010
+    Futurice.Chart.Enum
+    Futurice.Chart.Histogram
+    Futurice.Chart.Stacked

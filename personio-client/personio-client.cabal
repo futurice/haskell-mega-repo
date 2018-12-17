@@ -1,35 +1,33 @@
-name:           personio-client
-version:        0
-synopsis:       Personio client library
-description:    Bindings to <https://www.personio.de/de/api-documentation/>
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.10.3, GHC==8.0.2
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               personio-client
+version:            0
+synopsis:           Personio client library
+description:        Bindings to <https://www.personio.de/de/api-documentation/>
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
     DeriveAnyClass
     DeriveGeneric
     DerivingStrategies
     GeneralizedNewtypeDeriving
-  hs-source-dirs: src
-  ghc-options: -Wall
   build-depends:
-      aeson
+    , aeson
     , aeson-compat
     , base
     , cassava
@@ -43,8 +41,8 @@ library
     , futurice-tribes
     , github
     , http-api-data
-    , intervals
     , http-client
+    , intervals
     , lens
     , lucid
     , monad-http
@@ -58,42 +56,42 @@ library
     , time
     , unordered-containers
   exposed-modules:
-      Control.Monad.Personio
-      Personio
-      Personio.Eval
-      Personio.Request
-      Personio.Types
-      Personio.Types.Cfg
-      Personio.Types.ContractType
-      Personio.Types.Employee
-      Personio.Types.EmployeeId
-      Personio.Types.EmploymentType
-      Personio.Types.Envelope
-      Personio.Types.PersonalIdValidations
-      Personio.Types.SalaryType
-      Personio.Types.ScheduleEmployee
-      Personio.Types.SimpleEmployee
-      Personio.Types.Status
-      Personio.Types.Validation
+    Control.Monad.Personio
+    Personio
+    Personio.Eval
+    Personio.Request
+    Personio.Types
+    Personio.Types.Cfg
+    Personio.Types.ContractType
+    Personio.Types.Employee
+    Personio.Types.EmployeeId
+    Personio.Types.EmploymentType
+    Personio.Types.Envelope
+    Personio.Types.PersonalIdValidations
+    Personio.Types.SalaryType
+    Personio.Types.ScheduleEmployee
+    Personio.Types.SimpleEmployee
+    Personio.Types.Status
+    Personio.Types.Validation
   other-modules:
-      Personio.Types.Internal
-      Personio.Internal.Attribute
-  default-language: Haskell2010
+    Personio.Internal.Attribute
+    Personio.Types.Internal
 
 test-suite unit-tests
-  type: exitcode-stdio-1.0
-  main-is: Tests.hs
-  hs-source-dirs:
-      tests/
-  ghc-options: -Wall
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   tests/
+  ghc-options:      -Wall
   build-depends:
-      aeson
+    , aeson
     , aeson-compat
     , base
     , cassava
     , constraints
     , containers
     , env-config
+    , file-embed
     , flowdock-rest
     , fum-types
     , futurice-constants
@@ -103,20 +101,18 @@ test-suite unit-tests
     , http-api-data
     , http-client
     , lens
+    , lens-aeson
     , lucid
     , monad-http
     , mtl
+    , personio-client
     , regex-applicative
     , regex-applicative-text
     , scientific
     , swagger2
-    , text
-    , time
-    , unordered-containers
-    , file-embed
-    , lens-aeson
-    , personio-client
     , tasty
     , tasty-hunit
     , tasty-quickcheck
-  default-language: Haskell2010
+    , text
+    , time
+    , unordered-containers

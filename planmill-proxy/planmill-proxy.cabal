@@ -1,57 +1,59 @@
-cabal-version:  2.2
-name:           planmill-proxy
-version:        0
-
-synopsis:       Planmill proxy
-description:    New and fancy
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               planmill-proxy
+version:            0
+synopsis:           Planmill proxy
+description:        New and fancy
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall
+  default-language:   Haskell2010
+  ghc-options:        -Wall -freduction-depth=30
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base
-    , constraints
-    , env-config
-    , futurice-prelude
-    , http-client
-    , http-client-tls
-    , intervals
-    , planmill-client
-    , time-parsers >=0.1.1.0
     , aeson
     , aeson-compat
+    , base
     , binary
     , binary-tagged
     , bytestring
     , Chart
     , colour
+    , constraints
     , containers
     , data-default-class
+    , env-config
     , exceptions
     , futurice-chart
     , futurice-metrics
     , futurice-postgres
+    , futurice-prelude
     , futurice-servant
+    , http-client
+    , http-client-tls
     , intervals
+    , lens
     , monad-logger
     , periocron
+    , planmill-client
     , postgresql-simple
     , postgresql-simple-url
     , resource-pool
@@ -62,11 +64,9 @@ library
     , swagger2
     , text
     , time
+    , time-parsers           >=0.1.1.0
     , unordered-containers
     , vector
-    , lens
-  ghc-options: -freduction-depth=30
-
   exposed-modules:
     Futurice.App.PlanMillProxy
     Futurice.App.PlanMillProxy.API
@@ -77,19 +77,16 @@ library
     Futurice.App.PlanMillProxy.Logic.Common
     Futurice.App.PlanMillProxy.Logic.Timereports
     Futurice.App.PlanMillProxy.Types
-  default-language: Haskell2010
 
 executable planmill-proxy-capacity-lambda
   ghc-options:      -Wall
   hs-source-dirs:   src-capacity lambdas
   main-is:          CapacityLambda.hs
   default-language: Haskell2010
-  other-modules:
-    Futurice.Lambda.PlanMillProxy.Capacity
-
+  other-modules:    Futurice.Lambda.PlanMillProxy.Capacity
   build-depends:
-    , base
     , aeson
+    , base
     , binary-tagged
     , bytestring
     , directory
@@ -106,12 +103,10 @@ executable planmill-proxy-timereports-lambda
   hs-source-dirs:   src-timereports lambdas
   main-is:          TimereportLambda.hs
   default-language: Haskell2010
-  other-modules:
-    Futurice.Lambda.PlanMillProxy.Timereports
-
+  other-modules:    Futurice.Lambda.PlanMillProxy.Timereports
   build-depends:
-    , base
     , aeson
+    , base
     , binary-tagged
     , bytestring
     , containers
@@ -131,12 +126,10 @@ executable planmill-proxy-cache-lambda
   hs-source-dirs:   src-cache lambdas
   main-is:          CacheLambda.hs
   default-language: Haskell2010
-  other-modules:
-    Futurice.Lambda.PlanMillProxy.Cache
-
+  other-modules:    Futurice.Lambda.PlanMillProxy.Cache
   build-depends:
-    , base
     , aeson
+    , base
     , binary-tagged
     , bytestring
     , constraints
@@ -150,11 +143,10 @@ executable planmill-proxy-cache-lambda
     , time
 
 executable planmill-proxy-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -threaded -rtsopts
-  build-depends:
-      base
-    , planmill-proxy
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , planmill-proxy

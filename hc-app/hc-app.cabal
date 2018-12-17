@@ -1,100 +1,98 @@
-name:           hc-app
-version:        0
-synopsis:       Tools for HC
-description:    Tools for HC.
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
+cabal-version: 2.2
+name:          hc-app
+version:       0
+synopsis:      Tools for HC
+description:   Tools for HC.
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
+    DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
     DeriveTraversable
-    ScopedTypeVariables
     DerivingStrategies
-    DeriveAnyClass
-  ghc-options: -Wall
+    ScopedTypeVariables
   build-depends:
-      base >= 4.9 && <4.13,
-      aeson,
-      base16-bytestring,
-      base64-bytestring-type,
-      binary,
-      Chart,
-      clay,
-      containers,
-      cryptohash-sha512,
-      email-proxy-client,
-      entropy,
-      env-config,
-      file-embed,
-      fin,
-      fum-api,
-      fum-types,
-      futurice-foundation,
-      futurice-integrations,
-      futurice-logo,
-      futurice-prelude,
-      futurice-servant,
-      futurice-tribes,
-      http-api-data,
-      intervals,
-      lattices,
-      lens,
-      microstache,
-      personio-client,
-      planmill-client,
-      range-set-list,
-      servant,
-      servant-Chart,
-      servant-client,
-      servant-server,
-      swagger2,
-      template-haskell,
-      text,
-      time,
-      vec,
-      unordered-containers
- 
+    , aeson
+    , base
+    , base16-bytestring
+    , base64-bytestring-type
+    , binary
+    , Chart
+    , clay
+    , containers
+    , cryptohash-sha512
+    , email-proxy-client
+    , entropy
+    , env-config
+    , file-embed
+    , fin
+    , fum-api
+    , fum-types
+    , futurice-foundation
+    , futurice-integrations
+    , futurice-logo
+    , futurice-prelude
+    , futurice-servant
+    , futurice-tribes
+    , http-api-data
+    , intervals
+    , lattices
+    , lens
+    , microstache
+    , personio-client
+    , planmill-client
+    , range-set-list
+    , servant
+    , servant-Chart
+    , servant-client
+    , servant-server
+    , swagger2
+    , template-haskell
+    , text
+    , time
+    , unordered-containers
+    , vec
   exposed-modules:
-      Futurice.App.HC.Achoo.Fetch
-      Futurice.App.HC.Achoo.Render
-      Futurice.App.HC.Achoo.Types
-      Futurice.App.HC.Anniversaries
-      Futurice.App.HC.API
-      Futurice.App.HC.Config
-      Futurice.App.HC.Ctx
-      Futurice.App.HC.EarlyCaring.Page
-      Futurice.App.HC.EarlyCaring.Template
-      Futurice.App.HC.EarlyCaring.Types
-      Futurice.App.HC.HRNumbers
-      Futurice.App.HC.IndexPage
-      Futurice.App.HC.Main
-      Futurice.App.HC.Markup
-      Futurice.App.HC.PersonioValidation
-      Futurice.App.HC.PrivateContacts
-
-  default-language: Haskell2010
+    Futurice.App.HC.API
+    Futurice.App.HC.Achoo.Fetch
+    Futurice.App.HC.Achoo.Render
+    Futurice.App.HC.Achoo.Types
+    Futurice.App.HC.Anniversaries
+    Futurice.App.HC.Config
+    Futurice.App.HC.Ctx
+    Futurice.App.HC.EarlyCaring.Page
+    Futurice.App.HC.EarlyCaring.Template
+    Futurice.App.HC.EarlyCaring.Types
+    Futurice.App.HC.HRNumbers
+    Futurice.App.HC.IndexPage
+    Futurice.App.HC.Main
+    Futurice.App.HC.Markup
+    Futurice.App.HC.PersonioValidation
+    Futurice.App.HC.PrivateContacts
 
 executable hc-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded -rtsopts
-  build-depends: base, hc-app
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , hc-app

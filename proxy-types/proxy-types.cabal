@@ -1,27 +1,26 @@
-name:           proxy-types
-version:        0
-synopsis:       Prox types
-description:    Prox types.
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               proxy-types
+version:            0
+synopsis:           Prox types
+description:        Prox types.
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -32,10 +31,9 @@ library
     DerivingStrategies
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
-  ghc-options: -Wall
   build-depends:
-      base                  >=4.10   && <4.13
     , avatar-client
+    , base
     , containers
     , fum-api
     , fum-types
@@ -52,9 +50,10 @@ library
     , sms-proxy-client
     , swagger2
     , text
+
   -- Integrations
   build-depends:
-      contacts-api
+    , contacts-api
     , fum-api
     , futurice-github
     , personio-client
@@ -62,6 +61,5 @@ library
     , reports-app
     , servant-binary-tagged
   exposed-modules:
-      Futurice.App.Proxy.API
-      Futurice.App.Proxy.Endpoint
-  default-language: Haskell2010
+    Futurice.App.Proxy.API
+    Futurice.App.Proxy.Endpoint

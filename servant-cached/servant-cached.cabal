@@ -1,15 +1,14 @@
-cabal-version:  2.2
-name:           servant-cached
-version:        0
-synopsis:       Servant Cached
-description:    Servant Cached
-category:       Web
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.2
-build-type:     Simple
+cabal-version: 2.2
+name:          servant-cached
+version:       0
+synopsis:      Servant Cached
+description:   Servant Cached
+category:      Web
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 library
   default-language: Haskell2010
@@ -21,5 +20,4 @@ library
     , futurice-prelude
     , servant
     , swagger2
-  exposed-modules:
-      Servant.Cached
+  exposed-modules:  Servant.Cached

@@ -1,29 +1,26 @@
-cabal-version:  2.2
-name:           mega-repo-tool
-version:        0
-
-synopsis:       Various commands to manage futurice/haskell-mega-repo
-description:    Build the package and run @stack exec mega-repo-tool -- -h@
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-tested-with:    GHC ==8.4.4
-build-type:     Simple
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               mega-repo-tool
+version:            0
+synopsis:           Various commands to manage futurice/haskell-mega-repo
+description:        @cabal new-run mega-repo-tool --help@
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -34,7 +31,6 @@ library
     DerivingStrategies
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
-  ghc-options: -Wall
   build-depends:
     , aeson
     , aeson-compat
@@ -44,12 +40,12 @@ library
     , array
     , async
     , aws-lambda-runtime
-    , base >=4.7   && <4.13
+    , base
     , base-compat
     , base16-bytestring
     , base64-bytestring
     , bytestring
-    , Cabal >= 2.2
+    , Cabal                 ^>=2.2 || ^>=2.4
     , cabal-plan
     , case-insensitive
     , containers
@@ -63,8 +59,8 @@ library
     , http-client
     , http-client-tls
     , lens
-    , machines           >= 0.6.1
-    , machines-directory >= 0.2.1.0
+    , machines              >=0.6.1
+    , machines-directory    >=0.2.1.0
     , microstache
     , optparse-applicative
     , parsec
@@ -87,29 +83,25 @@ library
     build-depends: unix
 
   exposed-modules:
-      Futurice.App.MegaRepoTool
-      Futurice.App.MegaRepoTool.BuildDocker
-      Futurice.App.MegaRepoTool.Config
-      Futurice.App.MegaRepoTool.CopyArtifacts
-      Futurice.App.MegaRepoTool.Estimator
-      Futurice.App.MegaRepoTool.Exec
-      Futurice.App.MegaRepoTool.GenPass
-      Futurice.App.MegaRepoTool.GenKeys
-      Futurice.App.MegaRepoTool.Keys
-      Futurice.App.MegaRepoTool.Lambda
-      Futurice.App.MegaRepoTool.PatternCompleter
-      Futurice.App.MegaRepoTool.StackYaml
-      Futurice.App.MegaRepoTool.Stats
-
-  default-language: Haskell2010
+    Futurice.App.MegaRepoTool
+    Futurice.App.MegaRepoTool.BuildDocker
+    Futurice.App.MegaRepoTool.Config
+    Futurice.App.MegaRepoTool.CopyArtifacts
+    Futurice.App.MegaRepoTool.Estimator
+    Futurice.App.MegaRepoTool.Exec
+    Futurice.App.MegaRepoTool.GenKeys
+    Futurice.App.MegaRepoTool.GenPass
+    Futurice.App.MegaRepoTool.Keys
+    Futurice.App.MegaRepoTool.Lambda
+    Futurice.App.MegaRepoTool.PatternCompleter
+    Futurice.App.MegaRepoTool.StackYaml
+    Futurice.App.MegaRepoTool.Stats
 
 executable mega-repo-tool
-  main-is: Main.hs
-  hs-source-dirs:
-      cli
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-N -T"
-  build-depends:
-      base
-    , mega-repo-tool
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   cli
+  ghc-options:      -Wall -threaded -rtsopts "-with-rtsopts=-N -T"
+  build-depends:
+    , base
+    , mega-repo-tool

@@ -1,32 +1,28 @@
-name:           preferences-app
-version:        0
-synopsis:       Preferences
-description:    Single preferences for all apps
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.10.3, GHC==8.0.2
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               preferences-app
+version:            0
+synopsis:           Preferences
+description:        Single preferences for all apps
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+  hs-source-dirs:   src
+  ghc-options:      -Wall
   build-depends:
-      base                  >=4.7   && <4.13
     , aeson
+    , base
     , base-compat
     , bytestring
     , clay
@@ -47,19 +43,18 @@ library
     , text
     , time
   exposed-modules:
-      Futurice.App.Preferences.Config
-      Futurice.App.Preferences.Ctx
-      Futurice.App.Preferences.IndexPage
-      Futurice.App.Preferences.Main
-      Futurice.App.Preferences.Markup
+    Futurice.App.Preferences.Config
+    Futurice.App.Preferences.Ctx
+    Futurice.App.Preferences.IndexPage
+    Futurice.App.Preferences.Main
+    Futurice.App.Preferences.Markup
   default-language: Haskell2010
 
 executable preferences-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -threaded -rtsopts
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -threaded -rtsopts
   build-depends:
-      base
+    , base
     , preferences-app
   default-language: Haskell2010

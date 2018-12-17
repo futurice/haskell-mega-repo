@@ -1,34 +1,39 @@
-name:           hours-api
-version:        0
-synopsis:       Hours API
-description:    Hours API: Actual server and mock
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>, Jussi Vaihia <jussi.vaihia@futurice.com>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.10.3, GHC==8.0.2, GHC==8.2.1
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               hours-api
+version:            0
+synopsis:           Hours API
+description:        Hours API: Actual server and mock
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:
+  Oleg Grenrus <oleg.grenrus@iki.fi>, Jussi Vaihia <jussi.vaihia@futurice.com>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base >= 4.8 && <4.13
     , aeson
     , aeson-compat
     , avatar-client
+    , base
     , constraints
     , containers
     , dynmap-cache
@@ -71,40 +76,35 @@ library
     , unordered-containers
     , vector
   exposed-modules:
-      Futurice.App.HoursApi
-      Futurice.App.HoursApi.API
-      Futurice.App.HoursApi.Class
-      Futurice.App.HoursApi.Config
-      Futurice.App.HoursApi.Ctx
-      Futurice.App.HoursApi.Logic
-      Futurice.App.HoursApi.Monad
-      Futurice.App.HoursApi.Types
-      Futurice.App.HoursMock
-      Futurice.App.HoursMock.Config
-      Futurice.App.HoursMock.Ctx
-      Futurice.App.HoursMock.MockData
-      Futurice.App.HoursMock.Monad
-      Futurice.App.HoursMock.World
-  default-language: Haskell2010
+    Futurice.App.HoursApi
+    Futurice.App.HoursApi.API
+    Futurice.App.HoursApi.Class
+    Futurice.App.HoursApi.Config
+    Futurice.App.HoursApi.Ctx
+    Futurice.App.HoursApi.Logic
+    Futurice.App.HoursApi.Monad
+    Futurice.App.HoursApi.Types
+    Futurice.App.HoursMock
+    Futurice.App.HoursMock.Config
+    Futurice.App.HoursMock.Ctx
+    Futurice.App.HoursMock.MockData
+    Futurice.App.HoursMock.Monad
+    Futurice.App.HoursMock.World
 
 executable hours-api-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded -rtsopts
-  build-depends:
-      base
-    , hours-api
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -threaded -rtsopts
+  build-depends:
+    , base
+    , hours-api
 
 executable hours-mock-server
-  main-is: Main.hs
-  hs-source-dirs:
-      mock
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -threaded -rtsopts
-  build-depends:
-      base
-    , hours-api
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   mock
+  ghc-options:      -threaded -rtsopts
+  build-depends:
+    , base
+    , hours-api

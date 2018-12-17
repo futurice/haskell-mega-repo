@@ -1,29 +1,25 @@
-cabal-version:  2.0
-name:           sisosota-app
-version:        0
-
-synopsis:       Simple CAS
-description:    Simple CAS
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-rpo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-rpo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               sisosota-app
+version:            0
+synopsis:           Simple CAS
+description:        Simple CAS
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-rpo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-rpo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
-  location: https://github.com/futurice/haskell-mega-rpo
+  type:     git
+  location: https://github.com/futurice/haskell-mega-repo
 
 library
-  ghc-options: -Wall
-  hs-source-dirs:
-      src
+  ghc-options:        -Wall
+  hs-source-dirs:     src
   default-extensions:
     DeriveDataTypeable
     DeriveFoldable
@@ -32,14 +28,14 @@ library
     DeriveTraversable
     ScopedTypeVariables
   build-depends:
-      base                  >=4.7   && <4.13
     , aeson
     , aeson-compat
     , amazonka
     , amazonka-s3
-    , bytestring
+    , base
     , base-compat
     , base64-bytestring
+    , bytestring
     , clay
     , containers
     , entropy
@@ -70,19 +66,18 @@ library
     , time
     , vector
   exposed-modules:
-      Futurice.App.Sisosota.Config
-      Futurice.App.Sisosota.Ctx
-      Futurice.App.Sisosota.IndexPage
-      Futurice.App.Sisosota.Main
-      Futurice.App.Sisosota.Markup
-  default-language: Haskell2010
+    Futurice.App.Sisosota.Config
+    Futurice.App.Sisosota.Ctx
+    Futurice.App.Sisosota.IndexPage
+    Futurice.App.Sisosota.Main
+    Futurice.App.Sisosota.Markup
+  default-language:   Haskell2010
 
 executable sisosota-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -threaded -rtsopts
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -threaded -rtsopts
   build-depends:
-      base
+    , base
     , sisosota-app
   default-language: Haskell2010

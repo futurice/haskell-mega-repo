@@ -1,43 +1,39 @@
-name:           futurice-tribes
-version:        0
-synopsis:       Futurice tribes
-description:    Futurice tribes and locations
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.10.3, GHC==8.0.2
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               futurice-tribes
+version:            0
+synopsis:           Futurice tribes
+description:        Futurice tribes and locations
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
+    DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
     DeriveTraversable
-    DeriveAnyClass
     DerivingStrategies
     ScopedTypeVariables
-  ghc-options: -Wall
   build-depends:
-      base            >=4.7      && <4.13
-    , QuickCheck
     , aeson
     , aeson-compat
+    , base
     , cassava
     , containers
     , env-config
@@ -46,6 +42,7 @@ library
     , http-api-data
     , kleene
     , lucid
+    , QuickCheck
     , regex-applicative
     , regex-applicative-text
     , swagger2
@@ -54,16 +51,15 @@ library
     , trifecta
     , vector
   exposed-modules:
-      Futurice.CareerLevel
-      Futurice.Company
-      Futurice.CostCenter
-      Futurice.Email
-      Futurice.Office
-      Futurice.Tribe
+    Futurice.CareerLevel
+    Futurice.Company
+    Futurice.CostCenter
+    Futurice.Email
+    Futurice.Office
+    Futurice.Tribe
   other-modules:
-      Futurice.CareerLevel.Internal
-      Futurice.Company.Internal
-      Futurice.CostCenter.Internal
-      Futurice.Office.Internal
-      Futurice.Tribe.Internal
-  default-language: Haskell2010
+    Futurice.CareerLevel.Internal
+    Futurice.Company.Internal
+    Futurice.CostCenter.Internal
+    Futurice.Office.Internal
+    Futurice.Tribe.Internal

@@ -1,24 +1,25 @@
-name:           flowdock-proxy
-version:        0
-synopsis:       Flowdock proxy and cache
-description:    flowdock proxy and cache
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
+cabal-version: 2.2
+name:          flowdock-proxy
+version:       0
+synopsis:      Flowdock proxy and cache
+description:   flowdock proxy and cache
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -29,65 +30,59 @@ library
     DerivingStrategies
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
-  ghc-options: -Wall
   build-depends:
-      aeson,
-      async,
-      base,
-      Chart,
-      clay,
-      cmark-gfm,
-      containers,
-      deepseq,
-      env-config,
-      flowdock-rest,
-      fum-types,
-      futurice-foundation,
-      futurice-integrations,
-      futurice-postgres,
-      futurice-prelude,
-      futurice-servant,
-      futurice-tribes,
-      lens,
-      mtl,
-      periocron,
-      personio-client,
-      postgresql-simple,
-      servant,
-      servant-cached,
-      servant-Chart,
-      servant-server,
-      stm,
-      text,
-      text-short,
-      text-containers,
-      these,
-      time,
-      vector,
-      xss-sanitize
-
-  if impl(ghc >= 8.4.4)
-    build-depends:
-      ghc-compact
-
+    , aeson
+    , async
+    , base
+    , Chart
+    , clay
+    , cmark-gfm
+    , containers
+    , deepseq
+    , env-config
+    , flowdock-rest
+    , fum-types
+    , futurice-foundation
+    , futurice-integrations
+    , futurice-postgres
+    , futurice-prelude
+    , futurice-servant
+    , futurice-tribes
+    , ghc-compact
+    , lens
+    , mtl
+    , periocron
+    , personio-client
+    , postgresql-simple
+    , servant
+    , servant-cached
+    , servant-Chart
+    , servant-server
+    , stm
+    , text
+    , text-containers
+    , text-short
+    , these
+    , time
+    , vector
+    , xss-sanitize
   exposed-modules:
-      Futurice.App.FlowdockProxy.API
-      Futurice.App.FlowdockProxy.Charts
-      Futurice.App.FlowdockProxy.Clay
-      Futurice.App.FlowdockProxy.Config
-      Futurice.App.FlowdockProxy.Ctx
-      Futurice.App.FlowdockProxy.DB
-      Futurice.App.FlowdockProxy.IndexPage
-      Futurice.App.FlowdockProxy.Main
-      Futurice.App.FlowdockProxy.Markup
-      Futurice.App.FlowdockProxy.UsersPage
-
-  default-language: Haskell2010
+    Futurice.App.FlowdockProxy.API
+    Futurice.App.FlowdockProxy.Charts
+    Futurice.App.FlowdockProxy.Clay
+    Futurice.App.FlowdockProxy.Config
+    Futurice.App.FlowdockProxy.Ctx
+    Futurice.App.FlowdockProxy.DB
+    Futurice.App.FlowdockProxy.IndexPage
+    Futurice.App.FlowdockProxy.Main
+    Futurice.App.FlowdockProxy.Markup
+    Futurice.App.FlowdockProxy.UsersPage
 
 executable flowdock-proxy-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded -rtsopts
-  build-depends: base, flowdock-proxy
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , flowdock-proxy

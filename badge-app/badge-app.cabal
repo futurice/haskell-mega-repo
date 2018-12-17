@@ -1,78 +1,82 @@
-name:           badge-app
-version:        0
-synopsis:       Generate badges
-description:    Genreate badges
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
+cabal-version: 2.2
+name:          badge-app
+version:       0
+synopsis:      Generate badges
+description:   Genreate badges
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base >= 4.9 && <4.13,
-      avatar-client,
-      bytestring,
-      containers,
-      diagrams-lib,
-      diagrams-rasterific,
-      diagrams-svg,
-      env-config,
-      exceptions,
-      file-embed-lzma,
-      filepath,
-      fum-types,
-      futurice-constants,
-      futurice-foundation,
-      futurice-integrations,
-      futurice-prelude,
-      futurice-servant,
-      futurice-tribes,
-      JuicyPixels,
-      JuicyPixels-extra,
-      lens,
-      mtl,
-      personio-client,
-      servant,
-      servant-cached,
-      servant-client,
-      servant-client-core,
-      servant-JuicyPixels,
-      servant-server,
-      SVGFonts,
-      tar,
-      template-haskell,
-      text
- 
+    , avatar-client
+    , base
+    , bytestring
+    , containers
+    , diagrams-lib
+    , diagrams-rasterific
+    , diagrams-svg
+    , env-config
+    , exceptions
+    , file-embed-lzma
+    , filepath
+    , fum-types
+    , futurice-constants
+    , futurice-foundation
+    , futurice-integrations
+    , futurice-prelude
+    , futurice-servant
+    , futurice-tribes
+    , JuicyPixels
+    , JuicyPixels-extra
+    , lens
+    , mtl
+    , personio-client
+    , servant
+    , servant-cached
+    , servant-client
+    , servant-client-core
+    , servant-JuicyPixels
+    , servant-server
+    , SVGFonts
+    , tar
+    , template-haskell
+    , text
   exposed-modules:
-      Futurice.App.Badge.API
-      Futurice.App.Badge.Config
-      Futurice.App.Badge.Ctx
-      Futurice.App.Badge.Data
-      Futurice.App.Badge.IndexPage
-      Futurice.App.Badge.Main
-      Futurice.App.Badge.Markup
-      Futurice.App.Badge.Templates
-      Futurice.App.Badge.Tools
-
-  default-language: Haskell2010
+    Futurice.App.Badge.API
+    Futurice.App.Badge.Config
+    Futurice.App.Badge.Ctx
+    Futurice.App.Badge.Data
+    Futurice.App.Badge.IndexPage
+    Futurice.App.Badge.Main
+    Futurice.App.Badge.Markup
+    Futurice.App.Badge.Templates
+    Futurice.App.Badge.Tools
 
 executable badge-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded -rtsopts
-  build-depends: base, badge-app
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
+  build-depends:
+    , badge-app
+    , base

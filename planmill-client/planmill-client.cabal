@@ -1,40 +1,37 @@
-name:           planmill-client
-version:        0
-synopsis:       PlanMill API
-description:    Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
-category:       Web
-homepage:       https://github.com/futurice/haskell-planmill-client#readme
-bug-reports:    https://github.com/futurice/haskell-planmill-client/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.2
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               planmill-client
+version:            0
+synopsis:           PlanMill API
+description:
+  Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
+category:           Web
+homepage:           https://github.com/futurice/haskell-planmill-client#readme
+bug-reports:        https://github.com/futurice/haskell-planmill-client/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-planmill-client
 
 library
-  default-language: Haskell2010
-  hs-source-dirs: src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall -freduction-depth=100
   default-extensions:
     DeriveAnyClass
-    DerivingStrategies
     DeriveDataTypeable
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
     DeriveTraversable
+    DerivingStrategies
     ScopedTypeVariables
-  ghc-options: -Wall
   build-depends:
-      base
     , aeson
     , aeson-compat
     , aeson-extra
@@ -42,6 +39,7 @@ library
     , ansi-wl-pprint
     , async
     , attoparsec
+    , base
     , base-compat
     , base64-bytestring
     , binary
@@ -79,17 +77,17 @@ library
     , monad-http
     , monad-memoize
     , monad-time
-    , monadcryptorandom >=0.7.0
+    , monadcryptorandom       >=0.7.0
     , mtl
     , operational
     , optparse-sop
     , postgresql-simple
     , QuickCheck
-    , reflection >= 2 && <2.3
+    , reflection              >=2
     , regex-applicative-text
     , scientific
     , semigroups
-    , singleton-bool >= 0.1.2.0
+    , singleton-bool          >=0.1.2.0
     , stm
     , swagger2
     , text
@@ -100,62 +98,57 @@ library
     , unordered-containers
     , vector
     , zlib
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=100
-  if impl(ghc < 8.0)
-    ghc-options: -fcontext-stack=40
   exposed-modules:
-      Control.Monad.PlanMill
-      PlanMill
-      PlanMill.Auth
-      PlanMill.Classes
-      PlanMill.Endpoints
-      PlanMill.Enumerations
-      PlanMill.Eval
-      PlanMill.Internal.Prelude
-      PlanMill.Queries
-      PlanMill.Queries.Haxl
-      PlanMill.Test
-      PlanMill.Types
-      PlanMill.Types.Absence
-      PlanMill.Types.Account
-      PlanMill.Types.Action
-      PlanMill.Types.Assignment
-      PlanMill.Types.Auth
-      PlanMill.Types.CapacityCalendar
-      PlanMill.Types.Cfg
-      PlanMill.Types.Contact
-      PlanMill.Types.Enumeration
-      PlanMill.Types.Error
-      PlanMill.Types.ExitCriteria
-      PlanMill.Types.Hook
-      PlanMill.Types.Identifier
-      PlanMill.Types.Inserted
-      PlanMill.Types.Me
-      PlanMill.Types.Meta
-      PlanMill.Types.Project
-      PlanMill.Types.Query
-      PlanMill.Types.ReportableAssignment
-      PlanMill.Types.Request
-      PlanMill.Types.ResultInterval
-      PlanMill.Types.ResultOrder
-      PlanMill.Types.Task
-      PlanMill.Types.TimeBalance
-      PlanMill.Types.Timereport
-      PlanMill.Types.UOffset
-      PlanMill.Types.UrlPart
-      PlanMill.Types.User
-      PlanMill.Types.UserCapacity
-      PlanMill.Types.Vacation
-      PlanMill.Worker
+    Control.Monad.PlanMill
+    PlanMill
+    PlanMill.Auth
+    PlanMill.Classes
+    PlanMill.Endpoints
+    PlanMill.Enumerations
+    PlanMill.Eval
+    PlanMill.Internal.Prelude
+    PlanMill.Queries
+    PlanMill.Queries.Haxl
+    PlanMill.Test
+    PlanMill.Types
+    PlanMill.Types.Absence
+    PlanMill.Types.Account
+    PlanMill.Types.Action
+    PlanMill.Types.Assignment
+    PlanMill.Types.Auth
+    PlanMill.Types.CapacityCalendar
+    PlanMill.Types.Cfg
+    PlanMill.Types.Contact
+    PlanMill.Types.Enumeration
+    PlanMill.Types.Error
+    PlanMill.Types.ExitCriteria
+    PlanMill.Types.Hook
+    PlanMill.Types.Identifier
+    PlanMill.Types.Inserted
+    PlanMill.Types.Me
+    PlanMill.Types.Meta
+    PlanMill.Types.Project
+    PlanMill.Types.Query
+    PlanMill.Types.ReportableAssignment
+    PlanMill.Types.Request
+    PlanMill.Types.ResultInterval
+    PlanMill.Types.ResultOrder
+    PlanMill.Types.Task
+    PlanMill.Types.TimeBalance
+    PlanMill.Types.Timereport
+    PlanMill.Types.UOffset
+    PlanMill.Types.UrlPart
+    PlanMill.Types.User
+    PlanMill.Types.UserCapacity
+    PlanMill.Types.Vacation
+    PlanMill.Worker
 
 executable planmill-client
-  main-is: Main.hs
-  hs-source-dirs:
-      cli
-  ghc-options: -Wall
+  default-language: Haskell2010
+  ghc-options:      -Wall -freduction-depth=100
+  main-is:          Main.hs
+  hs-source-dirs:   cli
   build-depends:
-      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -163,6 +156,7 @@ executable planmill-client
     , ansi-wl-pprint
     , async
     , attoparsec
+    , base
     , base-compat
     , base64-bytestring
     , binary
@@ -198,17 +192,20 @@ executable planmill-client
     , lucid
     , monad-http
     , monad-time
-    , monadcryptorandom >=0.7.0
+    , monadcryptorandom       >=0.7.0
     , mtl
     , operational
+    , optparse-applicative
     , optparse-sop
+    , planmill-client
     , postgresql-simple
     , QuickCheck
-    , reflection >= 2 && <2.3
+    , reflection              >=2
     , regex-applicative-text
     , scientific
     , semigroups
-    , singleton-bool >= 0.1.2.0
+    , SHA
+    , singleton-bool          >=0.1.2.0
     , stm
     , swagger2
     , text
@@ -218,27 +215,18 @@ executable planmill-client
     , transformers
     , unordered-containers
     , vector
-    , zlib
-    , planmill-client
-    , optparse-applicative
-    , SHA
     , yaml
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=100
-  if impl(ghc < 8.0)
-    ghc-options: -fcontext-stack=40
+    , zlib
   other-modules:
-      Caching
-      MonadPretty
-  default-language: Haskell2010
+    Caching
+    MonadPretty
 
 executable pm-cli
-  main-is: Main.hs
-  hs-source-dirs:
-      cli2
-  ghc-options: -Wall -rtsopts -threaded
+  default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   cli2
+  ghc-options:      -Wall -rtsopts -threaded -freduction-depth=100
   build-depends:
-      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -246,6 +234,7 @@ executable pm-cli
     , ansi-wl-pprint
     , async
     , attoparsec
+    , base
     , base-compat
     , base64-bytestring
     , binary
@@ -277,51 +266,45 @@ executable pm-cli
     , http-types
     , intervals
     , lens
-    , log-base
-    , lucid
-    , monad-http
-    , monad-time
-    , monadcryptorandom >=0.7.0
-    , mtl
-    , operational
-    , optparse-sop
-    , postgresql-simple
-    , QuickCheck
-    , reflection >= 2 && <2.3
-    , regex-applicative-text
-    , scientific
-    , semigroups
-    , singleton-bool >= 0.1.2.0
-    , stm
-    , swagger2
-    , text
-    , time
-    , time-locale-compat
-    , time-parsers
-    , transformers
-    , unordered-containers
-    , vector
-    , zlib
     , lifted-async
     , lifted-base
+    , log-base
+    , lucid
     , monad-control
+    , monad-http
+    , monad-time
+    , monadcryptorandom       >=0.7.0
+    , mtl
+    , operational
+    , optparse-sop
     , planmill-client
+    , postgresql-simple
+    , QuickCheck
+    , reflection
+    , regex-applicative-text
     , resource-pool
+    , scientific
+    , semigroups
+    , singleton-bool          >=0.1.2.0
+    , stm
+    , swagger2
+    , text
+    , time
+    , time-locale-compat
+    , time-parsers
+    , transformers
     , transformers-base
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=100
-  if impl(ghc < 8.0)
-    ghc-options: -fcontext-stack=40
-  default-language: Haskell2010
+    , unordered-containers
+    , vector
+    , zlib
 
 test-suite integration
-  type: exitcode-stdio-1.0
-  main-is: Integration.hs
-  hs-source-dirs:
-      integration
-  ghc-options: -Wall
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Integration.hs
+  hs-source-dirs:   integration
+  ghc-options:      -Wall -freduction-depth=100
   build-depends:
-      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -329,6 +312,7 @@ test-suite integration
     , ansi-wl-pprint
     , async
     , attoparsec
+    , base
     , base-compat
     , base64-bytestring
     , binary
@@ -365,17 +349,18 @@ test-suite integration
     , monad-http
     , monad-memoize
     , monad-time
-    , monadcryptorandom >=0.7.0
+    , monadcryptorandom       >=0.7.0
     , mtl
     , operational
     , optparse-sop
+    , planmill-client
     , postgresql-simple
     , QuickCheck
-    , reflection >= 2 && <2.3
+    , reflection              >=2
     , regex-applicative-text
     , scientific
     , semigroups
-    , singleton-bool >= 0.1.2.0
+    , singleton-bool          >=0.1.2.0
     , stm
     , swagger2
     , text
@@ -386,21 +371,14 @@ test-suite integration
     , unordered-containers
     , vector
     , zlib
-    , planmill-client
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=100
-  if impl(ghc < 8.0)
-    ghc-options: -fcontext-stack=40
-  default-language: Haskell2010
 
 test-suite test
-  type: exitcode-stdio-1.0
-  main-is: Tests.hs
-  hs-source-dirs:
-      test
-  ghc-options: -Wall
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   test
+  ghc-options:      -Wall
   build-depends:
-      base >=4.8 && <4.13
     , aeson
     , aeson-compat
     , aeson-extra
@@ -408,6 +386,7 @@ test-suite test
     , ansi-wl-pprint
     , async
     , attoparsec
+    , base
     , base-compat
     , base64-bytestring
     , binary
@@ -425,6 +404,7 @@ test-suite test
     , DRBG
     , env-config
     , exceptions
+    , file-embed
     , futurice-constants
     , futurice-metrics
     , futurice-prelude
@@ -444,19 +424,22 @@ test-suite test
     , monad-http
     , monad-memoize
     , monad-time
-    , monadcryptorandom >=0.7.0
+    , monadcryptorandom       >=0.7.0
     , mtl
     , operational
     , optparse-sop
+    , planmill-client
     , postgresql-simple
     , QuickCheck
-    , reflection >= 2 && <2.3
+    , reflection              >=2
     , regex-applicative-text
     , scientific
     , semigroups
-    , singleton-bool >= 0.1.2.0
+    , singleton-bool          >=0.1.2.0
     , stm
     , swagger2
+    , tasty
+    , tasty-quickcheck
     , text
     , time
     , time-locale-compat
@@ -465,12 +448,3 @@ test-suite test
     , unordered-containers
     , vector
     , zlib
-    , planmill-client
-    , tasty
-    , tasty-quickcheck
-    , file-embed
-  if impl(ghc >= 8.0)
-    ghc-options: -freduction-depth=100
-  if impl(ghc < 8.0)
-    ghc-options: -fcontext-stack=40
-  default-language: Haskell2010
