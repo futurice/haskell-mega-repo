@@ -1,41 +1,39 @@
-cabal-version:  2.2
-name:           futurice-signed
-version:        0
-
-synopsis:       Signed data
-description:    Signed data
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
+cabal-version: 2.2
+name:          futurice-signed
+version:       0
+synopsis:      Signed data
+description:   Signed data
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveFunctor
+    DeriveGeneric
+    ScopedTypeVariables
   build-depends:
-    , base
     , aeson
+    , base
     , base16-bytestring
     , containers
     , cryptohash-sha512
     , ed25519
     , futurice-prelude
+    , insert-ordered-containers
     , serialise
     , swagger2
-    , insert-ordered-containers
     , unordered-containers
-  default-extensions:
-      DeriveGeneric
-      DeriveFunctor
-      ScopedTypeVariables
-  exposed-modules:
-      Futurice.Signed
-  ghc-options: -Wall
-  hs-source-dirs: src
-  default-language: Haskell2010
+  exposed-modules:    Futurice.Signed

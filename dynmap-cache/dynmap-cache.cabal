@@ -1,32 +1,29 @@
-name:           dynmap-cache
-version:        0
-synopsis:       Dynamic STM based cache
-description:    Dynamic STM based cache
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==8.0.2, GHC==8.2.1
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               dynmap-cache
+version:            0
+synopsis:           Dynamic STM based cache
+description:        Dynamic STM based cache
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+  default-language: Haskell2010
+  hs-source-dirs:   src
+  ghc-options:      -Wall
   build-depends:
-      base            >=4.9      && <4.13
     , async
+    , base
     , base-compat
     , bytestring
     , deepseq
@@ -48,23 +45,21 @@ library
     , transformers-compat
     , unordered-containers
   exposed-modules:
-      Futurice.Cache
-      Futurice.DynMap
-  default-language: Haskell2010
+    Futurice.Cache
+    Futurice.DynMap
 
 test-suite unit-tests
-  type: exitcode-stdio-1.0
-  main-is: Tests.hs
-  hs-source-dirs:
-      test
-  ghc-options: -Wall -threaded -rtsopts
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   test
+  ghc-options:      -Wall -threaded -rtsopts
   build-depends:
-      base            >=4.9      && <4.13
-    , dynmap-cache
     , async
-    , stm
+    , base
+    , dynmap-cache
     , futurice-prelude
+    , stm
   build-depends:
-      tasty
+    , tasty
     , tasty-hunit
   default-language: Haskell2010

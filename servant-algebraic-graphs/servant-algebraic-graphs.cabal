@@ -1,41 +1,36 @@
-cabal-version:  2.0
-name:           servant-algebraic-graphs
-version:        0
-
-synopsis:       Servant support for algebraic-graphs
-description:    Servant support for algebraic-graphs, uses graphviz to render them.
-category:       Web
-homepage:       https://github.com/phadej/servant-algebraic-graphs#readme
-bug-reports:    https://github.com/phadej/servant-algebraic-graphs/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==8.0.2, GHC==8.2.1
-build-type:     Simple
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               servant-algebraic-graphs
+version:            0
+synopsis:           Servant support for algebraic-graphs
+description:
+  Servant support for algebraic-graphs, uses graphviz to render them.
+category:           Web
+homepage:           https://github.com/phadej/servant-algebraic-graphs#readme
+bug-reports:        https://github.com/phadej/servant-algebraic-graphs/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+tested-with:        ghc ==8.0.2 ghc ==8.2.1
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/phadej/servant-algebraic-graphs
 
 library
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+  hs-source-dirs:   src
+  ghc-options:      -Wall
   build-depends:
-      algebraic-graphs ^>= 0.2
-
-    , base           >=4.9   && <4.13
+    , algebraic-graphs  ^>=0.2
+    , base              >=4.9 && <4.13
     , bytestring
     , deepseq
-    , http-media     >=0.6.2
+    , http-media        >=0.6.2
     , process-extras
-    , servant        >=0.12  && <0.16
+    , servant           >=0.12 && <0.16
     , swagger2
     , text
-  exposed-modules:
-      Servant.Graph
+  exposed-modules:  Servant.Graph
   default-language: Haskell2010

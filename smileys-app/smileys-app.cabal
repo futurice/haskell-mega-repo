@@ -1,38 +1,38 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
-name:           smileys-app
-version:        0
-synopsis:       Smileys backend for FutuHours
-description:    Smileys backend for FutuHours
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-rpo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-rpo/issues
-author:         Jussi Vaihia <jussi.viahia@futurice.com>
-maintainer:     Jussi Vaihia <jussi.viahia@futurice.com>
-license:        BSD3
-license-file:   LICENSE
-tested-with:    GHC==8.0.1
-build-type:     Simple
-cabal-version:  >= 1.10
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               smileys-app
+version:            0
+synopsis:           Smileys backend for FutuHours
+description:        Smileys backend for FutuHours
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-rpo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-rpo/issues
+author:             Jussi Vaihia <jussi.viahia@futurice.com>
+maintainer:         Jussi Vaihia <jussi.viahia@futurice.com>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-rpo
 
 library
-  hs-source-dirs:
-      src
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    ScopedTypeVariables
   build-depends:
-      base                  >=4.7   && <4.13
+    , adjunctions
     , aeson
     , aeson-compat
+    , base        
     , base-compat
     , Chart
     , containers
@@ -42,14 +42,15 @@ library
     , fum-types
     , futurice-chart
     , futurice-foundation
-    , futurice-prelude
     , futurice-postgres
+    , futurice-prelude
     , futurice-servant
     , generics-sop
     , http-client
     , http-client-tls
     , http-types
     , lens
+    , linear
     , lucid
     , mtl
     , postgresql-simple
@@ -62,26 +63,21 @@ library
     , text
     , time
     , vector
-    , adjunctions
-    , linear
   exposed-modules:
-      Futurice.APL
-      Futurice.App.Smileys
-      Futurice.App.Smileys.API
-      Futurice.App.Smileys.Charts
-      Futurice.App.Smileys.Config
-      Futurice.App.Smileys.Ctx
-      Futurice.App.Smileys.Logic
-      Futurice.App.Smileys.Types
-  default-language: Haskell2010
+    Futurice.APL
+    Futurice.App.Smileys
+    Futurice.App.Smileys.API
+    Futurice.App.Smileys.Charts
+    Futurice.App.Smileys.Config
+    Futurice.App.Smileys.Ctx
+    Futurice.App.Smileys.Logic
+    Futurice.App.Smileys.Types
 
 executable smileys-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
-  ghc-options: -Wall -threaded -rtsopts
+  default-language:   Haskell2010
+  main-is:            Main.hs
+  hs-source-dirs:     srv
+  ghc-options:        -Wall -threaded -rtsopts
   build-depends:
-      base
+    , base
     , smileys-app
-  default-language: Haskell2010

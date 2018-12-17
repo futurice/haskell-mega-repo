@@ -1,27 +1,26 @@
-name:           checklist-app
-version:        0
-synopsis:       Over-engineered TODO
-description:    ...
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
+cabal-version: 2.2
+name:          checklist-app
+version:       0
+synopsis:      Over-engineered TODO
+description:   ...
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  default-language: Haskell2010
-  hs-source-dirs: src
-  ghc-options: -Wall
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
-    GeneralizedNewtypeDeriving
     DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
@@ -29,9 +28,9 @@ library
     DeriveGeneric
     DeriveTraversable
     DerivingStrategies
+    GeneralizedNewtypeDeriving
     ScopedTypeVariables
   build-depends:
-      base >= 4.7 && <4.13
     , adjunctions
     , aeson
     , aeson-compat
@@ -39,6 +38,7 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , base
     , base64-bytestring
     , cassava
     , Chart
@@ -46,9 +46,9 @@ library
     , constraints
     , containers
     , crypto-api
-    , DRBG
     , deepseq
     , distributive
+    , DRBG
     , env-config
     , flowdock-rest
     , fum-api
@@ -64,7 +64,7 @@ library
     , generics-sop-lens
     , github
     , http-api-data
-    , lattices >=1.6
+    , lattices                  >=1.6
     , lens
     , lens-aeson
     , lucid
@@ -74,7 +74,7 @@ library
     , planmill-client
     , postgresql-simple
     , QuickCheck
-    , recursion-schemes >= 5.0.1
+    , recursion-schemes         >=5.0.1
     , reflection
     , regex-applicative
     , resource-pool
@@ -92,71 +92,72 @@ library
     , trifecta
     , uuid
   exposed-modules:
-      Futurice.App.Checklist
-      Futurice.App.Checklist.Ack
-      Futurice.App.Checklist.API
-      Futurice.App.Checklist.Charts.Done
-      Futurice.App.Checklist.Clay
-      Futurice.App.Checklist.Command
-      Futurice.App.Checklist.Config
-      Futurice.App.Checklist.Ctx
-      Futurice.App.Checklist.Logic
-      Futurice.App.Checklist.Markup
-      Futurice.App.Checklist.Pages.Agents
-      Futurice.App.Checklist.Pages.AgentAudit
-      Futurice.App.Checklist.Pages.Archive
-      Futurice.App.Checklist.Pages.Checklist
-      Futurice.App.Checklist.Pages.Checklists
-      Futurice.App.Checklist.Pages.CreateEmployee
-      Futurice.App.Checklist.Pages.CreateTask
-      Futurice.App.Checklist.Pages.Employee
-      Futurice.App.Checklist.Pages.EmployeeAudit
-      Futurice.App.Checklist.Pages.Error
-      Futurice.App.Checklist.Pages.HelpAppliance
-      Futurice.App.Checklist.Pages.HelpServices
-      Futurice.App.Checklist.Pages.Index
-      Futurice.App.Checklist.Pages.More
-      Futurice.App.Checklist.Pages.Personio
-      Futurice.App.Checklist.Pages.Report
-      Futurice.App.Checklist.Pages.Stats
-      Futurice.App.Checklist.Pages.Task
-      Futurice.App.Checklist.Pages.Tasks
-      Futurice.App.Checklist.Personio
-      Futurice.App.Checklist.Types
-      Futurice.App.Checklist.Types.Basic
-      Futurice.App.Checklist.Types.ChecklistId
-      Futurice.App.Checklist.Types.ContractType
-      Futurice.App.Checklist.Types.Counter
-      Futurice.App.Checklist.Types.Identifier
-      Futurice.App.Checklist.Types.SortCriteria
-      Futurice.App.Checklist.Types.TaskAppliance
-      Futurice.App.Checklist.Types.TaskComment
-      Futurice.App.Checklist.Types.TaskItem
-      Futurice.App.Checklist.Types.TaskRole
-      Futurice.App.Checklist.Types.TaskTag
-      Futurice.App.Checklist.Types.World
+    Futurice.App.Checklist
+    Futurice.App.Checklist.API
+    Futurice.App.Checklist.Ack
+    Futurice.App.Checklist.Charts.Done
+    Futurice.App.Checklist.Clay
+    Futurice.App.Checklist.Command
+    Futurice.App.Checklist.Config
+    Futurice.App.Checklist.Ctx
+    Futurice.App.Checklist.Logic
+    Futurice.App.Checklist.Markup
+    Futurice.App.Checklist.Pages.AgentAudit
+    Futurice.App.Checklist.Pages.Agents
+    Futurice.App.Checklist.Pages.Archive
+    Futurice.App.Checklist.Pages.Checklist
+    Futurice.App.Checklist.Pages.Checklists
+    Futurice.App.Checklist.Pages.CreateEmployee
+    Futurice.App.Checklist.Pages.CreateTask
+    Futurice.App.Checklist.Pages.Employee
+    Futurice.App.Checklist.Pages.EmployeeAudit
+    Futurice.App.Checklist.Pages.Error
+    Futurice.App.Checklist.Pages.HelpAppliance
+    Futurice.App.Checklist.Pages.HelpServices
+    Futurice.App.Checklist.Pages.Index
+    Futurice.App.Checklist.Pages.More
+    Futurice.App.Checklist.Pages.Personio
+    Futurice.App.Checklist.Pages.Report
+    Futurice.App.Checklist.Pages.Stats
+    Futurice.App.Checklist.Pages.Task
+    Futurice.App.Checklist.Pages.Tasks
+    Futurice.App.Checklist.Personio
+    Futurice.App.Checklist.Types
+    Futurice.App.Checklist.Types.Basic
+    Futurice.App.Checklist.Types.ChecklistId
+    Futurice.App.Checklist.Types.ContractType
+    Futurice.App.Checklist.Types.Counter
+    Futurice.App.Checklist.Types.Identifier
+    Futurice.App.Checklist.Types.SortCriteria
+    Futurice.App.Checklist.Types.TaskAppliance
+    Futurice.App.Checklist.Types.TaskComment
+    Futurice.App.Checklist.Types.TaskItem
+    Futurice.App.Checklist.Types.TaskRole
+    Futurice.App.Checklist.Types.TaskTag
+    Futurice.App.Checklist.Types.World
 
 executable checklist-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded -rtsopts
+  main-is:          Main.hs
+  default-language: Haskell2010
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
   build-depends:
-      base >= 4.7 && <4.13
     , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , base
     , Chart
+    , checklist-app
     , clay
     , constraints
     , containers
     , crypto-api
-    , DRBG
     , deepseq
     , distributive
+    , DRBG
     , env-config
     , fum-api
     , fum-types
@@ -169,7 +170,7 @@ executable checklist-app-server
     , generics-sop-lens
     , github
     , http-api-data
-    , lattices >=1.6
+    , lattices               >=1.6
     , lens
     , lens-aeson
     , lucid
@@ -178,7 +179,7 @@ executable checklist-app-server
     , personio-client
     , postgresql-simple
     , QuickCheck
-    , recursion-schemes >= 5.0.1
+    , recursion-schemes      >=5.0.1
     , reflection
     , regex-applicative
     , resource-pool
@@ -194,20 +195,17 @@ executable checklist-app-server
     , time
     , trifecta
     , uuid
-    , checklist-app
-  default-language: Haskell2010
 
 test-suite unit-tests
-  type: exitcode-stdio-1.0
-  main-is: Tests.hs
-  hs-source-dirs:
-      tests/
-  ghc-options: -Wall
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   tests/
+  ghc-options:      -Wall
   build-depends:
-      base
     , aeson
+    , base
+    , checklist-app
     , futurice-prelude
     , tasty
     , tasty-quickcheck
-    , checklist-app
-  default-language: Haskell2010

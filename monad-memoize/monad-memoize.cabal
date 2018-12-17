@@ -1,16 +1,14 @@
 cabal-version: 2.2
-name: monad-memoize
-version: 0
-
-synopsis: Monad which can memoize
-category: Control.
-description: 
-  memoize :: m a -> m (m a)
+name:          monad-memoize
+version:       0
+synopsis:      Monad which can memoize
+category:      Control.
+description:   memoize :: m a -> m (m a)
 
 library
-  default-language: Haskell2010
-  ghc-options:      -Wall
-  hs-source-dirs:   src
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -27,5 +25,4 @@ library
     , hashable
     , haxl
     , transformers
-  exposed-modules:
-    Control.Monad.Memoize
+  exposed-modules:    Control.Monad.Memoize

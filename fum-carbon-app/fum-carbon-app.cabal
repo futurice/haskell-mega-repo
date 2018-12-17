@@ -1,24 +1,25 @@
-name:           fum-carbon-app
-version:        6
-synopsis:       An user management system for LDAP
-description:    ...
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
+cabal-version: 2.2
+name:          fum-carbon-app
+version:       6
+synopsis:      An user management system for LDAP
+description:   ...
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -30,15 +31,14 @@ library
     GeneralizedNewtypeDeriving
     InstanceSigs
     ScopedTypeVariables
-  ghc-options: -Wall
   build-depends:
-      base >= 4.7 && <4.13
     , adjunctions
     , aeson
     , aeson-compat
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , base
     , bytestring
     , cassava
     , clay
@@ -78,7 +78,7 @@ library
     , process
     , QuickCheck
     , range-set-list
-    , recursion-schemes >= 5.0.1
+    , recursion-schemes       >=5.0.1
     , reflection
     , regex-applicative
     , regex-applicative-text
@@ -101,82 +101,78 @@ library
     , vector
     , writer-cps-mtl
   exposed-modules:
-      Futurice.App.FUM
-      Futurice.App.FUM.Ack
-      Futurice.App.FUM.ACL
-      Futurice.App.FUM.API
-      Futurice.App.FUM.API.Pages
-      Futurice.App.FUM.Auth
-      Futurice.App.FUM.Clay
-      Futurice.App.FUM.Command
-      Futurice.App.FUM.Command.AddEditorGroup
-      Futurice.App.FUM.Command.AddEmailToEmployee
-      Futurice.App.FUM.Command.AddEmployeeToGroup
-      Futurice.App.FUM.Command.AddSSHKeyToEmployee
-      Futurice.App.FUM.Command.Bootstrap
-      Futurice.App.FUM.Command.ChangeGroupMatch
-      Futurice.App.FUM.Command.CreateEmployee
-      Futurice.App.FUM.Command.CreateGroup
-      Futurice.App.FUM.Command.Definition
-      Futurice.App.FUM.Command.RemoveEditorGroup
-      Futurice.App.FUM.Command.RemoveEmailFromEmployee
-      Futurice.App.FUM.Command.RemoveEmployeeFromGroup
-      Futurice.App.FUM.Command.RemoveSSHKeyFromEmployee
-      Futurice.App.FUM.Command.ResetPassword
-      Futurice.App.FUM.Command.Server
-      Futurice.App.FUM.Config
-      Futurice.App.FUM.Ctx
-      Futurice.App.FUM.Lomake
-      Futurice.App.FUM.Machine
-      Futurice.App.FUM.Markup
-      Futurice.App.FUM.Pages.CreateEmployee
-      Futurice.App.FUM.Pages.CreateGroup
-      Futurice.App.FUM.Pages.Error
-      Futurice.App.FUM.Pages.FromPersonio
-      Futurice.App.FUM.Pages.Href
-      Futurice.App.FUM.Pages.Index
-      Futurice.App.FUM.Pages.ListEmployees
-      Futurice.App.FUM.Pages.ListGroups
-      Futurice.App.FUM.Pages.Server
-      Futurice.App.FUM.Pages.Summary
-      Futurice.App.FUM.Pages.ViewEmployee
-      Futurice.App.FUM.Pages.ViewGroup
-      Futurice.App.FUM.Report.CompareOldFum
-      Futurice.App.FUM.Transactor
-      Futurice.App.FUM.Types
-      Futurice.App.FUM.Types.Customer
-      Futurice.App.FUM.Types.Employee
-      Futurice.App.FUM.Types.Group
-      Futurice.App.FUM.Types.GroupMatch
-      Futurice.App.FUM.Types.GroupType
-      Futurice.App.FUM.Types.Identifier
-      Futurice.App.FUM.Types.Mailbox
-      Futurice.App.FUM.Types.Password
-      Futurice.App.FUM.Types.SSHKey
-      Futurice.App.FUM.Types.Status
-      Futurice.App.FUM.Types.UnixID
-      Futurice.App.FUM.Types.World
-  default-language: Haskell2010
+    Futurice.App.FUM
+    Futurice.App.FUM.ACL
+    Futurice.App.FUM.API
+    Futurice.App.FUM.API.Pages
+    Futurice.App.FUM.Ack
+    Futurice.App.FUM.Auth
+    Futurice.App.FUM.Clay
+    Futurice.App.FUM.Command
+    Futurice.App.FUM.Command.AddEditorGroup
+    Futurice.App.FUM.Command.AddEmailToEmployee
+    Futurice.App.FUM.Command.AddEmployeeToGroup
+    Futurice.App.FUM.Command.AddSSHKeyToEmployee
+    Futurice.App.FUM.Command.Bootstrap
+    Futurice.App.FUM.Command.ChangeGroupMatch
+    Futurice.App.FUM.Command.CreateEmployee
+    Futurice.App.FUM.Command.CreateGroup
+    Futurice.App.FUM.Command.Definition
+    Futurice.App.FUM.Command.RemoveEditorGroup
+    Futurice.App.FUM.Command.RemoveEmailFromEmployee
+    Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+    Futurice.App.FUM.Command.RemoveSSHKeyFromEmployee
+    Futurice.App.FUM.Command.ResetPassword
+    Futurice.App.FUM.Command.Server
+    Futurice.App.FUM.Config
+    Futurice.App.FUM.Ctx
+    Futurice.App.FUM.Lomake
+    Futurice.App.FUM.Machine
+    Futurice.App.FUM.Markup
+    Futurice.App.FUM.Pages.CreateEmployee
+    Futurice.App.FUM.Pages.CreateGroup
+    Futurice.App.FUM.Pages.Error
+    Futurice.App.FUM.Pages.FromPersonio
+    Futurice.App.FUM.Pages.Href
+    Futurice.App.FUM.Pages.Index
+    Futurice.App.FUM.Pages.ListEmployees
+    Futurice.App.FUM.Pages.ListGroups
+    Futurice.App.FUM.Pages.Server
+    Futurice.App.FUM.Pages.Summary
+    Futurice.App.FUM.Pages.ViewEmployee
+    Futurice.App.FUM.Pages.ViewGroup
+    Futurice.App.FUM.Report.CompareOldFum
+    Futurice.App.FUM.Transactor
+    Futurice.App.FUM.Types
+    Futurice.App.FUM.Types.Customer
+    Futurice.App.FUM.Types.Employee
+    Futurice.App.FUM.Types.Group
+    Futurice.App.FUM.Types.GroupMatch
+    Futurice.App.FUM.Types.GroupType
+    Futurice.App.FUM.Types.Identifier
+    Futurice.App.FUM.Types.Mailbox
+    Futurice.App.FUM.Types.Password
+    Futurice.App.FUM.Types.SSHKey
+    Futurice.App.FUM.Types.Status
+    Futurice.App.FUM.Types.UnixID
+    Futurice.App.FUM.Types.World
 
 executable fum-carbon-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded -rtsopts
-  build-depends:
-      base >= 4.7 && <4.13
-    , fum-carbon-app
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , fum-carbon-app
 
 test-suite unit-tests
-  type: exitcode-stdio-1.0
-  main-is: Tests.hs
-  hs-source-dirs:
-      tests/
-  ghc-options: -Wall
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   tests/
+  ghc-options:      -Wall
   build-depends:
-      base >= 4.7 && <4.13
-    -- , fum-carbon-app
+    , base
     , futurice-prelude
     , tasty
-  default-language: Haskell2010

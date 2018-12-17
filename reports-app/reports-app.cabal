@@ -1,29 +1,29 @@
-name:           reports-app
-version:        0
-synopsis:       Show various reports.
-description:    ...
-category:       Web
-homepage:       https://github.com/futurice/haskell-mega-repo#readme
-bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD3
-license-file:   LICENSE
-build-type:     Simple
-cabal-version:  >= 1.10
-
+cabal-version:      2.2
+name:               reports-app
+version:            0
+synopsis:           Show various reports.
+description:        ...
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
 extra-source-files:
   i-dont-know.json
   missing-hours-email.template
   missing-hours-sms.template
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/haskell-mega-repo
 
 library
-  hs-source-dirs:
-      src
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall -fprint-potential-instances
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -35,15 +35,14 @@ library
     GeneralizedNewtypeDeriving
     InstanceSigs
     ScopedTypeVariables
-  ghc-options: -Wall -fprint-potential-instances
   build-depends:
-      base >= 4.8 && <4.13
-    , base-compat
     , adjunctions
     , aeson
     , aeson-pretty
     , algebraic-graphs
     , ansi-pretty
+    , base
+    , base-compat
     , base64-bytestring
     , bifunctors
     , binary-orphans
@@ -80,10 +79,10 @@ library
     , futurice-servant
     , futurice-tribes
     , generics-sop
-    , github >=0.15.0
-    , hashable >= 1.2
+    , github                    >=0.15.0
+    , hashable                  >=1.2
     , http-api-data
-    , http-client >= 0.5
+    , http-client               >=0.5
     , http-client-tls
     , http-types
     , intervals
@@ -131,39 +130,39 @@ library
     , vector
     , wai
   exposed-modules:
-      Futurice.App.Reports
-      Futurice.App.Reports.API
-      Futurice.App.Reports.ActiveAccounts
-      Futurice.App.Reports.CareerLengthChart
-      Futurice.App.Reports.Config
-      Futurice.App.Reports.Ctx
-      Futurice.App.Reports.Dashdo
-      Futurice.App.Reports.GithubReposDashdo
-      Futurice.App.Reports.IDontKnow
-      Futurice.App.Reports.Inventory
-      Futurice.App.Reports.Markup
-      Futurice.App.Reports.MissingHours
-      Futurice.App.Reports.MissingHoursChart
-      Futurice.App.Reports.MissingHoursDailyChart
-      Futurice.App.Reports.MissingHoursDashdo
-      Futurice.App.Reports.MissingHoursNotifications
-      Futurice.App.Reports.OfficeVibeIntegration
-      Futurice.App.Reports.PlanMillAccountValidation
-      Futurice.App.Reports.PowerAbsences
-      Futurice.App.Reports.PowerProjects
-      Futurice.App.Reports.PowerUser
-      Futurice.App.Reports.ProjectHours
-      Futurice.App.Reports.SupervisorsGraph
-      Futurice.App.Reports.Templates
-      Futurice.App.Reports.TimereportsByTask
-      Futurice.App.Reports.TimereportsDump
-      Futurice.App.Reports.UtzChart
-  default-language: Haskell2010
+    Futurice.App.Reports
+    Futurice.App.Reports.API
+    Futurice.App.Reports.ActiveAccounts
+    Futurice.App.Reports.CareerLengthChart
+    Futurice.App.Reports.Config
+    Futurice.App.Reports.Ctx
+    Futurice.App.Reports.Dashdo
+    Futurice.App.Reports.GithubReposDashdo
+    Futurice.App.Reports.IDontKnow
+    Futurice.App.Reports.Inventory
+    Futurice.App.Reports.Markup
+    Futurice.App.Reports.MissingHours
+    Futurice.App.Reports.MissingHoursChart
+    Futurice.App.Reports.MissingHoursDailyChart
+    Futurice.App.Reports.MissingHoursDashdo
+    Futurice.App.Reports.MissingHoursNotifications
+    Futurice.App.Reports.OfficeVibeIntegration
+    Futurice.App.Reports.PlanMillAccountValidation
+    Futurice.App.Reports.PowerAbsences
+    Futurice.App.Reports.PowerProjects
+    Futurice.App.Reports.PowerUser
+    Futurice.App.Reports.ProjectHours
+    Futurice.App.Reports.SupervisorsGraph
+    Futurice.App.Reports.Templates
+    Futurice.App.Reports.TimereportsByTask
+    Futurice.App.Reports.TimereportsDump
+    Futurice.App.Reports.UtzChart
 
 executable reports-app-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -Wall -threaded -rtsopts
-  build-depends: base, reports-app
   default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , reports-app

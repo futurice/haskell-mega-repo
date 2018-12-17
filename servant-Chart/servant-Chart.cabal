@@ -1,32 +1,28 @@
-cabal-version:  2.2
-name:           servant-Chart
-version:        0
-
-synopsis:       Servant support for Chart
-description:    Servant support for Chart
-category:       Web
-homepage:       https://github.com/phadej/servant-Chart-svg#readme
-bug-reports:    https://github.com/phadej/servant-Chart-svg/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.2
-build-type:     Simple
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               servant-Chart
+version:            0
+synopsis:           Servant support for Chart
+description:        Servant support for Chart
+category:           Web
+homepage:           https://github.com/phadej/servant-Chart-svg#readme
+bug-reports:        https://github.com/phadej/servant-Chart-svg/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+tested-with:        ghc ==7.8.4 ghc ==7.10.3 ghc ==8.0.2
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/phadej/servant-Chart-svg
 
 library
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+  hs-source-dirs:   src
+  ghc-options:      -Wall
   build-depends:
-      base           >=4.7      && <4.13
+    , base             >=4.7 && <4.13
     , Chart
     , Chart-diagrams
     , deepseq
@@ -34,18 +30,19 @@ library
     , diagrams-svg
     , file-embed
     , file-embed-lzma
-    , http-media     >=0.6.2
-    , servant        >=0.4.4.5  && <0.16
+    , http-media       >=0.6.2
+    , servant          >=0.4.4.5 && <0.16
     , svg-builder
     , SVGFonts
     , swagger2
     , vector
   build-depends:
-    adjunctions, futurice-prelude, mtl
+    , adjunctions
+    , futurice-prelude
+    , mtl
 
-  if impl(ghc >= 8.4.4)
+  if impl(ghc >=8.4.4)
     build-depends: ghc-compact ^>=0.1.0.0
 
-  exposed-modules:
-      Servant.Chart
+  exposed-modules:  Servant.Chart
   default-language: Haskell2010

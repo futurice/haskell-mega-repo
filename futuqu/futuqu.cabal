@@ -1,15 +1,14 @@
 cabal-version: 2.2
-name: futuqu
-version: 0
-
-synopsis: FUTUrice QUery
-category: Integration
-description: Data to the people
+name:          futuqu
+version:       0
+synopsis:      FUTUrice QUery
+category:      Integration
+description:   Data to the people
 
 library
-  default-language: Haskell2010
-  ghc-options:      -Wall
-  hs-source-dirs:   src
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
   default-extensions:
     DeriveAnyClass
     DeriveDataTypeable
@@ -47,15 +46,15 @@ library
   exposed-modules:
     Futuqu
     Futuqu.API
-    Futuqu.NT
     Futuqu.Ggrr.HourKinds
     Futuqu.Ggrr.MissingHours
+    Futuqu.NT
     Futuqu.Rada.Accounts
     Futuqu.Rada.Capacities
     Futuqu.Rada.People
     Futuqu.Rada.Projects
     Futuqu.Rada.Tasks
     Futuqu.Rada.Timereports
+    Futuqu.Servant.CSV
     Futuqu.Strm.Capacities
     Futuqu.Strm.Timereports
-    Futuqu.Servant.CSV

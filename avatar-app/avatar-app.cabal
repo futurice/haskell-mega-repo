@@ -1,29 +1,25 @@
-cabal-version:  2.2
-name:           avatar-app
-version:        0
-
-synopsis:       Avatar app
-description:    Make an avatar of everything
-category:       Web
-homepage:       https://github.com/futurice/avatar-app#readme
-bug-reports:    https://github.com/futurice/avatar-app/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
-license:        BSD-3-Clause
-license-file:   LICENSE
-build-type:     Simple
-
-extra-source-files:
-    README.md
+cabal-version:      2.2
+name:               avatar-app
+version:            0
+synopsis:           Avatar app
+description:        Make an avatar of everything
+category:           Web
+homepage:           https://github.com/futurice/avatar-app#readme
+bug-reports:        https://github.com/futurice/avatar-app/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/futurice/avatar-app
 
 library
-  hs-source-dirs:
-      src
-  ghc-options: -Wall
+  hs-source-dirs:     src
+  ghc-options:        -Wall
   default-extensions:
     DeriveDataTypeable
     DeriveFoldable
@@ -32,13 +28,13 @@ library
     DeriveTraversable
     ScopedTypeVariables
   build-depends:
-    , base
     , aeson-compat
     , amazonka
     , amazonka-lambda
     , amazonka-s3
     , avatar-client
     , avatar-internal
+    , base
     , base-compat
     , blaze-html
     , bytestring
@@ -48,8 +44,8 @@ library
     , file-embed
     , fum-client
     , fum-types
-    , futurice-integrations
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , http-client
@@ -71,29 +67,27 @@ library
     , unordered-containers
     , vector
   exposed-modules:
-      Futurice.App.Avatar
-      Futurice.App.Avatar.Config
-      Futurice.App.Avatar.Ctx
-      Futurice.App.Avatar.Embedded
-      Futurice.App.Avatar.Markup
-  default-language: Haskell2010
+    Futurice.App.Avatar
+    Futurice.App.Avatar.Config
+    Futurice.App.Avatar.Ctx
+    Futurice.App.Avatar.Embedded
+    Futurice.App.Avatar.Markup
+  default-language:   Haskell2010
 
 executable avatar-server
-  main-is: Main.hs
-  hs-source-dirs:
-      srv
-  ghc-options: -Wall -threaded -rtsopts
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -threaded -rtsopts
   build-depends:
-      base
     , avatar-app
+    , base
   default-language: Haskell2010
 
 library avatar-internal
   default-language: Haskell2010
   ghc-options:      -Wall
   hs-source-dirs:   src-internal
-  exposed-modules:
-      Futurice.App.Avatar.Types
+  exposed-modules:  Futurice.App.Avatar.Types
   build-depends:
     , base
     , base64-bytestring
@@ -106,23 +100,19 @@ executable avatar-process-lambda
   hs-source-dirs:   src-process lambdas
   main-is:          ProcessLambda.hs
   default-language: Haskell2010
-  other-modules:
-    Futurice.Lambda.Avatar.Process
-
+  other-modules:    Futurice.Lambda.Avatar.Process
   build-depends:
-    , base
     , amazonka
     , amazonka-s3
     , avatar-internal
+    , base
     , bytestring
     , env-config
     , futurice-lambda
     , futurice-prelude
     , http-client
-    , JuicyPixels >=3.2.7
-    , JuicyPixels-scale-dct >=0.1.0.0
+    , JuicyPixels            >=3.2.7
+    , JuicyPixels-scale-dct  >=0.1.0.0
     , linear
     , vector
-
-  build-depends:
-    , aeson
+  build-depends:    aeson
