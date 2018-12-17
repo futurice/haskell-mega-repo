@@ -1,5 +1,6 @@
 index-state: 2018-12-04T11:13:52Z
 tests: True
+with-compiler: ghc-8.6.3
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
