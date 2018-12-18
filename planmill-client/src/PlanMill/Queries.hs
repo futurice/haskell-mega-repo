@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -31,22 +32,26 @@ module PlanMill.Queries (
     usersQuery,
     absencesQuery,
     -- timereportsModifiedQuery,
+    --- * Raw queries
+    project',
+    projects',
     ) where
 
 import PlanMill.Internal.Prelude
 
 import Control.Lens          (alongside, withIndex)
 import Control.Monad.Memoize (MonadMemoize (memo))
+import Data.List (find)
 import Data.Constraint       (Dict (..))
 import Data.Reflection       (reifySymbol)
 import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
-       (Absence, Absences, Account, AccountId, CapacityCalendars, Me, Project,
-       ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
-       Timereport, Timereports, User, UserCapacities, UserId, Users,
-       identifier)
+       (Absence, Absences, Account, AccountId, CapacityCalendars, Me,
+       Project (..), ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId,
+       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
+       Users, identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -218,17 +223,66 @@ account aid = planmillQuery
 
 -- | A single project in PlanMill.
 --
--- See <https://developers.planmill.com/api/#projects__project_id__get>
+-- Under the hoods asks for all projects listing, and the individual projects.
+-- Combines the data        .
+--
 project :: MonadPlanMillQuery m => ProjectId -> m Project
-project pid = planmillQuery
+project pid = memo pid $ do
+    p <- project' pid
+    ps <- projects'
+    return $ case find (\p' -> p' ^. identifier == pid) ps of
+        Nothing -> p
+        Just p' -> combineProjects p p'
+
+-- | Get a list of projects.
+--
+-- Under the hood, asks for individual projects too.
+--
+projects :: MonadPlanMillQuery m => m Projects
+projects = do
+    ps <- projects'
+    for ps $ \p -> do
+        p' <- project' (p ^. identifier)
+        return $ combineProjects p p'
+
+combineProjects :: Project -> Project -> Project
+combineProjects p p' = Project
+    { _pId             = p ^. identifier
+    , pName            = pName p
+    , pAccount         = combineMaybe pAccount p p'
+    , pAccountName     = combineMaybe pAccountName p p'
+    , pCategory        = pCategory p
+    , pStart           = combineMaybe pStart p p'
+    , pFinish          = combineMaybe pFinish p p'
+    , pProjectManager  = combineMaybe pProjectManager p p'
+    , pInvoicedRevenue = combineMax pInvoicedRevenue p p'
+    , pActualRevenue   = combineMax pActualRevenue p p'
+    , pTotalRevenue    = combineMax pTotalRevenue p p'
+    , pActualCost      = combineMax pActualCost p p'
+    , pTotalCost       = combineMax pTotalCost p p'
+    , pActualEffort    = combineMax pActualEffort p p'
+    , pTotalEffort     = combineMax pTotalEffort p p'
+    }
+  where
+    combineMax :: Ord b => (a -> b) -> a -> a -> b
+    combineMax f x y = max (f x) (f y)
+
+    combineMaybe :: (a -> Maybe b) -> a -> a -> Maybe b
+    combineMaybe f x y = f x <|> f y
+
+-- | A single project in PlanMill.
+--
+-- See <https://developers.planmill.com/api/#projects__project_id__get>
+project' :: MonadPlanMillQuery m => ProjectId -> m Project
+project' pid = planmillQuery
     $ QueryGet QueryTagProject mempty
     $ toUrlParts $ ("projects" :: Text) // pid
 
 -- | Get a list of projects.
 --
 -- See <https://developers.planmill.com/api/#projects_get>
-projects :: MonadPlanMillQuery m => m Projects
-projects = planmillVectorQuery
+projects' :: MonadPlanMillQuery m => m Projects
+projects' = planmillVectorQuery
     $ QueryPagedGet QueryTagProject mempty
     $ toUrlParts $ ("projects" :: Text)
 

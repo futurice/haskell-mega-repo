@@ -93,8 +93,9 @@ evalPlanMill pm = do
             let req'' = (addHeader (authHeader auth) req')
             -- BEGIN HACK: 2018-12-17, PlanMill is sad so we do this
                       { responseTimeout =
-                          if BS8.isSuffixOf "tasks/28532" $ path req
-                          then responseTimeoutMicro $ 60 * 1000000
+                          if BS8.isSuffixOf "tasks/28532" (path req)
+                            || BS8.isSuffixOf "absences" (path req)
+                          then responseTimeoutMicro $ 120 * 1000000
                           else responseTimeout req' -- otherwise do nothing
                       }
             -- END HACK

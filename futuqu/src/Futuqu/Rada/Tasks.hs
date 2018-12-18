@@ -30,6 +30,8 @@ data Task = Task
     , tName   :: !Text
     , tStart  :: !Day
     , tFinish :: !Day
+
+    , tTotalEffort :: !Int
     }
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
@@ -65,12 +67,13 @@ tasksData fAccIds fProjIds = do
             return $ map (convert prjId accId) (toList tasks)
 
     convert prjId accId t = Task
-        { tTaskId    = t ^. PM.identifier
-        , tProjectId = prjId
-        , tAccountId = accId
-        , tName      = PM.taskName t
-        , tStart     = PM.taskStart t
-        , tFinish    = PM.taskFinish t
+        { tTaskId      = t ^. PM.identifier
+        , tProjectId   = prjId
+        , tAccountId   = accId
+        , tName        = PM.taskName t
+        , tStart       = PM.taskStart t
+        , tFinish      = PM.taskFinish t
+        , tTotalEffort = PM.taskTotalEffort t
         }
 
     predAccount accId = case fAccIds of
