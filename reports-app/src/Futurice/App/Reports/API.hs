@@ -8,6 +8,7 @@
 module Futurice.App.Reports.API where
 
 import Dashdo.Servant            (DashdoAPI)
+import Futuqu.API
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns   (Report)
@@ -19,9 +20,9 @@ import Servant
 import Servant.Cached
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
-import Futuqu.API
 
 import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
+import Futurice.App.Reports.DoWeStudy                 (DoWeStudyData)
 import Futurice.App.Reports.IDontKnow                 (IDontKnowData)
 import Futurice.App.Reports.Inventory                 (InventorySummary)
 import Futurice.App.Reports.MissingHours              (MissingHoursReport)
@@ -75,6 +76,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
     :<|> "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
     :<|> "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
+    :<|> "tables" :> "do-we-study"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
     -- Officevibe
     :<|> "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
     :<|> "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]

@@ -41,6 +41,7 @@ import Futurice.App.Reports.CareerLengthChart
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
 import Futurice.App.Reports.Dashdo                    (makeDashdoServer)
+import Futurice.App.Reports.DoWeStudy                 (doWeStudyData)
 import Futurice.App.Reports.IDontKnow                 (iDontKnowData)
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.Markup
@@ -254,6 +255,7 @@ server ctx = makeServer ctx reports
     :<|> liftIO (serveData projectHoursData ctx)
     :<|> liftIO (serveData projectHoursData ctx)
     :<|> (\month tribe -> liftIO (serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx))
+    :<|> (\month tribe -> liftIO (serveDataParam2 month (tribe >>= either (const Nothing) Just) doWeStudyData ctx))
     -- officevibe
     :<|> liftIO (serveData' () (const officeVibeData) ovdUsers ctx)
     :<|> liftIO (serveData' () (const officeVibeData) ovdGroups ctx)

@@ -35,6 +35,7 @@ library
     GeneralizedNewtypeDeriving
     InstanceSigs
     ScopedTypeVariables
+
   build-depends:
     , adjunctions
     , aeson
@@ -129,6 +130,7 @@ library
     , vec
     , vector
     , wai
+
   exposed-modules:
     Futurice.App.Reports
     Futurice.App.Reports.API
@@ -137,6 +139,7 @@ library
     Futurice.App.Reports.Config
     Futurice.App.Reports.Ctx
     Futurice.App.Reports.Dashdo
+    Futurice.App.Reports.DoWeStudy
     Futurice.App.Reports.GithubReposDashdo
     Futurice.App.Reports.IDontKnow
     Futurice.App.Reports.Inventory
