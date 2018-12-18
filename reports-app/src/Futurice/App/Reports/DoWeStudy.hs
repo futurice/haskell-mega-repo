@@ -33,7 +33,6 @@ import qualified PlanMill.Queries    as PMQ
 
 data TrainingType = Jedi
                   | OtherTraining
-                  | Test
                   deriving (Show, Generic, NFData)
 
 doWeStudyConfig :: Value
@@ -118,15 +117,7 @@ doWeStudyData mmonth mtribe = do
                          , dwsHours    = ndtConvert' (PM.trAmount tr)
                          , dwsDesc     = comment
                          }
-               | otherwise -> return $ Just DoWeStudy
-                         { dwsDate     = PM.trStart tr
-                         , dwsName     = p ^. P.employeeFullname
-                         , dwsTribe    = p ^. P.employeeTribe
-                         , dwsCategory = Test
-                         , dwsProject  = maybe "<project>" PM.pName prj
-                         , dwsHours    = ndtConvert' (PM.trAmount tr)
-                         , dwsDesc     = comment
-                         }
+               | otherwise -> return Nothing
 
     return $ DWS today month mtribe (dwss ^.. folded . folded . _Just)
 
@@ -134,7 +125,6 @@ instance ToHtml TrainingType where
     toHtmlRaw = toHtml
     toHtml Jedi = toHtml ("Jedi" :: Text)
     toHtml OtherTraining = toHtml ("General training" :: Text)
-    toHtml Test = toHtml ("Test" :: Text)
 
 instance ToHtml DoWeStudyData where
     toHtmlRaw = toHtml
