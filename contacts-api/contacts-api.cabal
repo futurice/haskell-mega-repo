@@ -1,4 +1,4 @@
-cabal-version:      >=1.10
+cabal-version:      2.2
 name:               contacts-api
 version:            0
 synopsis:           Contacts api
@@ -8,7 +8,7 @@ homepage:           https://github.com/futurice/contacts-api#readme
 bug-reports:        https://github.com/futurice/contacts-api/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
-license:            BSD-3
+license:            BSD-3-Clause
 license-file:       LICENSE
 build-type:         Simple
 extra-source-files: README.md
