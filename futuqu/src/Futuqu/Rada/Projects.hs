@@ -27,10 +27,20 @@ data Project = Project
     -- planmill
     , prjName     :: !Text
     , prjCategory :: !Text -- TODO, make EnumTextValue
-    -- TODO: add data as needed
-    -- power
-    -- TODO: power doesn't provide IDs so we could link data
-    -- TODO: add data as needed
+
+    -- these fields are asked for dashboards:
+    , prjStart                      :: !(Maybe UTCTime)
+    , prjFinish                     :: !(Maybe UTCTime)
+    , prjProjectManager             :: !(Maybe PM.UserId)
+
+    -- better types would be... better
+    , prjInvoicedRevenue            :: !Double
+    , prjActualRevenue              :: !Double
+    , prjTotalRevenue               :: !Double
+    , prjActualCost                 :: !Double
+    , prjTotalCost                  :: !Double
+    , prjActualEffort               :: !Int
+    , prjTotalEffort                :: !Int
     }
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
@@ -64,6 +74,17 @@ projectsData fAccIds = do
             , prjAccountId = accId
             , prjName      = PM.pName p
             , prjCategory  = fromMaybe "-" $ cats ^? ix (PM.pCategory p)
+
+            , prjStart           = PM.pStart p
+            , prjFinish          = PM.pFinish p
+            , prjProjectManager  = PM.pProjectManager p
+            , prjInvoicedRevenue = PM.pInvoicedRevenue p
+            , prjActualRevenue   = PM.pActualRevenue p
+            , prjTotalRevenue    = PM.pTotalRevenue p
+            , prjActualCost      = PM.pActualCost p
+            , prjTotalCost       = PM.pTotalCost p
+            , prjActualEffort    = PM.pActualEffort p
+            , prjTotalEffort     = PM.pTotalEffort p
             }
 
     predAccount accId = case fAccIds of

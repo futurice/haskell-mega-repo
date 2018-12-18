@@ -577,6 +577,10 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
                 & AWS.mdValue      ?~ fromIntegral liveBytes
                 & AWS.mdUnit       ?~ AWS.Bytes
                 & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
+        let datum1b = AWS.metricDatum "Compact bytes"
+                & AWS.mdValue      ?~ fromIntegral compactBytes
+                & AWS.mdUnit       ?~ AWS.Bytes
+                & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
         -- Productivity
         let datum2 = AWS.metricDatum "Productivity"
                 & AWS.mdValue      ?~ productivity
@@ -589,7 +593,7 @@ cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch"
                 & AWS.mdDimensions .~ [AWS.dimension "Service" awsService]
 
         -- Put.
-        let datums0 = datum1 : datum2 : datum3
+        let datums0 = datum1 : datum1b : datum2 : datum3
                    : cacheDatum : meterDatums
         -- metric names can be only ASCII
         let datums1 = datums0 & traverse . AWS.mdMetricName . each %~ makeAscii
