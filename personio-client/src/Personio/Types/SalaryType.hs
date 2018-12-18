@@ -1,12 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE ImpredicativeTypes  #-}
-{-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
 module Personio.Types.SalaryType (
     SalaryType (..),
     salaryTypeToText,
@@ -23,12 +17,10 @@ import qualified Data.Csv as Csv
 data SalaryType
     = Monthly
     | Hourly
-  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, Generic)
-  deriving anyclass (NFData, Hashable, Binary)
-
-makePrisms ''SalaryType
-deriveGeneric ''SalaryType
-deriveLift ''SalaryType
+  deriving stock (Eq, Ord, Show, Read, Typeable, Enum, Bounded, GhcGeneric, Lift)
+  deriving anyclass (NFData, Hashable, Binary, SopGeneric, HasDatatypeInfo)
+  deriving (Arbitrary) via (Sopica SalaryType)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, Csv.ToField, Csv.FromField, ToHtml) via (Enumica SalaryType)
 
 instance TextEnum SalaryType where
     type TextEnumNames SalaryType = '["Monthly", "Hourly"]
@@ -45,15 +37,6 @@ salaryTypeFromText = enumFromText
 
 _SalaryType :: Prism' Text SalaryType
 _SalaryType = enumPrism
-
-deriveVia [t| Arbitrary SalaryType       `Via` Sopica SalaryType  |]
-deriveVia [t| ToJSON SalaryType          `Via` Enumica SalaryType |]
-deriveVia [t| FromJSON SalaryType        `Via` Enumica SalaryType |]
-deriveVia [t| ToHttpApiData SalaryType   `Via` Enumica SalaryType |]
-deriveVia [t| FromHttpApiData SalaryType `Via` Enumica SalaryType |]
-deriveVia [t| Csv.ToField SalaryType     `Via` Enumica SalaryType |]
-deriveVia [t| Csv.FromField SalaryType   `Via` Enumica SalaryType |]
-deriveVia [t| ToHtml SalaryType          `Via` Enumica SalaryType |]
 
 instance ToParamSchema SalaryType where toParamSchema = enumToParamSchema
 instance ToSchema SalaryType where declareNamedSchema = enumDeclareNamedSchema

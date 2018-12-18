@@ -73,11 +73,12 @@ data Opts = Opts
     { optsDumpJson :: !Bool
     , optsDumpRaw  :: !Bool
     , optsShowAll  :: !Bool
+    , optsTimeout  :: !Int
     }
   deriving Show
 
 defaultOpts :: Opts
-defaultOpts = Opts False False False
+defaultOpts = Opts False False False 30
 
 -------------------------------------------------------------------------------
 -- Ctx
@@ -105,21 +106,24 @@ optsP = Opts
     <$> O.flag False True (O.long "dump-json" <> O.help "Print json")
     <*> O.flag False True (O.long "dump-raw" <> O.help "Print raw reqsponse")
     <*> O.flag False True (O.long "show-all" <> O.help "Show all entries, default: 10")
+    <*> O.option O.auto (O.long "timeout" <> O.value 30 <> O.help "Timeout" <> O.showDefault)
 
 main :: IO ()
 main = withStderrLogger $ \lgr -> runLogT "pm-cli" lgr $ do
-    f <- liftIO $ O.execParser opts
+    (opts, cmd) <- liftIO $ O.execParser optsP'
     cfg <- getConfig "PM"
     gpool <- mkCryptoPool 2 (120 :: NominalDiffTime) 2
     mgr <- liftIO $ newManager tlsManagerSettings
-    f $ Ctx
+        { H.managerResponseTimeout = H.responseTimeoutMicro $ optsTimeout opts * 1000000
+        }
+    execute opts cmd $ Ctx
         { _ctxPlanmillCfg = cfg
         , _ctxCryptoPool  = gpool
         , _ctxOpts        = defaultOpts
         , _ctxHttpManager = mgr
         }
   where
-    opts = O.info (O.helper <*> (execute <$> optsP <*> O.sopCommandParser)) $ mconcat
+    optsP' = O.info (O.helper <*> ((,) <$> optsP <*> O.sopCommandParser)) $ mconcat
         [ O.fullDesc
         , O.progDesc "Planmill Client"
         , O.header "Let's see what it returns"

@@ -24,8 +24,12 @@ library
   default-extensions:
     DeriveAnyClass
     DeriveGeneric
+    DeriveLift
     DerivingStrategies
+    DerivingVia
     GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -55,6 +59,7 @@ library
     , text
     , time
     , unordered-containers
+
   exposed-modules:
     Control.Monad.Personio
     Personio
@@ -73,6 +78,7 @@ library
     Personio.Types.SimpleEmployee
     Personio.Types.Status
     Personio.Types.Validation
+
   other-modules:
     Personio.Internal.Attribute
     Personio.Types.Internal

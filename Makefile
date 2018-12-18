@@ -7,7 +7,7 @@
 
 CONCURRENCY?=2
 
-HC:=ghc-8.4.4
+HC:=ghc-8.6.3
 LOCALBIN:=${HOME}/.local/bin
 
 # Build everything

@@ -42,7 +42,7 @@ fi
 cd "$ROOTDIR"
 
 # GHC version
-GHCVER=${GHCVER-8.4.4}
+GHCVER=${GHCVER-8.6.3}
 export PATH=/opt/ghc/$GHCVER/bin:$PATH
 HC=ghc-$GHCVER
 

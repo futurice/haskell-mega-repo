@@ -13,7 +13,7 @@ import Futurice.Metrics.RateMeter (mark)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
        requestBody, requestHeaders, responseBody, responseStatus,
-       setQueryString)
+       responseTimeout, responseTimeoutMicro, setQueryString)
 import Network.HTTP.Types         (Header, Status (..), statusIsSuccessful)
 import System.IO.Unsafe           (unsafePerformIO)
 import Text.Printf                (printf)
@@ -90,7 +90,14 @@ evalPlanMill pm = do
             logTrace_ $ T.pack $ "req " <> m <> " " <> url
             -- We need to generate auth (nonce) at each req
             auth <- getAuth
-            let req'' = addHeader (authHeader auth) req'
+            let req'' = (addHeader (authHeader auth) req')
+            -- BEGIN HACK: 2018-12-17, PlanMill is sad so we do this
+                      { responseTimeout =
+                          if BS8.isSuffixOf "tasks/28532" $ path req
+                          then responseTimeoutMicro $ 60 * 1000000
+                          else responseTimeout req' -- otherwise do nothing
+                      }
+            -- END HACK
             (dur, res) <- clocked $ httpLbs req''
             let status@Status {..} = responseStatus res
             let body = responseBody res
