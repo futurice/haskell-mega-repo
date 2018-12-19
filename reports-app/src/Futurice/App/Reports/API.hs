@@ -17,6 +17,7 @@ import Futurice.Tribe            (Tribe)
 import GHC.TypeLits              (KnownSymbol, Symbol)
 import Prelude ()
 import Servant
+import Servant.API.Generic
 import Servant.Cached
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
@@ -39,69 +40,60 @@ import Futurice.App.Reports.TimereportsDump           (SimpleTimereport)
 
 type ReportTypes = '[HTML, CSV, JSON]
 
-data R (path :: Symbol) (report :: *)
+data Record route = Record
+    { recIndex :: route :- Get '[HTML] (HtmlPage "index")
 
-type Reports =
-    '[R "missing-hours"       MissingHoursReport
-    , R "hours-by-task"       TimereportsByTaskReport
-    ]
+    -- "legacy" reports
+    , recMissingHours :: route :- "missing-hours" :> Get ReportTypes MissingHoursReport
+    , recHoursByTask  :: route :- "hours-by-task" :> Get ReportTypes TimereportsByTaskReport
 
--- | This, 'RReport' and 'RName', type families are needed to make 'FoldReportsAPI' reduce
--- to the ':<|>' in cons case.
-type family RPath r where
-    RPath (R path report) = path
-
-type family RReport r where
-    RReport (R path report) = report
-
-type family RName r where
-    RName (R path (Report name params a)) = name
-
-class (KnownSymbol (RPath r), KnownSymbol (RName r), NFData (RReport r)) => RClass r
-instance (KnownSymbol path, KnownSymbol name, NFData params, NFData a)
-    => RClass (R path (Report name params a))
-
-type family FoldReportsAPI rs :: * where
-    FoldReportsAPI '[]       = Get '[HTML] (HtmlPage "index")
-    FoldReportsAPI (r ': rs) =
-        RPath r :> Get ReportTypes (RReport r) :<|>
-        FoldReportsAPI rs
-
-type ReportsAPI = FoldReportsAPI Reports
     -- Tables
-    :<|> "tables" :> "active-accounts"      :> Get '[HTML] ActiveAccounts
-    :<|> "tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts
-    :<|> "tables" :> "planmill-account-validation" :> Get '[HTML] PMAccountValidation
-    :<|> "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
-    :<|> "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
-    :<|> "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
-    :<|> "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
-    :<|> "tables" :> "do-we-study"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
+    , recTablesActiveAccounts       :: route :- "tables" :> "active-accounts"      :> Get '[HTML] ActiveAccounts
+    , recTablesActiveAccountsJSON   :: route :- "tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts
+    , recTablesPMAccountValidation  :: route :- "tables" :> "planmill-account-validation" :> Get '[HTML] PMAccountValidation
+    , recTablesInventorySummary     :: route :- "tables" :> "inventory-summary"    :> Get '[HTML] InventorySummary
+    , recTablesProjectHoursData     :: route :- "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
+    , recTablesProjectHoursDataJSON :: route :- "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
+    , recTablesIDontKnow            :: route :- "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
+    , recTablesDoWeStudy            :: route :- "tables" :> "do-we-study"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
+
     -- Officevibe
-    :<|> "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
-    :<|> "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]
-    :<|> "officevibe" :> "groups-mapping.csv" :> Get '[CSV] [OfficeVibeRelation]
-    -- Dump
-    :<|> "dump" :> "timereports.csv.xz" :> CachedGet (LZMA CSV) [SimpleTimereport]
+    , recOfficevibeUsers         :: route :- "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
+    , recOfficevibeGroups        :: route :- "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]
+    , recOfficevibeGroupsMapping :: route :- "officevibe" :> "groups-mapping.csv" :> Get '[CSV] [OfficeVibeRelation]
+
+    -- Dump: can be deleted, we have futuqu
+    , recTimereportsDump :: route :- "dump" :> "timereports.csv.xz" :> CachedGet (LZMA CSV) [SimpleTimereport]
+
     -- Charts
-    :<|> "charts" :> "utz" :> Get '[SVG] (Chart "utz")
-    :<|> "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
-    :<|> "charts" :> "missing-hours-daily" :> Get '[SVG] (Chart "missing-hours-daily")
-    :<|> "charts" :> "career-length" :> Get '[SVG] (Chart "career-length")
-    :<|> "charts" :> "career-length-relative" :> Get '[SVG] (Chart "career-length-relative")
-    :<|> "charts" :> "inventory-quantiles" :> Get '[SVG] (Chart "inventory-quantiles")
+    , recChartsUtz                  :: route :- "charts" :> "utz" :> Get '[SVG] (Chart "utz")
+    , recChartsMissingHours         :: route :- "charts" :> "missing-hours" :> Get '[SVG] (Chart "missing-hours")
+    , recChartsMissingHoursDaily    :: route :- "charts" :> "missing-hours-daily" :> Get '[SVG] (Chart "missing-hours-daily")
+    , recChartsCareerLength         :: route :- "charts" :> "career-length" :> Get '[SVG] (Chart "career-length")
+    , recChartsCareerLengthRelative :: route :- "charts" :> "career-length-relative" :> Get '[SVG] (Chart "career-length-relative")
+    , recChartsInventoryQuantiles   :: route :- "charts" :> "inventory-quantiles" :> Get '[SVG] (Chart "inventory-quantiles")
+
     -- Graphs
-    :<|> "graphs" :> "supervisors" :> Get '[ALGA] (Graph Emp "supervisors")
+    , recGraphsSupervisors :: route :- "graphs" :> "supervisors" :> Get '[ALGA] (Graph Emp "supervisors")
+
     -- Additional non-reports
-    :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
-    :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport
-    :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+    , recPowerUsers    :: route :- "power" :> "users" :> Get '[JSON] PowerUserReport
+    , recPowerProjects :: route :- "power" :> "projects" :> Get '[JSON] PowerProjectsReport
+    , recPowerAbsences :: route :- "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+
     -- missing hours notification
-    :<|> "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
+    , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
+
     -- futuqu
-    :<|> "futuqu" :> FutuquAPI
+    , recFutuqu :: route :- "futuqu" :> FutuquAPI
+
     -- dashdo
-    :<|> "dashdo" :> DashdoAPI
+    , recDashdo :: route :- "dashdo" :> DashdoAPI
+    }
+  deriving Generic
+
+
+type ReportsAPI = ToServantApi Record
 
 reportsApi :: Proxy ReportsAPI
-reportsApi = Proxy
+reportsApi = genericApi (Proxy :: Proxy Record)

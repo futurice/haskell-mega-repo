@@ -225,10 +225,11 @@ instance IdentifierToHtml Account where
             ]
 
 data Account = Account
-    { _saId   :: !AccountId
-    , saName  :: !Text
-    , saOwner :: !(Maybe UserId)
-    , saType  :: !(EnumValue Account "type")
+    { _saId     :: !AccountId
+    , saName    :: !Text
+    , saOwner   :: !(Maybe UserId)
+    , saType    :: !(EnumValue Account "type")
+    , saPassive :: !(EnumValue Account "passive")
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -240,11 +241,12 @@ instance HasStructuralInfo Account where structuralInfo = sopStructuralInfo
 instance HasSemanticVersion Account
 
 instance FromJSON Account where
-    parseJSON = withObject "Account" $ \obj ->
-        Account <$> obj .: "id"
-                <*> obj .: "name"
-                <*> obj .:? "owner"
-                <*> obj .: "type"
+    parseJSON = withObject "Account" $ \obj -> Account
+        <$> obj .: "id"
+        <*> obj .: "name"
+        <*> obj .:? "owner"
+        <*> obj .: "type"
+        <*> obj .: "passive"
 
 -------------------------------------------------------------------------------
 -- Identifiers
