@@ -24,7 +24,7 @@ data Account = Account
     -- planmill
     , accName    :: !Text
     , accType    :: !Text -- TODO, make EnumTextValue
-    , accOwnerId :: !PM.UserId
+    , accOwnerId :: !(Maybe PM.UserId)
     , accPassive :: !Text -- TODO, make EnumTextValue
     }
   deriving stock (Eq, Ord, Show, GhcGeneric)
@@ -46,7 +46,7 @@ accountsData = do
     accs  <- traverse PMQ.account (toList accIds)
     types <- PMQ.allEnumerationValues Proxy Proxy
     passive <- PMQ.allEnumerationValues Proxy Proxy
-    return $ sortOn accName $ map (convert types) accs
+    return $ sortOn accName $ map (convert types passive) accs
   where
     convert types passive a = Account
         { accAccountId = a ^. PM.identifier

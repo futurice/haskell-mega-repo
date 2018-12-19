@@ -8,30 +8,12 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Services         (Service (..))
 import Futurice.Time.Month
-import Generics.SOP              (hcmap, hpure, hsequenceK)
 import Lucid.Base                (Attribute (..))
 import Lucid.Servant             (linkAbsHref_)
 import Prelude ()
 import Servant.Links             (allFieldLinks')
 
 import Futurice.App.Reports.API
-
-links :: NP Proxy Reports
-links = hpure Proxy
-
-makeLink :: forall r m. (RClass r, Monad m) => Proxy r -> K (HtmlT m ()) r
-makeLink _ = K $ li_ $ do
-    a_ [ href_ $ "/" <> textVal ppath ] $ toHtml $ textVal pname
-    " ("
-    -- TODO: we'd like to use ".json", but we need type-level sybmol concatenation
-    -- https://ghc.haskell.org/trac/ghc/ticket/12162
-    a_ [ href_ $ "/" <> textVal ppath <> ".json" ] $ "json"
-    ", "
-    a_ [ href_ $ "/" <> textVal ppath <> ".csv" ] $ "csv"
-    ")"
-  where
-    ppath = Proxy :: Proxy (RPath r)
-    pname = Proxy :: Proxy (RName r)
 
 attrValue :: Functor f => LensLike' f Attribute Text
 attrValue f (Attribute ak av) = Attribute ak <$> f av
@@ -72,33 +54,34 @@ indexPage today = page_ "Reports" $ do
 
     fullRow_ $ h2_ "Charts"
     fullRow_ $ ul_ $ do
-        li_ $ a_ [ href_ "/charts/career-length" ] "Distribution of career lengths over time, absolute"
-        li_ $ a_ [ href_ "/charts/career-length-relative" ] "Distribution of career length over time, relative"
+        li_ $ a_ [ recordHref_ recChartsCareerLength         ] "Distribution of career lengths over time, absolute"
+        li_ $ a_ [ recordHref_ recChartsCareerLengthRelative ] "Distribution of career length over time, relative"
 
-        li_ $ a_ [ href_ "/charts/missing-hours" ] "Missing hours by tribe per employee per week"
-        li_ $ a_ [ href_ "/charts/missing-hours-daily" ] "Missing hours total per day"
-        li_ $ a_ [ href_ "/charts/utz" ] "Company UTZ"
+        li_ $ a_ [ recordHref_ recChartsMissingHours      ] "Missing hours by tribe per employee per week"
+        li_ $ a_ [ recordHref_ recChartsMissingHoursDaily ] "Missing hours total per day"
+        li_ $ a_ [ recordHref_ recChartsUtz               ] "Company UTZ"
 
     fullRow_ $ h2_ "Graphs"
     fullRow_ $ ul_ $ do
-        li_ $ a_ [ href_ "/graphs/supervisors" ] "Supervisor graph"
+        li_ $ a_ [ recordHref_ recGraphsSupervisors ] "Supervisor graph"
 
     fullRow_ $ h2_ "Tables"
     fullRow_ $ ul_ $ do
-        void $ hsequenceK $ hcmap (Proxy :: Proxy RClass) makeLink links
+        li_ $ a_ [ recordHref_ recMissingHours ] "Missing hours"
+        li_ $ a_ [ recordHref_ recHoursByTask  ] "Hours by task"
 
-        li_ $ a_ [ href_ "/tables/active-accounts" ] "Active accounts"
-        li_ $ a_ [ href_ "/tables/planmill-account-validation" ] "Validation of PlanMill account data"
-        li_ $ a_ [ href_ "/tables/inventory-summary" ] "Mobile budget stats"
-        li_ $ a_ [ href_ "/tables/project-hours" ] "Hours by project and type"
-        li_ $ a_ [ href_ "/tables/i-dont-know" ] "I don't know... report"
-        li_ $ a_ [ href_ "/tables/do-we-study" ] "Learning hours report"
+        li_ $ a_ [ recordHref_ recTablesActiveAccounts            ] "Active accounts"
+        li_ $ a_ [ recordHref_ recTablesPMAccountValidation       ] "Validation of PlanMill account data"
+        li_ $ a_ [ recordHref_ recTablesInventorySummary          ] "Mobile budget stats"
+        li_ $ a_ [ recordHref_ recTablesProjectHoursData          ] "Hours by project and type"
+        li_ $ a_ [ recordHref_ recTablesIDontKnow Nothing Nothing ] "I don't know... report"
+        li_ $ a_ [ recordHref_ recTablesDoWeStudy Nothing Nothing ] "Learning hours report"
 
     fullRow_ $ h2_ "Integrations for Power"
     fullRow_ $ ul_ $ do
-        li_ $ a_ [ href_ "/power/users" ] "Users"
-        li_ $ a_ [ href_ "/power/projects" ] "Projects"
-        li_ $ a_ [ href_ "/power/absences" ] "Absences"
+        li_ $ a_ [ recordHref_ recPowerUsers            ] "Users"
+        li_ $ a_ [ recordHref_ recPowerProjects         ] "Projects"
+        li_ $ a_ [ recordHref_ recPowerAbsences Nothing ] "Absences"
 
     fullRow_ $ h2_ "Swagger UI"
     fullRow_ $ ul_ $ do

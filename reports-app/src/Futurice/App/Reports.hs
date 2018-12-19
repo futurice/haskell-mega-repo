@@ -14,7 +14,6 @@ import Data.List                      (isSuffixOf)
 import Futuqu                         (futuquServer)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
-import Futurice.Metrics.RateMeter     (mark)
 import Futurice.Periocron
 import Futurice.Postgres
 import Futurice.Prelude
@@ -22,14 +21,13 @@ import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
 import Futurice.Wai.ContentMiddleware
-import Generics.SOP                   (All, hcmap, hcollapse)
-import GHC.TypeLits                   (KnownSymbol, symbolVal)
 import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
 import Servant
 import Servant.Cached                 (mkCached)
 import Servant.Chart                  (Chart (..))
 import Servant.Graph                  (Graph (..))
+import Servant.Server.Generic         (genericServer)
 
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
@@ -69,8 +67,6 @@ import Futurice.App.Reports.TimereportsByTask
 import Futurice.App.Reports.TimereportsDump           (timereportsDump)
 import Futurice.App.Reports.UtzChart
        (utzChartData, utzChartRender)
-
-newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -137,14 +133,6 @@ cachedIO' ctx = cachedIO logger cache 600
   where
     cache  = ctxCache ctx
     logger = ctxLogger ctx
-
--- All report endpoints
--- this is used for api 'server' and pericron
-reports :: NP ReportEndpoint Reports
-reports =
-    ReportEndpoint serveMissingHoursReport :*
-    ReportEndpoint serveTimereportsByTaskReport :*
-    Nil
 
 {-
 serveTable
@@ -228,59 +216,58 @@ missingHoursChartData'
 missingHoursChartData' _ctx =
     missingHoursChartData missingHoursEmployeePredicate
 
-makeServer
-    :: All RClass reports
-    => Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
-makeServer _   Nil       = liftIO $ indexPage <$> currentDay
-makeServer ctx (r :* rs) =
-    let s = handler r
-    in s :<|> makeServer ctx rs
-  where
-    handler :: forall r. RClass r => ReportEndpoint r -> Handler (RReport r)
-    handler re@(ReportEndpoint re') = liftIO $ do
-        mark $ "Report: " <> path re
-        re' ctx
-
-    path :: forall r. RClass r => ReportEndpoint r -> Text
-    path _ = symbolVal (Proxy :: Proxy (RName r)) ^. packed
-
 -- | API server
 server :: Ctx -> Server ReportsAPI
-server ctx = makeServer ctx reports
-    -- tables
-    :<|> liftIO (serveData activeAccountsData ctx)
-    :<|> liftIO (serveData activeAccountsData ctx)
-    :<|> liftIO (serveData pmAccountValidationData ctx)
-    :<|> liftIO serveInventory
-    :<|> liftIO (serveData projectHoursData ctx)
-    :<|> liftIO (serveData projectHoursData ctx)
-    :<|> (\month tribe -> liftIO (serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx))
-    :<|> (\month tribe -> liftIO (serveDataParam2 month (tribe >>= either (const Nothing) Just) doWeStudyData ctx))
-    -- officevibe
-    :<|> liftIO (serveData' () (const officeVibeData) ovdUsers ctx)
-    :<|> liftIO (serveData' () (const officeVibeData) ovdGroups ctx)
-    :<|> liftIO (serveData' () (const officeVibeData) ovdRelations ctx)
-    -- dumps
-    :<|> liftIO (serveData (mkCached <$> timereportsDump) ctx)
-    -- charts
-    :<|> liftIO (serveChart utzChartData utzChartRender ctx)
-    :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
-    :<|> liftIO (serveChartIO (missingHoursDailyChartData ctx) missingHoursDailyChartRender ctx)
-    :<|> liftIO (serveChart careerLengthData careerLengthRender ctx)
-    :<|> liftIO (serveChart careerLengthData careerLengthRelativeRender ctx)
-    :<|> liftIO (serveInventoryChart inventoryBalanceQuantiles)
-    -- graphs
-    :<|> liftIO (serveGraph supervisorsGraph ctx)
-    -- power
-    :<|> liftIO (servePowerUsersReport ctx)
-    :<|> liftIO (servePowerProjectsReport ctx)
-    :<|> liftIO . servePowerAbsencesReport ctx
-    -- missing hours notifications
-    :<|> liftIO (missingHoursNotifications ctx)
+server ctx = genericServer $ Record
+    { recIndex = liftIO $ indexPage <$> currentDay
+
+    -- "legacy" -reports
+    , recMissingHours = liftIO $ serveMissingHoursReport ctx
+    , recHoursByTask  = liftIO $ serveTimereportsByTaskReport ctx
+
+    -- Tables
+    , recTablesActiveAccounts       = liftIO $ serveData activeAccountsData ctx
+    , recTablesActiveAccountsJSON   = liftIO $ serveData activeAccountsData ctx
+    , recTablesPMAccountValidation  = liftIO $ serveData pmAccountValidationData ctx
+    , recTablesInventorySummary     = liftIO serveInventory
+    , recTablesProjectHoursData     = liftIO $ serveData projectHoursData ctx
+    , recTablesProjectHoursDataJSON = liftIO $ serveData projectHoursData ctx
+    , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
+    , recTablesDoWeStudy            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
+
+    -- Officevibe
+    , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
+    , recOfficevibeGroups        = liftIO $ serveData' () (const officeVibeData) ovdGroups ctx
+    , recOfficevibeGroupsMapping = liftIO $ serveData' () (const officeVibeData) ovdRelations ctx
+
+    -- Dump: can be deleted, we have futuqu
+    , recTimereportsDump = liftIO (serveData (mkCached <$> timereportsDump) ctx)
+
+    -- Charts
+    , recChartsUtz                  = liftIO $ serveChart utzChartData utzChartRender ctx
+    , recChartsMissingHours         = liftIO $ serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx
+    , recChartsMissingHoursDaily    = liftIO $ serveChartIO (missingHoursDailyChartData ctx) missingHoursDailyChartRender ctx
+    , recChartsCareerLength         = liftIO $ serveChart careerLengthData careerLengthRender ctx
+    , recChartsCareerLengthRelative = liftIO $ serveChart careerLengthData careerLengthRelativeRender ctx
+    , recChartsInventoryQuantiles   = liftIO $ serveInventoryChart inventoryBalanceQuantiles
+
+    -- Graphs
+    , recGraphsSupervisors = liftIO (serveGraph supervisorsGraph ctx)
+
+    -- Additional non-reports
+    , recPowerUsers    = liftIO $ servePowerUsersReport ctx
+    , recPowerProjects = liftIO $ servePowerProjectsReport ctx
+    , recPowerAbsences = liftIO . servePowerAbsencesReport ctx
+
+    -- missing hours notification
+    , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
+
     -- futuqu
-    :<|> futuquServer lgr (ctxManager ctx) (ctxCache ctx) (toFutuquCfg (cfgIntegrationsCfg cfg))
+    , recFutuqu = futuquServer lgr (ctxManager ctx) (ctxCache ctx) (toFutuquCfg (cfgIntegrationsCfg cfg))
+
     -- dashdo
-    :<|> ctxDashdo ctx
+    , recDashdo =  ctxDashdo ctx
+    }
   where
     lgr = ctxLogger ctx
     cfg = ctxConfig ctx
@@ -294,7 +281,6 @@ server ctx = makeServer ctx reports
     serveInventoryChart g = do
         v <- serveInventory
         pure (g v)
-
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -317,8 +303,8 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
         let missingHoursStatsJob =
                 mkJob "missing-hours-stats" (missingHoursStats ctx) $ every (60 * 60)
 
-        let jobs = missingHoursStatsJob : hcollapse
-                (hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports)
+        let jobs = missingHoursStatsJob
+                 : []
 
         -- listen to MQ, especially for missing hours ping
         void $ forEachMessage mq $ \msg -> case msg of
@@ -326,12 +312,6 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             _                -> pure ()
 
         return (ctx, jobs)
-
-    mkReportPeriocron :: forall r. RClass r => Ctx -> ReportEndpoint r -> Job
-    mkReportPeriocron ctx (ReportEndpoint r) = mkJob (name ^. packed) (r ctx)
-        $ shifted (2 * 60) $ every $ 10 * 60
-      where
-        name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
 
     swaggerMod
           = Sw.applyTagsFor
