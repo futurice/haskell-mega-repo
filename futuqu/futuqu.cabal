@@ -17,9 +17,11 @@ library
     DeriveGeneric
     DeriveTraversable
     DerivingStrategies
+    DerivingVia
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
     StandaloneDeriving
+
   build-depends:
     , aeson
     , base
@@ -43,6 +45,7 @@ library
     , servant-server
     , text
     , time
+
   exposed-modules:
     Futuqu
     Futuqu.API
