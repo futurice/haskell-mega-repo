@@ -16,6 +16,8 @@ module Futurice.Integrations.Classes (
     MonadPlanMillQuery(..),
     MonadTime(..),
     MonadMemoize(..),
+    -- * Exceptions
+    PlanmillBatchError (..),
     ) where
 
 import Control.Monad.FUM      (MonadFUM (..))
@@ -26,6 +28,7 @@ import Data.Constraint        (Constraint)
 import Futurice.GitHub        (GHTypes)
 import Futurice.Prelude
 import Generics.SOP           (All)
+import PlanMill.Queries.Haxl  (PlanmillBatchError (..))
 import Power                  (MonadPower (..))
 import Prelude ()
 
