@@ -10,6 +10,7 @@ module Futurice.App.Reports.DoWeStudy (
     doWeStudyData) where
 
 import Control.Lens              (filtered, sumOf)
+import Control.Monad.Catch       (handle)
 import Data.Fixed                (Centi)
 import Data.Ord                  (comparing)
 import Data.Set.Lens             (setOf)
@@ -73,7 +74,7 @@ instance ToSchema DoWeStudyData where declareNamedSchema = sopDeclareNamedSchema
 -- Fetch
 -------------------------------------------------------------------------------
 
-doWeStudyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m) => Maybe Month -> Maybe Tribe -> m DoWeStudyData
+doWeStudyData :: forall m. (MonadTime m, MonadCatch m, MonadPersonio m, MonadPlanMillQuery m) => Maybe Month -> Maybe Tribe -> m DoWeStudyData
 doWeStudyData mmonth mtribe = do
     today <- currentDay
     let month = fromMaybe (dayToMonth today) mmonth
@@ -90,33 +91,31 @@ doWeStudyData mmonth mtribe = do
         let uid = pmu ^. PM.identifier
         trs <- PMQ.timereports interval uid
 
-        for (toList trs) $ \tr -> do
+        for (toList trs) $ \tr -> handle (\PlanmillBatchError {} -> return Nothing) $ do
             task <- PMQ.task (PM.trTask tr)
             prj <- traverse PMQ.project (PM.taskProject task)
             let comment = fromMaybe "<empty>" $ PM.trComment tr
             let commentWs = Set.fromList $ T.words $ T.toLower comment
             let otherTrainingSet = setOf (L.values . L._String) doWeStudyConfig
 
-            if | Set.member "jedi" commentWs -> do
-                     return $ Just DoWeStudy
-                         { dwsDate     = PM.trStart tr
-                         , dwsName     = p ^. P.employeeFullname
-                         , dwsTribe    = p ^. P.employeeTribe
-                         , dwsCategory = Jedi
-                         , dwsProject  = maybe "<project>" PM.pName prj
-                         , dwsHours    = ndtConvert' (PM.trAmount tr)
-                         , dwsDesc     = comment
-                         }
-               | not (Set.disjoint otherTrainingSet commentWs) -> do
-                     return $ Just DoWeStudy
-                         { dwsDate     = PM.trStart tr
-                         , dwsName     = p ^. P.employeeFullname
-                         , dwsTribe    = p ^. P.employeeTribe
-                         , dwsCategory = OtherTraining
-                         , dwsProject  = maybe "<project>" PM.pName prj
-                         , dwsHours    = ndtConvert' (PM.trAmount tr)
-                         , dwsDesc     = comment
-                         }
+            if | Set.member "jedi" commentWs -> return $ Just DoWeStudy
+                     { dwsDate     = PM.trStart tr
+                     , dwsName     = p ^. P.employeeFullname
+                     , dwsTribe    = p ^. P.employeeTribe
+                     , dwsCategory = Jedi
+                     , dwsProject  = maybe "<project>" PM.pName prj
+                     , dwsHours    = ndtConvert' (PM.trAmount tr)
+                     , dwsDesc     = comment
+                     }
+               | not (Set.disjoint otherTrainingSet commentWs) -> return $ Just DoWeStudy
+                     { dwsDate     = PM.trStart tr
+                     , dwsName     = p ^. P.employeeFullname
+                     , dwsTribe    = p ^. P.employeeTribe
+                     , dwsCategory = OtherTraining
+                     , dwsProject  = maybe "<project>" PM.pName prj
+                     , dwsHours    = ndtConvert' (PM.trAmount tr)
+                     , dwsDesc     = comment
+                     }
                | otherwise -> return Nothing
 
     return $ DWS today month mtribe (dwss ^.. folded . folded . _Just)

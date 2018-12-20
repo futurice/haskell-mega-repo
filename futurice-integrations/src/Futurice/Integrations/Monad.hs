@@ -29,7 +29,9 @@ module Futurice.Integrations.Monad (
     stateSetPlanMill,
     ) where
 
+import Control.Exception         (displayException)
 import Control.Monad.PlanMill    (MonadPlanMillConstraint (..))
+import Data.Aeson                (Value (Null))
 import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Has              (FlipIn)
@@ -45,15 +47,17 @@ import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.GitHub              as GH
 import qualified Futurice.Integrations.GitHub as GH
 import qualified Haxl.Core                    as H
+import qualified Log.Data                     as L
+import qualified Log.Logger                   as L
 import qualified Personio
-import qualified Power.Haxl
 import qualified Personio.Haxl
 import qualified PlanMill.Types.Query         as Q
+import qualified Power.Haxl
 
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
-import Futurice.Integrations.Serv
 import Futurice.Integrations.Monad.StateSet
+import Futurice.Integrations.Serv
 import Futurice.Integrations.Serv.Config
 import Futurice.Integrations.Serv.Contains
 
@@ -86,6 +90,51 @@ newtype Integrations (ss :: [Serv]) a
 -- | Lift arbitrary haxl computations into 'Integrations'. This is potentially unsafe.
 liftHaxl :: H.GenHaxl () a -> Integrations ss a
 liftHaxl = Integr . lift
+
+-------------------------------------------------------------------------------
+-- Throw & Catch & Logging
+-------------------------------------------------------------------------------
+
+instance MonadThrow (Integrations ss) where
+    throwM = Integr . throwM
+
+-- | Log the exception automatically
+instance MonadCatch (Integrations ss) where
+    catch (Integr m) h = Integr $ m `catch` \exc -> do
+        now <- view envNow
+        lift $ H.uncachedRequest $ LogR $ L.LogMessage
+            { L.lmComponent = "integrations-catch"
+            , L.lmDomain    = []
+            , L.lmTime      = now
+            , L.lmLevel     = L.LogInfo
+            , L.lmMessage   = displayException exc ^. packed
+            , L.lmData      = Null
+            }
+        unIntegr (h exc)
+
+data LogR a where
+    LogR :: L.LogMessage -> LogR ()
+
+deriving instance Eq (LogR a)
+deriving instance Show (LogR a)
+instance H.ShowP LogR where
+    showp = show
+
+instance Hashable (LogR a) where
+    hashWithSalt salt (LogR lm) = hashWithSalt salt (L.lmMessage lm)
+
+instance H.StateKey LogR where
+    data State LogR = LogState Logger
+
+instance H.DataSourceName LogR where
+    dataSourceName _ = "Logger"
+
+instance H.DataSource u LogR where
+    fetch (LogState lgr) _flags _userEnv = H.SyncFetch $ traverse_ doLog where
+        doLog :: H.BlockedFetch LogR -> IO ()
+        doLog (H.BlockedFetch (LogR lm) v) = do
+            H.putSuccess v ()
+            L.execLogger lgr lm
 
 -------------------------------------------------------------------------------
 -- Config
@@ -161,7 +210,8 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
         IntCfgPower req cfg2      -> stateSetPower lgr mgr req (f cfg2)
   where
     ctsEmpty :: ConfigToState '[]
-    ctsEmpty = CTS $ \IntCfgEmpty -> Tagged H.stateEmpty
+    ctsEmpty = CTS $ \IntCfgEmpty -> Tagged $
+        H.stateSet (LogState lgr) H.stateEmpty
 
 newtype ConfigToState ss = CTS { runCTS :: IntegrationsConfig ss -> Tagged ss H.StateStore }
 

@@ -10,6 +10,7 @@
 module Futurice.App.Reports (defaultMain) where
 
 import Control.Lens                   (each)
+import Data.Aeson                     (object, (.=))
 import Data.List                      (isSuffixOf)
 import Futuqu                         (futuquServer)
 import Futurice.Integrations
@@ -129,7 +130,12 @@ serveTimereportsByTaskReport ctx = cachedIO' ctx () $
     runIntegrations' ctx timereportsByTaskReport
 
 cachedIO' :: (Eq k, Hashable k, Typeable k, NFData v, Typeable v) => Ctx -> k -> IO v -> IO v
-cachedIO' ctx = cachedIO logger cache 600
+cachedIO' ctx k action = cachedIO logger cache 600 k $ do
+    (ts, x) <- clocked action
+    runLogT "cached-io" logger $ logTraceI "Execution time $ts" $ object
+        [ "ts" .= timeSpecToSecondsD ts
+        ]
+    return x
   where
     cache  = ctxCache ctx
     logger = ctxLogger ctx

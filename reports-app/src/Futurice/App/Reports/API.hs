@@ -11,10 +11,8 @@ import Dashdo.Servant            (DashdoAPI)
 import Futuqu.API
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Futurice.Report.Columns   (Report)
 import Futurice.Servant
 import Futurice.Tribe            (Tribe)
-import GHC.TypeLits              (KnownSymbol, Symbol)
 import Prelude ()
 import Servant
 import Servant.API.Generic

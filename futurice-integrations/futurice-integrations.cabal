@@ -32,6 +32,7 @@ library
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
     StandaloneDeriving
+
   build-depends:
     , aeson
     , aeson-compat
@@ -61,6 +62,7 @@ library
     , http-client-tls
     , intervals
     , lens
+    , log-base
     , lucid
     , monad-memoize
     , monad-time
@@ -78,6 +80,7 @@ library
     , unordered-containers
     , vector
     , zlib
+
   exposed-modules:
     Futurice.Daily
     Futurice.Integrations
