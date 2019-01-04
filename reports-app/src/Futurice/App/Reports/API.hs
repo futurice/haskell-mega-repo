@@ -21,7 +21,7 @@ import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
 import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
-import Futurice.App.Reports.DoWeStudy                 (DoWeStudyData)
+import Futurice.App.Reports.DoWeStudy                 (DoWeStudyData, StudyKind)
 import Futurice.App.Reports.IDontKnow                 (IDontKnowData)
 import Futurice.App.Reports.Inventory                 (InventorySummary)
 import Futurice.App.Reports.MissingHours              (MissingHoursReport)
@@ -53,7 +53,7 @@ data Record route = Record
     , recTablesProjectHoursData     :: route :- "tables" :> "project-hours"        :> Get '[HTML] ProjectHoursData
     , recTablesProjectHoursDataJSON :: route :- "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
     , recTablesIDontKnow            :: route :- "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
-    , recTablesDoWeStudy            :: route :- "tables" :> "do-we-study"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
+    , recTablesDoWeStudy            :: route :- "tables" :> "do-we-study"          :> QueryParam' '[Lenient, Optional] "studykind" StudyKind :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
 
     -- Officevibe
     , recOfficevibeUsers         :: route :- "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
