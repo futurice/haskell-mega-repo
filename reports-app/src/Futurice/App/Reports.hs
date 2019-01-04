@@ -178,6 +178,16 @@ serveDataParam2
     -> IO v
 serveDataParam2 k k' f = serveData' (k, k') (uncurry f) id
 
+serveDataParam3
+    :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k, Eq k', Hashable k', Typeable k', Eq k'', Hashable k'', Typeable k'')
+    => k
+    -> k'
+    -> k''
+    -> (k -> k' -> k'' -> Integrations ReportIntegrations v)
+    -> Ctx
+    -> IO v
+serveDataParam3 k k' k'' f = serveData' (k, k', k'') (\(x,y,z) -> f x y z) id
+
 serveData'
     :: (Typeable a, NFData a, Eq k, Hashable k, Typeable k)
     => k
@@ -239,7 +249,7 @@ server ctx = genericServer $ Record
     , recTablesProjectHoursData     = liftIO $ serveData projectHoursData ctx
     , recTablesProjectHoursDataJSON = liftIO $ serveData projectHoursData ctx
     , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
-    , recTablesDoWeStudy            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
+    , recTablesDoWeStudy            = \skind month tribe -> liftIO $ serveDataParam3 (skind >>= either (const Nothing) Just) month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
 
     -- Officevibe
     , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
