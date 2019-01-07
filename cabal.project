@@ -91,6 +91,7 @@ packages:
   futuroom-app/
   github-proxy/
   github-sync/
+  google-client/
   haxl-fxtra/
   hc-app/
   hours-api/

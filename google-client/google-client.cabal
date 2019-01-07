@@ -1,0 +1,45 @@
+cabal-version: 2.2
+name:          google-client
+version:       0
+synopsis:      Google client
+category:      Integration
+description:   Simplified bindings to Google API using gogol
+
+library
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+    StandaloneDeriving
+
+  build-depends:
+    , aeson
+    , base
+    , free
+    , futurice-prelude
+    , gogol
+    , gogol-admin-directory
+    , gogol-apps-calendar
+    , gogol-core
+    , gogol-people
+    , http-client
+    , http-types
+    , servant
+    , servant-client
+    , servant-client-core
+
+  exposed-modules:
+    Google
+    Google.Class
+    Google.Eval
+    Google.Request
+    Google.Types

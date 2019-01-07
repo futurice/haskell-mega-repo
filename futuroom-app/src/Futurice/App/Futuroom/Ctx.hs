@@ -7,8 +7,8 @@ import Prelude ()
 import Futurice.App.Futuroom.Config
 
 data Ctx = Ctx
-    { ctxConfig :: !Config
-    , ctxLogger :: !Logger
+    { ctxConfig  :: !Config
+    , ctxLogger  :: !Logger
     , ctxManager :: !Manager
-    , ctxCache :: !Cache
+    , ctxCache   :: !Cache
     }
