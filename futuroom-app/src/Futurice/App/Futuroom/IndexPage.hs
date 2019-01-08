@@ -23,11 +23,13 @@ meetingRoomCss = C.body C.? do
     ".meeting-room" C.? do
         C.float C.floatLeft
         C.width (C.px 200.0)
+        C.zIndex 4
     ".event" C.? do
         C.position C.absolute
         C.width (C.px 200.0)
     ".timeline" C.? do
         C.position C.relative
+        C.top (C.px 20)
     ".timeline" C.? C.ul C.? C.li C.? do
         C.height (C.px 240)
     ".timeline" C.? C.ul C.? C.li C.# C.before C.? do
@@ -37,6 +39,11 @@ meetingRoomCss = C.body C.? do
         C.backgroundColor C.black
     ".row" C.? do
         C.maxWidth C.none
+    ".schedule" C.? do
+        C.width (C.px 2050.0)
+    ".timelabel" C.? do
+        C.position C.absolute
+        C.left (C.px 5.0)
 
 instance Navigation Nav where
     serviceTitle _ = "Futuroom"
@@ -47,12 +54,12 @@ instance Navigation Nav where
 
 indexPage :: Day -> Map MeetingRoom [Reservation] -> HtmlPage "indexpage"
 indexPage day reservations = page_ "Futuroom" (Nothing :: Maybe Nav) $ do
-    div_ [class_ "schedule"] $ do
+    row_ $ do
         form_ [recordAction_ indexPageGet Nothing] $ do
-            largemed_ 3 $ input_ [type_ "date", name_ "date", placeholder_ "Pick a date"]
-            largemed_ 2 $ button_ [class_ "button", type_ "submit"] "Get events for day"
-            largemed_ 1 $ span_ ""
-        fullRow_ $ do
+            div_ [style_ "width: 200px; float: left; margin-right: 10px; padding-efl"] $ input_ [type_ "date", name_ "date", placeholder_ "Pick a date"]
+            div_ [style_ "width: 200px; float: left;"] $ button_ [class_ "button", type_ "submit"] "Get events for day"
+    div_ [class_ "schedule"] $ do
+        div_ $ do
             h4_ $ toHtml $ formatTime defaultTimeLocale "%e %b %Y" day
             void $ flip M.traverseWithKey reservations $ \mname mreservations -> do
                 div_ [class_ "meeting-room"] $ do
@@ -67,17 +74,17 @@ indexPage day reservations = page_ "Futuroom" (Nothing :: Maybe Nav) $ do
                           _ -> pure ()
         div_ [class_ "timeline"] $ do
             ul_ [class_ "no-bullet"]$ do
-                li_ $ span_ "08:00"
-                li_ $ span_ "09:00"
-                li_ $ span_ "10:00"
-                li_ $ span_ "11:00"
-                li_ $ span_ "12:00"
-                li_ $ span_ "13:00"
-                li_ $ span_ "14:00"
-                li_ $ span_ "15:00"
-                li_ $ span_ "16:00"
-                li_ $ span_ "17:00"
-                li_ $ span_ "18:00"
+                li_ $ span_ [class_ "timelabel"] "08:00"
+                li_ $ span_ [class_ "timelabel"] "09:00"
+                li_ $ span_ [class_ "timelabel"] "10:00"
+                li_ $ span_ [class_ "timelabel"] "11:00"
+                li_ $ span_ [class_ "timelabel"] "12:00"
+                li_ $ span_ [class_ "timelabel"] "13:00"
+                li_ $ span_ [class_ "timelabel"] "14:00"
+                li_ $ span_ [class_ "timelabel"] "15:00"
+                li_ $ span_ [class_ "timelabel"] "16:00"
+                li_ $ span_ [class_ "timelabel"] "17:00"
+                li_ $ span_ [class_ "timelabel"] "18:00"
   where
       minimumTime [] currentMinimum = currentMinimum
       minimumTime res currentMinimum = minimum [minimum $ utctDayTime <$> catMaybes (resStartTime <$> res), currentMinimum]
