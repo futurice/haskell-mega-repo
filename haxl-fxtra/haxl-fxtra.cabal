@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -39,6 +40,7 @@ library
     , fum-client
     , futurice-prelude
     , github
+    , google-client
     , hashable
     , haxl
     , http-client
@@ -50,9 +52,11 @@ library
     , tagged
     , text
     , vector
+
   exposed-modules:
     FUM.Haxl
     Flowdock.Haxl
     Github.Haxl
+    Google.Haxl
     Personio.Haxl
     Power.Haxl

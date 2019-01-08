@@ -88,8 +88,10 @@ packages:
   futurice-servant/
   futurice-signed/
   futurice-tribes/
+  futuroom-app/
   github-proxy/
   github-sync/
+  google-client/
   haxl-fxtra/
   hc-app/
   hours-api/
@@ -135,6 +137,11 @@ packages:
 
   -- we need a release with https://github.com/brendanhay/amazonka/issues/463
   vendor/amazonka/amazonka
+
+  -- and we need a release https://github.com/brendanhay/gogol/pull/105
+  vendor/gogol/core
+  vendor/gogol/gogol
+  vendor/gogol/gogol-people
 
 package theme-app
   ghc-options: +RTS -M2G -RTS

@@ -34,6 +34,7 @@ data Service
     | FlowdockProxyService
     | FumCarbonService
     | FumService
+    | FuturoomService
     | GithubProxyService
     | GithubSyncService
     | HoursService
@@ -71,6 +72,7 @@ instance TextEnum Service where
         , "flowdock-proxy"
         , "fum-carbon"
         , "fum"
+        , "futuroom"
         , "github-proxy"
         , "github-sync"
         , "hours"
@@ -132,6 +134,7 @@ data PerService a = PerService
     , perFlowdockProxy :: a
     , perFumCarbon     :: a
     , perFum           :: a
+    , perFuturoom      :: a
     , perGithubProxy   :: a
     , perGithubSync    :: a
     , perHours         :: a
@@ -171,6 +174,7 @@ instance Representable PerService where
     index p FlowdockProxyService = perFlowdockProxy p
     index p FumCarbonService     = perFumCarbon p
     index p FumService           = perFum p
+    index p FuturoomService      = perFuturoom p
     index p GithubProxyService   = perGithubProxy p
     index p GithubSyncService    = perGithubSync p
     index p HoursService         = perHours p
@@ -202,6 +206,7 @@ instance Representable PerService where
         , perFlowdockProxy = f FlowdockProxyService
         , perFumCarbon     = f FumCarbonService
         , perFum           = f FumService
+        , perFuturoom      = f FuturoomService
         , perGithubProxy   = f GithubProxyService
         , perGithubSync    = f GithubSyncService
         , perHours         = f HoursService
