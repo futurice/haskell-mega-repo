@@ -71,10 +71,16 @@ fetchEvents reservationDay roomEmail = do
          , resTitle = event ^. eSummary
          }
 
--- TODO: make this function
-reservationsGetImpl :: Ctx -> Maybe WeekNumber -> Maybe Year -> Handler [Reservation]
-reservationsGetImpl _ _ _ = do
-    pure []
+-- TODO: refactor to be more efficient
+reservationsGetImpl :: Ctx -> Maybe Day -> Handler [Reservation]
+reservationsGetImpl ctx day = do
+    reservationDay <- case day of
+          Just t -> pure t
+          Nothing -> currentDay
+    let stateStore = H.stateSet (GHaxl.initDataSource (toGoogleCfg ctx) (ctxManager ctx)) H.stateEmpty
+    haxlEnv <- liftIO $ H.initEnv stateStore ()
+    meetingRoomEvents <- liftIO $ (H.runHaxl haxlEnv $ fetchMeetingRoomEvents reservationDay )
+    pure $ foldr (<>) [] meetingRoomEvents
 
 fetchMeetingRoomEvents :: Day -> H.GenHaxl u (Map MeetingRoom [Reservation])
 fetchMeetingRoomEvents reservationDay = do

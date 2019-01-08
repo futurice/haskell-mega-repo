@@ -16,7 +16,7 @@ import Futurice.App.Futuroom.Types
 ----------------------------
 
 data Record route = Record
-    { reservationsGet :: route :- "reservation" :> QueryParam "week" WeekNumber :> QueryParam "year" Year :> Get '[JSON] [Reservation]
+    { reservationsGet :: route :- "reservation" :> QueryParam "date" Day :> Get '[JSON] [Reservation]
     } deriving Generic
 
 type FuturoomAPI = ToServantApi Record
