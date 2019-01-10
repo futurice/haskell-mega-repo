@@ -37,9 +37,10 @@ import PlanMill.Types.Identifier
        (HasIdentifier (..), Identifier (..), IdentifierToHtml (..))
 import Text.Regex.Applicative.Text     (match)
 
+import qualified Data.Text       as T
 import qualified FUM.Types.Login as FUM
 
-import PlanMill.Types.UOffset          (UOffset (..))
+import PlanMill.Types.UOffset (UOffset (..))
 
 -------------------------------------------------------------------------------
 -- User
@@ -225,11 +226,13 @@ instance IdentifierToHtml Account where
             ]
 
 data Account = Account
-    { _saId     :: !AccountId
-    , saName    :: !Text
-    , saOwner   :: !(Maybe UserId)
-    , saType    :: !(EnumValue Account "type")
-    , saPassive :: !(EnumValue Account "passive")
+    { _saId       :: !AccountId
+    , saName      :: !Text
+    , saOwner     :: !(Maybe UserId)
+    , saType      :: !(EnumValue Account "type")
+    , saPassive   :: !(EnumValue Account "passive")
+    , saCreated   :: !(Maybe UTCTime)
+    , saCreatedBy :: !(Maybe Text)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
 
@@ -247,6 +250,9 @@ instance FromJSON Account where
         <*> obj .:? "owner"
         <*> obj .: "type"
         <*> obj .: "passive"
+        <*> obj .:? "created"
+        -- For some reason few Futurice accounts have number as creator
+        <*> ((obj .:? "createdBy") <|> ((fmap . fmap) (T.pack . (show :: Int -> String)) (obj .:? "createdBy")))
 
 -------------------------------------------------------------------------------
 -- Identifiers

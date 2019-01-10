@@ -22,10 +22,12 @@ data Account = Account
     -- identifiers
     { accAccountId :: !PM.AccountId
     -- planmill
-    , accName    :: !Text
-    , accType    :: !Text -- TODO, make EnumTextValue
-    , accOwnerId :: !(Maybe PM.UserId)
-    , accPassive :: !Text -- TODO, make EnumTextValue
+    , accName      :: !Text
+    , accType      :: !Text -- TODO, make EnumTextValue
+    , accOwnerId   :: !(Maybe PM.UserId)
+    , accPassive   :: !Text -- TODO, make EnumTextValue
+    , accCreated   :: !(Maybe UTCTime)
+    , accCreatedBy :: !(Maybe Text)
     }
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
@@ -54,4 +56,6 @@ accountsData = do
         , accType      = fromMaybe "-" $ types ^? ix (PM.saType a)
         , accOwnerId   = PM.saOwner a
         , accPassive   = fromMaybe "-" $ passive ^? ix (PM.saPassive a)
+        , accCreated   = PM.saCreated a
+        , accCreatedBy = PM.saCreatedBy a
         }

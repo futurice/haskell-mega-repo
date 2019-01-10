@@ -41,17 +41,17 @@ import PlanMill.Internal.Prelude
 
 import Control.Lens          (alongside, withIndex)
 import Control.Monad.Memoize (MonadMemoize (memo))
-import Data.List (find)
 import Data.Constraint       (Dict (..))
+import Data.List             (find)
 import Data.Reflection       (reifySymbol)
 import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
-       (Absence, Absences, Account, AccountId, CapacityCalendars, Me,
-       Project (..), ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId,
-       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
-       Users, identifier)
+       (Absence, Absences, Account (..), AccountId, Accounts,
+       CapacityCalendars, Me, Project (..), ProjectId, Projects, Task, TaskId,
+       Tasks, Team, TeamId, TimeBalance, Timereport, Timereports, User,
+       UserCapacities, UserId, Users, identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -213,13 +213,44 @@ absences = planmillVectorQuery absencesQuery
 absencesQuery :: Query Absences
 absencesQuery = QueryPagedGet QueryTagAbsence mempty $ toUrlParts $ ("absences" :: Text)
 
+account :: MonadPlanMillQuery m => AccountId -> m Account
+account aid = memo aid $ do
+    a <- account' aid
+    as <- accounts'
+    return $ case find (\a' -> a' ^. identifier == aid) as of
+        Nothing -> a
+        Just a' -> combineAccounts a a'
+
+combineAccounts :: Account -> Account -> Account
+combineAccounts a a' = Account
+    { _saId       = a ^. identifier
+    , saName      = saName a
+    , saOwner     = combineMaybe saOwner a a'
+    , saType      = saType a
+    , saPassive   = saPassive a
+    , saCreated   = combineMaybe saCreated a a'
+    , saCreatedBy = combineMaybe saCreatedBy a a'
+    }
+    where
+      combineMaybe :: (a -> Maybe b) -> a -> a -> Maybe b
+      combineMaybe f x y = f x <|> f y
+
+
 -- | View details of a single account.
 --
 -- See <https://developers.planmill.com/api/#accounts__account_id__get>
-account :: MonadPlanMillQuery m => AccountId -> m Account
-account aid = planmillQuery
+account' :: MonadPlanMillQuery m => AccountId -> m Account
+account' aid = planmillQuery
     $ QueryGet QueryTagAccount mempty
     $ toUrlParts $ ("accounts" :: Text) // aid
+
+-- | Get a list of accounts.
+--
+-- See <https://developers.planmill.com/api/#accounts_get>
+accounts' :: MonadPlanMillQuery m => m Accounts
+accounts' = planmillVectorQuery
+    $ QueryPagedGet QueryTagAccount mempty
+    $ toUrlParts $ ("accounts" :: Text)
 
 -- | A single project in PlanMill.
 --
