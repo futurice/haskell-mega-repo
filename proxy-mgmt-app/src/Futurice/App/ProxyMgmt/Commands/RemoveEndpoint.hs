@@ -4,9 +4,9 @@
 {-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DerivingVia       #-}
 module Futurice.App.ProxyMgmt.Commands.RemoveEndpoint where
 
 import FUM.Types.Login
@@ -24,11 +24,9 @@ data RemoveEndpoint = RemoveEndpoint
     { rePolicy   :: !PolicyName
     , reEndpoint :: !LenientEndpoint
     }
-  deriving (Show, Typeable, Generic)
-
-deriveGeneric ''RemoveEndpoint
-deriveVia [t| ToJSON RemoveEndpoint   `Via` Sopica RemoveEndpoint |]
-deriveVia [t| FromJSON RemoveEndpoint `Via` Sopica RemoveEndpoint |]
+  deriving (Show, Typeable, GhcGeneric)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON) via (Sopica RemoveEndpoint)
 
 instance HasLomake RemoveEndpoint where
     lomake _ =
