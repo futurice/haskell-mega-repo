@@ -4,9 +4,9 @@
 {-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DerivingVia       #-}
 module Futurice.App.ProxyMgmt.Commands.AddToken where
 
 import FUM.Types.Login
@@ -25,11 +25,9 @@ data AddToken = AddToken
     { addTokenLogin  :: !Login
     , addTokenPolicy :: !PolicyName
     }
-  deriving (Show, Typeable, Generic)
-
-deriveGeneric ''AddToken
-deriveVia [t| ToJSON AddToken   `Via` Sopica AddToken |]
-deriveVia [t| FromJSON AddToken `Via` Sopica AddToken |]
+  deriving (Show, Typeable, GhcGeneric)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON) via (Sopica AddToken)
 
 instance HasLomake AddToken where
     lomake _ =

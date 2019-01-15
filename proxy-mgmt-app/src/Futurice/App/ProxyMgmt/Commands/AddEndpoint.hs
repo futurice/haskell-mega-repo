@@ -4,9 +4,9 @@
 {-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DerivingVia       #-}
 module Futurice.App.ProxyMgmt.Commands.AddEndpoint where
 
 import FUM.Types.Login
@@ -24,11 +24,9 @@ data AddEndpoint = AddEndpoint
     { addEndpointPolicy   :: !PolicyName
     , addEndpointEndpoint :: !Endpoint
     }
-  deriving (Show, Typeable, Generic)
-
-deriveGeneric ''AddEndpoint
-deriveVia [t| ToJSON AddEndpoint   `Via` Sopica AddEndpoint |]
-deriveVia [t| FromJSON AddEndpoint `Via` Sopica AddEndpoint |]
+  deriving (Show, Typeable, GhcGeneric)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON) via (Sopica AddEndpoint)
 
 instance HasLomake AddEndpoint where
     lomake _ =
