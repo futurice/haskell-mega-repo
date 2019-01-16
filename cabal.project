@@ -120,6 +120,7 @@ packages:
   proxy-mgmt-app/
   proxy-types/
   reports-app/
+  schedule-app/
   servant-algebraic-graphs/
   servant-binary-tagged/
   servant-cached/

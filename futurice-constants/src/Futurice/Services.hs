@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE InstanceSigs       #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE RecordWildCards    #-}
-{-# LANGUAGE TemplateHaskell    #-}
 {-# LANGUAGE TypeFamilies       #-}
 {-# LANGUAGE TypeOperators      #-}
 module Futurice.Services (
@@ -51,15 +51,15 @@ data Service
     | ProxMgmtService
     | ProxService
     | ReportsService
+    | ScheduleService
     | SisosotaService
     | SmileysApiService
     | SmsProxyService
     | ThemeService
-  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
-  deriving anyclass (NFData, Binary)
-
--- makePrism ''Service
-deriveGeneric ''Service
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, GhcGeneric, Lift)
+  deriving anyclass (NFData, Binary, SopGeneric)
+  deriving (Arbitrary) via (Sopica Service)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, ToHtml) via (Enumica Service)
 
 instance TextEnum Service where
     type TextEnumNames Service =
@@ -89,6 +89,7 @@ instance TextEnum Service where
         , "prox-mgmt"
         , "prox"
         , "reports"
+        , "schedule"
         , "sisosota"
         , "smileys-api"
         , "sms-proxy"
@@ -107,15 +108,6 @@ serviceFromText = enumFromText
 
 _Service :: Prism' Text Service
 _Service = enumPrism
-
-deriveVia [t| Arbitrary Service       `Via` Sopica Service  |]
-deriveVia [t| ToJSON Service          `Via` Enumica Service |]
-deriveVia [t| FromJSON Service        `Via` Enumica Service |]
-deriveVia [t| ToHttpApiData Service   `Via` Enumica Service |]
-deriveVia [t| FromHttpApiData Service `Via` Enumica Service |]
--- deriveVia [t| Csv.ToField Service     `Via` Enumica Service |]
--- deriveVia [t| Csv.FromField Service   `Via` Enumica Service |]
-deriveVia [t| ToHtml Service          `Via` Enumica Service |]
 
 instance ToParamSchema Service where toParamSchema = enumToParamSchema
 instance ToSchema Service where declareNamedSchema = enumDeclareNamedSchema
@@ -151,6 +143,7 @@ data PerService a = PerService
     , perProxMgmt      :: a
     , perProx          :: a
     , perReports       :: a
+    , perSchedule      :: a
     , perSisosota      :: a
     , perSmileysApi    :: a
     , perSmsProxy      :: a
@@ -191,6 +184,7 @@ instance Representable PerService where
     index p ProxMgmtService      = perProxMgmt p
     index p ProxService          = perProx p
     index p ReportsService       = perReports p
+    index p ScheduleService      = perSchedule p
     index p SisosotaService      = perSisosota p
     index p SmileysApiService    = perSmileysApi p
     index p SmsProxyService      = perSmsProxy p
@@ -223,6 +217,7 @@ instance Representable PerService where
         , perProxMgmt      = f ProxMgmtService
         , perProx          = f ProxService
         , perReports       = f ReportsService
+        , perSchedule      = f ScheduleService
         , perSisosota      = f SisosotaService
         , perSmileysApi    = f SmileysApiService
         , perSmsProxy      = f SmsProxyService

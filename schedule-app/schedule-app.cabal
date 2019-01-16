@@ -1,0 +1,84 @@
+cabal-version: 2.2
+name:          schedule-app
+version:       2
+synopsis:      Schedule creator
+description:   ...
+category:      Web
+homepage:      https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
+author:        Toni Okuogume <toni.okuogume@futurice.com>
+maintainer:    Toni Okuogume <toni.okuogume@futurice.com>
+license:       BSD-3-Clause
+license-file:  LICENSE
+build-type:    Simple
+
+source-repository head
+  type:     git
+  location: https://github.com/futurice/haskell-mega-repo
+
+library
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:        -Wall
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    ScopedTypeVariables
+
+  build-depends:
+    , aeson
+    , async
+    , base
+    , bytestring
+    , constraints
+    , containers
+    , env-config
+    , fum-types
+    , futurice-foundation
+    , futurice-integrations
+    , futurice-postgres
+    , futurice-prelude
+    , futurice-servant
+    , generics-sop
+    , generics-sop-lens
+    , http-api-data
+    , lens
+    , lucid
+    , mtl
+    , periocron
+    , personio-client
+    , postgresql-simple
+    , resource-pool
+    , servant
+    , servant-lucid
+    , servant-server
+    , stm
+    , time
+
+  exposed-modules:
+    Futurice.App.Schedule
+    Futurice.App.Schedule.API
+    Futurice.App.Schedule.Command
+    Futurice.App.Schedule.Command.AddScheduleTemplate
+    Futurice.App.Schedule.Command.Definition
+    Futurice.App.Schedule.Config
+    Futurice.App.Schedule.Ctx
+    Futurice.App.Schedule.Markup
+    Futurice.App.Schedule.Pages.IndexPage
+    Futurice.App.Schedule.World
+
+executable schedule-server
+  default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   srv
+  ghc-options:      -Wall -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , schedule-app
