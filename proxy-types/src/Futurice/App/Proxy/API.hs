@@ -94,7 +94,36 @@ data Routes = Routes
     , routeFutuquTimereportsStream :: Futuqu ("strm" :> "timereports.csv.gz" :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
     , routeFutuquCapacitiesStream  :: Futuqu ("strm" :> "capacities.csv.gz"  :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
 
-    -- Power
+    -- Power v3
+    , routePowerV3PersonCompetences :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "timeline" :> "personcompetence/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "person_competences" :> Get '[JSON] Value)
+
+    , routePowerV3ProjectCompetences :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "timeline" :> "projectcompetence/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "project_competences" :> Get '[JSON] Value)
+
+    , routePowerV3Competences :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "competence/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "competences" :> Get '[JSON] Value)
+
+    , routePowerV3People :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "person/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "people" :> Get '[JSON] Value)
+
+    , routePowerV3Tribes :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "tribe/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "tribes" :> Get '[JSON] Value)
+
+    , routePowerV3Allocations :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "allocation/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "allocations" :> Get '[JSON] Value)
+
+    , routePowerV3Projects :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "project/" :> Get '[JSON] Value)
+        ("power" :> "v3api" :> "projects" :> Get '[JSON] Value)
+
+    -- Power v2 (deprecated)
     , routePowerBi :: ProxiedEndpoint 'PowerService
         ("api" :> "v2" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int:> QueryParam "tribe" Text :> Get '[JSON] Value)
         ("power" :> "api" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> QueryParam "tribe" Text :> Get '[JSON] Value)
