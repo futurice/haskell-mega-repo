@@ -97,31 +97,31 @@ data Routes = Routes
     -- Power v3
     , routePowerV3PersonCompetences :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "timeline" :> "personcompetence/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "person_competences" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "person_competences" :> Get '[JSON] Value)
 
     , routePowerV3ProjectCompetences :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "timeline" :> "projectcompetence/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "project_competences" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "project_competences" :> Get '[JSON] Value)
 
     , routePowerV3Competences :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "competence/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "competences" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "competences" :> Get '[JSON] Value)
 
     , routePowerV3People :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "person/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "people" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "people" :> Get '[JSON] Value)
 
     , routePowerV3Tribes :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "tribe/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "tribes" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "tribes" :> Get '[JSON] Value)
 
     , routePowerV3Allocations :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "allocation/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "allocations" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "allocations" :> Get '[JSON] Value)
 
     , routePowerV3Projects :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "project/" :> Get '[JSON] Value)
-        ("power" :> "v3api" :> "projects" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "projects" :> Get '[JSON] Value)
 
     -- Power v2 (deprecated)
     , routePowerBi :: ProxiedEndpoint 'PowerService
