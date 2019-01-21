@@ -33,5 +33,5 @@ deriveVia [t| FromJSON Person `Via` Sopica Person |]
 
 instance PyJSON Person where
     parsePyJSON = withObject "Person" $ \obj -> Person
-        <$> obj .: "person__username"
-        <*> obj .: "person__utz_target"
+        <$> obj .: "username"
+        <*> obj .: "utz_target"
