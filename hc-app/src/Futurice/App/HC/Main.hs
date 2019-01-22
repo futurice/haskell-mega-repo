@@ -198,7 +198,7 @@ achooReportAction ctx mfu mi' ma' all' = withAuthUser (const impl) ctx mfu where
 
     (mi, ma) = case (mi', ma') of
         (Just x,  Just y)  -> (x, y)
-        (Nothing, Nothing) -> ( $(mkDay "2018-01-01"), $(mkDay "2018-06-30") )
+        (Nothing, Nothing) -> ( $(mkDay "2019-01-01"), $(mkDay "2019-06-30") )
         (Just x,  Nothing) -> (x, addDays 180 x) -- TODO: add 6 months
         (Nothing, Just x)  -> (x, addDays (negate 180) x)
 

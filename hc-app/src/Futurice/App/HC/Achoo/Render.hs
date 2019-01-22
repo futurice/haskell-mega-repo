@@ -40,6 +40,8 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
 
     hr_ []
     ul_ [ class_ "menu" ] $ do
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2019-01-01")) (Just $(mkDay "2019-06-30")) (Just whole) ] $ "2019 H1"
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2019-01-01")) (Just $(mkDay "2019-12-31")) (Just whole) ] $ "2019 Year"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2018-01-01")) (Just $(mkDay "2018-06-30")) (Just whole) ] $ "2018 H1"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2018-07-01")) (Just $(mkDay "2018-12-31")) (Just whole) ] $ "2018 H2"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2018-01-01")) (Just $(mkDay "2018-12-31")) (Just whole) ] $ "2018 Year"
