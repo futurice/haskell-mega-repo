@@ -93,7 +93,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
     makeCounts :: [AccessEntry] -> (LenientEndpoint, Int)
     makeCounts xs = (aeEndpoint $ head xs, length xs)
 
- -------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- Util: move to futurice-prelude
 -------------------------------------------------------------------------------
 
