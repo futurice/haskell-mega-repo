@@ -6,6 +6,7 @@ module Futurice.App.ProxyMgmt.Pages.Tokens (tokensPageHandler) where
 import Control.Lens               (auf, coerced)
 import Data.Coerce                (Coercible, coerce)
 import Data.Semigroup             (Max (..), Option (..))
+import Data.List                  (groupBy)
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
 import Futurice.Generics          (textualToText)
@@ -18,6 +19,8 @@ import Prelude ()
 import Servant.Links              (fieldLink)
 
 import qualified Data.Map.Strict as Map
+
+import Futurice.App.Proxy.API     (LenientEndpoint)
 
 import Futurice.App.ProxyMgmt.API
 import Futurice.App.ProxyMgmt.Commands.AddToken
@@ -58,7 +61,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
             th_ "Last active"
             th_ "Policy"
             th_ "Accessed endpoints"
-            th_ "Calls per Month"
+            th_ "Calls (per Month)"
         tbody_ $ for_ tokens $ \t -> tr_ $ do
             let ae = aes' ^. ix (tUserName t)
             td_ $ fromMaybe (toHtml $ tUserName t) $ do
@@ -74,9 +77,11 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
                 toHtml e
                 " → "
                 toHtml (formatHumanHelsinkiTime t)
-            td_ $ do 
-                let count = show . length . filter isCurrMo $ ae
-                toHtml count
+            let counts = map makeCounts . groupBy (eqBy aeEndpoint) $ filter isCurrMo ae
+            td_ $ ul_ $ for_ counts $ \(e, c) -> li_ $ do
+                toHtml e
+                " → "
+                toHtml (show c)
   where
     -- uses inlined DList
     aes' :: Map UserName [AccessEntry]
@@ -84,10 +89,16 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
 
     isCurrMo :: AccessEntry -> Bool
     isCurrMo = (== currMonth) . dayToMonth . utctDay . aeStamp
- 
--------------------------------------------------------------------------------
+
+    makeCounts :: [AccessEntry] -> (LenientEndpoint, Int)
+    makeCounts xs = (aeEndpoint $ head xs, length xs)
+
+ -------------------------------------------------------------------------------
 -- Util: move to futurice-prelude
 -------------------------------------------------------------------------------
+
+eqBy :: Eq b => (a -> b) -> a -> a -> Bool
+eqBy f x y = f x == f y 
 
 calaf :: forall f g a b. (Functor f, Functor g, Coercible a b)
       => (a -> b) -> (f b -> g b) -> f a -> g a
