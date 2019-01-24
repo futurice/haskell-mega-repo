@@ -13,6 +13,7 @@ import Futurice.Lomake
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant           (cachedIO)
+import Futurice.Time.Month        (dayToMonth)
 import Prelude ()
 import Servant.Links              (fieldLink)
 
@@ -32,14 +33,15 @@ tokensPageHandler = do
         policies <- fetchPolicies ctx
         tokens <- fetchTokens ctx
         accessEntries <- fetchAccessEntries ctx
-        pure $ tokensPage policies tokens accessEntries
+        currMonth <- currentMonth
+        pure $ tokensPage currMonth policies tokens accessEntries
 
 -------------------------------------------------------------------------------
 -- Html
 -------------------------------------------------------------------------------
 
-tokensPage :: [PolicyName] -> [Token] -> [AccessEntry] -> HtmlPage "tokens"
-tokensPage policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
+tokensPage :: Month -> [PolicyName] -> [Token] -> [AccessEntry] -> HtmlPage "tokens"
+tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
     h2_ "New token"
     let fopts = FormOptions "add-token-form" (fieldLink routeAddToken) ("Add", "success")
     let policies' = fmap (\x -> (x, textualToText x)) policies
@@ -73,13 +75,16 @@ tokensPage policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
                 " → "
                 toHtml (formatHumanHelsinkiTime t)
             td_ $ do 
-                let count = show . length $ ae
+                let count = show . length . filter isCurrMo $ ae
                 toHtml count
   where
     -- uses inlined DList
     aes' :: Map UserName [AccessEntry]
     aes' = Map.map ($[]) $ Map.fromListWith (.) $ map (\ae -> (aeUser ae, (ae :))) $ aes
 
+    isCurrMo :: AccessEntry -> Bool
+    isCurrMo = (== currMonth) . dayToMonth . utctDay . aeStamp
+ 
 -------------------------------------------------------------------------------
 -- Util: move to futurice-prelude
 -------------------------------------------------------------------------------
