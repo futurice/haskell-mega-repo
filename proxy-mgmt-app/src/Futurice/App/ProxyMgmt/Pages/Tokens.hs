@@ -56,6 +56,7 @@ tokensPage policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
             th_ "Last active"
             th_ "Policy"
             th_ "Accessed endpoints"
+            th_ "Calls per Month"
         tbody_ $ for_ tokens $ \t -> tr_ $ do
             let ae = aes' ^. ix (tUserName t)
             td_ $ fromMaybe (toHtml $ tUserName t) $ do
@@ -71,6 +72,9 @@ tokensPage policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
                 toHtml e
                 " → "
                 toHtml (formatHumanHelsinkiTime t)
+            td_ $ do 
+                let count = show . length $ ae
+                toHtml count
   where
     -- uses inlined DList
     aes' :: Map UserName [AccessEntry]
