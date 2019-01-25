@@ -77,8 +77,8 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
                 toHtml e
                 " → "
                 toHtml (formatHumanHelsinkiTime t)
-            let counts = map makeCounts . groupBy (eqBy aeEndpoint) $ filter isCurrMo ae
-            td_ $ ul_ $ for_ counts $ \(e, c) -> li_ $ do
+            let counts = calaf (UnionWith' . fmap Sum) foldMap (\x -> Map.singleton (aeEndpoint x) 1) $ filter isCurrMo ae
+            td_ $ ul_ $ ifor_ counts $ \e c -> li_ $ do
                 toHtml e
                 " → "
                 toHtml (show c)
