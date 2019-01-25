@@ -29,7 +29,7 @@ import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
 import Futurice.App.ProxyMgmt.Utils
 
-tokensPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "tokens")
+tokensPageHandler :: ReaderT (Login, Ctx) IO (HtmlPage "tokens")
 tokensPageHandler = do
     (_, ctx) <- ask
     liftIO $ do

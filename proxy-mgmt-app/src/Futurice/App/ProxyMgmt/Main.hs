@@ -37,7 +37,7 @@ import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 
-server :: Ctx Identity -> Server ProxyMgmtAPI
+server :: Ctx -> Server ProxyMgmtAPI
 server ctx = genericServer $ ProxyMgmtRoutes
     { routeIndexPage          = \mfu -> nt False ctx mfu indexPageHandler
     , routeRegenerateOwnToken = \mfu -> nt False ctx mfu regenerateTokenHandler
@@ -49,10 +49,12 @@ server ctx = genericServer $ ProxyMgmtRoutes
     , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
     , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
     , routeAddToken           = \mfu -> nt True ctx mfu . addTokenHandler
+    -- dashdo
+    , routeDashdo             = ctxDashdoServer ctx
     }
 
 -- Access control adding transformation
-nt :: Bool -> Ctx f -> Maybe Login -> ReaderT (Login, Ctx f) IO a -> Handler a
+nt :: Bool -> Ctx -> Maybe Login -> ReaderT (Login, Ctx) IO a -> Handler a
 nt requireAdmin ctx mfu handler = do
     now <- currentTime
 
@@ -82,9 +84,9 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp proxyMgmtApi .~ server
     & serverEnvPfx           .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx Identity, [Job])
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg@Config {..} lgr mgr cache _mq = do
         postgresPool <- createPostgresPool cfgPostgresConnInfo
-        let ctx = Ctx postgresPool cfg lgr cache mgr Proxy
-        dashdoServer <- makeDashdoServer ctx
-        pure (ctx { ctxDashdoServer = Identity dashdoServer }, [])
+        let ctx' = DashdoCtx postgresPool cfg lgr cache mgr
+        dashdoServer <- makeDashdoServer ctx'
+        pure (Ctx postgresPool cfg lgr cache mgr dashdoServer, [])

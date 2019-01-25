@@ -26,7 +26,7 @@ import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
 import Futurice.App.ProxyMgmt.Utils
 
-policiesPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "policies")
+policiesPageHandler :: ReaderT (Login, Ctx) IO (HtmlPage "policies")
 policiesPageHandler = do
     (_, ctx) <- ask
     liftIO $ do

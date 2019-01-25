@@ -1,5 +1,6 @@
 module Futurice.App.ProxyMgmt.Ctx (
     Ctx (..),
+    DashdoCtx (..),
     ) where
 
 import Dashdo.Servant                (DashdoAPI)
@@ -10,11 +11,19 @@ import Futurice.Servant              (Cache)
 import Prelude ()
 import Servant                       (Server)
 
-data Ctx f = Ctx
+data Ctx = Ctx
     { ctxPostgresPool :: !(Pool Connection)
     , ctxConfig       :: !Config
     , ctxLogger       :: !Logger
     , ctxCache        :: !Cache
     , ctxManager      :: !Manager
-    , ctxDashdoServer :: !(f (Server DashdoAPI))
+    , ctxDashdoServer :: !(Server DashdoAPI)
+    }
+
+data DashdoCtx = DashdoCtx
+    { dctxPostgresPool :: !(Pool Connection)
+    , dctxConfig       :: !Config
+    , dctxLogger       :: !Logger
+    , dctxCache        :: !Cache
+    , dctxManager      :: !Manager
     }

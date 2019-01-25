@@ -43,10 +43,10 @@ data Val = Val
 
 instance NFData Val
 
-fetchValues :: Ctx f -> IO [Val]
-fetchValues Ctx {..} =
-    cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchValues" ctxLogger $ do
-        res <- safePoolQuery_ ctxPostgresPool
+fetchValues :: DashdoCtx -> IO [Val]
+fetchValues DashdoCtx {..} =
+    cachedIO dctxLogger dctxCache 600 () $ runLogT "fetchValues" dctxLogger $ do
+        res <- safePoolQuery_ dctxPostgresPool
             "SELECT username, updated, endpoint FROM proxyapp.accesslog WHERE current_timestamp - updated < '1 month' :: interval ORDER BY updated DESC;"
         return $ fmap mkVal res
 
@@ -187,11 +187,11 @@ valueTable vs = table_ [ class_ "table table-striped" ] $ do
 -- Usage dashboard
 -------------------------------------------------------------------------------
 
-proxyRDashdo :: Ctx f -> RDashdo IO
+proxyRDashdo :: DashdoCtx -> RDashdo IO
 proxyRDashdo ctx =
     RDashdo "usage" "Prox usage" $ Dashdo params0 $ usage ctx
 
-usage :: Ctx f -> SHtml IO Params ()
+usage :: DashdoCtx -> SHtml IO Params ()
 usage ctx = do
     -- parameters and values
     values <- liftIO $ fetchValues ctx
@@ -235,7 +235,7 @@ usage ctx = do
 -- Server
 -------------------------------------------------------------------------------
 
-makeDashdoServer :: Ctx f -> IO (Server DashdoAPI)
+makeDashdoServer :: DashdoCtx -> IO (Server DashdoAPI)
 makeDashdoServer ctx = do
     let html = rdash dashdos plotlyCDN
     dashdoServer id html dashdos

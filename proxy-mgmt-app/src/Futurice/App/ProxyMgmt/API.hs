@@ -9,6 +9,7 @@ import Futurice.Lomake
 import Prelude ()
 import Servant
 import Servant.API.Generic
+import Dashdo.Servant (DashdoAPI)
 
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
@@ -39,6 +40,8 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
         SSOUser :> "command" :> "add-token"
         :> ReqBody '[JSON] (LomakeRequest AddToken)
         :> Post '[JSON] (CommandResponse ())
+    -- dashdo
+    , routeDashdo :: route :- "dashdo" :> DashdoAPI
     }
   deriving Generic
 

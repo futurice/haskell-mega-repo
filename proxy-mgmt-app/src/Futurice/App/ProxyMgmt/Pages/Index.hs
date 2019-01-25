@@ -17,7 +17,7 @@ import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
 import Futurice.App.ProxyMgmt.Utils  (fetchPolicyEndpoints)
 
-indexPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "index")
+indexPageHandler :: ReaderT (Login, Ctx) IO (HtmlPage "index")
 indexPageHandler = ReaderT $ \(login, ctx) -> do
     mtoken <- fetchToken login ctx
     entries <- fetchAccessEntries login ctx
@@ -28,14 +28,14 @@ indexPageHandler = ReaderT $ \(login, ctx) -> do
 -- Data
 -------------------------------------------------------------------------------
 
-fetchToken :: Login -> Ctx f -> IO (Maybe Token)
+fetchToken :: Login -> Ctx -> IO (Maybe Token)
 fetchToken login Ctx {..} =
     cachedIO ctxLogger ctxCache 600 login $ runLogT "fetchTokens" ctxLogger $
         listToMaybe <$> safePoolQuery ctxPostgresPool
             "SELECT username, passtext is not null, usertype, policyname FROM proxyapp.credentials WHERE username = ?;"
             (Only login)
 
-fetchAccessEntries :: Login -> Ctx f -> IO [AccessEntry]
+fetchAccessEntries :: Login -> Ctx -> IO [AccessEntry]
 fetchAccessEntries login Ctx {..} =
     cachedIO ctxLogger ctxCache 600 login $ runLogT "fetchAccessEntries" ctxLogger $ do
         safePoolQuery ctxPostgresPool

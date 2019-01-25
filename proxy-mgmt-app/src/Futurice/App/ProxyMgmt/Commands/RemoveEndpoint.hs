@@ -34,7 +34,7 @@ instance HasLomake RemoveEndpoint where
         hiddenField "Endpoint" :*
         Nil
 
-removeEndpointHandler :: LomakeRequest RemoveEndpoint -> ReaderT (Login, Ctx f) IO (CommandResponse ())
+removeEndpointHandler :: LomakeRequest RemoveEndpoint -> ReaderT (Login, Ctx) IO (CommandResponse ())
 removeEndpointHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) ->
     runLogT "add-endpoint" ctxLogger $ do
         logInfoI "removing endpoint $endpoint from $policy" e
