@@ -61,7 +61,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
             th_ "Last active"
             th_ "Policy"
             th_ "Accessed endpoints"
-            th_ "Calls (per Month)"
+            th_ "Calls (this Month)"
         tbody_ $ for_ tokens $ \t -> tr_ $ do
             let ae = aes' ^. ix (tUserName t)
             td_ $ fromMaybe (toHtml $ tUserName t) $ do
