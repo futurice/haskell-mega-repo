@@ -7,19 +7,17 @@ module Futurice.App.Reports.ActiveSubcontractors where
 
 import Control.Monad             (filterM)
 import Data.Fixed                (Centi)
-import Futurice.CostCenter
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Time
-import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
+import Numeric.Interval.NonEmpty (inf, sup, (...))
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
 import qualified Data.Vector         as V
-import qualified Personio            as P
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -85,9 +83,8 @@ activeSubcontractorsReport = do
 --    let interval = $(mkDay "2018-12-01") ... $(mkDay "2018-12-31")
     fmp0 <- personioPlanmillMap
     fmp0' <- filterM getExternals $ HM.toList fmp0
-    let fmp0'' = HM.fromList fmp0'
-    let fmp0''' = HM.elems $ fmap snd fmp0''
-    d <- V.concat <$> traverse (activeSubcontractor interval) fmp0'''
+    let fmp0'' = fmap (snd . snd) fmp0'
+    d <- V.concat <$> traverse (activeSubcontractor interval) fmp0''
     pure $ ActiveSubcontractorData interval d
   where
     getExternals (_, (_, planmillUser)) =
@@ -99,7 +96,7 @@ activeSubcontractorsReport = do
 
 activeSubContractorRender :: ActiveSubcontractorData -> HtmlPage "active-subcontractors"
 activeSubContractorRender (ActiveSubcontractorData interval d) = page_ "Active Subcontractors" $ do
-    let uniqueNames = length . V.uniq . V.fromList . sort . V.toList $ fmap (\x -> _asName x) d
+    let uniqueNames = length . nub . sort . V.toList $ fmap _asName d
     h1_ "Active Subcontractors"
     p_ $ do
         "generated from marked hours on "
@@ -107,7 +104,7 @@ activeSubContractorRender (ActiveSubcontractorData interval d) = page_ "Active S
         " ... "
         toHtml $ show $ sup interval
     p_ $ do
-        toHtml $ (T.pack $ show uniqueNames) <> (" subcontractors marked hours during the interval" :: Text)
+        toHtml $ T.pack (show uniqueNames) <> " subcontractors marked hours during the interval"
     sortableTable_ $ do
         thead_ $ tr_ $ do
             th_ "Name"
