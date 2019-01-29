@@ -59,9 +59,9 @@ reportsPage currMonth policies tokens accessEntries = page_ "Reports" (Just NavR
         toHtml (show c)
 
     h2_ "Requests per Day"
-    let dateCount = countByF aeStamp accessEntries
+    let dateCount = countByF (formatHumanHelsinkiTime . aeStamp) accessEntries
     td_ $ ul_ $ ifor_ dateCount $ \e c -> li_ $ do
-        toHtml $ formatHumanHelsinkiTime e
+        toHtml e
         " → "
         toHtml (show c)
 
