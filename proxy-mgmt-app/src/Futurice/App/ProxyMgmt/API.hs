@@ -27,6 +27,8 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
         SSOUser :> "policies" :> Get '[HTML] (HtmlPage "policies")
     , routeAuditPage :: route :-
         SSOUser :> "audit" :> Get '[HTML] (HtmlPage "audit")
+    , routeReportsPage :: route :-
+        SSOUser :> "reports" :> Get '[HTML] (HtmlPage "reports")
     -- Commands
     , routeRemoveEndpoint :: route :-
         SSOUser :> "command" :> "remove-endpoint"

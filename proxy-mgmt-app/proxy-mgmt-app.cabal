@@ -81,6 +81,7 @@ library
     Futurice.App.ProxyMgmt.Pages.Index
     Futurice.App.ProxyMgmt.Pages.Policies
     Futurice.App.ProxyMgmt.Pages.Tokens
+    Futurice.App.ProxyMgmt.Pages.Reports
     Futurice.App.ProxyMgmt.Types
     Futurice.App.ProxyMgmt.Utils
 
