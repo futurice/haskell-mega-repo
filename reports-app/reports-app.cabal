@@ -156,6 +156,7 @@ library
     Futurice.App.Reports.PowerProjects
     Futurice.App.Reports.PowerUser
     Futurice.App.Reports.ProjectHours
+    Futurice.App.Reports.SubcontractorNotifications
     Futurice.App.Reports.SupervisorsGraph
     Futurice.App.Reports.Templates
     Futurice.App.Reports.TimereportsByTask

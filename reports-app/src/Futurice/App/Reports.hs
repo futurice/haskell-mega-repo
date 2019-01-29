@@ -41,9 +41,9 @@ import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
-import Futurice.App.Reports.Dashdo                    (makeDashdoServer)
-import Futurice.App.Reports.DoWeStudy                 (doWeStudyData)
-import Futurice.App.Reports.IDontKnow                 (iDontKnowData)
+import Futurice.App.Reports.Dashdo                     (makeDashdoServer)
+import Futurice.App.Reports.DoWeStudy                  (doWeStudyData)
+import Futurice.App.Reports.IDontKnow                  (iDontKnowData)
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
@@ -56,18 +56,19 @@ import Futurice.App.Reports.MissingHoursDailyChart
 import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeData (..), officeVibeData)
-import Futurice.App.Reports.PlanMillAccountValidation (pmAccountValidationData)
+import Futurice.App.Reports.PlanMillAccountValidation  (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
        (PowerUserReport, powerUserReport)
-import Futurice.App.Reports.ProjectHours              (projectHoursData)
-import Futurice.App.Reports.SupervisorsGraph          (supervisorsGraph)
+import Futurice.App.Reports.ProjectHours               (projectHoursData)
+import Futurice.App.Reports.SubcontractorNotifications
+import Futurice.App.Reports.SupervisorsGraph           (supervisorsGraph)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
-import Futurice.App.Reports.TimereportsDump           (timereportsDump)
+import Futurice.App.Reports.TimereportsDump            (timereportsDump)
 import Futurice.App.Reports.UtzChart
        (utzChartData, utzChartRender)
 
@@ -326,8 +327,9 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 
         -- listen to MQ, especially for missing hours ping
         void $ forEachMessage mq $ \msg -> case msg of
-            MissingHoursPing -> void $ missingHoursNotifications ctx
-            _                -> pure ()
+            MissingHoursPing  -> void $ missingHoursNotifications ctx
+            SubcontractorPing -> void $ subcontractorNotifications ctx
+            _                 -> pure ()
 
         return (ctx, jobs)
 

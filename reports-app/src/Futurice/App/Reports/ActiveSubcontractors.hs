@@ -18,6 +18,7 @@ import Prelude ()
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
 import qualified Data.Vector         as V
+import qualified Personio            as P
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
 
@@ -26,7 +27,7 @@ import qualified PlanMill.Queries    as PMQ
 -------------------------------------------------------------------------------
 
 data ActiveSubcontractor = ActiveSubcontractor
-    { _asName  :: !Text
+    { _asName  :: !P.Employee
     , _asDay   :: !Day
     , _asHours :: !(NDT 'Hours Centi)
     }
@@ -59,15 +60,16 @@ instance ToHtml ActiveSubcontractorData where
 activeSubcontractor
     :: MonadPlanMillQuery m
     => PM.Interval Day
+    -> P.Employee
     -> PM.User
     -> m (Vector ActiveSubcontractor)
-activeSubcontractor interval user = do
+activeSubcontractor interval emp user = do
     let uid = user ^. PM.identifier
     tr <- PMQ.timereports interval uid
     pure $ fmap toActiveSubcontractor tr
   where
       toActiveSubcontractor tr = ActiveSubcontractor
-          { _asName = (PM.uFirstName user) <> " " <> (PM.uLastName user)
+          { _asName = emp
           , _asDay = PM.trStart tr
           , _asHours = ndtConvert' $ PM.trAmount tr
           }
@@ -80,11 +82,10 @@ activeSubcontractorsReport
 activeSubcontractorsReport = do
     today <- currentDay
     let interval = beginningOfPrevMonth today ... endOfPrevMonth today
---    let interval = $(mkDay "2018-12-01") ... $(mkDay "2018-12-31")
     fmp0 <- personioPlanmillMap
     fmp0' <- filterM getExternals $ HM.toList fmp0
-    let fmp0'' = fmap (snd . snd) fmp0'
-    d <- V.concat <$> traverse (activeSubcontractor interval) fmp0''
+    let fmp0'' = fmap snd fmp0'
+    d <- V.concat <$> traverse (uncurry $ activeSubcontractor interval) fmp0''
     pure $ ActiveSubcontractorData interval d
   where
     getExternals (_, (_, planmillUser)) =
@@ -96,7 +97,7 @@ activeSubcontractorsReport = do
 
 activeSubContractorRender :: ActiveSubcontractorData -> HtmlPage "active-subcontractors"
 activeSubContractorRender (ActiveSubcontractorData interval d) = page_ "Active Subcontractors" $ do
-    let uniqueNames = length . nub . sort . V.toList $ fmap _asName d
+    let uniqueNames = length . nub . sort . V.toList $ fmap (view P.employeeFullname . _asName) d
     h1_ "Active Subcontractors"
     p_ $ do
         "generated from marked hours on "
@@ -111,6 +112,6 @@ activeSubContractorRender (ActiveSubcontractorData interval d) = page_ "Active S
             th_ "Day"
             th_ "Hours"
         tbody_ $ for_ d $ \(ActiveSubcontractor name day hours) -> tr_ $ do
-            td_ $ toHtml name
+            td_ $ toHtml $ name ^. P.employeeFullname
             td_ $ toHtml $ show day
             td_ $ toHtml hours
