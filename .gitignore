@@ -33,3 +33,4 @@ tags
 theme-app/private/*
 
 data
+.projectile
