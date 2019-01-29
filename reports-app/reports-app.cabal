@@ -135,6 +135,7 @@ library
     Futurice.App.Reports
     Futurice.App.Reports.API
     Futurice.App.Reports.ActiveAccounts
+    Futurice.App.Reports.ActiveSubcontractors
     Futurice.App.Reports.CareerLengthChart
     Futurice.App.Reports.Config
     Futurice.App.Reports.Ctx

@@ -34,6 +34,8 @@ import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
 
 import Futurice.App.Reports.ActiveAccounts
+import Futurice.App.Reports.ActiveSubcontractors
+       (activeSubcontractorsReport)
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
@@ -250,7 +252,7 @@ server ctx = genericServer $ Record
     , recTablesProjectHoursDataJSON = liftIO $ serveData projectHoursData ctx
     , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
     , recTablesDoWeStudy            = \skind month tribe -> liftIO $ serveDataParam3 (skind >>= either (const Nothing) Just) month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
-
+    , recActiveSubcontractors       = liftIO $ serveData activeSubcontractorsReport ctx
     -- Officevibe
     , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
     , recOfficevibeGroups        = liftIO $ serveData' () (const officeVibeData) ovdGroups ctx

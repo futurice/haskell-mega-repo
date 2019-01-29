@@ -76,6 +76,7 @@ indexPage today = page_ "Reports" $ do
         li_ $ a_ [ recordHref_ recTablesProjectHoursData          ] "Hours by project and type"
         li_ $ a_ [ recordHref_ recTablesIDontKnow Nothing Nothing ] "I don't know... report"
         li_ $ a_ [ recordHref_ recTablesDoWeStudy Nothing Nothing Nothing ] "Learning hours report"
+        li_ $ a_ [ recordHref_ recActiveSubcontractors            ] "Active subcontractors"
 
     fullRow_ $ h2_ "Integrations for Power"
     fullRow_ $ ul_ $ do
