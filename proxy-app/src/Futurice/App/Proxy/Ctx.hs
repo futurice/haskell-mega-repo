@@ -5,7 +5,7 @@ module Futurice.App.Proxy.Ctx where
 
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Services          (Service (..))
+import Futurice.Services (Service (..))
 import Prelude ()
 
 import Futurice.App.Proxy.Endpoint (HasClientBaseurl (..), HasHttpManager (..))
@@ -41,3 +41,4 @@ instance HasClientBaseurl Ctx 'PowerService         where clientBaseurl _ = ctxC
 instance HasClientBaseurl Ctx 'PersonioProxyService where clientBaseurl _ = ctxConfig . cfgPersonioProxyBaseurl
 instance HasClientBaseurl Ctx 'ContactsApiService   where clientBaseurl _ = ctxConfig . cfgContactsApiBaseurl
 instance HasClientBaseurl Ctx 'SmsProxyService      where clientBaseurl _ = ctxConfig . cfgSmsProxyBaseurl
+instance HasClientBaseurl Ctx 'LibraryService       where clientBaseurl _ = ctxConfig . cfgLibraryBaseurl

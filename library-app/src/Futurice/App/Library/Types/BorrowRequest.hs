@@ -7,6 +7,7 @@
 module Futurice.App.Library.Types.BorrowRequest where
 
 import Data.Aeson
+import FUM.Types.Login
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -22,6 +23,19 @@ data BorrowRequest = BorrowRequest
 
 deriveGeneric ''BorrowRequest
 
+deriveVia [t| ToJSON BorrowRequest `Via` Sopica BorrowRequest |]
 deriveVia [t| FromJSON BorrowRequest `Via` Sopica BorrowRequest |]
 
 instance ToSchema BorrowRequest where declareNamedSchema = sopDeclareNamedSchema
+
+data BorrowRequestWithUser = BorrowRequestWithUser
+    { _brwuUser    :: !Login
+    , _brwuRequest :: !BorrowRequest
+    } deriving (Show, Typeable)
+
+deriveGeneric ''BorrowRequestWithUser
+
+deriveVia [t| ToJSON BorrowRequestWithUser `Via` Sopica BorrowRequestWithUser |]
+deriveVia [t| FromJSON BorrowRequestWithUser `Via` Sopica BorrowRequestWithUser |]
+
+instance ToSchema BorrowRequestWithUser where declareNamedSchema = sopDeclareNamedSchema

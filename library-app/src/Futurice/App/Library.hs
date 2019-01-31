@@ -61,6 +61,7 @@ apiServer ctx = genericServer $ Record
     , bookByISBNGet          = getBookByISBNImpl ctx
     , bookCoverGet           = getBookCoverImpl ctx
     , borrowPost             = borrowBookImpl ctx
+    , borrowWithUserPost     = borrowWithUserPostImpl ctx
     , itemDelete             = itemDeleteImpl ctx
     , snatchPost             = snatchBookImpl ctx
     , loansGet               = getLoansImpl ctx
@@ -287,7 +288,7 @@ indexPageImpl ctx mcriteria direction limit startBookId startBoardGameId search 
         pure $ indexPage crit itemInfos dir lim startBookId startBoardGameId search library onlyAvailableText
 
     fmap2 f = fmap (fmap f)
-    
+
     -- default values
     criteria      = fromMaybe (MkSome (BookSort SortTitle)) mcriteria
     lib           = fromMaybe AllLibraries library
@@ -318,8 +319,8 @@ personalLoansPageImpl ctx login = do
     ls <- personalLoansImpl ctx login
     pure $ personalLoansPage ls
 
-borrowBookImpl :: Ctx -> Maybe Login -> BorrowRequest -> Handler Loan
-borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
+borrowBookCallback :: Ctx -> BorrowRequest -> Login -> Handler Loan
+borrowBookCallback ctx req l = do
     emap <- liftIO $ getPersonioDataMap ctx
     case emap ^.at l of
       Nothing -> throwError err403
@@ -327,7 +328,15 @@ borrowBookImpl ctx login req = withAuthUser ctx login $ (\l -> do
           loanData <- runLogT "borrow-book" (ctxLogger ctx) (borrowBook ctx (es ^. P.employeeId) req)
           case loanData of
             Nothing -> throwError $ err404 { errBody = "Loan data is not available" }
-            Just (LoanData lid _ _ _) -> getLoanImpl ctx lid)
+            Just (LoanData lid _ _ _) -> getLoanImpl ctx lid
+
+borrowBookImpl :: Ctx -> Maybe Login -> BorrowRequest -> Handler Loan
+borrowBookImpl ctx login req = withAuthUser ctx login (borrowBookCallback ctx req)
+
+borrowWithUserPostImpl :: Ctx -> BorrowRequestWithUser -> Handler LoanResponse
+borrowWithUserPostImpl ctx (BorrowRequestWithUser user req) = do
+    (Loan lid date info person) <- borrowBookCallback ctx req user
+    return $ LoanResponse lid date (info ^. itemInfo) ((\p -> (p ^. P.employeeFirst) <> " " <> (p ^. P.employeeLast)) <$> person)
 
 snatchBookImpl :: Ctx -> Maybe Login -> ItemId -> Handler Loan
 snatchBookImpl ctx login iid = withAuthUser ctx login $ (\l -> do
@@ -378,10 +387,13 @@ getBookByISBNImpl ctx isbn = do
           , _byISBNDataSource = DSDatabase _id _cover}
       cleanedISBN = T.filter (/= '-') isbn
 
-getLoansImpl :: Ctx -> Handler [Loan]
+getLoansImpl :: Ctx -> Handler [LoanResponse]
 getLoansImpl ctx = do
     es <- liftIO $ getPersonioData ctx
-    runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoans ctx es
+    ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoans ctx es
+    pure $ toLoanResponse <$> ls
+  where
+    toLoanResponse (Loan lid date info person) = LoanResponse lid date (info ^. itemInfo) ((\p -> (p ^. P.employeeFirst) <> " " <> (p ^. P.employeeLast)) <$> person)
 
 getLoanImpl :: Ctx -> LoanId -> Handler Loan
 getLoanImpl ctx lid = do

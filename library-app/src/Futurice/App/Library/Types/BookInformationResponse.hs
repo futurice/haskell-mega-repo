@@ -36,6 +36,8 @@ deriveGeneric ''Books
 deriveGeneric ''BookInformationResponse
 
 deriveVia [t| ToJSON BookInformationResponse `Via` Sopica BookInformationResponse |]
+deriveVia [t| FromJSON BookInformationResponse `Via` Sopica BookInformationResponse |]
 deriveVia [t| ToJSON Books `Via` Sopica Books |]
+deriveVia [t| FromJSON Books `Via` Sopica Books |]
 
 instance ToSchema BookInformationResponse
