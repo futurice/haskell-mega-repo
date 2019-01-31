@@ -31,6 +31,7 @@ library
     DerivingStrategies
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
+
   build-depends:
     , avatar-client
     , base
@@ -56,10 +57,12 @@ library
     , contacts-api
     , fum-api
     , futurice-github
+    , library-app
     , personio-client
     , planmill-client
     , reports-app
     , servant-binary-tagged
+
   exposed-modules:
     Futurice.App.Proxy.API
     Futurice.App.Proxy.Endpoint

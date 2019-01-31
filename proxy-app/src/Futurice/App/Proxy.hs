@@ -81,6 +81,10 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
               (K.operationsMatching $ K.sym "personio-request" <|> K.psym (isSuffixOf "-haxl"))
               [ "Raw data access" ]
 
+        . Sw.applyTagsFor
+            (K.operationsMatching $ K.sym "library" *> many K.anySym)
+            [ "Library" ]
+
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
 checkCreds ctx req u p = do
     let u' = decodeLatin1 u

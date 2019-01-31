@@ -23,7 +23,7 @@ import qualified Personio as P
 -------------------------------------------------------------------------------
 
 newtype LoanId = LoanId Int32
-  deriving newtype (Eq, Ord, Show, ToJSON, FromHttpApiData, ToHttpApiData, FromField, ToField)
+  deriving newtype (Eq, Ord, Show, FromJSON, ToJSON, FromHttpApiData, ToHttpApiData, FromField, ToField)
 
 deriveGeneric ''LoanId
 instance ToParamSchema LoanId where toParamSchema = newtypeToParamSchema
@@ -65,6 +65,33 @@ instance ToJSON Loan where
 
 -- | Not correct instance.
 instance ToSchema Loan
+
+data LoanResponse = LoanResponse
+    { _loanResponseId            :: !LoanId
+    , _loanResponseLoaned        :: !Text
+    , _loanResponseInformation   :: !(Some ItemInfo)
+    , _loanResponsePerson        :: !(Maybe Text)
+    }
+    deriving (Show, Typeable, Generic)
+
+instance ToSchema LoanResponse where declareNamedSchema = emptyDeclareNamedSchema
+
+instance ToJSON LoanResponse where
+    toJSON (LoanResponse lid date info person) = object
+        ["id"       .= lid
+        , "loaned"  .= date
+        , case info of
+            MkSome (ItemBook bookinfo)            -> "book"      .= bookinfo
+            MkSome (ItemBoardGame boardgameinfo)  -> "boardgame" .= boardgameinfo
+        , "loaner"  .= fromMaybe "" person
+        ]
+
+instance FromJSON LoanResponse where
+    parseJSON = withObject "loanresponse" $ \l ->
+      LoanResponse <$> l .: "id"
+                   <*> l .: "loaned"
+                   <*> ((MkSome . ItemBook <$> l .: "book") <|> (MkSome . ItemBoardGame <$> l .: "boardgame"))
+                   <*> l .: "loaner"
 
 -------------------------------------------------------------------------------
 -- ReturnedLoan

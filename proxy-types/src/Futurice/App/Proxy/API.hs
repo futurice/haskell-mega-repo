@@ -38,6 +38,7 @@ import qualified Data.Set                             as Set
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified Futurice.App.Contacts.Types          as Contact
+import qualified Futurice.App.Library.Types           as Library
 import qualified Futurice.App.SmsProxy.Types          as SMS
 import qualified Futurice.FUM.MachineAPI              as FUM6
 import qualified Futurice.GitHub                      as GH
@@ -184,6 +185,20 @@ data Routes = Routes
     , routePersonioProxyHaxl :: ProxiedEndpoint 'PersonioProxyService
         ("personio-request" :> PersonioProxyEndpoint')
         (Summary "Not for integrations" :> "personio-request" :> PersonioProxyEndpoint')
+
+    -- Library endpoints
+    , routeLibraryBooksGet :: ProxiedEndpoint 'LibraryService
+        ("book" :> Get '[JSON] [Library.BookInformationResponse])
+        (Summary "Get all books" :> "library" :> "book" :> Get '[JSON] [Library.BookInformationResponse])
+    , routeLibraryLoansGet :: ProxiedEndpoint 'LibraryService
+        ("loan" :> Get '[JSON] [Library.LoanResponse])
+        (Summary "Get all loans" :> "library" :> "loan" :> Get '[JSON] [Library.LoanResponse])
+    , routeLibraryBorrowBookPost :: ProxiedEndpoint 'LibraryService
+        ("book" :> "user" :> "borrow" :> ReqBody '[JSON] Library.BorrowRequestWithUser :> Post '[JSON] Library.LoanResponse)
+        (Summary "Borrow a book for user" :> "library" :> "book" :> "borrow" :> ReqBody '[JSON] Library.BorrowRequestWithUser :> Post '[JSON] Library.LoanResponse)
+    , routeLibraryReturnPost :: ProxiedEndpoint 'LibraryService
+        ("return" :> Capture "id" Library.LoanId :> Post '[JSON] Bool)
+        (Summary "Return a loan" :> "library" :> "return" :> Capture "id" Library.LoanId :> Post '[JSON] Bool)
     }
   deriving (Generic)
 

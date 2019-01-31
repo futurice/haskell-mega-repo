@@ -62,21 +62,16 @@ instance ToField Library where
 instance ToSchema Library where
     declareNamedSchema _ = do
         return $ NamedSchema (Just "Library") $ mempty
-            & type_ .~ SwaggerObject
-            & required .~ [ "office" ]
+            & type_ .~ SwaggerString
 
 instance ToJSON Library where
-    toJSON (OfficeLibrary office) = object ["office" .= office]
-    toJSON Elibrary               = object ["office" .= ("Elibrary" :: Text)]
-    toJSON _                      = object ["office" .= ("Unknown" :: Text)]
+    toJSON = toJSON . libraryToText
 
 instance ToJSONKey Library where
     toJSONKey = toJSONKeyText libraryToText
 
 instance FromJSON Library where
-    parseJSON = withObject "Library" $ \l -> do
-        office <- l .: "office"
-        pure $ libraryFromText office
+    parseJSON = withText "library" (pure . libraryFromText)
 
 instance ToHtml Library where
     toHtml = toHtmlRaw

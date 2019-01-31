@@ -18,6 +18,7 @@ data Config = Config
     , _cfgPowerBaseurl         :: !BaseUrl
     , _cfgContactsApiBaseurl   :: !BaseUrl
     , _cfgSmsProxyBaseurl      :: !BaseUrl
+    , _cfgLibraryBaseurl       :: !BaseUrl
     }
 
 makeLenses ''Config
@@ -34,3 +35,4 @@ instance Configure Config where
         <*> envVar "POWER_BASEURL"
         <*> envVar "CONTACTSAPI_BASEURL"
         <*> envVar "SMSPROXY_BASEURL"
+        <*> envVar "LIBRARY_BASEURL"

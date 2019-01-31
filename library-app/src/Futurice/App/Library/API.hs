@@ -27,9 +27,10 @@ data Record route = Record
     , bookByISBNGet          :: route :- "book" :> "isbn" :> Capture "isbn" Text :> Get '[JSON] BookInformationByISBNResponse
     , bookCoverGet           :: route :- BookCoverEndpoint
     , borrowPost             :: route :- SSOUser :> "book" :> "borrow" :> ReqBody '[JSON] BorrowRequest :> Post '[JSON] Loan
+    , borrowWithUserPost     :: route :- "book" :> "user" :> "borrow" :> ReqBody '[JSON] BorrowRequestWithUser :> Post '[JSON] LoanResponse
     , itemDelete             :: route :- "item"  :> Capture "id" ItemId :> Delete '[JSON] Text
     , snatchPost             :: route :- SSOUser :> "book" :> "snatch" :> Capture "id" ItemId :> Post '[JSON] Loan
-    , loansGet               :: route :- "loan" :> Get '[JSON] [Loan]
+    , loansGet               :: route :- "loan" :> Get '[JSON] [LoanResponse]
     , loanGet                :: route :- "loan" :> Capture "id" LoanId :> Get '[JSON] Loan
     , returnPost             :: route :- "return" :> Capture "id" LoanId :> Post '[JSON] Bool
     , personalLoansGet       :: route :- SSOUser :> "user" :> "loan" :> Get '[JSON] [Loan]
