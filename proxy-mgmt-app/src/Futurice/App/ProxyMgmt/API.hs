@@ -46,8 +46,8 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
     -- Charts
     , routeChartPerUser :: route :-
         SSOUser :> "chart" :> "per-user" :> Get '[SVG] (Chart "per-user")
-    -- , routeChartPerEndpoint :: route :-
-    --     SSOUser :> "chart" :> "per-endpoint" :> Get '[SVG] (Chart "per-endpoint")
+    , routeChartPerEndpoint :: route :-
+        SSOUser :> "chart" :> "per-endpoint" :> Get '[SVG] (Chart "per-endpoint")
     -- , routeChartPerDay :: route :-
     --     SSOUser :> "chart" :> "per-day" :> Get '[SVG] (Chart "per-day")
     -- dashdo

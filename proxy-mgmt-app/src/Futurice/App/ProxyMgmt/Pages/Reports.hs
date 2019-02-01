@@ -1,7 +1,12 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
-module Futurice.App.ProxyMgmt.Pages.Reports (reportsPageHandler, chartHandler, chartPerUser) where
+module Futurice.App.ProxyMgmt.Pages.Reports 
+    (reportsPageHandler
+    , chartHandler
+    , chartPerUser
+    , chartPerEndpoint
+    ) where
 
 import Control.Lens               (auf, coerced, (.=))
 import Data.Coerce                (Coercible, coerce)
@@ -40,6 +45,23 @@ isCurrMo currMonth = (== currMonth) . dayToMonth . utctDay . aeStamp
 
 countByF :: Ord a => Month -> (AccessEntry -> a) -> [AccessEntry] -> Map a Integer
 countByF cm f = fromListWith (+) . map (\x -> (f x, 1))  . filter (isCurrMo cm)
+
+
+chartPerEndpoint :: Month -> [AccessEntry] -> Chart "per-endpoint"
+chartPerEndpoint currMonth accessEntries =
+    Chart $ C.toRenderable layout
+    
+    where
+        values = map (\(s, v) -> (show s, fromIntegral v)) . assocs $ countByF currMonth aeEndpoint accessEntries
+
+        pitem (s,v) = C.pitem_value .~ v
+                    $ C.pitem_label .~ s
+                    $ C.pitem_offset .~ 0
+                    $ def
+
+        layout = C.pie_title .~ "Requests per Endpoint"
+               $ C.pie_plot . C.pie_data .~ map pitem values
+               $ def
 
 
 chartPerUser :: Month -> [AccessEntry] -> Chart "per-user"
@@ -91,6 +113,7 @@ reportsPage currMonth policies tokens accessEntries = page_ "Reports" (Just NavR
 
     h2_ "Requests per Endpoint"
     let endCount = countByF currMonth aeEndpoint accessEntries
+    img_ [ src_ "/chart/per-endpoint" ]
     td_ $ ul_ $ ifor_ endCount $ \e c -> li_ $ do
         toHtml e
         " → "
