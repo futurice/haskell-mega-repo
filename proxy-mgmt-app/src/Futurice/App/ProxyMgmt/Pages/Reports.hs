@@ -6,6 +6,7 @@ module Futurice.App.ProxyMgmt.Pages.Reports
     , chartHandler
     , chartPerUser
     , chartPerEndpoint
+    , chartPerDay
     ) where
 
 import Control.Lens               (auf, coerced, (.=))
@@ -70,7 +71,22 @@ pieChart title field currMonth accessEntries =
         layout = C.pie_title .~ title
                $ C.pie_plot . C.pie_data .~ map pitem values
                $ def
-               
+
+
+chartPerDay :: Month -> [AccessEntry] -> Chart "per-day"
+chartPerDay currMonth accessEntries = Chart $ C.toRenderable layout
+    where
+        values :: [(Day, [Double])]
+        values = map (\(s, v) -> (s, [fromIntegral v])) . assocs $ countByF currMonth (utctDay . aeStamp) accessEntries
+        
+        line1 = C.plot_bars_titles .~ map (show . fst) values
+              $ C.plot_bars_values .~ values
+              $ C.plot_bars_style .~ C.BarsStacked
+              $ def 
+        
+        layout = C.layout_title .~ "Requests per Day"
+               $ C.layout_plots .~ [ C.plotBars line1 ]
+               $ def 
 
 chartHandler :: (Month -> [AccessEntry] -> Chart a) -> ReaderT (Login, Ctx) IO (Chart a)
 chartHandler cf = do
@@ -111,9 +127,10 @@ reportsPage currMonth policies tokens accessEntries = page_ "Reports" (Just NavR
         toHtml (show c)
 
     h2_ "Requests per Day"
-    let dateCount = countByF currMonth (formatHumanHelsinkiTime . aeStamp) accessEntries
+    let dateCount = countByF currMonth (utctDay . aeStamp) accessEntries
+    img_ [ src_ "/chart/per-day" ]
     td_ $ ul_ $ ifor_ dateCount $ \e c -> li_ $ do
-        toHtml e
+        toHtml (show e)
         " → "
         toHtml (show c)
 

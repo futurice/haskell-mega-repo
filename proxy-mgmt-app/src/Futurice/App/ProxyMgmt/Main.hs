@@ -54,6 +54,7 @@ server ctx = genericServer $ ProxyMgmtRoutes
     -- charts
     , routeChartPerUser       = \mfu -> nt True ctx mfu $ chartHandler chartPerUser
     , routeChartPerEndpoint   = \mfu -> nt True ctx mfu $ chartHandler chartPerEndpoint
+    , routeChartPerDay        = \mfu -> nt True ctx mfu $ chartHandler chartPerDay
     -- dashdo
     , routeDashdo             = ctxDashdoServer ctx
     }
