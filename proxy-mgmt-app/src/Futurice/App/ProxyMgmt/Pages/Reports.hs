@@ -44,42 +44,33 @@ isCurrMo :: Month -> AccessEntry -> Bool
 isCurrMo currMonth = (== currMonth) . dayToMonth . utctDay . aeStamp
 
 countByF :: Ord a => Month -> (AccessEntry -> a) -> [AccessEntry] -> Map a Integer
-countByF cm f = fromListWith (+) . map (\x -> (f x, 1))  . filter (isCurrMo cm)
+countByF cm f = fromListWith (+) . map (\x -> (f x, 1)) . filter (isCurrMo cm)
 
 
 chartPerEndpoint :: Month -> [AccessEntry] -> Chart "per-endpoint"
-chartPerEndpoint currMonth accessEntries =
-    Chart $ C.toRenderable layout
-    
-    where
-        values = map (\(s, v) -> (show s, fromIntegral v)) . assocs $ countByF currMonth aeEndpoint accessEntries
-
-        pitem (s,v) = C.pitem_value .~ v
-                    $ C.pitem_label .~ s
-                    $ C.pitem_offset .~ 0
-                    $ def
-
-        layout = C.pie_title .~ "Requests per Endpoint"
-               $ C.pie_plot . C.pie_data .~ map pitem values
-               $ def
+chartPerEndpoint = pieChart "Requests per Endpoint" aeEndpoint
 
 
 chartPerUser :: Month -> [AccessEntry] -> Chart "per-user"
-chartPerUser currMonth accessEntries =
+chartPerUser = pieChart "Requests per User" aeUser
+
+
+pieChart :: (Ord a, Show a) => String -> (AccessEntry -> a) -> Month -> [AccessEntry] -> Chart b
+pieChart title field currMonth accessEntries = 
     Chart $ C.toRenderable layout
     
     where
-        values = map (\(s, v) -> (show s, fromIntegral v)) . assocs $ countByF currMonth aeUser accessEntries
+        values = map (\(s, v) -> (show s, fromIntegral v)) . assocs $ countByF currMonth field accessEntries
 
         pitem (s,v) = C.pitem_value .~ v
                     $ C.pitem_label .~ s
                     $ C.pitem_offset .~ 0
                     $ def
 
-        layout = C.pie_title .~ "Requests per User"
+        layout = C.pie_title .~ title
                $ C.pie_plot . C.pie_data .~ map pitem values
                $ def
-
+               
 
 chartHandler :: (Month -> [AccessEntry] -> Chart a) -> ReaderT (Login, Ctx) IO (Chart a)
 chartHandler cf = do
