@@ -16,6 +16,7 @@ import Data.Map                   (fromListWith, assocs)
 import Data.List                  (groupBy)
 import Data.Semigroup             (Max (..), Option (..))
 import Data.Text                  (unpack)
+import Data.Time.Calendar         (toGregorian)
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
 import Futurice.Generics          (textualToText)
@@ -76,10 +77,12 @@ pieChart title field currMonth accessEntries =
 chartPerDay :: Month -> [AccessEntry] -> Chart "per-day"
 chartPerDay currMonth accessEntries = Chart $ C.toRenderable layout
     where
-        values :: [(Day, [Double])]
-        values = map (\(s, v) -> (s, [fromIntegral v])) . assocs $ countByF currMonth (utctDay . aeStamp) accessEntries
+        values :: [(Int, [Double])]
+        values' = map (\(s, v) -> (s, [fromIntegral v])) . assocs $ countByF currMonth (utctDay . aeStamp) accessEntries
+        values = map (\(s, v) -> ((\(_,_,t) -> t) $ toGregorian s, v)) values'
+        titles = map (show . fst) values'
         
-        line1 = C.plot_bars_titles .~ map (show . fst) values
+        line1 = C.plot_bars_titles .~ titles
               $ C.plot_bars_values .~ values
               $ C.plot_bars_style .~ C.BarsStacked
               $ def 
