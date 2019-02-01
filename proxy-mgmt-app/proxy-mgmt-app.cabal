@@ -36,9 +36,11 @@ library
     , base
     , base-compat
     , base64-bytestring
+    , Chart
     , clay
     , containers
     , dashdo
+    , data-default-class
     , entropy
     , env-config
     , fum-api
@@ -60,6 +62,7 @@ library
     , proxy-types
     , resource-pool
     , servant
+    , servant-Chart
     , servant-dashdo
     , servant-server
     , swagger2

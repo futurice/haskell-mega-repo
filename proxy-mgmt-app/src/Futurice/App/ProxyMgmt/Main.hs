@@ -51,6 +51,8 @@ server ctx = genericServer $ ProxyMgmtRoutes
     , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
     , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
     , routeAddToken           = \mfu -> nt True ctx mfu . addTokenHandler
+    -- charts
+    , routeChartPerUser       = \mfu -> nt True ctx mfu $ chartHandler chartPerUser
     -- dashdo
     , routeDashdo             = ctxDashdoServer ctx
     }
