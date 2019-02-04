@@ -77,15 +77,20 @@ pieChart title field currMonth accessEntries =
 chartPerDay :: Month -> [AccessEntry] -> Chart "per-day"
 chartPerDay currMonth accessEntries = Chart $ C.toRenderable layout
     where
+        values' :: [(Day, [Double])]
         values' = map (\(s, v) -> (s, [fromIntegral v])) . assocs $ countByF currMonth (utctDay . aeStamp) accessEntries
 
-        values :: [(Int, [Double])]
-        values = map (\(s, v) -> ((\(_,_,t) -> t) $ toGregorian s, v)) values'
-        
+        empty = Map.fromList [ (x, [0.0]) | x <- [1..31] ]
+
+        --values :: [(Int, [Double])]
+        values = Map.fromList $ map (\(s, v) -> ((\(_,_,t) -> t) $ toGregorian s, v)) values'
+
+        padded = Map.toList $ Map.union values empty
+
         titles = map (show . fst) values'
         
         line1 = C.plot_bars_titles .~ titles
-              $ C.plot_bars_values .~ values
+              $ C.plot_bars_values .~ padded
               $ C.plot_bars_style .~ C.BarsStacked
               $ def 
         
