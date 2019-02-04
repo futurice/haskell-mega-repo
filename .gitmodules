@@ -22,4 +22,4 @@
 	url = https://github.com/brendanhay/amazonka.git
 [submodule "vendor/gogol"]
 	path = vendor/gogol
-	url = https://github.com/futurice/gogol.git
+	url = https://github.com/brendanhay/gogol.git
