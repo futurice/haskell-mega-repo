@@ -82,19 +82,17 @@ chartPerDay currMonth accessEntries = Chart $ C.toRenderable layout
 
         empty = Map.fromList [ (x, [0.0]) | x <- [1..31] ]
 
-        --values :: [(Int, [Double])]
         values = Map.fromList $ map (\(s, v) -> ((\(_,_,t) -> t) $ toGregorian s, v)) values'
 
         padded = Map.toList $ Map.union values empty
-
-        titles = map (show . fst) values'
         
-        line1 = C.plot_bars_titles .~ titles
+        line1 = C.plot_bars_titles .~ []
               $ C.plot_bars_values .~ padded
               $ C.plot_bars_style .~ C.BarsStacked
               $ def 
         
         layout = C.layout_title .~ "Requests per Day"
+               $ C.layout_x_axis . C.laxis_generate .~ C.autoIndexAxis [ show x | x <- [0..31] ]
                $ C.layout_plots .~ [ C.plotBars line1 ]
                $ def 
 
