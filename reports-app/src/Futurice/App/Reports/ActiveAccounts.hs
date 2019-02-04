@@ -15,13 +15,15 @@ module Futurice.App.Reports.ActiveAccounts (
     ActiveEmployee (..),
     ) where
 
+import Data.Fixed                (Centi)
 import Data.Tuple                (swap)
 import Futurice.Email            (Email)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Numeric.Interval.NonEmpty (Interval, (...), inf, sup)
+import Futurice.Time             (NDT, TimeUnit (..), ndtConvert')
+import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
@@ -34,6 +36,7 @@ import qualified PlanMill.Queries    as PMQ
 data ActiveEmployee = ActiveEmployee
     { aeName           :: !Text
     , aeDay            :: !Day
+    , aeHours          :: !(NDT 'Hours Centi)
     , aeEmail          :: !(Maybe Email)
     , aePlanmillId     :: !PM.UserId
     , aeEmploymentType :: !(Maybe P.EmploymentType)
@@ -41,10 +44,11 @@ data ActiveEmployee = ActiveEmployee
   deriving stock (Show, Generic)
   deriving anyclass (NFData)
 
-mkActiveEmployee :: Day -> P.Employee -> PM.User -> ActiveEmployee
-mkActiveEmployee d pe pmu = ActiveEmployee
+mkActiveEmployee :: Day -> NDT 'Hours Centi -> P.Employee -> PM.User -> ActiveEmployee
+mkActiveEmployee d h pe pmu = ActiveEmployee
     { aeName           = pe ^. P.employeeFullname
     , aeDay            = d
+    , aeHours          = h
     , aeEmail          = pe ^. P.employeeEmail
     , aePlanmillId     = pmu ^. PM.identifier
     , aeEmploymentType = pe ^. P.employeeEmploymentType
@@ -97,7 +101,7 @@ activeAccountsData = do
     mangle
         :: Day
         -> Map PM.UserId P.Employee
-        -> HashMap FUM.Login (P.Employee, (PM.User, Map PM.AccountId (Day, PM.Account)))
+        -> HashMap FUM.Login (P.Employee, (PM.User, Map PM.AccountId (Day, NDT 'Hours Centi, PM.Account)))
         -> Map PM.AccountId ActiveAccount
     mangle today uidLookup xs = Map.fromListWith app
         [ pair accId ActiveAccount
@@ -107,10 +111,10 @@ activeAccountsData = do
                   owner <- uidLookup ^? ix oid
                   guard $ P.employeeIsActive today owner
                   owner ^. P.employeeEmail
-              , aaEmployees = Map.singleton login $ mkActiveEmployee d pe pmu
+              , aaEmployees = Map.singleton login $ mkActiveEmployee d h pe pmu
               }
         | (login, (pe, (pmu, ys))) <- HM.toList xs
-        , (accId, (d, acc)) <- Map.toList ys
+        , (accId, (d, h, acc)) <- Map.toList ys
         ]
       where
         app (ActiveAccount a o b) (ActiveAccount _ _  b') =
@@ -118,22 +122,16 @@ activeAccountsData = do
 
         pair = (,)
 
-    perEmployee :: Interval Day -> PM.User -> m (PM.User, Map PM.AccountId (Day, PM.Account))
+    perEmployee :: Interval Day -> PM.User -> m (PM.User, Map PM.AccountId (Day, NDT 'Hours Centi, PM.Account))
     perEmployee interval pmu = do
         let uid = pmu ^. PM.identifier
         trs <- PMQ.timereports interval uid
-        let projIds = map swap $ Map.toList $ Map.fromListWith max
-              [ (i, PM.trStart tr)
-              | tr <- toList trs
-              , Just i <- [PM.trProject tr]
-              ]
+        let projIds = map swap $ Map.toList $ Map.fromListWith (\(a1,b1) (a2,b2) -> (max a1 a2, b1 + b2))
+                      [(i, (PM.trStart tr, ndtConvert' $ PM.trAmount tr)) | tr <- toList trs, Just i <- [PM.trProject tr]]
         projects <- (traverse . traverse) PMQ.project projIds
-        let accIds = Map.fromListWith max
-              [ (i, d)
-              | (d, pr) <- projects
-              , Just i  <- [PM.pAccount pr]
-              ]
-        accounts <- ifor accIds $ \i d -> (,) d <$> PMQ.account i
+        let accIds = Map.fromListWith (\(a1,b1) (a2,b2) -> (max a1 a2, b1 + b2))
+                     [(i, (d,h)) | ((d, h), pr) <- projects, Just i <- [PM.pAccount pr]]
+        accounts <- ifor accIds $ \i (d,h) -> (,,) d h <$> PMQ.account i
         return (pmu, accounts)
 
 instance ToHtml ActiveAccounts where
@@ -154,8 +152,9 @@ activeAccountsRender (ActiveAccounts i xs) = page_ "Active accounts" $ do
             th_ "Account PM#"
             th_ "Owner"
             th_ "Employee name"
-            th_ [ title_ "Most recent active day" ] "Day"
             th_ "Employee PM#"
+            th_ [ title_ "Most recent active day" ] "Day"
+            th_ [ title_ "Hours done to account during the interval"] "Hours"
             th_ "Email"
 
         tbody_ $ ifor_ xs $ \accId (ActiveAccount acc owner employees) -> rows
@@ -164,6 +163,7 @@ activeAccountsRender (ActiveAccounts i xs) = page_ "Active accounts" $ do
                 td_ $ toHtml aeName
                 td_ $ traverse_ toHtml aeEmail
                 td_ $ toHtml $ show aeDay
+                td_ $ toHtml $ aeHours
                 td_ $ toHtml aePlanmillId
 
 rows :: (Monad m, Foldable f) => [HtmlT m ()] -> f (HtmlT m ()) -> HtmlT m ()
