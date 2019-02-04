@@ -8,7 +8,6 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.ProxyMgmt.Main (defaultMain) where
 
-import Dashdo.Servant
 import FUM.Types.Login           (Login)
 import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
@@ -27,7 +26,6 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.ProxyMgmt.API
 import Futurice.App.ProxyMgmt.Config          (Config (..))
 import Futurice.App.ProxyMgmt.Ctx
-import Futurice.App.ProxyMgmt.Dashdo
 import Futurice.App.ProxyMgmt.Pages.Audit
 import Futurice.App.ProxyMgmt.Pages.Index
 import Futurice.App.ProxyMgmt.Pages.Policies
@@ -55,8 +53,6 @@ server ctx = genericServer $ ProxyMgmtRoutes
     , routeChartPerUser       = \mfu -> nt True ctx mfu $ chartHandler chartPerUser
     , routeChartPerEndpoint   = \mfu -> nt True ctx mfu $ chartHandler chartPerEndpoint
     , routeChartPerDay        = \mfu -> nt True ctx mfu $ chartHandler chartPerDay
-    -- dashdo
-    , routeDashdo             = ctxDashdoServer ctx
     }
 
 -- Access control adding transformation
@@ -93,6 +89,4 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg@Config {..} lgr mgr cache _mq = do
         postgresPool <- createPostgresPool cfgPostgresConnInfo
-        let ctx' = DashdoCtx postgresPool cfg lgr cache mgr
-        dashdoServer <- makeDashdoServer ctx'
-        pure (Ctx postgresPool cfg lgr cache mgr dashdoServer, [])
+        pure (Ctx postgresPool cfg lgr cache mgr, [])

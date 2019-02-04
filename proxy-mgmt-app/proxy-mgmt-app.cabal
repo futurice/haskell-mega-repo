@@ -63,7 +63,6 @@ library
     , resource-pool
     , servant
     , servant-Chart
-    , servant-dashdo
     , servant-server
     , swagger2
     , text
@@ -77,7 +76,6 @@ library
     Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
     Futurice.App.ProxyMgmt.Config
     Futurice.App.ProxyMgmt.Ctx
-    Futurice.App.ProxyMgmt.Dashdo
     Futurice.App.ProxyMgmt.Main
     Futurice.App.ProxyMgmt.Markup
     Futurice.App.ProxyMgmt.Pages.Audit
