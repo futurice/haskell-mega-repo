@@ -71,6 +71,7 @@ pieChart title field currMonth accessEntries =
 
         layout = C.pie_title .~ title
                $ C.pie_plot . C.pie_data .~ map pitem values
+               $ C.pie_plot . C.pie_label_style . C.font_size .~ 14
                $ def
 
 
