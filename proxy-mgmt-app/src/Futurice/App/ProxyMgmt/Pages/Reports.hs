@@ -72,6 +72,7 @@ pieChart title field currMonth accessEntries =
         layout = C.pie_title .~ title
                $ C.pie_plot . C.pie_data .~ map pitem values
                $ C.pie_plot . C.pie_label_style . C.font_size .~ 14
+               $ C.pie_margin .~ 60
                $ def
 
 
@@ -119,7 +120,7 @@ reportsPageHandler = do
 
 reportsPage :: Month -> [PolicyName] -> [Token] -> [AccessEntry] -> HtmlPage "reports"
 reportsPage currMonth policies tokens accessEntries = page_ "Reports" (Just NavReports) $ do
-    h2_ "Requests per User"
+    h2_ "Requests per User (this month)"
     let userCount = countByF currMonth aeUser accessEntries
     img_ [ src_ "/chart/per-user" ]
     td_ $ ul_ $ ifor_ userCount $ \e c -> li_ $ do
@@ -127,7 +128,7 @@ reportsPage currMonth policies tokens accessEntries = page_ "Reports" (Just NavR
         " → "
         toHtml (show c)
 
-    h2_ "Requests per Endpoint"
+    h2_ "Requests per Endpoint (this month)"
     let endCount = countByF currMonth aeEndpoint accessEntries
     img_ [ src_ "/chart/per-endpoint" ]
     td_ $ ul_ $ ifor_ endCount $ \e c -> li_ $ do
@@ -135,7 +136,7 @@ reportsPage currMonth policies tokens accessEntries = page_ "Reports" (Just NavR
         " → "
         toHtml (show c)
 
-    h2_ "Requests per Day"
+    h2_ "Requests per Day (this month)"
     let dateCount = countByF currMonth (utctDay . aeStamp) accessEntries
     img_ [ src_ "/chart/per-day" ]
     td_ $ ul_ $ ifor_ dateCount $ \e c -> li_ $ do
