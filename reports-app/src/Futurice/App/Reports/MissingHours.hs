@@ -14,6 +14,7 @@ module Futurice.App.Reports.MissingHours (
     missingHoursReport,
     -- * Predicate
     missingHoursEmployeePredicate,
+    missingHoursEmployeeNotificationPredicate,
     -- * Data
     MissingHour (..),
     -- * Logic
@@ -56,6 +57,14 @@ missingHoursEmployeePredicate :: Interval Day -> P.Employee -> Bool
 missingHoursEmployeePredicate interval p = and
     [ p ^. P.employeeEmploymentType == Just P.Internal
     , p ^. P.employeeSalaryType == Just P.Monthly
+    , P.employeeIsActiveInterval interval p
+    ]
+
+missingHoursEmployeeNotificationPredicate :: Interval Day -> P.Employee -> Bool
+missingHoursEmployeeNotificationPredicate interval p = and
+    [ p ^. P.employeeEmploymentType == Just P.Internal
+    , p ^. P.employeeSalaryType == Just P.Monthly
+    , p ^. P.employeeEndDate == Nothing
     , P.employeeIsActiveInterval interval p
     ]
 

@@ -28,7 +28,7 @@ import Futurice.App.Preferences.Types
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
 import Futurice.App.Reports.MissingHours
-       (missingHourDay, missingHoursEmployeePredicate, missingHoursReport)
+       (missingHourDay, missingHoursEmployeeNotificationPredicate, missingHoursReport)
 import Futurice.App.Reports.Templates
 
 -- | Pick the latter from
@@ -65,7 +65,7 @@ missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
 
         (ppm, Report _ report) <- liftIO $ runIntegrations' ctx $ (,)
             <$> personioPlanmillMap
-            <*> missingHoursReport missingHoursEmployeePredicate interval
+            <*> missingHoursReport missingHoursEmployeeNotificationPredicate interval
 
         let logins = HM.keys report
         prefs <- liftIO $ getPreferences mgr preferencesBurl logins
