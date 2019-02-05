@@ -9,6 +9,7 @@ import Futurice.Lomake
 import Prelude ()
 import Servant
 import Servant.API.Generic
+import Servant.Chart                    (Chart, SVG)
 
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
@@ -26,6 +27,8 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
         SSOUser :> "policies" :> Get '[HTML] (HtmlPage "policies")
     , routeAuditPage :: route :-
         SSOUser :> "audit" :> Get '[HTML] (HtmlPage "audit")
+    , routeReportsPage :: route :-
+        SSOUser :> "reports" :> Get '[HTML] (HtmlPage "reports")
     -- Commands
     , routeRemoveEndpoint :: route :-
         SSOUser :> "command" :> "remove-endpoint"
@@ -39,6 +42,13 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
         SSOUser :> "command" :> "add-token"
         :> ReqBody '[JSON] (LomakeRequest AddToken)
         :> Post '[JSON] (CommandResponse ())
+    -- Charts
+    , routeChartPerUser :: route :-
+        SSOUser :> "chart" :> "per-user" :> Get '[SVG] (Chart "per-user")
+    , routeChartPerEndpoint :: route :-
+        SSOUser :> "chart" :> "per-endpoint" :> Get '[SVG] (Chart "per-endpoint")
+    , routeChartPerDay :: route :-
+        SSOUser :> "chart" :> "per-day" :> Get '[SVG] (Chart "per-day")
     }
   deriving Generic
 

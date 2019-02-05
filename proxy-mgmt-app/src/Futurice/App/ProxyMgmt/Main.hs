@@ -8,7 +8,6 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.ProxyMgmt.Main (defaultMain) where
 
-import Dashdo.Servant
 import FUM.Types.Login           (Login)
 import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
@@ -27,17 +26,17 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import Futurice.App.ProxyMgmt.API
 import Futurice.App.ProxyMgmt.Config          (Config (..))
 import Futurice.App.ProxyMgmt.Ctx
-import Futurice.App.ProxyMgmt.Dashdo
 import Futurice.App.ProxyMgmt.Pages.Audit
 import Futurice.App.ProxyMgmt.Pages.Index
 import Futurice.App.ProxyMgmt.Pages.Policies
 import Futurice.App.ProxyMgmt.Pages.Tokens
+import Futurice.App.ProxyMgmt.Pages.Reports
 import Futurice.App.ProxyMgmt.Commands.RegenerateToken
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 
-server :: Ctx Identity -> Server ProxyMgmtAPI
+server :: Ctx -> Server ProxyMgmtAPI
 server ctx = genericServer $ ProxyMgmtRoutes
     { routeIndexPage          = \mfu -> nt False ctx mfu indexPageHandler
     , routeRegenerateOwnToken = \mfu -> nt False ctx mfu regenerateTokenHandler
@@ -45,14 +44,19 @@ server ctx = genericServer $ ProxyMgmtRoutes
     , routeTokensPage         = \mfu -> nt True  ctx mfu tokensPageHandler
     , routePoliciesPage       = \mfu -> nt True  ctx mfu policiesPageHandler
     , routeAuditPage          = \mfu -> nt True  ctx mfu auditPageHandler
+    , routeReportsPage        = \mfu -> nt True  ctx mfu reportsPageHandler
     -- commands
     , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
     , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
     , routeAddToken           = \mfu -> nt True ctx mfu . addTokenHandler
+    -- charts
+    , routeChartPerUser       = \mfu -> nt True ctx mfu $ chartHandler chartPerUser
+    , routeChartPerEndpoint   = \mfu -> nt True ctx mfu $ chartHandler chartPerEndpoint
+    , routeChartPerDay        = \mfu -> nt True ctx mfu $ chartHandler chartPerDay
     }
 
 -- Access control adding transformation
-nt :: Bool -> Ctx f -> Maybe Login -> ReaderT (Login, Ctx f) IO a -> Handler a
+nt :: Bool -> Ctx -> Maybe Login -> ReaderT (Login, Ctx) IO a -> Handler a
 nt requireAdmin ctx mfu handler = do
     now <- currentTime
 
@@ -82,9 +86,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverApp proxyMgmtApi .~ server
     & serverEnvPfx           .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx Identity, [Job])
+    makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx cfg@Config {..} lgr mgr cache _mq = do
         postgresPool <- createPostgresPool cfgPostgresConnInfo
-        let ctx = Ctx postgresPool cfg lgr cache mgr Proxy
-        dashdoServer <- makeDashdoServer ctx
-        pure (ctx { ctxDashdoServer = Identity dashdoServer }, [])
+        pure (Ctx postgresPool cfg lgr cache mgr, [])

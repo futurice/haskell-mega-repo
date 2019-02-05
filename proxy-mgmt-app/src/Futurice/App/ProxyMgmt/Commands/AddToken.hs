@@ -35,7 +35,7 @@ instance HasLomake AddToken where
         dynEnumField "Policy" :*
         Nil
 
-addTokenHandler :: LomakeRequest AddToken -> ReaderT (Login, Ctx f) IO (CommandResponse ())
+addTokenHandler :: LomakeRequest AddToken -> ReaderT (Login, Ctx) IO (CommandResponse ())
 addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
     -- we generate some token, user will regenerate it then
     base64T <- generateToken

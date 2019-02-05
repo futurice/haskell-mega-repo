@@ -31,13 +31,13 @@ generateToken = do
 -- Fetch data
 -------------------------------------------------------------------------------
 
-fetchPolicies :: Ctx f -> IO [PolicyName]
+fetchPolicies :: Ctx -> IO [PolicyName]
 fetchPolicies Ctx {..} =
     runLogT "fetchPolicies" ctxLogger $ do
         fromOnly <$$> safePoolQuery_ ctxPostgresPool
             "SELECT policyname FROM proxyapp.policy ORDER BY policyname;"
 
-fetchPolicyEndpoints :: Ctx f -> IO (Map PolicyName (Set LenientEndpoint))
+fetchPolicyEndpoints :: Ctx -> IO (Map PolicyName (Set LenientEndpoint))
 fetchPolicyEndpoints Ctx {..} = runLogT "fetchPolicies" ctxLogger $ do
     -- we need to ask for policies to get empty policies
     policies <- fromOnly <$$> safePoolQuery_ ctxPostgresPool
@@ -50,13 +50,13 @@ fetchPolicyEndpoints Ctx {..} = runLogT "fetchPolicies" ctxLogger $ do
         [ (policy, mempty) | policy <- policies ] ++
         [ (policy, Set.singleton endpoint) | (policy, endpoint) <- endpoints ]
 
-fetchTokens :: Ctx f -> IO [Token]
+fetchTokens :: Ctx -> IO [Token]
 fetchTokens Ctx {..} =
     runLogT "fetchTokens" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool
             "SELECT username, passtext is not null, usertype, policyname FROM proxyapp.credentials ORDER BY username ASC;"
 
-fetchAccessEntries :: Ctx f -> IO [AccessEntry]
+fetchAccessEntries :: Ctx -> IO [AccessEntry]
 fetchAccessEntries Ctx {..} =
     cachedIO ctxLogger ctxCache 600 () $ runLogT "fetchAccessEntries" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool

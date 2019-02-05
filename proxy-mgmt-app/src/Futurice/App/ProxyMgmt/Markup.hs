@@ -18,6 +18,7 @@ data Nav
     | NavTokens
     | NavPolicies
     | NavAudit
+    | NavReports
   deriving (Eq, Ord, Enum, Bounded)
 
 instance Navigation Nav where
@@ -27,6 +28,7 @@ instance Navigation Nav where
     navLink NavTokens   = (recordHref_ routeTokensPage,   "Tokens")
     navLink NavPolicies = (recordHref_ routePoliciesPage, "Policies")
     navLink NavAudit    = (recordHref_ routeAuditPage,    "Audit log")
+    navLink NavReports  = (recordHref_ routeReportsPage,  "Reports")
 
     pageParams = pageParamsWithJS
         $(makeRelativeToProject "proxy-mgmt.js" >>= embedJS)

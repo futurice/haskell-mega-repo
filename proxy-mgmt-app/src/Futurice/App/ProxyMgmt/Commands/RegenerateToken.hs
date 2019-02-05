@@ -15,7 +15,7 @@ import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Types
 import Futurice.App.ProxyMgmt.Utils
 
-regenerateTokenHandler :: ReaderT (Login, Ctx f) IO Text
+regenerateTokenHandler :: ReaderT (Login, Ctx) IO Text
 regenerateTokenHandler= ReaderT $ \(login, Ctx {..}) -> do
     now <- currentTime
     base64T <- generateToken

@@ -34,7 +34,7 @@ instance HasLomake AddEndpoint where
         enumField "Endpoint" textualToText :*
         Nil
 
-addEndpointHandler :: LomakeRequest AddEndpoint -> ReaderT (Login, Ctx f) IO (CommandResponse ())
+addEndpointHandler :: LomakeRequest AddEndpoint -> ReaderT (Login, Ctx) IO (CommandResponse ())
 addEndpointHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) ->
     runLogT "add-endpoint" ctxLogger $ do
         logInfoI "adding endpoint $endpoint to $policy" e

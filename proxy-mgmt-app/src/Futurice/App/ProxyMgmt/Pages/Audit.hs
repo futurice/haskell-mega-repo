@@ -19,7 +19,7 @@ import Futurice.App.ProxyMgmt.Types
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
 
-auditPageHandler :: ReaderT (Login, Ctx f) IO (HtmlPage "audit")
+auditPageHandler :: ReaderT (Login, Ctx) IO (HtmlPage "audit")
 auditPageHandler = do
     (_, ctx) <- ask
     liftIO $ do
@@ -30,7 +30,7 @@ auditPageHandler = do
 -- Data
 -------------------------------------------------------------------------------
 
-fetchAudit :: Ctx f -> IO [(Login, UTCTime, Text)]
+fetchAudit :: Ctx -> IO [(Login, UTCTime, Text)]
 fetchAudit Ctx {..} =
     runLogT "fetchAudit" ctxLogger $ do
         safePoolQuery_ ctxPostgresPool

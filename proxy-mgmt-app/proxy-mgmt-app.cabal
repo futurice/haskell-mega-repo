@@ -36,9 +36,11 @@ library
     , base
     , base-compat
     , base64-bytestring
+    , Chart
     , clay
     , containers
     , dashdo
+    , data-default-class
     , entropy
     , env-config
     , fum-api
@@ -60,7 +62,7 @@ library
     , proxy-types
     , resource-pool
     , servant
-    , servant-dashdo
+    , servant-Chart
     , servant-server
     , swagger2
     , text
@@ -74,13 +76,13 @@ library
     Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
     Futurice.App.ProxyMgmt.Config
     Futurice.App.ProxyMgmt.Ctx
-    Futurice.App.ProxyMgmt.Dashdo
     Futurice.App.ProxyMgmt.Main
     Futurice.App.ProxyMgmt.Markup
     Futurice.App.ProxyMgmt.Pages.Audit
     Futurice.App.ProxyMgmt.Pages.Index
     Futurice.App.ProxyMgmt.Pages.Policies
     Futurice.App.ProxyMgmt.Pages.Tokens
+    Futurice.App.ProxyMgmt.Pages.Reports
     Futurice.App.ProxyMgmt.Types
     Futurice.App.ProxyMgmt.Utils
 
