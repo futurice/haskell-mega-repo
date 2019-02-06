@@ -36,7 +36,8 @@ import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns
-import Futurice.Time
+import Futurice.Time             
+import Futurice.Time.Month       (dayToMonth)
 import Numeric.Interval.NonEmpty (Interval, inf, sup)
 import Prelude ()
 
@@ -86,8 +87,13 @@ deriveVia [t| FromJSON MissingHour `Via` Sopica MissingHour |]
 instance ToSchema MissingHour where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns MissingHour where
-    type Columns MissingHour = '[Day, NDT 'Hours Centi]
-    toColumns (MissingHour d c) = [I d :* I c :* Nil]
+    type Columns MissingHour = '[Day, Month, NDT 'Hours Centi]
+    toColumns (MissingHour d c) = [I d :* I (dayToMonth d) :* I c :* Nil]
+    columnNames _ =
+        K "day" :*
+        K "month" :*
+        K "capacity" :*
+        Nil
 
 -------------------------------------------------------------------------------
 -- Report
