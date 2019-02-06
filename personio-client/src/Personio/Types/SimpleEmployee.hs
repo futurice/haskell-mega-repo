@@ -107,3 +107,9 @@ employeeIsActiveWholeInterval interval e =
         (Just hire, Nothing)  -> hire <= I.inf interval
         (Nothing, Just end)   ->                           I.sup interval <= end
         (Just hire, Just end) -> hire <= I.inf interval && I.sup interval <= end
+
+-- | Simpler check, checks only if the employee's end date is after the given interval
+employeeEndsAfterInterval :: HasSimpleEmployee e => Interval Day -> e -> Bool
+employeeEndsAfterInterval interval e = case e ^. employeeEndDate of
+    Nothing -> True
+    Just ed -> ed > I.sup interval

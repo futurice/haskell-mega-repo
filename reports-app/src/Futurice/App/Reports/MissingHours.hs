@@ -64,9 +64,9 @@ missingHoursEmployeeNotificationPredicate :: Interval Day -> P.Employee -> Bool
 missingHoursEmployeeNotificationPredicate interval p = and
     [ p ^. P.employeeEmploymentType == Just P.Internal
     , p ^. P.employeeSalaryType == Just P.Monthly
-    , P.employeeIsActiveWholeInterval interval p
+    , P.employeeEndsAfterInterval interval p
+    , P.employeeIsActiveInterval interval p
     ]
-
 
 -------------------------------------------------------------------------------
 -- Data
