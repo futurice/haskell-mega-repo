@@ -138,11 +138,6 @@ packages:
   -- we need a release with https://github.com/brendanhay/amazonka/issues/463
   vendor/amazonka/amazonka
 
-  -- and we need a release https://github.com/brendanhay/gogol/pull/105
-  vendor/gogol/core
-  vendor/gogol/gogol
-  vendor/gogol/gogol-people
-
 package theme-app
   ghc-options: +RTS -M2G -RTS
 
