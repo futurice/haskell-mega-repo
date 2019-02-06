@@ -1,14 +1,19 @@
+{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 module Futurice.App.Schedule.Command where
 
-import Data.Aeson.Types (parseEither, parseJSON)
-import Data.Constraint  (Dict (..))
+import Control.Lens       (review)
+import Data.Aeson.Types   (parseEither, parseJSON)
+import Data.Constraint    (Dict (..))
+import Data.Type.Equality
+import Futurice.Has       (In, inj)
 import Futurice.Prelude
 import Futurice.TypeTag
-import Generics.SOP     (hcmap, hcollapse)
+import Generics.SOP       (hcmap, hcollapse)
 import Prelude ()
 
 import Futurice.App.Schedule.Command.AddScheduleTemplate
@@ -23,6 +28,12 @@ type CT = TT Commands
 -- | Existential command, union of all commands.
 data SomeCommand where
     SomeCommand :: CT cmd -> cmd 'Done -> SomeCommand
+
+type ICT cmd = In cmd Commands
+
+-- | 'SomeCommand' introduction.
+someCommand :: (Command cmd, ICT cmd) => cmd 'Done -> SomeCommand
+someCommand = SomeCommand (TT (review inj Refl))
 
 withCT :: forall cmd r. CT cmd -> (Command cmd => r) -> r
 withCT ct r = case typeTagDict (Proxy :: Proxy Command) ct of
@@ -50,4 +61,8 @@ typeTagsByName = Map.fromList $ hcollapse $ hcmap (Proxy :: Proxy Command) f (ty
 
 commandTag :: forall cmd proxy. Command cmd => proxy cmd -> Text
 commandTag _ = view packed (symbolVal p) where
+    p = Proxy :: Proxy (CommandTag cmd)
+
+commandTag' :: forall cmd phase. Command cmd => cmd phase -> Text
+commandTag' _ = view packed (symbolVal p) where
     p = Proxy :: Proxy (CommandTag cmd)

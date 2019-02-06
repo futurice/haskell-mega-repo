@@ -1,8 +1,13 @@
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies    #-}
 module Futurice.App.Schedule.World where
 
 import Data.Time.LocalTime
+import Futurice.IdMap      (HasKey, IdMap, Key, key)
 import Futurice.Prelude
 import Prelude ()
+
+import Futurice.App.Schedule.Types
 
 import qualified Personio as P
 
@@ -12,8 +17,6 @@ data Starter = Starter
     , _starterSupervisor :: !(Maybe P.Employee)
     , _starterPersonioID :: !(Maybe P.EmployeeId)
     } deriving (Show)
-
-data Calendar = Calendar deriving Show
 
 data MeetingRoom = MeetingRoom
 
@@ -35,11 +38,8 @@ data EventTemplate = EventTemplate
     , _etInviteEmployees :: !(Bool)
     }
 
-data ScheduleTemplate = ScheduleTemplate
-    { _scheduleName     :: !Text
-    , _scheduleCalendar :: !Calendar
-    , _scheduleTimezone :: !TimeZone
-    } deriving Show
+newtype Identifier a = Identifier UUID
+    deriving (Show, Eq, Ord)
 
 data SchedulingRequestStatus = Accepted
                              | Declined -- TODO: check what are the actual statuses
@@ -56,13 +56,13 @@ data SchedulingRequest = SchedulingRequest
 
 data World = World
     { _worldStarters          :: ![Starter]
-    , _worldScheduleTemplates :: ![ScheduleTemplate]
+    , _worldScheduleTemplates :: !(IdMap ScheduleTemplate)
     } deriving Show
 
-emptyWorld :: World
-emptyWorld = World [] []
+makeLenses ''World
 
-data Phase = Command | Internal
+emptyWorld :: World
+emptyWorld = World [] mempty
 
  -- id            | integer                  |           | not null | nextval('futuschedule_futuuser_id_seq'::regclass)
  -- password      | character varying(128)   |           | not null |

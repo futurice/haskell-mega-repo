@@ -8,7 +8,10 @@ import FUM.Types.Login   (Login)
 import Futurice.Generics
 import Futurice.Lomake   (CommandResponse)
 import Futurice.Prelude
+import Futurice.Stricter (StricterT)
 import Prelude ()
+
+import Futurice.App.Schedule.World
 
 data Phase = Input     -- ^User input
            | Executing -- ^Command that needs executing (for example sending emails)
@@ -19,9 +22,9 @@ type family Phased (phase :: Phase) a b c where
     Phased 'Executing a b c = b
     Phased 'Done a b c      = c
 
-class (FromJSON (cmd 'Done), KnownSymbol (CommandTag cmd)) =>  Command (cmd :: Phase -> *) where
+class (FromJSON (cmd 'Done), FromJSON (cmd 'Input), ToJSON (cmd 'Done), KnownSymbol (CommandTag cmd)) =>  Command (cmd :: Phase -> *) where
     type CommandTag cmd :: Symbol
 
-    processCommand :: UTCTime -> Login -> cmd 'Input -> m (cmd 'Done) -- TODO: need for right management?
+    processCommand :: UTCTime -> Login -> cmd 'Input -> ReaderT World (ExceptT String (LogT IO)) (cmd 'Done) -- TODO: need for right management?
 
-    applyCommand :: UTCTime -> Login -> cmd 'Done -> m (CommandResponse ())
+    applyCommand :: UTCTime -> Login -> cmd 'Done -> StricterT World (Either String) (CommandResponse ()) -- TODO: why not Text?

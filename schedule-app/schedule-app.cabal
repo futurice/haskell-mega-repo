@@ -50,6 +50,7 @@ library
     , generics-sop-lens
     , http-api-data
     , lens
+    , lifted-base
     , lucid
     , mtl
     , periocron
@@ -72,6 +73,8 @@ library
     Futurice.App.Schedule.Ctx
     Futurice.App.Schedule.Markup
     Futurice.App.Schedule.Pages.IndexPage
+    Futurice.App.Schedule.Transactor
+    Futurice.App.Schedule.Types
     Futurice.App.Schedule.World
 
 executable schedule-server
