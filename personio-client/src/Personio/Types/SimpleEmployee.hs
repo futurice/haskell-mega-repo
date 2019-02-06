@@ -92,7 +92,7 @@ employeeIsActive' today e =
     && maybe True (today <=) (e ^. employeeEndDate)
 
 -- | /Note/: this considers only contract dates
-employeeIsActiveInterval :: HasSimpleEmployee e =>Interval Day -> e -> Bool
+employeeIsActiveInterval :: HasSimpleEmployee e => Interval Day -> e -> Bool
 employeeIsActiveInterval interval e =
     case (e ^. employeeHireDate, e ^. employeeEndDate) of
         (Nothing, Nothing)    -> False
