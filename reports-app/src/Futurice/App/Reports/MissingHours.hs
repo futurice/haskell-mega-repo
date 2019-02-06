@@ -64,14 +64,8 @@ missingHoursEmployeeNotificationPredicate :: Interval Day -> P.Employee -> Bool
 missingHoursEmployeeNotificationPredicate interval p = and
     [ p ^. P.employeeEmploymentType == Just P.Internal
     , p ^. P.employeeSalaryType == Just P.Monthly
-    , p `isAfter` sup interval
-    , P.employeeIsActiveInterval interval p
+    , P.employeeIsActiveWholeInterval interval p
     ]
-    where
-        isAfter :: P.HasSimpleEmployee e => e -> Day -> Bool
-        isAfter e d = case e ^. P.employeeEndDate of
-            Nothing -> True
-            Just ed -> ed > d
 
 
 -------------------------------------------------------------------------------
