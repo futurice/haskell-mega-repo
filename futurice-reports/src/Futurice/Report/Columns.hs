@@ -484,6 +484,7 @@ data ColumnType
     | CTNumber   -- ^ number
     | CTBool     -- ^ boolean
     | CTDay      -- ^ day: @2016-10-25@
+    | CTMonth    -- ^ month: @2016-10@
     | CTDayDiff  -- ^ day difference: @5 days"
     | CTHourDiff -- ^ hour difference: @5 hours"
     | CTFumUser  -- ^ FUM user (e.g. abcd)
@@ -494,6 +495,7 @@ instance ToJSON ColumnType where
     toJSON CTNumber   = "number"
     toJSON CTBool     = "bool"
     toJSON CTDay      = "day"
+    toJSON CTMonth    = "month"
     toJSON CTDayDiff  = "dayDiff"
     toJSON CTHourDiff = "hourDiff"
     toJSON CTFumUser  = "fumUser"
@@ -522,6 +524,8 @@ columnTypeAggregate CTNumber =
 columnTypeAggregate CTBool =
     [ AggFirst, AggCount, AggCollectDistinct ]
 columnTypeAggregate CTDay =
+    [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
+columnTypeAggregate CTMonth =
     [ AggFirst, AggCount, AggCountDistinct, AggCollect, AggCollectDistinct ]
 columnTypeAggregate CTDayDiff =
     [ minBound .. maxBound ]
@@ -586,6 +590,10 @@ instance ReportValue Word64 where
 
 instance ReportValue Day where
     reportValueType _ = CTDay
+    reportValueHtml = fromString . show
+
+instance ReportValue Month where
+    reportValueType _ = CTMonth
     reportValueHtml = fromString . show
 
 instance ReportValue UTCTime where
