@@ -23,21 +23,37 @@ import Futurice.App.Schedule.World
 
 server :: Ctx -> Server ScheduleAPI
 server ctx = genericServer $ Record
-    { indexPageGet = getIndexPage ctx
-    , createScheduleTemplate = createScheduleTemplateImpl ctx
+    { createScheduleTemplate   = createScheduleTemplateImpl ctx
+    }
+
+htmlServer :: Ctx -> Server HtmlAPI
+htmlServer ctx = genericServer $ HtmlRecord
+    { indexPageGet               = getIndexPage ctx
+    , newSchedulePageGet         = newSchedulePageGetImpl ctx
+    , schedulingRequestPageGet   = schedulingRequestPageGetImpl ctx
+    , personalSchedulesPageGet   = personalSchedulesPageGetImpl ctx
+    , createScheduleTemplateForm = createScheduleTemplateFormImpl ctx
     }
 
 getIndexPage :: Ctx -> Handler (HtmlPage "indexpage")
 getIndexPage ctx = do
     w <- liftIO $ readTVarIO (ctxWorld ctx)
-    pure $ indexPage w
+    pure $ indexPage ctx w
+
+newSchedulePageGetImpl :: Ctx -> Handler (HtmlPage "new-schedule-page")
+newSchedulePageGetImpl ctx = undefined
+
+schedulingRequestPageGetImpl :: Ctx -> Handler (HtmlPage "scheduling-request-page")
+schedulingRequestPageGetImpl ctx = undefined
+
+personalSchedulesPageGetImpl :: Ctx -> Handler (HtmlPage "personal-schedules-page")
+personalSchedulesPageGetImpl ctx = undefined
 
 createScheduleTemplateImpl :: Ctx -> Maybe Login -> AddScheduleTemplate 'Input -> Handler (CommandResponse ())
 createScheduleTemplateImpl ctx loc cmdInput = withAuthUser ctx loc $ \login world -> runLogT "process-command" (ctxLogger ctx) $ do
     now <- currentTime
     cmdInternal' <- hoist liftIO $ runExceptT $
         runReaderT (processCommand now login cmdInput) world
-    logTrace_ "We are here"
     case cmdInternal' of
       Left err -> pure (CommandResponseError err)
       Right cmdInternal -> do
@@ -46,12 +62,20 @@ createScheduleTemplateImpl ctx loc cmdInput = withAuthUser ctx loc $ \login worl
             Right res' -> pure res'
             Left err   -> pure (CommandResponseError err)
 
+createScheduleTemplateFormImpl :: Ctx -> Maybe Login -> AddScheduleTemplate 'Input -> Handler (HtmlPage "indexpage")
+createScheduleTemplateFormImpl ctx loc cmd = do
+    response <- createScheduleTemplateImpl ctx loc cmd
+    case response of
+      CommandResponseOk _ -> getIndexPage ctx
+      _ -> throwError err400
+
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverService          .~ ScheduleService
     & serverDescription      .~ "Schedule onboarding events"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
+    & serverHtmlApp htmlApi  .~ htmlServer
     & serverApp scheduleApi  .~ server
     & serverEnvPfx           .~ "SCHEDULEAPP"
 

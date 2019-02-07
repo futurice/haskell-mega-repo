@@ -10,16 +10,30 @@ import Prelude ()
 import Servant.API
 import Servant.API.Generic
 import Servant.HTML.Lucid        (HTML)
+import Servant.Multipart         (Mem, MultipartForm)
 
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.Definition
 
 data Record route = Record
-    { indexPageGet :: route :- Summary "Index page" :> Get '[HTML] (HtmlPage "indexpage")
-    , createScheduleTemplate :: route :- SSOUser :> "schedule-template" :> ReqBody '[JSON] (AddScheduleTemplate 'Input) :> Post '[JSON] (CommandResponse ())
+    { createScheduleTemplate     :: route :- SSOUser :> "schedule-template" :> ReqBody '[JSON] (AddScheduleTemplate 'Input) :> Post '[JSON] (CommandResponse ())
     } deriving (Generic)
 
 type ScheduleAPI = ToServantApi Record
 
 scheduleApi :: Proxy ScheduleAPI
 scheduleApi = genericApi (Proxy :: Proxy Record)
+
+
+data HtmlRecord route = HtmlRecord
+    { createScheduleTemplateForm :: route :- SSOUser :> "schedule-template" :> MultipartForm Mem (AddScheduleTemplate 'Input) :> Post '[HTML] (HtmlPage "indexpage")
+    , indexPageGet               :: route :- Summary "Index page" :> Get '[HTML] (HtmlPage "indexpage")
+    , newSchedulePageGet         :: route :- Get '[HTML] (HtmlPage "new-schedule-page")
+    , schedulingRequestPageGet   :: route :- Get '[HTML] (HtmlPage "scheduling-request-page")
+    , personalSchedulesPageGet   :: route :- Get '[HTML] (HtmlPage "personal-schedules-page")
+    } deriving (Generic)
+
+type HtmlAPI = ToServantApi HtmlRecord
+
+htmlApi :: Proxy HtmlAPI
+htmlApi = genericApi (Proxy :: Proxy HtmlRecord)

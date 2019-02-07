@@ -14,7 +14,7 @@ import Prelude ()
 import Futurice.App.Schedule.World
 
 data Phase = Input     -- ^User input
-           | Executing -- ^Command that needs executing (for example sending emails)
+           | Executing -- ^Command that needs executing (for example sending emails) TODO: remove this?
            | Done      -- ^Command is done
 
 type family Phased (phase :: Phase) a b c where

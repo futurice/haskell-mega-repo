@@ -53,14 +53,17 @@ library
     , lifted-base
     , lucid
     , mtl
+    , parsec
     , periocron
     , personio-client
     , postgresql-simple
     , resource-pool
     , servant
     , servant-lucid
+    , servant-multipart
     , servant-server
     , stm
+    , text
     , time
 
   exposed-modules:

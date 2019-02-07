@@ -15,12 +15,18 @@ import Servant                   (Link)
 import Futurice.App.Schedule.API
 
 data Nav = NavHome
+         | NavNewSchedule
+         | NavSchedulingRequest
+         | NavPersonalSchedules
     deriving (Eq, Enum, Bounded, Ord)
 
 instance Navigation Nav where
-    serviceTitle _ = "Library"
+    serviceTitle _ = "Schedule"
 
-    navLink NavHome    = (recordHref_ indexPageGet, "Library Home")
+    navLink NavHome              = (recordHref_ indexPageGet, "Schedule Home")
+    navLink NavNewSchedule       = (recordHref_ newSchedulePageGet, "Create New Schedule")
+    navLink NavSchedulingRequest = (recordHref_ schedulingRequestPageGet, "Scheduling Requests")
+    navLink NavPersonalSchedules = (recordHref_ personalSchedulesPageGet, "Personal Schedules")
 
 linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l

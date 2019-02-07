@@ -8,10 +8,13 @@ import Futurice.Integrations      (IntegrationsConfig, ServPE)
 import Futurice.Prelude
 import Prelude ()
 
+import Futurice.App.Schedule.Types
+
 data Config = Config
     { cfgPostgesConnInfo    :: !ConnectInfo
     , cfgIntegrationsConfig :: !(IntegrationsConfig '[ ServPE ])
     , cfgMockUser           :: !(Maybe Login)
+    , cfgCalendar           :: ![Calendar]
     }
 
 instance Configure Config where
@@ -19,3 +22,4 @@ instance Configure Config where
         <$> envConnectInfo
         <*> configure
         <*> optionalAlt (envVar "MOCKUSER")
+        <*> envVar "SCHEDULE_CALENDAR"
