@@ -52,7 +52,6 @@ library
     , gogol-admin-directory
     , gogol-apps-calendar
     , gogol-core
-    , gogol-people
     , google-client
     , haxl
     , haxl-fxtra

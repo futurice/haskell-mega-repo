@@ -1,4 +1,4 @@
-index-state: 2019-01-31T09:05:19Z
+index-state: 2019-02-11T13:37:56Z
 tests: True
 with-compiler: ghc-8.6.3
 
@@ -30,7 +30,12 @@ constraints:
   SVGFonts              ^>= 1.7,
   unix-time             ^>= 0.3.8,
   tdigest               ^>= 0.2,
-  JuicyPixels-scale-dct ^>= 0.1.2
+  JuicyPixels-scale-dct ^>= 0.1.2,
+  gogol                 ^>= 0.4.0,
+  gogol-admin-directory ^>= 0.4.0,
+  gogol-apps-calendar   ^>= 0.4.0,
+  gogol-core            ^>= 0.4.0,
+  gogol-people          ^>= 0.4.0
 
 -- diagrams + lens + Chart
 allow-newer:
