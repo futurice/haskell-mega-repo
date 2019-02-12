@@ -18,6 +18,9 @@ import Futurice.App.Schedule.Command.Definition
 import Futurice.App.Schedule.Config
 import Futurice.App.Schedule.Ctx
 import Futurice.App.Schedule.Pages.IndexPage
+import Futurice.App.Schedule.Pages.NewSchedulePage
+import Futurice.App.Schedule.Pages.PersonalSchedulesPage
+import Futurice.App.Schedule.Pages.SchedulingRequestPage
 import Futurice.App.Schedule.Transactor
 import Futurice.App.Schedule.World
 
@@ -41,13 +44,19 @@ getIndexPage ctx = do
     pure $ indexPage ctx w
 
 newSchedulePageGetImpl :: Ctx -> Handler (HtmlPage "new-schedule-page")
-newSchedulePageGetImpl ctx = undefined
+newSchedulePageGetImpl ctx = do
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    pure $ newSchedulePage w
 
 schedulingRequestPageGetImpl :: Ctx -> Handler (HtmlPage "scheduling-request-page")
-schedulingRequestPageGetImpl ctx = undefined
+schedulingRequestPageGetImpl ctx = do
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    pure $ schedulingRequestPage w
 
 personalSchedulesPageGetImpl :: Ctx -> Handler (HtmlPage "personal-schedules-page")
-personalSchedulesPageGetImpl ctx = undefined
+personalSchedulesPageGetImpl ctx = do
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    pure $ personalSchedulesPage w
 
 createScheduleTemplateImpl :: Ctx -> Maybe Login -> AddScheduleTemplate 'Input -> Handler (CommandResponse ())
 createScheduleTemplateImpl ctx loc cmdInput = withAuthUser ctx loc $ \login world -> runLogT "process-command" (ctxLogger ctx) $ do

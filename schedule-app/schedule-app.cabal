@@ -76,6 +76,9 @@ library
     Futurice.App.Schedule.Ctx
     Futurice.App.Schedule.Markup
     Futurice.App.Schedule.Pages.IndexPage
+    Futurice.App.Schedule.Pages.NewSchedulePage
+    Futurice.App.Schedule.Pages.PersonalSchedulesPage
+    Futurice.App.Schedule.Pages.SchedulingRequestPage
     Futurice.App.Schedule.Transactor
     Futurice.App.Schedule.Types
     Futurice.App.Schedule.World

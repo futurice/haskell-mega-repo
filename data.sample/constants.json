@@ -29,6 +29,7 @@
     "prox": "https://prox.example.com",
     "prox-mgmt": "https://prox-mgmt.example.com",
     "reports": "https://reports.example.com",
+    "schedule": "https://schedule.example.com",
     "sisosota": "https://sisosota.example.com",
     "smileys-api": "https://smileys-api.example.com",
     "sms-proxy": "https://sms-proxy.example.com",

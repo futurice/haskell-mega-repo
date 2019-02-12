@@ -41,28 +41,16 @@ data EventTemplate = EventTemplate
 newtype Identifier a = Identifier UUID
     deriving (Show, Eq, Ord)
 
-data SchedulingRequestStatus = Accepted
-                             | Declined -- TODO: check what are the actual statuses
-                             deriving Show
-
-data SchedulingRequest = SchedulingRequest
-    { _srJson        :: !Text -- TODO: separate to it's own type
-    , _srRequestedAt :: !UTCTime -- should this be localtime?
-    , _srStatus      :: !SchedulingRequestStatus
-    , _srError       :: !Text -- this should not probably be it's own field?
-    , _srRequestedBy :: !P.EmployeeId
-    , _srPdfUrl      :: !Text  -- what was this
-    } deriving Show
-
 data World = World
-    { _worldStarters          :: ![Starter]
-    , _worldScheduleTemplates :: !(IdMap ScheduleTemplate)
+    { _worldStarters           :: ![Starter]
+    , _worldScheduleTemplates  :: !(IdMap ScheduleTemplate)
+    , _worldSchedulingRequests :: !(IdMap SchedulingRequest)
     } deriving Show
 
 makeLenses ''World
 
 emptyWorld :: World
-emptyWorld = World [] mempty
+emptyWorld = World [] mempty mempty
 
  -- id            | integer                  |           | not null | nextval('futuschedule_futuuser_id_seq'::regclass)
  -- password      | character varying(128)   |           | not null |

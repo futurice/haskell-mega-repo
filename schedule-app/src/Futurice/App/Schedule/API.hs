@@ -28,9 +28,9 @@ scheduleApi = genericApi (Proxy :: Proxy Record)
 data HtmlRecord route = HtmlRecord
     { createScheduleTemplateForm :: route :- SSOUser :> "schedule-template" :> MultipartForm Mem (AddScheduleTemplate 'Input) :> Post '[HTML] (HtmlPage "indexpage")
     , indexPageGet               :: route :- Summary "Index page" :> Get '[HTML] (HtmlPage "indexpage")
-    , newSchedulePageGet         :: route :- Get '[HTML] (HtmlPage "new-schedule-page")
-    , schedulingRequestPageGet   :: route :- Get '[HTML] (HtmlPage "scheduling-request-page")
-    , personalSchedulesPageGet   :: route :- Get '[HTML] (HtmlPage "personal-schedules-page")
+    , newSchedulePageGet         :: route :- Summary "Create new schedule page" :> "new-schedule-page" :> Get '[HTML] (HtmlPage "new-schedule-page")
+    , schedulingRequestPageGet   :: route :- Summary "Scheduling requests" :> "scheduling-requests" :> Get '[HTML] (HtmlPage "scheduling-request-page")
+    , personalSchedulesPageGet   :: route :- Summary "Personal schedules" :> "schedules" :> Get '[HTML] (HtmlPage "personal-schedules-page")
     } deriving (Generic)
 
 type HtmlAPI = ToServantApi HtmlRecord
