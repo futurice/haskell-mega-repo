@@ -1,8 +1,12 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE DerivingVia       #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Schedule.World where
 
+import Data.Swagger        (NamedSchema (..), ToSchema (..))
 import Data.Time.LocalTime
+import Futurice.Generics
 import Futurice.IdMap      (HasKey, IdMap, Key, key)
 import Futurice.Prelude
 import Prelude ()
@@ -24,20 +28,6 @@ data Event = Event
 
 data EventTask = EventTask
 
-newtype MonthOffset = MonthOffset Integer
-
-newtype DayOffset = DayOffset Integer
-
---   summary     |    description    | dayOffset | startTime | endTime  | inviteEmployees | inviteSupervisors | isCollective | scheduleTemplate_id | monthOffset
-data EventTemplate = EventTemplate
-    { _etSummary         :: !Text
-    , _etDescription     :: !Text
-    , _etTimeOffset      :: !(Either DayOffset MonthOffset)
-    , _etStartTime       :: !(NominalDiffTime) -- TODO: Duration?3
-    , _etEndTime         :: !(NominalDiffTime)
-    , _etInviteEmployees :: !(Bool)
-    }
-
 newtype Identifier a = Identifier UUID
     deriving (Show, Eq, Ord)
 
@@ -45,9 +35,12 @@ data World = World
     { _worldStarters           :: ![Starter]
     , _worldScheduleTemplates  :: !(IdMap ScheduleTemplate)
     , _worldSchedulingRequests :: !(IdMap SchedulingRequest)
-    } deriving Show
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
 
 makeLenses ''World
+
+instance ToSchema World where
+    declareNamedSchema _ = pure $ NamedSchema (Just "World") mempty
 
 emptyWorld :: World
 emptyWorld = World [] mempty mempty

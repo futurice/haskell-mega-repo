@@ -11,7 +11,10 @@ import Futurice.App.Schedule.Config
 import Futurice.App.Schedule.Ctx
 import Futurice.App.Schedule.Markup
 import Futurice.App.Schedule.Types
+import Futurice.App.Schedule.Types.TimeZoneInfo
 import Futurice.App.Schedule.World
+
+import qualified Data.Text as T
 
 indexPage :: Ctx -> World -> HtmlPage "indexpage"
 indexPage ctx world = page_ "Home" (Just NavHome) $ do
@@ -26,18 +29,16 @@ indexPage ctx world = page_ "Home" (Just NavHome) $ do
             tbody_ $ do
                 for_ (world ^. worldScheduleTemplates) $ \s -> tr_ $ do
                     td_ $ toHtml $ s ^. scheduleName
-                    td_ $ toHtml $ show $ s ^. scheduleTimezone
+                    td_ $ toHtml $ timeZoneToText $ s ^. scheduleTimezone
                     td_ $ toHtml $ calendarToText $ s ^. scheduleCalendar
                     td_ $ span_ ""
-                tr_ $ do
-                    td_ $ input_ [class_ "text"]
-                    td_ $ span_ ""
-                    td_ $ select_ [] $ do
-                        for_ (cfgCalendar cfg) $ \cal -> do
-                            optionSelected_ False [ value_ $ calendarToText cal ] $ toHtml $ calendarToText cal
-    form_ [recordAction_ createScheduleTemplateForm, method_ "Post", enctype_ "multipart/form-data"] $ do
-        input_ [ name_ "name", type_ "text"]
-        select_ [ name_ "calendar"] $ do
+    fullRow_ $ form_ [recordAction_ createScheduleTemplateForm, method_ "Post", enctype_ "multipart/form-data"] $ do
+        label_ "Create new template"
+        large_ 3 $ input_ [ name_ "name", type_ "text"]
+        large_ 3 $ select_ [ name_ "timezone"] $ do
+            for_ officeTimeLabelsStrings $ \tz -> do
+                optionSelected_ False [ value_ $ T.pack tz ] $ toHtml $ tz
+        large_ 3 $ select_ [ name_ "calendar"] $ do
             for_ (cfgCalendar cfg) $ \cal -> do
                 optionSelected_ False [ value_ $ calendarToText cal ] $ toHtml $ calendarToText cal
         button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"

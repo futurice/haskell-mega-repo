@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Schedule.Markup(
     module Futurice.Lucid.Foundation,
     linkToText,
     Nav (..),
-    page_) where
+    page_,
+    futuId_) where
 
 import Futurice.Generics
 import Futurice.Lucid.Foundation hiding (page_)
@@ -28,5 +30,10 @@ instance Navigation Nav where
     navLink NavSchedulingRequest = (recordHref_ schedulingRequestPageGet, "Scheduling Requests")
     navLink NavPersonalSchedules = (recordHref_ personalSchedulesPageGet, "Personal Schedules")
 
+    pageParams = pageParamsWithJS $(makeRelativeToProject "schedule-app.js" >>= embedJS)
+
 linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l
+
+futuId_ :: Text -> Attribute
+futuId_ = data_ "futu-id"

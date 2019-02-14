@@ -16,12 +16,14 @@ import Futurice.TypeTag
 import Generics.SOP       (hcmap, hcollapse)
 import Prelude ()
 
+import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.Definition
 
 import qualified Data.Map as Map
 
-type Commands = '[ AddScheduleTemplate ]
+type Commands = '[ AddScheduleTemplate
+                 , AddEventTemplates ]
 
 type CT = TT Commands
 

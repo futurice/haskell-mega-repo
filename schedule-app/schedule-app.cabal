@@ -63,14 +63,20 @@ library
     , servant-multipart
     , servant-server
     , stm
+    , swagger2
+    , template-haskell
     , text
     , time
+    , tz
 
   exposed-modules:
     Futurice.App.Schedule
     Futurice.App.Schedule.API
     Futurice.App.Schedule.Command
+    Futurice.App.Schedule.Command.AddEventTemplates
     Futurice.App.Schedule.Command.AddScheduleTemplate
+    Futurice.App.Schedule.Command.CreateEventTemplate
+    Futurice.App.Schedule.Command.CreateSchedule
     Futurice.App.Schedule.Command.Definition
     Futurice.App.Schedule.Config
     Futurice.App.Schedule.Ctx
@@ -81,6 +87,7 @@ library
     Futurice.App.Schedule.Pages.SchedulingRequestPage
     Futurice.App.Schedule.Transactor
     Futurice.App.Schedule.Types
+    Futurice.App.Schedule.Types.TimeZoneInfo
     Futurice.App.Schedule.World
 
 executable schedule-server
