@@ -190,7 +190,9 @@ cmdBuildDocker appnames = do
     T.putStrLn "Upload images by:"
     ANSI.setSGR [ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Green]
     for_ images $ \(_, image, _, _) ->
-        T.putStrLn $ "  docker push " <> image
+        T.putStrLn $ "  appswarm image:push"
+            <> " --image " <> image
+            <> " --tag " <> githash
     ANSI.setSGR []
 
     T.putStrLn "Deploy images by:"
