@@ -20,7 +20,8 @@ import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Report.Columns
-import Futurice.Tribe          (tribeToText)
+import Futurice.Tribe          (tribeToText, tribeToText)
+import Futurice.Office          (officeToText)
 import Prelude ()
 
 import qualified Data.Map.Strict as Map
@@ -80,11 +81,12 @@ powerUserReport = do
 powerUser :: Day -> EmployeeMap -> P.Employee -> Maybe PowerUser
 powerUser today es e = do
     login <- e ^. P.employeeLogin
+    virtualTeam <- team
     pure PowerUser
         { _powerUserUsername       = login
         , _powerUserFirst          = e ^. P.employeeFirst
         , _powerUserLast           = e ^. P.employeeLast
-        , _powerUserTeam           = tribeToText $ e ^. P.employeeTribe
+        , _powerUserTeam           = virtualTeam
         , _powerUserCompetence     = e ^. P.employeeRole
         , _powerUserStart          = e ^. P.employeeHireDate
         , _powerUserEnd            = e ^. P.employeeEndDate
@@ -100,6 +102,20 @@ powerUser today es e = do
     s = do
         sid <- e ^. P.employeeSupervisorId
         es ^? ix sid
+    team = do
+        let tname = tribeToText $ e ^. P.employeeTribe
+        let oname = officeToText $ e ^. P.employeeOffice
+        if tname == "Germany"
+        then
+            if oname == "Munich"
+            then pure "Munich"
+            else
+                if oname == "Berlin"
+                then pure "Berlin"
+                else pure tname
+        else
+            pure tname
+
 
 -- | Employee is active if
 --
