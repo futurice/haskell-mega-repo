@@ -81,12 +81,11 @@ powerUserReport = do
 powerUser :: Day -> EmployeeMap -> P.Employee -> Maybe PowerUser
 powerUser today es e = do
     login <- e ^. P.employeeLogin
-    virtualTeam <- team
     pure PowerUser
         { _powerUserUsername       = login
         , _powerUserFirst          = e ^. P.employeeFirst
         , _powerUserLast           = e ^. P.employeeLast
-        , _powerUserTeam           = virtualTeam
+        , _powerUserTeam           = team
         , _powerUserCompetence     = e ^. P.employeeRole
         , _powerUserStart          = e ^. P.employeeHireDate
         , _powerUserEnd            = e ^. P.employeeEndDate
@@ -102,19 +101,15 @@ powerUser today es e = do
     s = do
         sid <- e ^. P.employeeSupervisorId
         es ^? ix sid
-    team = do
-        let tname = tribeToText $ e ^. P.employeeTribe
-        let oname = officeToText $ e ^. P.employeeOffice
-        if tname == "Germany"
-        then
-            if oname == "Munich"
-            then pure "Munich"
-            else
-                if oname == "Berlin"
-                then pure "Berlin"
-                else pure tname
-        else
-            pure tname
+    tribeName = tribeToText $ e ^. P.employeeTribe
+    team =
+        case tribeName of
+            "Germany" ->
+                case officeToText $ e ^. P.employeeOffice of
+                    "Munich" -> "Munich"
+                    "Berlin" -> "Berlin"
+                    _        -> tribeName
+            _ -> tribeName
 
 
 -- | Employee is active if
