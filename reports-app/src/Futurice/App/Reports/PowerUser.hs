@@ -103,12 +103,9 @@ powerUser today es e = do
         es ^? ix sid
     tribeName = tribeToText $ e ^. P.employeeTribe
     team =
-        case tribeName of
-            "Germany" ->
-                case officeToText $ e ^. P.employeeOffice of
-                    "Munich" -> "Munich"
-                    "Berlin" -> "Berlin"
-                    _        -> tribeName
+        case (tribeName, officeToText $ e ^. P.employeeOffice) of
+            ("Germany", "Munich") -> "Munich"
+            ("Germany", "Berlin") -> "Berlin"
             _ -> tribeName
 
 
