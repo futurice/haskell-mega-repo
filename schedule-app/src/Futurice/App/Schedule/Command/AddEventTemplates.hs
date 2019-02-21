@@ -6,15 +6,16 @@
 module Futurice.App.Schedule.Command.AddEventTemplates where
 
 import Futurice.Generics
-import Futurice.IdMap    (Key)
+import Futurice.IdMap    (Key, fromFoldable)
 import Futurice.Prelude
 import Prelude ()
-import Control.Lens      ((.=))
+import Control.Lens      ((<>=))
 import Futurice.Lomake
 
 import Futurice.App.Schedule.Command.Definition
-import Futurice.App.Schedule.Types
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.World
+import Futurice.App.Schedule.Types.Templates
+import Futurice.App.Schedule.Types.Phase
 
 data AddEventTemplates (phase :: Phase) = AddEventTemplates
     { _aeScheduleTemplateName :: !(Key ScheduleTemplate)
@@ -35,5 +36,5 @@ instance Command AddEventTemplates where
         pure $ AddEventTemplates templateId templates
 
     applyCommand _time _log (AddEventTemplates templateId templates) = do
-        worldScheduleTemplates . ix templateId . scheduleEventTemplates .= templates
+        worldScheduleTemplates . ix templateId . scheduleEventTemplates <>= fromFoldable templates
         pure $ CommandResponseOk ()

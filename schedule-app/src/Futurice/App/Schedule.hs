@@ -5,7 +5,7 @@ module Futurice.App.Schedule where
 
 import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
 import FUM.Types.Login
-import Futurice.Integrations     (runIntegrations)
+import Futurice.Integrations     (personioPlanmillMap, runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
@@ -21,14 +21,17 @@ import Futurice.App.Schedule.Command.CreateSchedule
 import Futurice.App.Schedule.Command.Definition
 import Futurice.App.Schedule.Config
 import Futurice.App.Schedule.Ctx
+import Futurice.App.Schedule.Pages.CreateNewSchedulePage
 import Futurice.App.Schedule.Pages.IndexPage
 import Futurice.App.Schedule.Pages.NewSchedulePage
 import Futurice.App.Schedule.Pages.PersonalSchedulesPage
 import Futurice.App.Schedule.Pages.SchedulingRequestPage
 import Futurice.App.Schedule.Transactor
-import Futurice.App.Schedule.Types
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.Phase
+import Futurice.App.Schedule.Types.Templates
+import Futurice.App.Schedule.Types.World
 
+import qualified Data.Map as M
 import qualified Personio as P
 
 server :: Ctx -> Server ScheduleAPI
@@ -46,6 +49,7 @@ htmlServer ctx = genericServer $ HtmlRecord
     , personalSchedulesPageGet   = personalSchedulesPageGetImpl ctx
     , createScheduleTemplateForm = createScheduleTemplateFormImpl ctx
     , createNewScheduleStartForm = createNewScheduleStartFormImpl ctx
+    , createNewScheduleForm      = createNewScheduleFormImpl ctx
     }
 
 getIndexPage :: Ctx -> Handler (HtmlPage "indexpage")
@@ -66,8 +70,17 @@ newSchedulePageGetImpl ctx = do
 
 schedulingRequestPageGetImpl :: Ctx -> Handler (HtmlPage "scheduling-request-page")
 schedulingRequestPageGetImpl ctx = do
+    now <- currentTime
     w <- liftIO $ readTVarIO (ctxWorld ctx)
-    pure $ schedulingRequestPage w
+    emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    let emps' = M.fromList $ catMaybes $ map (\emp -> case emp ^. P.employeeLogin of
+                                    Nothing -> Nothing
+                                    Just l -> Just (l, emp)) emps
+    pure $ schedulingRequestPage w emps'
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
 
 personalSchedulesPageGetImpl :: Ctx -> Handler (HtmlPage "personal-schedules-page")
 personalSchedulesPageGetImpl ctx = do
@@ -90,6 +103,13 @@ processInputCommand ctx loc cmd = withAuthUser ctx loc $ \login world -> runLogT
 createScheduleTemplateImpl :: Ctx -> Maybe Login -> AddScheduleTemplate 'Input -> Handler (CommandResponse ())
 createScheduleTemplateImpl = processInputCommand
 
+createNewScheduleFormImpl :: Ctx -> Maybe Login -> CreateSchedule 'Input -> Handler (HtmlPage "indexpage")
+createNewScheduleFormImpl ctx loc cmd = do
+    response <- processInputCommand ctx loc cmd
+    case response of
+      CommandResponseOk _ -> getIndexPage ctx
+      _ -> throwError err400
+
 createScheduleTemplateFormImpl :: Ctx -> Maybe Login -> AddScheduleTemplate 'Input -> Handler (HtmlPage "indexpage")
 createScheduleTemplateFormImpl ctx loc cmd = do
     response <- createScheduleTemplateImpl ctx loc cmd
@@ -105,8 +125,16 @@ scheduleTemplateGetImpl ctx =  do
     w <- liftIO $ readTVarIO (ctxWorld ctx)
     pure $ toList $ w ^. worldScheduleTemplates
 
-createNewScheduleStartFormImpl :: Ctx -> Maybe Login -> CreateScheduleStart -> Handler (HtmlPage "indexpage")
-createNewScheduleStartFormImpl ctx loc scheduleStart = traceShow scheduleStart $ getIndexPage ctx
+createNewScheduleStartFormImpl :: Ctx -> Maybe Login -> CreateScheduleStart -> Handler (HtmlPage "create-new-schedule-page")
+createNewScheduleStartFormImpl ctx _loc scheduleStart = do
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    now <- currentTime
+    emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    pure $ createNewSchedulePage scheduleStart emps w
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

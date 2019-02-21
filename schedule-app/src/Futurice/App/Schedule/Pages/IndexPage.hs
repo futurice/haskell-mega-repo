@@ -10,9 +10,9 @@ import Futurice.App.Schedule.API
 import Futurice.App.Schedule.Config
 import Futurice.App.Schedule.Ctx
 import Futurice.App.Schedule.Markup
-import Futurice.App.Schedule.Types
+import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.TimeZoneInfo
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.World
 
 import qualified Data.Text as T
 

@@ -7,5 +7,5 @@ futu.onload(function () {
     var assert = futu.assert;
     var buttonOnClick = futu.buttonOnClick;
 
-    $('select[data-futu-id=schedule-employees]').$el = jQuery($('select[data-futu-id=schedule-employees]')).select2();
+    $$('select[data-futu-id=schedule-employees]').$el = jQuery($$('select[data-futu-id=schedule-employees]')).select2();
 });

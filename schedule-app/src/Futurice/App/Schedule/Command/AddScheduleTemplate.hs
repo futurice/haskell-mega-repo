@@ -10,18 +10,18 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Schedule.Command.AddScheduleTemplate where
 
-import Control.Lens.Getter (use)
-import Data.Time.LocalTime
+--import Control.Lens.Getter (use)
 import Futurice.Generics
 import Futurice.Lomake
 import Futurice.Prelude
 import Prelude ()
-import Servant.Multipart   (FromMultipart, Mem, fromMultipart, lookupInput)
+import Servant.Multipart (FromMultipart, Mem, fromMultipart, lookupInput)
 
 import Futurice.App.Schedule.Command.Definition
-import Futurice.App.Schedule.Types
+import Futurice.App.Schedule.Types.Phase
+import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.TimeZoneInfo
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.World
 
 import qualified Data.Text as T
 
@@ -61,7 +61,7 @@ instance Command AddScheduleTemplate where
                   { _scheduleName = name
                   , _scheduleCalendar = cal
                   , _scheduleTimezone = t
-                  , _scheduleEventTemplates = []
+                  , _scheduleEventTemplates = mempty
                   }
               pure $ CommandResponseOk ()
           Nothing ->  throwError $ "Given timezone " ++ T.unpack tz ++ " not recognized timezone"

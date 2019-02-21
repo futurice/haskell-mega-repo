@@ -8,11 +8,10 @@ import Prelude ()
 
 import Futurice.App.Schedule.API
 import Futurice.App.Schedule.Markup
-import Futurice.App.Schedule.Types
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.Templates
+import Futurice.App.Schedule.Types.World
 
-import qualified Data.Text as T
-import qualified Personio  as P
+import qualified Personio as P
 
 newSchedulePage :: [P.Employee] -> World -> HtmlPage "new-schedule-page"
 newSchedulePage emps world = page_ "New Schedule" (Just NavNewSchedule) $ do

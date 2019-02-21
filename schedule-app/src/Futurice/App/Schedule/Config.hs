@@ -8,7 +8,7 @@ import Futurice.Integrations      (IntegrationsConfig, ServPE)
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.Schedule.Types
+import Futurice.App.Schedule.Types.Templates
 
 data Config = Config
     { cfgPostgesConnInfo    :: !ConnectInfo

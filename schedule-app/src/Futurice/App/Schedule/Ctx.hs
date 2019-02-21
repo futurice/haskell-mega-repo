@@ -3,7 +3,7 @@ module Futurice.App.Schedule.Ctx where
 
 import Control.Concurrent.MVar (MVar, newMVar)
 import Control.Concurrent.STM  (TVar, newTVarIO)
-import Data.Pool               (Pool, createPool)
+import Data.Pool               (Pool)
 import FUM.Types.Login         (Login)
 import Futurice.Postgres
 import Futurice.Prelude
@@ -13,7 +13,7 @@ import Prelude ()
 import Futurice.App.Schedule.Command
 import Futurice.App.Schedule.Command.Definition
 import Futurice.App.Schedule.Config
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.World
 
 import qualified Database.PostgreSQL.Simple as Postgres
 

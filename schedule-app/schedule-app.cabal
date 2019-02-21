@@ -68,6 +68,7 @@ library
     , text
     , time
     , tz
+    , uuid
 
   exposed-modules:
     Futurice.App.Schedule
@@ -81,14 +82,19 @@ library
     Futurice.App.Schedule.Config
     Futurice.App.Schedule.Ctx
     Futurice.App.Schedule.Markup
+    Futurice.App.Schedule.Pages.CreateNewSchedulePage
     Futurice.App.Schedule.Pages.IndexPage
     Futurice.App.Schedule.Pages.NewSchedulePage
     Futurice.App.Schedule.Pages.PersonalSchedulesPage
     Futurice.App.Schedule.Pages.SchedulingRequestPage
     Futurice.App.Schedule.Transactor
     Futurice.App.Schedule.Types
+    Futurice.App.Schedule.Types.Identifier
+    Futurice.App.Schedule.Types.Phase
+    Futurice.App.Schedule.Types.Schedule
+    Futurice.App.Schedule.Types.Templates
     Futurice.App.Schedule.Types.TimeZoneInfo
-    Futurice.App.Schedule.World
+    Futurice.App.Schedule.Types.World
 
 executable schedule-server
   default-language: Haskell2010

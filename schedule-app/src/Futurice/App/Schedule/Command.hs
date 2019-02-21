@@ -18,12 +18,15 @@ import Prelude ()
 
 import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
+import Futurice.App.Schedule.Command.CreateSchedule
 import Futurice.App.Schedule.Command.Definition
+import Futurice.App.Schedule.Types.Phase
 
 import qualified Data.Map as Map
 
 type Commands = '[ AddScheduleTemplate
-                 , AddEventTemplates ]
+                 , AddEventTemplates
+                 , CreateSchedule]
 
 type CT = TT Commands
 

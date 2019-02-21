@@ -1,8 +1,7 @@
 module Futurice.App.Schedule.Transactor where
 
 import Control.Concurrent.MVar.Lifted (withMVar)
-import Control.Concurrent.STM
-       (atomically, readTVar, writeTChan, writeTVar)
+import Control.Concurrent.STM         (atomically, readTVar, writeTVar)
 import Data.Aeson                     (toJSON)
 import FUM.Types.Login
 import Futurice.Lomake
@@ -24,7 +23,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 transact
     :: Ctx
     -> UTCTime       -- ^ now
-    -> Login         -- ^ submitted of the command
+    -> Login         -- ^ submitter of the command
     -> SomeCommand   -- ^ command
     -> LogT IO (Either String (CommandResponse ()))
 transact ctx now login scmd =

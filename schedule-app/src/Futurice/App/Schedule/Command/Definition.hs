@@ -11,16 +11,8 @@ import Futurice.Prelude
 import Futurice.Stricter (StricterT)
 import Prelude ()
 
-import Futurice.App.Schedule.World
-
-data Phase = Input     -- ^User input
-           | Executing -- ^Command that needs executing (for example sending emails) TODO: remove this?
-           | Done      -- ^Command is done
-
-type family Phased (phase :: Phase) a b c where
-    Phased 'Input a b c     = a
-    Phased 'Executing a b c = b
-    Phased 'Done a b c      = c
+import Futurice.App.Schedule.Types.Phase
+import Futurice.App.Schedule.Types.World
 
 class (FromJSON (cmd 'Done), FromJSON (cmd 'Input), ToJSON (cmd 'Done), KnownSymbol (CommandTag cmd)) =>  Command (cmd :: Phase -> *) where
     type CommandTag cmd :: Symbol

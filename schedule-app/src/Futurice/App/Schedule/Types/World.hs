@@ -1,17 +1,18 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Futurice.App.Schedule.World where
+module Futurice.App.Schedule.Types.World where
 
-import Data.Swagger        (NamedSchema (..), ToSchema (..))
-import Data.Time.LocalTime
+import Data.Swagger      (NamedSchema (..), ToSchema (..))
 import Futurice.Generics
-import Futurice.IdMap      (HasKey, IdMap, Key, key)
+import Futurice.IdMap    (IdMap)
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.Schedule.Types
+import Futurice.App.Schedule.Types.Schedule
+import Futurice.App.Schedule.Types.Templates
 
 import qualified Personio as P
 
@@ -24,8 +25,6 @@ data Starter = Starter
 
 data MeetingRoom = MeetingRoom
 
-data Event = Event
-
 data EventTask = EventTask
 
 newtype Identifier a = Identifier UUID
@@ -34,8 +33,8 @@ newtype Identifier a = Identifier UUID
 data World = World
     { _worldStarters           :: ![Starter]
     , _worldScheduleTemplates  :: !(IdMap ScheduleTemplate)
-    , _worldSchedulingRequests :: !(IdMap SchedulingRequest)
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    , _worldSchedules          :: ![Schedule]
+    } deriving (GhcGeneric, SopGeneric, HasDatatypeInfo)
 
 makeLenses ''World
 
@@ -43,7 +42,7 @@ instance ToSchema World where
     declareNamedSchema _ = pure $ NamedSchema (Just "World") mempty
 
 emptyWorld :: World
-emptyWorld = World [] mempty mempty
+emptyWorld = World [] mempty []
 
  -- id            | integer                  |           | not null | nextval('futuschedule_futuuser_id_seq'::regclass)
  -- password      | character varying(128)   |           | not null |

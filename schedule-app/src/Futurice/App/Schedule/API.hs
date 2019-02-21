@@ -16,8 +16,8 @@ import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.CreateSchedule
 import Futurice.App.Schedule.Command.Definition
-import Futurice.App.Schedule.Types
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.Phase
+import Futurice.App.Schedule.Types.Templates
 
 data Record route = Record
     { createScheduleTemplate     :: route :- SSOUser :> "schedule-template" :> ReqBody '[JSON] (AddScheduleTemplate 'Input) :> Post '[JSON] (CommandResponse ())
@@ -33,7 +33,8 @@ scheduleApi = genericApi (Proxy :: Proxy Record)
 
 data HtmlRecord route = HtmlRecord
     { createScheduleTemplateForm :: route :- SSOUser :> "schedule-template" :> MultipartForm Mem (AddScheduleTemplate 'Input) :> Post '[HTML] (HtmlPage "indexpage")
-    , createNewScheduleStartForm :: route :- SSOUser :> "schedule" :> MultipartForm Mem CreateScheduleStart :> Post '[HTML] (HtmlPage "indexpage")
+    , createNewScheduleStartForm :: route :- SSOUser :> "schedule-start" :> MultipartForm Mem CreateScheduleStart :> Post '[HTML] (HtmlPage "create-new-schedule-page")
+    , createNewScheduleForm      :: route :- SSOUser :> "schedule" :> MultipartForm Mem (CreateSchedule 'Input) :> Post '[HTML] (HtmlPage "indexpage")
     , indexPageGet               :: route :- Summary "Index page" :> Get '[HTML] (HtmlPage "indexpage")
     , newSchedulePageGet         :: route :- Summary "Create new schedule page" :> "new-schedule-page" :> Get '[HTML] (HtmlPage "new-schedule-page")
     , schedulingRequestPageGet   :: route :- Summary "Scheduling requests" :> "scheduling-requests" :> Get '[HTML] (HtmlPage "scheduling-request-page")

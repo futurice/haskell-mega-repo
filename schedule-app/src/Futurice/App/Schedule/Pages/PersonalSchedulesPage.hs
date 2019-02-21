@@ -7,7 +7,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.Schedule.Markup
-import Futurice.App.Schedule.World
+import Futurice.App.Schedule.Types.World
 
 personalSchedulesPage :: World -> HtmlPage "personal-schedules-page"
 personalSchedulesPage world = page_ "Personal Schedules" (Just NavPersonalSchedules) $ do

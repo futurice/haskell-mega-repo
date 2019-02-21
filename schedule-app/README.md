@@ -10,3 +10,4 @@ Commands come from frontend, are internalized to events and saved to database
 ## TODO
 
 - Clean up dependencies
+- Add proper logging
