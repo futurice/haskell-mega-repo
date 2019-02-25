@@ -41,6 +41,7 @@ import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST as FD
 import qualified GitHub             as GH
+import qualified Data.Text          as T
 
 import Personio.Types.Internal
 
@@ -194,8 +195,9 @@ parseEmployeeObject obj' = Employee
         | n <= 0    = Nothing
         | otherwise = Just n
 
-    notEmpty s | null s = Nothing
-    notEmpty s          = s
+    notEmpty :: Text -> Maybe Text
+    notEmpty s | T.null s = Nothing
+    notEmpty s            = Just s
 
 fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 fmap2 = fmap . fmap
