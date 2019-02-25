@@ -102,6 +102,7 @@ missingHoursNotifications ctx = runLogT "missing-hours-notifications" lgr $ do
 
                         when (pref ^. prefHoursPingSMS) $ case p ^. P.employeeWorkPhone of
                             Nothing -> logAttention "Employee without phone" login
+                            Just "" -> logAttention "Employee without phone" login
                             Just numb -> do
                                 x <- liftIO $ tryDeep $ S.sendSms mgr smsProxyBurl $ S.Req numb $
                                     renderMustache missingHoursSmsTemplate params ^. strict
