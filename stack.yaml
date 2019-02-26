@@ -224,6 +224,7 @@ extra-deps:
 - generic-deriving-1.12.3
 - generics-sop-0.4.0.1
 - generics-sop-lens-0.1.2.1
+- ghc-paths-0.1.0.9
 - github-0.20
 - gitrev-1.3.1
 - gogol-0.4.0
