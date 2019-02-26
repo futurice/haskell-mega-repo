@@ -5,7 +5,8 @@ module Futurice.App.Schedule where
 
 import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
 import FUM.Types.Login
-import Futurice.Integrations     (personioPlanmillMap, runIntegrations)
+import Futurice.IdMap            (Key, fromFoldable)
+import Futurice.Integrations     (runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
@@ -26,12 +27,12 @@ import Futurice.App.Schedule.Pages.IndexPage
 import Futurice.App.Schedule.Pages.NewSchedulePage
 import Futurice.App.Schedule.Pages.PersonalSchedulesPage
 import Futurice.App.Schedule.Pages.SchedulingRequestPage
+import Futurice.App.Schedule.SchedulePdf
 import Futurice.App.Schedule.Transactor
 import Futurice.App.Schedule.Types.Phase
 import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.World
 
-import qualified Data.Map as M
 import qualified Personio as P
 
 server :: Ctx -> Server ScheduleAPI
@@ -39,6 +40,7 @@ server ctx = genericServer $ Record
     { createScheduleTemplate   = createScheduleTemplateImpl ctx
     , addEventTemplates        = addEventTemplatesImpl ctx
     , scheduleTemplateGet      = scheduleTemplateGetImpl ctx
+    , schedulePdfGet           = schedulePdfGetImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -73,10 +75,7 @@ schedulingRequestPageGetImpl ctx = do
     now <- currentTime
     w <- liftIO $ readTVarIO (ctxWorld ctx)
     emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
-    let emps' = M.fromList $ catMaybes $ map (\emp -> case emp ^. P.employeeLogin of
-                                    Nothing -> Nothing
-                                    Just l -> Just (l, emp)) emps
-    pure $ schedulingRequestPage w emps'
+    pure $ schedulingRequestPage w emps
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
@@ -84,8 +83,14 @@ schedulingRequestPageGetImpl ctx = do
 
 personalSchedulesPageGetImpl :: Ctx -> Handler (HtmlPage "personal-schedules-page")
 personalSchedulesPageGetImpl ctx = do
+    now <- currentTime
     w <- liftIO $ readTVarIO (ctxWorld ctx)
-    pure $ personalSchedulesPage w
+    emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    pure $ personalSchedulesPage w (fromFoldable emps)
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
 
 processInputCommand :: (Command cmd, ICT cmd) => Ctx -> Maybe Login -> cmd 'Input -> Handler (CommandResponse ())
 processInputCommand ctx loc cmd = withAuthUser ctx loc $ \login world -> runLogT "process-command" (ctxLogger ctx) $ do
@@ -135,6 +140,13 @@ createNewScheduleStartFormImpl ctx _loc scheduleStart = do
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
     integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
+
+schedulePdfGetImpl :: Ctx -> Key ScheduleTemplate -> Handler SchedulePdf
+schedulePdfGetImpl ctx sid = do
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    case generateSchedulePdf w sid of
+      Just s -> pure s
+      Nothing -> throwError err400
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

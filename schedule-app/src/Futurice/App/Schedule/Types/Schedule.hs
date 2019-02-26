@@ -17,6 +17,7 @@ import FUM.Types.Login
 import Futurice.App.Schedule.Types.Templates
 
 import qualified Personio as P
+import qualified Data.Set as S
 
 data EventRequest  = EventRequest
     { _eventRequestSummary     :: !Text
@@ -58,7 +59,11 @@ instance ToSchema Event where
 data Schedule = Schedule
     { _scheduleScheduleTemplate :: !(Key ScheduleTemplate)
     , _scheduleEvents           :: ![Event]
-    , _scheduleCreatedBy        :: !(Login)
+    , _scheduleCreatedBy        :: !Login
+    , _scheduleCreatedOn        :: !UTCTime
     }
 
 makeLenses ''Schedule
+
+peopleOnSchedule :: Schedule -> S.Set P.EmployeeId
+peopleOnSchedule schedule = S.fromList $ concat $ _eventEmployees <$> schedule ^. scheduleEvents

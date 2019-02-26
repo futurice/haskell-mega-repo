@@ -87,6 +87,7 @@ library
     Futurice.App.Schedule.Pages.NewSchedulePage
     Futurice.App.Schedule.Pages.PersonalSchedulesPage
     Futurice.App.Schedule.Pages.SchedulingRequestPage
+    Futurice.App.Schedule.SchedulePdf
     Futurice.App.Schedule.Transactor
     Futurice.App.Schedule.Types
     Futurice.App.Schedule.Types.Identifier

@@ -73,7 +73,7 @@ instance Command CreateSchedule where
 
     processCommand _time _log (CreateSchedule sid schedule) = pure $ CreateSchedule sid schedule
 
-    applyCommand _time log (CreateSchedule sid schedule) = do
+    applyCommand time login (CreateSchedule sid schedule) = do
 --        eventTemplate <- use (worldScheduleTemplates . at (_csScheduleTemplateId schedule))
         let eventRequestToEvent er = Event
                 { _eventSummary = er ^. eventRequestSummary
@@ -86,5 +86,5 @@ instance Command CreateSchedule where
                 , _eventIsCollective = False
                 , _eventEmployees = er ^. eventRequestEmployees
                 }
-        worldSchedules <>= [Schedule sid (fmap eventRequestToEvent schedule) log]
+        worldSchedules <>= [Schedule sid (fmap eventRequestToEvent schedule) login time]
         pure $ CommandResponseOk ()
