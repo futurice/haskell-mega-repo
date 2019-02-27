@@ -80,6 +80,7 @@ library
     Futurice.App.Schedule.Command.CreateEventTemplate
     Futurice.App.Schedule.Command.CreateSchedule
     Futurice.App.Schedule.Command.Definition
+    Futurice.App.Schedule.Command.DeleteTemplate
     Futurice.App.Schedule.Config
     Futurice.App.Schedule.Ctx
     Futurice.App.Schedule.Markup

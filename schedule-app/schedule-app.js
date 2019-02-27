@@ -8,4 +8,19 @@ futu.onload(function () {
     var buttonOnClick = futu.buttonOnClick;
 
     $$('select[data-futu-id=schedule-employees]').$el = jQuery($$('select[data-futu-id=schedule-employees]')).select2();
+
+    $$('button[data-futu-id=delete-template]').forEach(function (btn) {
+        buttonOnClick(btn, function () {
+            btn.disabled = true;
+            var templateId = btn.dataset.scheduleTemplate;
+            fetch("/schedule-template",
+                  { method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(templateId)})
+                .then(function (response) { console.log("Success"); location=location.href; })
+                .catch(function (error) { console.log("Got error " + error); });
+        });
+    });
 });

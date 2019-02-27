@@ -16,6 +16,7 @@ import Servant.Multipart         (Mem, MultipartForm)
 import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.CreateSchedule
+import Futurice.App.Schedule.Command.DeleteTemplate
 import Futurice.App.Schedule.SchedulePdf
 import Futurice.App.Schedule.Types.Phase
 import Futurice.App.Schedule.Types.Schedule
@@ -28,6 +29,7 @@ data Record route = Record
     , addEventTemplates          :: route :- SSOUser :> "schedule-template" :> "event-templates" :> ReqBody '[JSON] (AddEventTemplates 'Input) :> Post '[JSON] (CommandResponse ())
     , scheduleTemplateGet        :: route :- "schedule-template" :> Get '[JSON] [ScheduleTemplate]
     , schedulePdfGet             :: route :- Summary "Generate and return pdf" :> "schedule" :> Capture "templateid" (Key Schedule) :> "pdf" :> Get '[OctetStream] SchedulePdf
+    , scheduleTemplateDelete     :: route :- SSOUser :> "schedule-template" :> ReqBody '[JSON] (DeleteTemplate 'Input) :> Delete '[JSON] (CommandResponse ())
     } deriving (Generic)
 
 type ScheduleAPI = ToServantApi Record

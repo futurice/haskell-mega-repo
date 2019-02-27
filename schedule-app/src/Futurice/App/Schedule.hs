@@ -20,6 +20,7 @@ import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.CreateSchedule
 import Futurice.App.Schedule.Command.Definition
+import Futurice.App.Schedule.Command.DeleteTemplate
 import Futurice.App.Schedule.Config
 import Futurice.App.Schedule.Ctx
 import Futurice.App.Schedule.Pages.CreateNewSchedulePage
@@ -43,6 +44,7 @@ server ctx = genericServer $ Record
     , addEventTemplates        = addEventTemplatesImpl ctx
     , scheduleTemplateGet      = scheduleTemplateGetImpl ctx
     , schedulePdfGet           = schedulePdfGetImpl ctx
+    , scheduleTemplateDelete   = scheduleTemplateDeleteImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -127,6 +129,9 @@ createScheduleTemplateFormImpl ctx loc cmd = do
 
 addEventTemplatesImpl :: Ctx -> Maybe Login -> AddEventTemplates 'Input -> Handler (CommandResponse ())
 addEventTemplatesImpl = processInputCommand
+
+scheduleTemplateDeleteImpl :: Ctx -> Maybe Login -> DeleteTemplate 'Input -> Handler (CommandResponse ())
+scheduleTemplateDeleteImpl = processInputCommand
 
 scheduleTemplateGetImpl :: Ctx -> Handler [ScheduleTemplate]
 scheduleTemplateGetImpl ctx =  do

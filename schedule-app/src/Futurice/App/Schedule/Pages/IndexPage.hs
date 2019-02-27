@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Schedule.Pages.IndexPage where
 
+import Futurice.IdMap            (key)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Prelude ()
@@ -31,7 +32,7 @@ indexPage ctx world = page_ "Home" (Just NavHome) $ do
                     td_ $ toHtml $ s ^. scheduleName
                     td_ $ toHtml $ timeZoneToText $ s ^. scheduleTimezone
                     td_ $ toHtml $ calendarToText $ s ^. scheduleCalendar
-                    td_ $ span_ ""
+                    td_ $ button_ [ class_ "alert button", type_ "button", futuId_ "delete-template", data_ "schedule-template" (s ^. key) ] "Delete"
     fullRow_ $ form_ [recordAction_ createScheduleTemplateForm, method_ "Post", enctype_ "multipart/form-data"] $ do
         label_ "Create new template"
         large_ 3 $ input_ [ name_ "name", type_ "text"]
