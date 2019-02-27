@@ -33,7 +33,7 @@ newtype Identifier a = Identifier UUID
 data World = World
     { _worldStarters           :: ![Starter]
     , _worldScheduleTemplates  :: !(IdMap ScheduleTemplate)
-    , _worldSchedules          :: ![Schedule]
+    , _worldSchedules          :: !(IdMap Schedule)
     } deriving (GhcGeneric, SopGeneric, HasDatatypeInfo)
 
 makeLenses ''World
@@ -42,7 +42,7 @@ instance ToSchema World where
     declareNamedSchema _ = pure $ NamedSchema (Just "World") mempty
 
 emptyWorld :: World
-emptyWorld = World [] mempty []
+emptyWorld = World [] mempty mempty
 
  -- id            | integer                  |           | not null | nextval('futuschedule_futuuser_id_seq'::regclass)
  -- password      | character varying(128)   |           | not null |

@@ -26,10 +26,12 @@ import Futurice.App.Schedule.Pages.CreateNewSchedulePage
 import Futurice.App.Schedule.Pages.IndexPage
 import Futurice.App.Schedule.Pages.NewSchedulePage
 import Futurice.App.Schedule.Pages.PersonalSchedulesPage
+import Futurice.App.Schedule.Pages.PersonSchedule
 import Futurice.App.Schedule.Pages.SchedulingRequestPage
 import Futurice.App.Schedule.SchedulePdf
 import Futurice.App.Schedule.Transactor
 import Futurice.App.Schedule.Types.Phase
+import Futurice.App.Schedule.Types.Schedule
 import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.World
 
@@ -52,6 +54,7 @@ htmlServer ctx = genericServer $ HtmlRecord
     , createScheduleTemplateForm = createScheduleTemplateFormImpl ctx
     , createNewScheduleStartForm = createNewScheduleStartFormImpl ctx
     , createNewScheduleForm      = createNewScheduleFormImpl ctx
+    , personSchedulePageGet      = personSchedulePageGetImpl ctx
     }
 
 getIndexPage :: Ctx -> Handler (HtmlPage "indexpage")
@@ -141,12 +144,25 @@ createNewScheduleStartFormImpl ctx _loc scheduleStart = do
     lgr = ctxLogger ctx
     integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
 
-schedulePdfGetImpl :: Ctx -> Key ScheduleTemplate -> Handler SchedulePdf
+schedulePdfGetImpl :: Ctx -> Key Schedule -> Handler SchedulePdf
 schedulePdfGetImpl ctx sid = do
     w <- liftIO $ readTVarIO (ctxWorld ctx)
     case generateSchedulePdf w sid of
       Just s -> pure s
       Nothing -> throwError err400
+
+personSchedulePageGetImpl :: Ctx -> P.EmployeeId -> Key Schedule -> Handler (HtmlPage "person-schedule")
+personSchedulePageGetImpl ctx eid sid = do
+    now <- currentTime
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    case (fromFoldable emps) ^. at eid of
+      Just e -> pure $ personSchedule w sid e
+      Nothing -> throwError err400 { errBody = "No employee found with given id"}
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

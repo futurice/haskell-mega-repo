@@ -10,11 +10,9 @@ module Futurice.App.Schedule.Types.Schedule where
 import Data.Swagger      (NamedSchema (..), ToSchema (..))
 import Futurice.Generics
 import Futurice.Prelude
-import Futurice.IdMap (Key)
+import Futurice.IdMap (Key, HasKey, key)
 import Prelude ()
 import FUM.Types.Login
-
-import Futurice.App.Schedule.Types.Templates
 
 import qualified Personio as P
 import qualified Data.Set as S
@@ -57,13 +55,17 @@ instance ToSchema Event where
     declareNamedSchema _ = pure $ NamedSchema (Just "Event") mempty
 
 data Schedule = Schedule
-    { _scheduleScheduleTemplate :: !(Key ScheduleTemplate)
+    { _scheduleTemplateName     :: !Text
     , _scheduleEvents           :: ![Event]
     , _scheduleCreatedBy        :: !Login
     , _scheduleCreatedOn        :: !UTCTime
     }
 
 makeLenses ''Schedule
+
+instance HasKey Schedule where
+    type Key Schedule = UTCTime
+    key = scheduleCreatedOn -- TODO: change to something better
 
 peopleOnSchedule :: Schedule -> S.Set P.EmployeeId
 peopleOnSchedule schedule = S.fromList $ concat $ _eventEmployees <$> schedule ^. scheduleEvents

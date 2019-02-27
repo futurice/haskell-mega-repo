@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -8,11 +7,11 @@
 module Futurice.App.Schedule.Command.CreateSchedule where
 
 import Data.Time.Format
-import Futurice.IdMap    (Key)
+import Futurice.IdMap    (Key, fromFoldable)
 import Futurice.Prelude
 import Futurice.Lomake
 import Futurice.Generics
-import Control.Lens      ((<>=))
+import Control.Lens      ((<>=), use)
 import Prelude ()
 import Servant.Multipart
        (FromMultipart, Mem, fromMultipart, iName, iValue, inputs, lookupInput)
@@ -62,11 +61,11 @@ instance FromMultipart Mem (CreateSchedule 'Input) where
                 <*> (lookupInputWithId eventId "from" >>= readMaybe . T.unpack)
                 <*> (lookupInputWithId eventId "to" >>= readMaybe . T.unpack)
                 <*> (Just $ fetchEmployees eventId)
-            schedule = traceShow eventIds (sequence (fmap buildEvent $ S.toList eventIds))
+            schedule = sequence (fmap buildEvent $ S.toList eventIds)
             fetchEmployees iid = catMaybes
                 $ fmap (fmap P.EmployeeId . readMaybe . T.unpack . iValue)
                 $ filter (\i -> iName i == ("employees-" <> iid)) $ inputs multipartData
-        in CreateSchedule <$> (lookupInput "schedule-template" multipartData) <*> schedule
+        in CreateSchedule <$> lookupInput "schedule-template" multipartData <*> schedule
 
 instance Command CreateSchedule where
     type CommandTag CreateSchedule = "create-schedule"
@@ -74,7 +73,7 @@ instance Command CreateSchedule where
     processCommand _time _log (CreateSchedule sid schedule) = pure $ CreateSchedule sid schedule
 
     applyCommand time login (CreateSchedule sid schedule) = do
---        eventTemplate <- use (worldScheduleTemplates . at (_csScheduleTemplateId schedule))
+        templateName <- use (worldScheduleTemplates . ix sid . scheduleName)
         let eventRequestToEvent er = Event
                 { _eventSummary = er ^. eventRequestSummary
                 , _eventDescription = er ^. eventRequestDescription
@@ -86,5 +85,5 @@ instance Command CreateSchedule where
                 , _eventIsCollective = False
                 , _eventEmployees = er ^. eventRequestEmployees
                 }
-        worldSchedules <>= [Schedule sid (fmap eventRequestToEvent schedule) login time]
+        worldSchedules <>= (fromFoldable $ [Schedule templateName (fmap eventRequestToEvent schedule) login time])
         pure $ CommandResponseOk ()

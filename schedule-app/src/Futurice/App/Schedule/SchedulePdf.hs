@@ -8,7 +8,7 @@ import Futurice.Prelude
 import Prelude ()
 import Servant
 
-import Futurice.App.Schedule.Types.Templates
+import Futurice.App.Schedule.Types.Schedule
 import Futurice.App.Schedule.Types.World
 
 import qualified Data.ByteString.Lazy as LBS
@@ -23,6 +23,6 @@ instance ToSchema SchedulePdf where
 instance MimeRender OctetStream SchedulePdf where
     mimeRender c (SchedulePdf bs) = mimeRender c bs
 
-generateSchedulePdf :: World -> (Key ScheduleTemplate) -> Maybe SchedulePdf
-generateSchedulePdf w sid = let scheduleTemplate = w ^. worldScheduleTemplates . at sid --TODO implement pdf functionality
+generateSchedulePdf :: World -> Key Schedule -> Maybe SchedulePdf
+generateSchedulePdf w sid = let schedule = w ^. worldSchedules . at sid --TODO implement pdf functionality
                             in Just $ SchedulePdf mempty

@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Schedule.Pages.SchedulingRequestPage where
 
-import Futurice.IdMap            (fromFoldable)
+import Futurice.IdMap            (fromFoldable, key)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Prelude ()
@@ -33,7 +33,7 @@ schedulingRequestPage world emps = page_ "Scheduling Requests" (Just NavScheduli
         tbody_ $ do
             for_ (world ^. worldSchedules) $ \schedule -> tr_ $ do
                 td_ (toHtml $ toEmployeeString $ (\e -> idemp ^. ix e . P.employeeFullname) <$> (S.toList $ peopleOnSchedule schedule))
-                td_ (toHtml $ schedule ^. scheduleScheduleTemplate)
+                td_ (toHtml $ schedule ^. scheduleTemplateName)
                 td_ (maybe "" (\x -> toHtml $ x ^. P.employeeFullname) (memp ^. at (schedule ^. scheduleCreatedBy)))
                 td_ (toHtml $ textShow $ utctDay $ schedule ^. scheduleCreatedOn)
                 td_ (select_ [ futuId_ "schedule-employees", multiple_ "multiple", name_ "add-employees"] $ do
@@ -42,7 +42,7 @@ schedulingRequestPage world emps = page_ "Scheduling Requests" (Just NavScheduli
                 td_ (select_ [ futuId_ "schedule-employees", multiple_ "multiple", name_ "remove-employees"] $ do
                           for_ emps $ \e -> do
                               optionSelected_ False [ value_ (showId $ e ^. P.employeeId)] $ toHtml (e ^. P.employeeFullname))
-                td_ $ a_ [ class_ "button", recordHref_ schedulePdfGet (schedule ^. scheduleScheduleTemplate)] "Download"
+                td_ $ a_ [ class_ "button", recordHref_ schedulePdfGet (schedule ^. key)] "Download"
                 td_ ""
                 td_ $ button_ [ class_ "alert button", type_ "button"] "Delete"
   where

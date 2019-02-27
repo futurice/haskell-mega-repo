@@ -46,6 +46,7 @@ library
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data
@@ -85,6 +86,7 @@ library
     Futurice.App.Schedule.Pages.CreateNewSchedulePage
     Futurice.App.Schedule.Pages.IndexPage
     Futurice.App.Schedule.Pages.NewSchedulePage
+    Futurice.App.Schedule.Pages.PersonSchedule
     Futurice.App.Schedule.Pages.PersonalSchedulesPage
     Futurice.App.Schedule.Pages.SchedulingRequestPage
     Futurice.App.Schedule.SchedulePdf
