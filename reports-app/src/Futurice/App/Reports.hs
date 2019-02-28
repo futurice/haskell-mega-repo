@@ -35,7 +35,7 @@ import qualified Futurice.KleeneSwagger as K
 
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractors
-       (activeSubcontractorsReport)
+       (ActiveSubcontractorData, activeSubcontractorsReport)
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
@@ -162,7 +162,6 @@ serveData
     -> IO v
 serveData f = serveData' () (const f) id
 
-{-
 serveDataParam
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k)
     => k
@@ -170,7 +169,6 @@ serveDataParam
     -> Ctx
     -> IO v
 serveDataParam k f = serveData' k f id
--}
 
 serveDataParam2
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k, Eq k', Hashable k', Typeable k')
@@ -235,6 +233,12 @@ missingHoursChartData'
 missingHoursChartData' _ctx =
     missingHoursChartData missingHoursEmployeePredicate
 
+serveActiveSubcontractorReport :: Ctx -> Maybe Day -> IO ActiveSubcontractorData
+serveActiveSubcontractorReport ctx (Just d) = serveDataParam d activeSubcontractorsReport ctx
+serveActiveSubcontractorReport ctx Nothing = do
+    now <- currentDay
+    serveDataParam now activeSubcontractorsReport ctx
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -253,7 +257,7 @@ server ctx = genericServer $ Record
     , recTablesProjectHoursDataJSON = liftIO $ serveData projectHoursData ctx
     , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
     , recTablesDoWeStudy            = \skind month tribe -> liftIO $ serveDataParam3 (skind >>= either (const Nothing) Just) month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
-    , recActiveSubcontractors       = liftIO $ serveData activeSubcontractorsReport ctx
+    , recActiveSubcontractors       = liftIO . serveActiveSubcontractorReport ctx
     -- Officevibe
     , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
     , recOfficevibeGroups        = liftIO $ serveData' () (const officeVibeData) ovdGroups ctx

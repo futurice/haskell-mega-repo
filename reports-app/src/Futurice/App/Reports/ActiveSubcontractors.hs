@@ -78,10 +78,9 @@ activeSubcontractor interval emp user = do
 -- interval
 activeSubcontractorsReport
     :: (MonadPlanMillQuery m, MonadPersonio m, MonadTime m)
-    => m ActiveSubcontractorData
-activeSubcontractorsReport = do
-    today <- currentDay
-    let interval = beginningOfPrevMonth today ... endOfPrevMonth today
+    => Day -> m ActiveSubcontractorData
+activeSubcontractorsReport day = do
+    let interval = beginningOfPrevMonth day ... endOfPrevMonth day
     fmp0 <- personioPlanmillMap
     fmp0' <- filterM getExternals $ HM.toList fmp0
     let fmp0'' = fmap snd fmp0'

@@ -38,7 +38,7 @@ subcontractorNotifications :: Ctx -> IO Text
 subcontractorNotifications ctx = runLogT "subcontractor-notifications" lgr $ do
     day <- currentDay
     checkNotificationDay day $ do
-        (ActiveSubcontractorData _ activeSubcontractorData) <- liftIO $ runIntegrations' ctx activeSubcontractorsReport
+        (ActiveSubcontractorData _ activeSubcontractorData) <- liftIO $ runIntegrations' ctx $ activeSubcontractorsReport day
         let subcontractors = nub $ sortBy (comparing $ view P.employeeFullname) $ V.toList $ V.map _asName activeSubcontractorData
         for_ subcontractors $ \p -> do
             let params = object

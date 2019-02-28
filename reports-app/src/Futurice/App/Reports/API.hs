@@ -55,7 +55,7 @@ data Record route = Record
     , recTablesProjectHoursDataJSON :: route :- "tables" :> "project-hours.json"   :> Get '[JSON] ProjectHoursData
     , recTablesIDontKnow            :: route :- "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
     , recTablesDoWeStudy            :: route :- "tables" :> "do-we-study"          :> QueryParam' '[Lenient, Optional] "studykind" StudyKind :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
-    , recActiveSubcontractors       :: route :- "tables" :> "active-subcontractors" :> Get '[HTML] ActiveSubcontractorData
+    , recActiveSubcontractors       :: route :- "tables" :> "active-subcontractors" :> QueryParam "day" Day :> Get '[HTML] ActiveSubcontractorData
 
     -- Officevibe
     , recOfficevibeUsers         :: route :- "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
