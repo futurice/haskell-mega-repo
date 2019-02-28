@@ -71,6 +71,7 @@ data Message
     | PersonioUpdated
     | MissingHoursPing
     | LibraryReminderPing
+    | SubcontractorPing
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message
@@ -85,6 +86,7 @@ data Topic
     | TopicPersonioUpdated
     | TopicMissingHoursPing
     | TopicLibraryReminderPing
+    | TopicSubcontractorPing
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 data PerTopic a = PerTopic
@@ -92,6 +94,7 @@ data PerTopic a = PerTopic
     , perPersonioUpdated     :: a
     , perMissingHoursPing    :: a
     , perLibraryReminderPing :: a
+    , perSubcontractorPing   :: a
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -106,12 +109,14 @@ instance Representable PerTopic where
     index p TopicPersonioUpdated     = perPersonioUpdated p
     index p TopicMissingHoursPing    = perMissingHoursPing p
     index p TopicLibraryReminderPing = perLibraryReminderPing p
+    index p TopicSubcontractorPing   = perSubcontractorPing p
 
     tabulate f = PerTopic
         { perServiceStarting     = f TopicServiceStarting
         , perPersonioUpdated     = f TopicPersonioUpdated
         , perMissingHoursPing    = f TopicMissingHoursPing
         , perLibraryReminderPing = f TopicLibraryReminderPing
+        , perSubcontractorPing   = f TopicSubcontractorPing
         }
 
 messageTopic :: Message -> Topic
@@ -119,6 +124,7 @@ messageTopic ServiceStarting {}     = TopicServiceStarting
 messageTopic PersonioUpdated {}     = TopicPersonioUpdated
 messageTopic MissingHoursPing {}    = TopicMissingHoursPing
 messageTopic LibraryReminderPing {} = TopicLibraryReminderPing
+messageTopic SubcontractorPing {}   = TopicSubcontractorPing
 
 -- | A subject of email
 messageSubject :: Message -> Text
@@ -131,6 +137,7 @@ topicName awsGroup TopicServiceStarting     = awsGroup <> "-service-starting"
 topicName awsGroup TopicPersonioUpdated     = awsGroup <> "-personio-updated"
 topicName awsGroup TopicMissingHoursPing    = awsGroup <> "-missing-hours-ping"
 topicName awsGroup TopicLibraryReminderPing = awsGroup <> "-library-reminder-ping"
+topicName awsGroup TopicSubcontractorPing   = awsGroup <> "-subcontractor-ping"
 
 -------------------------------------------------------------------------------
 -- Functions
