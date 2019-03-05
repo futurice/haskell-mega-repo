@@ -2,9 +2,9 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
--- | This lambda updates everything except timereports and capacities
-module Futurice.Lambda.PlanMillProxy.Cache (
-    planMillProxyCacheLambda,
+-- | This lambda updates "slow" queries that need more time
+module Futurice.Lambda.PlanMillProxy.CacheSlow (
+    planMillProxyCacheSlowLambda,
     ) where
 
 import Data.Aeson                   (FromJSON, Value, object, parseJSON, (.=))
@@ -16,8 +16,7 @@ import Data.Time                    (addDays)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
-       (ConnectInfo, HasPostgresPool, createPostgresPool, safePoolExecute,
-       safePoolExecute_)
+       (ConnectInfo, HasPostgresPool, createPostgresPool, safePoolExecute)
 import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
 import PlanMill.Worker              (Workers, submitPlanMill, withWorkers)
@@ -38,17 +37,14 @@ instance Configure Config where
         <$> configure
         <*> envConnectInfo
 
-planMillProxyCacheLambda :: AwsLambdaHandler
-planMillProxyCacheLambda = makeAwsLambda impl
+planMillProxyCacheSlowLambda :: AwsLambdaHandler
+planMillProxyCacheSlowLambda = makeAwsLambda impl
   where
     impl :: LambdaContext -> AWSEnv -> Config -> Logger -> Manager -> Value -> LogT IO ()
     impl lc _ Config {..} lgr mgr value = do
         -- Setup
         pool <- createPostgresPool cfgPostgresConnInfo
         now <- currentTime
-
-        -- cleanup cache
-        cleanupCache pool
 
        -- We want a UTC 02:00 point before `now`.
         let UTCTime today offset = now
@@ -69,13 +65,14 @@ planMillProxyCacheLambda = makeAwsLambda impl
                 tbl <- from_ "cache"
                 fields_ tbl ["query"]
                 where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
+                where_ [ ecolumn_ tbl "query", " similar to ", eparam_ ("%absence%|%accounts%" :: String)]
                 orderby_ tbl "updated" ASC
                 limit_ limit
 
             logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
 
             void $ runExceptT $ for_ qs $ \(Only (PM.SomeQuery q)) -> do
-                when (not $ isSlowQuery q) $ do
+                when (isSlowQuery q) $ do
                     remaining <- liftIO $ lcRemainingTimeInMillis lc
                     if remaining < 35 * 1000  -- PlanMill may take 30 seconds to answer
                     then do
@@ -116,16 +113,6 @@ planMillProxyCacheLambda = makeAwsLambda impl
                 storeInPostgres ctx q x'
                 return (Right ())
 
-    cleanupCache ctx = do
-        i <- safePoolExecute_ ctx cleanupQuery
-        logInfo_ $  "cleaned up " <> textShow i <> " cache items"
-      where
-        cleanupQuery :: Postgres.Query
-        cleanupQuery = fromString $ unwords
-            [ "DELETE FROM planmillproxy.cache"
-            , "WHERE viewed < -4" -- -4 makes data survive over the weekends
-            , ";"
-            ]
     isSlowQuery (PM.QueryPagedGet PM.QueryTagAbsence _ _) = True
     isSlowQuery (PM.QueryPagedGet PM.QueryTagAccount _ _) = True
     isSlowQuery _                                         = False
