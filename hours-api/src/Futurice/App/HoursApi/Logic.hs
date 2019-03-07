@@ -75,11 +75,12 @@ entryEditEndpoint
     => PM.TimereportId -> EntryUpdate -> m EntryUpdateResponse
 entryEditEndpoint eid eu = do
     tr <- H.timereport eid
-    if tr ^. H.timereportTaskId == eu ^. euTaskId
-    then H.editTimereport eid newTr
-    else do
-        H.deleteTimereport eid
-        H.addTimereport newTr
+    -- this should force us to get result before continuing
+    _ <- if tr ^. H.timereportTaskId == eu ^. euTaskId
+         then H.editTimereport eid newTr
+         else do
+           H.deleteTimereport eid
+           H.addTimereport newTr
     entryUpdateResponse (tr ^. H.timereportDay)
   where
     newTr = H.NewTimereport
