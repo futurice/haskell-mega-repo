@@ -61,9 +61,9 @@ indexPage day reservations = page_ "Futuroom" (Nothing :: Maybe Nav) $ do
     div_ [class_ "schedule"] $ do
         div_ $ do
             h4_ $ toHtml $ formatTime defaultTimeLocale "%e %b %Y" day
-            void $ flip M.traverseWithKey reservations $ \mname mreservations -> do
+            void $ flip M.traverseWithKey reservations $ \meetingroom mreservations -> do
                 div_ [class_ "meeting-room"] $ do
-                    div_ [class_ "meeting-room-names"] $ span_ $ toHtml $ mrName mname
+                    div_ [class_ "meeting-room-names"] $ span_ $ toHtml $ (mrName meetingroom <> " " <> maybe "" textShow (mrCapasity meetingroom))
                     for_ mreservations $ \res -> do
                         case (resStartTime res, resEndTime res) of
                           (Just startTime, Just endTime) -> div_ [class_ "card event", style_ (cardStyle startTime endTime)] $ do

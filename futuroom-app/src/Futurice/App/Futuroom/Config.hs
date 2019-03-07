@@ -4,18 +4,12 @@ import Futurice.EnvConfig
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Google as G
+
 data Config = Config
-    { cfgGooglePrivateKey   :: !ByteString
-    , cfgGoogleClientId     :: !Text
-    , cfgGoogleClientEmail  :: !Text
-    , cfgGooglePrivateKeyId :: !Text
-    , cfgServiceAccountUser :: !Text
+    { cfgGoogleConfig :: !G.GoogleCredentials
     }
 
 instance Configure Config where
     configure = Config
-        <$> envVar "GOOGLE_PRIVATE_KEY"
-        <*> envVar "GOOGLE_CLIENT_ID"
-        <*> envVar "GOOGLE_CLIENT_EMAIL"
-        <*> envVar "GOOGLE_PRIVATE_KEY_ID"
-        <*> envVar "SERVICE_ACCOUNT_USER"
+        <$> configure

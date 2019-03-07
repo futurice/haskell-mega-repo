@@ -26,13 +26,12 @@ import Futurice.App.Futuroom.Ctx
 import Futurice.App.Futuroom.IndexPage
 import Futurice.App.Futuroom.Types
 
-import qualified Data.Aeson.Lens        as L
-import qualified Data.ByteString.Base64 as Base64
-import qualified Data.Map               as M
-import qualified Data.Set               as S
-import qualified Google                 as G
-import qualified Google.Haxl            as GHaxl
-import qualified Haxl.Core              as H
+import qualified Data.Aeson.Lens as L
+import qualified Data.Map        as M
+import qualified Data.Set        as S
+import qualified Google          as G
+import qualified Google.Haxl     as GHaxl
+import qualified Haxl.Core       as H
 
 officeMeetingRooms :: Value
 officeMeetingRooms = $(makeRelativeToProject "meeting-rooms.json" >>= embedFromJSON (Proxy :: Proxy Value))
@@ -40,27 +39,24 @@ officeMeetingRooms = $(makeRelativeToProject "meeting-rooms.json" >>= embedFromJ
 fetchMeetingRooms :: Office -> S.Set Text
 fetchMeetingRooms office = setOf (L.key (officeToText office) . L.values . L._String) officeMeetingRooms
 
-toGoogleCfg :: Ctx -> G.GoogleCredentials
-toGoogleCfg ctx = G.GoogleCredentials
-       { G.privateKey = decodeUtf8Lenient $ Base64.decodeLenient $ cfgGooglePrivateKey (ctxConfig ctx)
-       , G.clientId = cfgGoogleClientId (ctxConfig ctx)
-       , G.clientEmail = cfgGoogleClientEmail (ctxConfig ctx)
-       , G.privateKeyId = cfgGooglePrivateKeyId (ctxConfig ctx)
-       , G.serviceAccountUser = cfgServiceAccountUser (ctxConfig ctx)
-       }
-
 fetchCalendarResources :: H.GenHaxl u [MeetingRoom]
 fetchCalendarResources = do
-    items <- GHaxl.calendarResources
+    items <- GHaxl.calendarResources G.ReadOnly
     pure $ catMaybes $ toMeetingRoom <$> items
   where
       toMeetingRoom res = case (res ^. crResourceName, res ^. crResourceEmail) of
-        (Just n, Just e) -> Just $ MeetingRoom n e
+        (Just n, Just e) -> Just $ MeetingRoom
+          { mrName = n
+          , mrEmail = e
+          , mrLocation = res ^. crBuildingId
+          , mrCapasity = fromIntegral <$> res ^. crCapacity
+          , mrFloor = res ^. crFloorName
+          }
         _                -> Nothing
 
 fetchEvents :: Day -> Text ->  H.GenHaxl u [Reservation]
 fetchEvents reservationDay roomEmail = do
-    events <- GHaxl.events reservationDay (succ reservationDay) roomEmail
+    events <- GHaxl.events G.ReadOnly reservationDay (succ reservationDay) roomEmail
     pure $ toReservation <$> filter (\e -> e ^. eStatus /= Just "cancelled" && roomReservationNotCancelled e) events
  where
      roomReservationNotCancelled e = not $ any (\a -> a ^.  eaEmail == Just roomEmail && a ^. eaResponseStatus == Just "declined" ) $ e ^. eAttendees
@@ -77,7 +73,7 @@ reservationsGetImpl ctx day = do
     reservationDay <- case day of
           Just t -> pure t
           Nothing -> currentDay
-    let stateStore = H.stateSet (GHaxl.initDataSource (toGoogleCfg ctx) (ctxManager ctx)) H.stateEmpty
+    let stateStore = H.stateSet (GHaxl.initDataSource (cfgGoogleConfig $ ctxConfig ctx) (ctxManager ctx)) H.stateEmpty
     haxlEnv <- liftIO $ H.initEnv stateStore ()
     meetingRoomEvents <- liftIO $ (H.runHaxl haxlEnv $ fetchMeetingRoomEvents reservationDay )
     pure $ foldr (<>) [] meetingRoomEvents
@@ -98,7 +94,7 @@ indexPageGetImpl ctx time = do
     reservationDay <- case time of
           Just t -> pure t
           Nothing -> currentDay
-    let stateStore = H.stateSet (GHaxl.initDataSource (toGoogleCfg ctx) (ctxManager ctx)) H.stateEmpty
+    let stateStore = H.stateSet (GHaxl.initDataSource (cfgGoogleConfig $ ctxConfig ctx) (ctxManager ctx)) H.stateEmpty
     haxlEnv <- liftIO $ H.initEnv stateStore ()
     meetingRoomEvents <- liftIO $ (H.runHaxl haxlEnv $ fetchMeetingRoomEvents reservationDay )
     pure $ indexPage reservationDay $ meetingRoomEvents

@@ -35,7 +35,6 @@ library
   build-depends:
     , aeson
     , base
-    , base64-bytestring
     , bytestring
     , clay
     , containers
