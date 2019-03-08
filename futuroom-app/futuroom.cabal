@@ -35,7 +35,6 @@ library
   build-depends:
     , aeson
     , base
-    , base64-bytestring
     , bytestring
     , clay
     , containers
@@ -54,8 +53,6 @@ library
     , gogol-core
     , gogol-people
     , google-client
-    , haxl
-    , haxl-fxtra
     , http-api-data
     , http-client
     , http-types
@@ -78,6 +75,7 @@ library
     Futurice.App.Futuroom.Config
     Futurice.App.Futuroom.Ctx
     Futurice.App.Futuroom.IndexPage
+    Futurice.App.Futuroom.Logic
     Futurice.App.Futuroom.Types
 
 executable futuroom-app-server

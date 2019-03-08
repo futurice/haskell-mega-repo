@@ -22,6 +22,7 @@ import Prelude ()
 
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
+import qualified Google.Types
 
 import Futurice.Integrations.Serv
 
@@ -49,6 +50,11 @@ data IntegrationsConfig :: [Serv] -> Type where
         :: Request
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServGH ': ss)
+
+    IntCfgGoogle
+        :: Google.Types.GoogleCredentials
+        -> IntegrationsConfig ss
+        -> IntegrationsConfig (ServGO ': ss)
 
     IntCfgPersonio
         :: Request
@@ -84,6 +90,8 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
             <$> (f <$> envVar "FUMCARBON_HAXLURL")
         cons SServGH = IntCfgGitHub
             <$> (f <$> envVar "GITHUBPROXY_HAXLURL")
+        cons SServGO = IntCfgGoogle
+            <$> configure
         cons SServPE = IntCfgPersonio
             <$> (f <$> envVar "PERSONIOPROXY_REQUESTURL")
         cons SServPM = IntCfgPlanMill

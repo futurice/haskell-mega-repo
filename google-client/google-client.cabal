@@ -24,8 +24,11 @@ library
   build-depends:
     , aeson
     , base
+    , base64-bytestring
     , binary
     , bytestring
+    , constraints
+    , env-config
     , free
     , futurice-prelude
     , gogol
