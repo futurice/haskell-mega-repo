@@ -50,3 +50,6 @@ events readonly x y z = dataFetch $ GR $ ReqEvents readonly x y z
 
 calendarResources :: ReadOnlyScope -> GenHaxl u [CalendarResource]
 calendarResources = dataFetch . GR . ReqCalendarResources
+
+request :: (Show a, Typeable a) => Req a -> GenHaxl u a
+request = dataFetch . GR

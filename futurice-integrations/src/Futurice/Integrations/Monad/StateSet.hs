@@ -11,6 +11,7 @@ module Futurice.Integrations.Monad.StateSet (
     stateSetFUM,
     stateSetFUM6,
     stateSetGitHub,
+    stateSetGoogle,
     stateSetPersonio,
     stateSetPlanMill,
     stateSetPower,
@@ -27,6 +28,8 @@ import qualified FUM
 import qualified FUM.Haxl
 import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.Integrations.GitHub as GH
+import qualified Google.Haxl
+import qualified Google.Types
 import qualified Haxl.Core                    as H
 import qualified Personio.Haxl
 import qualified Power.Haxl
@@ -89,3 +92,11 @@ stateSetPower
     -> Tagged (ServPO ': ss) H.StateStore
 stateSetPower lgr mgr burl (Tagged store) = Tagged $
     H.stateSet (Power.Haxl.initDataSource lgr mgr burl) store
+
+stateSetGoogle
+    :: Logger -> Manager
+    -> Google.Types.GoogleCredentials
+    -> Tagged ss H.StateStore
+    -> Tagged (ServGO ': ss) H.StateStore
+stateSetGoogle _lgr mgr cred (Tagged store) = Tagged $
+    H.stateSet (Google.Haxl.initDataSource cred mgr) store

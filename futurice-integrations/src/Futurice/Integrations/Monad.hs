@@ -46,6 +46,8 @@ import qualified FUM.Haxl
 import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.GitHub              as GH
 import qualified Futurice.Integrations.GitHub as GH
+import qualified Google.Haxl
+import qualified Google.Request
 import qualified Haxl.Core                    as H
 import qualified Log.Data                     as L
 import qualified Log.Logger                   as L
@@ -205,6 +207,7 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
         IntCfgFUM token burl cfg2 -> stateSetFUM lgr mgr token burl (f cfg2)
         IntCfgFUM6 req cfg2       -> stateSetFUM6 lgr mgr req (f cfg2)
         IntCfgGitHub req cfg2     -> stateSetGitHub lgr mgr req (f cfg2)
+        IntCfgGoogle cred cfg2    -> stateSetGoogle lgr mgr cred (f cfg2)
         IntCfgPersonio req cfg2   -> stateSetPersonio lgr mgr req (f cfg2)
         IntCfgPlanMill req cfg2   -> stateSetPlanMill lgr mgr req (f cfg2)
         IntCfgPower req cfg2      -> stateSetPower lgr mgr req (f cfg2)
@@ -314,6 +317,17 @@ instance Contains ServGH ss => MonadGitHub (Integrations ss) where
         tag = GH.mkReqTag
         showDict     = typeTagDict (Proxy :: Proxy Show) tag
         typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
+
+-------------------------------------------------------------------------------
+-- MonadGitHub
+-------------------------------------------------------------------------------
+
+instance Contains ServGO ss => MonadGoogle (Integrations ss) where
+    googleReq r =  case (showDict, typeableDict) of
+        (Dict, Dict) -> liftHaxl . Google.Haxl.request $ r
+      where
+        showDict     = Google.Request.requestDict (Proxy :: Proxy Show) r
+        typeableDict = Google.Request.requestDict (Proxy :: Proxy Typeable) r
 
 -------------------------------------------------------------------------------
 -- MonadPersonio

@@ -128,6 +128,7 @@ cmpReflServ SServFD   = Refl
 cmpReflServ SServFUM  = Refl
 cmpReflServ SServFUM6 = Refl
 cmpReflServ SServGH   = Refl
+cmpReflServ SServGO   = Refl
 cmpReflServ SServPE   = Refl
 cmpReflServ SServPM   = Refl
 cmpReflServ SServPO   = Refl
