@@ -1,8 +1,11 @@
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Google.Types where
 
 import Data.Aeson.Types
 import Futurice.EnvConfig
+import Futurice.Generics
 import Futurice.Prelude
 import Network.Google.Auth
 import Prelude ()
@@ -49,3 +52,14 @@ toCredentials :: GoogleCredentials -> Credentials s
 toCredentials cred = case FromAccount <$> parseEither parseJSON (toCredentialsJson cred) of
   Left e -> error e
   Right c -> c
+
+
+data CalendarEvent = CalendarEvent
+    { _ceStartTime   :: !UTCTime
+    , _ceEndTime     :: !UTCTime
+    , _ceDescription :: !Text
+    , _ceSummary     :: !Text
+    } deriving (Eq, Show, GhcGeneric, SopGeneric, Hashable, HasDatatypeInfo)
+      deriving (FromJSON) via (Sopica CalendarEvent)
+
+makeLenses ''CalendarEvent

@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Google.Eval where
 
 import Data.Binary.Builder
@@ -83,6 +84,29 @@ evalGoogleReq (ReqEvents AlsoWriteAccess startDay endDay email) = do
                            & elSingleEvents .~ Just True)
         pure $ eventList ^. eveItems
     pure $ filter (\e -> e ^. eStatus /= Just "cancelled" && roomReservationNotCancelled e) events
+evalGoogleReq (ReqInvite attendees calendarEvent) = do
+    cfg <- view googleCfg
+    mgr <- view httpManager
+    let cred = GA.serviceAccountUser (Just $ serviceAccountUser cfg) $ toCredentials cfg
+    let eventAttendees = fmap (\a -> eventAttendee & eaEmail .~ Just a) attendees
+    let eventStart = eventDateTime & edtDateTime .~ Just (calendarEvent ^. ceStartTime)
+    let eventEnd   = eventDateTime & edtDateTime .~ Just (calendarEvent ^. ceEndTime)
+    lgr <- newLogger Error stderr
+    env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
+    liftIO $ runResourceT $ runGoogle env $
+        send (eventsInsert "primary" (event & eAttendees   .~ eventAttendees
+                                            & eStart       .~ Just eventStart
+                                            & eEnd         .~ Just eventEnd
+                                            & eSummary     .~ Just (calendarEvent ^. ceSummary)
+                                            & eDescription .~ Just (calendarEvent ^. ceDescription)))
+evalGoogleReq (ReqDeleteEvent eventId) = do
+    cfg <- view googleCfg
+    mgr <- view httpManager
+    let cred = GA.serviceAccountUser (Just $ serviceAccountUser cfg) $ toCredentials cfg
+    lgr <- newLogger Error stderr
+    env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
+    void $ liftIO $ runResourceT $ runGoogle env $ do
+        void $ send (eventsDelete "primary" eventId)
 
 evalGoogleReqIO :: GoogleCredentials -> Manager -> Req a -> IO a
 evalGoogleReqIO cred mgr req = flip runReaderT (Cfg cred mgr) $ evalGoogleReq req

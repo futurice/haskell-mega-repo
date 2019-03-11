@@ -54,8 +54,10 @@ executable google-cli
   hs-source-dirs: cli
   ghc-options:    -Wall -threaded
   build-depends:
+    , aeson
     , base
     , env-config
     , futurice-prelude
     , google-client
     , optparse-applicative
+    , text
