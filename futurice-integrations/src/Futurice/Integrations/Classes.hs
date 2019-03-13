@@ -11,6 +11,7 @@ module Futurice.Integrations.Classes (
     MonadFUM(..),
     MonadFlowdock(..),
     MonadGitHub(..),
+    MonadGoogle(..),
     MonadPersonio(..),
     MonadPower(..),
     MonadPlanMillQuery(..),
@@ -28,6 +29,7 @@ import Data.Constraint        (Constraint)
 import Futurice.GitHub        (GHTypes)
 import Futurice.Prelude
 import Generics.SOP           (All)
+import Google                 (MonadGoogle (..))
 import PlanMill.Queries.Haxl  (PlanmillBatchError (..))
 import Power                  (MonadPower (..))
 import Prelude ()

@@ -2,9 +2,12 @@
 module Google.Types where
 
 import Data.Aeson.Types
+import Futurice.EnvConfig
 import Futurice.Prelude
 import Network.Google.Auth
 import Prelude ()
+
+import qualified Data.ByteString.Base64 as Base64
 
 data GoogleCredentials = GoogleCredentials
     { clientId           :: !Text
@@ -12,7 +15,15 @@ data GoogleCredentials = GoogleCredentials
     , privateKey         :: !Text
     , privateKeyId       :: !Text
     , serviceAccountUser :: !Text
-    }
+    } deriving Show
+
+instance Configure GoogleCredentials where
+    configure = GoogleCredentials
+        <$> envVar "GOOGLE_CLIENT_ID"
+        <*> envVar "GOOGLE_CLIENT_EMAIL"
+        <*> (decodeUtf8Lenient . Base64.decodeLenient <$> envVar "GOOGLE_PRIVATE_KEY")
+        <*> envVar "GOOGLE_PRIVATE_KEY_ID"
+        <*> envVar "SERVICE_ACCOUNT_USER"
 
 data Cfg = Cfg
     { googleCredentials  :: !GoogleCredentials
@@ -36,5 +47,5 @@ toCredentialsJson (GoogleCredentials cid email key keyid _) =  object [ "private
 
 toCredentials :: GoogleCredentials -> Credentials s
 toCredentials cred = case FromAccount <$> parseEither parseJSON (toCredentialsJson cred) of
-  Left _ -> error "Couln't read config" -- TODO: add better error
+  Left e -> error e
   Right c -> c

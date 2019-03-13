@@ -34,14 +34,16 @@ import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
 
 import Futurice.App.Reports.ActiveAccounts
+import Futurice.App.Reports.ActiveSubcontractors
+       (ActiveSubcontractorData, activeSubcontractorsReport)
 import Futurice.App.Reports.API
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
-import Futurice.App.Reports.Dashdo                    (makeDashdoServer)
-import Futurice.App.Reports.DoWeStudy                 (doWeStudyData)
-import Futurice.App.Reports.IDontKnow                 (iDontKnowData)
+import Futurice.App.Reports.Dashdo                     (makeDashdoServer)
+import Futurice.App.Reports.DoWeStudy                  (doWeStudyData)
+import Futurice.App.Reports.IDontKnow                  (iDontKnowData)
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
@@ -54,18 +56,19 @@ import Futurice.App.Reports.MissingHoursDailyChart
 import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeData (..), officeVibeData)
-import Futurice.App.Reports.PlanMillAccountValidation (pmAccountValidationData)
+import Futurice.App.Reports.PlanMillAccountValidation  (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
        (PowerUserReport, powerUserReport)
-import Futurice.App.Reports.ProjectHours              (projectHoursData)
-import Futurice.App.Reports.SupervisorsGraph          (supervisorsGraph)
+import Futurice.App.Reports.ProjectHours               (projectHoursData)
+import Futurice.App.Reports.SubcontractorNotifications
+import Futurice.App.Reports.SupervisorsGraph           (supervisorsGraph)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
-import Futurice.App.Reports.TimereportsDump           (timereportsDump)
+import Futurice.App.Reports.TimereportsDump            (timereportsDump)
 import Futurice.App.Reports.UtzChart
        (utzChartData, utzChartRender)
 
@@ -159,7 +162,6 @@ serveData
     -> IO v
 serveData f = serveData' () (const f) id
 
-{-
 serveDataParam
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k)
     => k
@@ -167,7 +169,6 @@ serveDataParam
     -> Ctx
     -> IO v
 serveDataParam k f = serveData' k f id
--}
 
 serveDataParam2
     :: (Typeable v, NFData v, Eq k, Hashable k, Typeable k, Eq k', Hashable k', Typeable k')
@@ -232,6 +233,12 @@ missingHoursChartData'
 missingHoursChartData' _ctx =
     missingHoursChartData missingHoursEmployeePredicate
 
+serveActiveSubcontractorReport :: Ctx -> Maybe Day -> IO ActiveSubcontractorData
+serveActiveSubcontractorReport ctx (Just d) = serveDataParam d activeSubcontractorsReport ctx
+serveActiveSubcontractorReport ctx Nothing = do
+    now <- currentDay
+    serveDataParam now activeSubcontractorsReport ctx
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -250,7 +257,7 @@ server ctx = genericServer $ Record
     , recTablesProjectHoursDataJSON = liftIO $ serveData projectHoursData ctx
     , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
     , recTablesDoWeStudy            = \skind month tribe -> liftIO $ serveDataParam3 (skind >>= either (const Nothing) Just) month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
-
+    , recActiveSubcontractors       = liftIO . serveActiveSubcontractorReport ctx
     -- Officevibe
     , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
     , recOfficevibeGroups        = liftIO $ serveData' () (const officeVibeData) ovdGroups ctx
@@ -324,8 +331,9 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 
         -- listen to MQ, especially for missing hours ping
         void $ forEachMessage mq $ \msg -> case msg of
-            MissingHoursPing -> void $ missingHoursNotifications ctx
-            _                -> pure ()
+            MissingHoursPing  -> void $ missingHoursNotifications ctx
+            SubcontractorPing -> void $ subcontractorNotifications ctx
+            _                 -> pure ()
 
         return (ctx, jobs)
 

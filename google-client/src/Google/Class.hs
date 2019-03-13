@@ -8,8 +8,8 @@ import Google.Request
 class Monad m => MonadGoogle m where
     googleReq :: Req a -> m a
 
-googleCalendarResources :: MonadGoogle m => m [CalendarResource]
-googleCalendarResources = googleReq ReqCalendarResources
+googleCalendarResources :: (MonadGoogle m) => ReadOnlyScope -> m [CalendarResource]
+googleCalendarResources readonly = googleReq (ReqCalendarResources readonly)
 
-googleCalendarEvents :: MonadGoogle m => Day -> Day -> Text -> m [Event]
-googleCalendarEvents startDay endDay email = googleReq (ReqEvents startDay endDay email)
+googleCalendarEvents :: MonadGoogle m => ReadOnlyScope -> Day -> Day -> Text -> m [Event]
+googleCalendarEvents readonly startDay endDay email = googleReq (ReqEvents readonly startDay endDay email)

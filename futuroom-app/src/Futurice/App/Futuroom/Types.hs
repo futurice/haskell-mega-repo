@@ -18,8 +18,11 @@ newtype Year = Year Int
     deriving anyclass (ToParamSchema)
 
 data MeetingRoom = MeetingRoom
-    { mrName  :: !Text
-    , mrEmail :: !Text
+    { mrName     :: !Text
+    , mrEmail    :: !Text
+    , mrLocation :: !(Maybe Text)
+    , mrCapasity :: !(Maybe Int)
+    , mrFloor    :: !(Maybe Text)
     } deriving (Show, Ord, Eq, Generic, NFData)
 
 data Reservation = Reservation

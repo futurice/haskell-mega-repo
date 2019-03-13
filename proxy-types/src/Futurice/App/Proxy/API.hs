@@ -124,35 +124,6 @@ data Routes = Routes
         ("uiapi" :> "project/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "projects" :> Get '[JSON] Value)
 
-    -- Power v2 (deprecated)
-    , routePowerBi :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int:> QueryParam "tribe" Text :> Get '[JSON] Value)
-        ("power" :> "api" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int :> QueryParam "tribe" Text :> Get '[JSON] Value)
-
-    , routePowerCompetences :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "company_competences" :> Get '[JSON] Value)
-        ("power" :> "api" :> "company_competences" :> Get '[JSON] Value)
-
-    , routePowerPeople :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "people" :> Get '[JSON] Value)
-        ("power" :> "api" :> "people" :> Get '[JSON] Value)
-
-    , routePowerTribes :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "tribes" :> Get '[JSON] Value)
-        ("power" :> "api" :> "tribes" :> Get '[JSON] Value)
-
-    , routePowerAllocations :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "allocations" :> Get '[JSON] Value)
-        ("power" :> "api" :> "allocations" :> Get '[JSON] Value)
-
-    , routePowerProjectCompetences :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "project_competences" :> Get '[JSON] Value)
-        ("power" :> "api" :> "project_competences" :> Get '[JSON] Value)
-
-    , routePowerSubcompetences :: ProxiedEndpoint 'PowerService
-        ("api" :> "v2" :> "subcompetences" :> Get '[JSON] Value)
-        ("power" :> "api" :> "subcompetences" :> Get '[JSON] Value)
-
 
     -- FUM
     , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
