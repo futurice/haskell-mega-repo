@@ -8,7 +8,7 @@ category:           Web
 homepage:           https://github.com/phadej/servant-algebraic-graphs#readme
 bug-reports:        https://github.com/phadej/servant-algebraic-graphs/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
 tested-with:        ghc ==8.0.2 ghc ==8.2.1
@@ -29,7 +29,7 @@ library
     , deepseq
     , http-media        >=0.6.2
     , process-extras
-    , servant           >=0.12 && <0.16
+    , servant           >=0.12 && <0.17
     , swagger2
     , text
   exposed-modules:  Servant.Graph

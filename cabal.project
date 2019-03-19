@@ -1,4 +1,4 @@
-index-state: 2019-02-21T13:25:20Z
+index-state: 2019-03-19T11:47:04Z
 tests: True
 with-compiler: ghc-8.6.3
 
@@ -20,12 +20,12 @@ constraints:
   lens                  ^>= 4.17,
   log-base              ^>= 0.7.4.0,
   semigroupoids         ^>= 5.3.1,
-  servant               ^>= 0.15,
+  servant               ^>= 0.16,
   postgresql-simple     ^>= 0.6,
-  servant-client        ^>= 0.15,
-  servant-client-core   ^>= 0.15,
-  servant-lucid         ^>= 0.8,
-  servant-server        ^>= 0.15,
+  servant-client        ^>= 0.16,
+  servant-client-core   ^>= 0.16,
+  servant-lucid         ^>= 0.9,
+  servant-server        ^>= 0.16,
   servant-swagger-ui    ^>= 0.3.0.3.13.2,
   SVGFonts              ^>= 1.7,
   unix-time             ^>= 0.3.8,

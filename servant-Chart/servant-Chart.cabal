@@ -31,7 +31,7 @@ library
     , file-embed
     , file-embed-lzma
     , http-media       >=0.6.2
-    , servant          >=0.4.4.5 && <0.16
+    , servant          >=0.4.4.5 && <0.17
     , svg-builder
     , SVGFonts
     , swagger2
