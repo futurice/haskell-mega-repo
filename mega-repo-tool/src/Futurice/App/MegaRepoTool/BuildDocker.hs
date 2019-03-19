@@ -39,6 +39,7 @@ buildCmd buildLambdas buildImage = cmdUnwords
     , "-e ORIGINAL_UID=" <> cmdUid
     , "-e PACKAGE_LAMBDAS=" <> (if buildLambdas then "YES" else "NO")
     , "-v " <> cmdPwd <> ":/app/src" -- cannot _yet- have ":ro".
+    , "-v " <> cmdPwd <> "/data/:/app/src/data/" -- support symlinked data/
     , "-v haskell-mega-repo-cabal:/root/.cabal"
     , "-v haskell-mega-repo-dist:/app/src/dist-newstyle-prod"
     , cmdText buildImage
