@@ -1,26 +1,27 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances, UndecidableInstances     #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Futurice.App.SmsProxy(defaultMain) where
 
-import Prelude ()
 import Futurice.Prelude
 import Futurice.Servant
+import Prelude ()
 import Servant
 
 import Futurice.App.SmsProxy.API
 import Futurice.App.SmsProxy.Config
-import Futurice.App.SmsProxy.Types
 import Futurice.App.SmsProxy.Ctx
 import Futurice.App.SmsProxy.Logic
+import Futurice.App.SmsProxy.Types
 
 server :: Ctx -> Server SmsProxyAPI
-server ctx = pure "This is sms proxy" 
+server ctx = pure "This is sms proxy"
     :<|> (\a b -> nt $ sendLegacySms' ctx a b)
     :<|> (nt . (sendSms ctx))
   where
@@ -28,7 +29,7 @@ server ctx = pure "This is sms proxy"
     nt = runLogT "smsproxy" (ctxLogger ctx)
 
 sendLegacySms'
-    :: (MonadIO m, MonadLog m, MonadThrow m, MonadError ServantErr m)
+    :: (MonadIO m, MonadLog m, MonadThrow m, MonadError ServerError m)
     => Ctx
     -> Maybe Text
     -> Maybe Text
