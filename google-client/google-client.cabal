@@ -48,3 +48,16 @@ library
     Google.Eval
     Google.Request
     Google.Types
+
+executable google-cli
+  main-is:        Main.hs
+  hs-source-dirs: cli
+  ghc-options:    -Wall -threaded
+  build-depends:
+    , aeson
+    , base
+    , env-config
+    , futurice-prelude
+    , google-client
+    , optparse-applicative
+    , text
