@@ -13,7 +13,8 @@ import Servant.Client
 import Servant.Client.Free
 import Servant.Client.Generic
 import Servant.Client.Internal.HttpClient
-       (catchConnectionError, clientResponseToResponse, requestToClientRequest)
+       (catchConnectionError, clientResponseToResponse, mkFailureResponse,
+       requestToClientRequest)
 
 import qualified Network.HTTP.Client as HTTP
 
@@ -23,7 +24,7 @@ import Power.Request
 routes :: PowerRoutes (AsClientT ClientM)
 routes = genericClient
 
-evalIO :: BaseUrl -> Manager -> Req a -> IO (Either ServantError a)
+evalIO :: BaseUrl -> Manager -> Req a -> IO (Either ClientError a)
 evalIO burl mgr req = case req of
     ReqPeople -> runClientM (routePeople routes) env
   where
@@ -33,13 +34,12 @@ freeRoutes :: PowerRoutes (AsClientT (Free ClientF))
 freeRoutes = genericClient
 
 -- | We essentially implement own servant-client library.
-evalIOReq :: HTTP.Request -> Manager -> Req a -> IO (Either ServantError a)
+evalIOReq :: HTTP.Request -> Manager -> Req a -> IO (Either ClientError a)
 evalIOReq baseReq mgr req = runExceptT $ case req of
     ReqPeople -> foldFree act (routePeople freeRoutes)
   where
-    act :: ClientF x -> ExceptT ServantError IO x
+    act :: ClientF x -> ExceptT ClientError IO x
     act (Throw err)             = throwError err
-    act (StreamingRequest _ _ ) = throwError $ ConnectionError "cannot stream"
     act (RunRequest sReq sRes)  = do
         let httpReq = amendRequest (requestToClientRequest burl sReq)
         httpRes <- liftIO $ catchConnectionError $ HTTP.httpLbs httpReq mgr
@@ -49,9 +49,9 @@ evalIOReq baseReq mgr req = runExceptT $ case req of
                 let status = HTTP.responseStatus response
                     status_code = statusCode status
                     response = response' { HTTP.responseHeaders = mapResHeaders (HTTP.responseHeaders response') }
-                    ourResponse = clientResponseToResponse response
+                    ourResponse = clientResponseToResponse id response
                 unless (status_code >= 200 && status_code < 300) $
-                    throwError $ FailureResponse ourResponse
+                    throwError $ mkFailureResponse burl sReq ourResponse
                 return (sRes ourResponse)
 
     burl = BaseUrl
