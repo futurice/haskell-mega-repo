@@ -3,7 +3,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.Reports.ActiveSubcontractors where
+module Futurice.App.Reports.ActiveSubcontractorsByHours where
 
 import Control.Monad             (filterM)
 import Data.Fixed                (Centi)

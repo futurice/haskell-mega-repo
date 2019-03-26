@@ -72,6 +72,7 @@ data Message
     | MissingHoursPing
     | LibraryReminderPing
     | SubcontractorPing
+    | SubcontractorHoursPing
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message
@@ -87,6 +88,7 @@ data Topic
     | TopicMissingHoursPing
     | TopicLibraryReminderPing
     | TopicSubcontractorPing
+    | TopicSubcontractorHoursPing
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 data PerTopic a = PerTopic
@@ -95,6 +97,7 @@ data PerTopic a = PerTopic
     , perMissingHoursPing    :: a
     , perLibraryReminderPing :: a
     , perSubcontractorPing   :: a
+    , perSubcontractorHoursPing :: a
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -105,26 +108,29 @@ instance Distributive PerTopic where
 instance Representable PerTopic where
     type Rep PerTopic = Topic
 
-    index p TopicServiceStarting     = perServiceStarting p
-    index p TopicPersonioUpdated     = perPersonioUpdated p
-    index p TopicMissingHoursPing    = perMissingHoursPing p
-    index p TopicLibraryReminderPing = perLibraryReminderPing p
-    index p TopicSubcontractorPing   = perSubcontractorPing p
+    index p TopicServiceStarting        = perServiceStarting p
+    index p TopicPersonioUpdated        = perPersonioUpdated p
+    index p TopicMissingHoursPing       = perMissingHoursPing p
+    index p TopicLibraryReminderPing    = perLibraryReminderPing p
+    index p TopicSubcontractorPing      = perSubcontractorPing p
+    index p TopicSubcontractorHoursPing = perSubcontractorHoursPing p
 
     tabulate f = PerTopic
-        { perServiceStarting     = f TopicServiceStarting
-        , perPersonioUpdated     = f TopicPersonioUpdated
-        , perMissingHoursPing    = f TopicMissingHoursPing
-        , perLibraryReminderPing = f TopicLibraryReminderPing
-        , perSubcontractorPing   = f TopicSubcontractorPing
+        { perServiceStarting        = f TopicServiceStarting
+        , perPersonioUpdated        = f TopicPersonioUpdated
+        , perMissingHoursPing       = f TopicMissingHoursPing
+        , perLibraryReminderPing    = f TopicLibraryReminderPing
+        , perSubcontractorPing      = f TopicSubcontractorPing
+        , perSubcontractorHoursPing = f TopicSubcontractorHoursPing
         }
 
 messageTopic :: Message -> Topic
-messageTopic ServiceStarting {}     = TopicServiceStarting
-messageTopic PersonioUpdated {}     = TopicPersonioUpdated
-messageTopic MissingHoursPing {}    = TopicMissingHoursPing
-messageTopic LibraryReminderPing {} = TopicLibraryReminderPing
-messageTopic SubcontractorPing {}   = TopicSubcontractorPing
+messageTopic ServiceStarting {}        = TopicServiceStarting
+messageTopic PersonioUpdated {}        = TopicPersonioUpdated
+messageTopic MissingHoursPing {}       = TopicMissingHoursPing
+messageTopic LibraryReminderPing {}    = TopicLibraryReminderPing
+messageTopic SubcontractorPing {}      = TopicSubcontractorPing
+messageTopic SubcontractorHoursPing {} = TopicSubcontractorHoursPing
 
 -- | A subject of email
 messageSubject :: Message -> Text
@@ -133,11 +139,12 @@ messageSubject (ServiceStarting service) =
 messageSubject msg = textShow (messageTopic msg) -- default
 
 topicName :: Text -> Topic -> Text
-topicName awsGroup TopicServiceStarting     = awsGroup <> "-service-starting"
-topicName awsGroup TopicPersonioUpdated     = awsGroup <> "-personio-updated"
-topicName awsGroup TopicMissingHoursPing    = awsGroup <> "-missing-hours-ping"
-topicName awsGroup TopicLibraryReminderPing = awsGroup <> "-library-reminder-ping"
-topicName awsGroup TopicSubcontractorPing   = awsGroup <> "-subcontractor-ping"
+topicName awsGroup TopicServiceStarting        = awsGroup <> "-service-starting"
+topicName awsGroup TopicPersonioUpdated        = awsGroup <> "-personio-updated"
+topicName awsGroup TopicMissingHoursPing       = awsGroup <> "-missing-hours-ping"
+topicName awsGroup TopicLibraryReminderPing    = awsGroup <> "-library-reminder-ping"
+topicName awsGroup TopicSubcontractorPing      = awsGroup <> "-subcontractor-ping"
+topicName awsGroup TopicSubcontractorHoursPing = awsGroup <> "-subcontractor-hours-ping"
 
 -------------------------------------------------------------------------------
 -- Functions

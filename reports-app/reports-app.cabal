@@ -135,7 +135,7 @@ library
     Futurice.App.Reports
     Futurice.App.Reports.API
     Futurice.App.Reports.ActiveAccounts
-    Futurice.App.Reports.ActiveSubcontractors
+    Futurice.App.Reports.ActiveSubcontractorsByHours
     Futurice.App.Reports.CareerLengthChart
     Futurice.App.Reports.Config
     Futurice.App.Reports.Ctx
@@ -156,7 +156,8 @@ library
     Futurice.App.Reports.PowerProjects
     Futurice.App.Reports.PowerUser
     Futurice.App.Reports.ProjectHours
-    Futurice.App.Reports.SubcontractorNotifications
+    Futurice.App.Reports.SubcontractorBillingNotifications
+    Futurice.App.Reports.SubcontractorHoursNotifications
     Futurice.App.Reports.SupervisorsGraph
     Futurice.App.Reports.Templates
     Futurice.App.Reports.TimereportsByTask
