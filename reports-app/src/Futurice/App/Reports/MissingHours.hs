@@ -27,16 +27,18 @@ module Futurice.App.Reports.MissingHours (
     mhpFromDay,
     mhpToDay,
     mhpTotalHours,
+    mhpFumPublicUrl
     ) where
 
-import Control.Lens (sumOf)
+import Control.Lens              (sumOf)
 import Data.Fixed                (Centi)
+import Futurice.Constants        (fumPublicUrl)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns
-import Futurice.Time             
+import Futurice.Time
 import Futurice.Time.Month       (dayToMonth)
 import Numeric.Interval.NonEmpty (Interval, inf, sup)
 import Prelude ()
@@ -109,6 +111,7 @@ data MissingHoursParams = MissingHoursParams
     , _mhpFromDay      :: !Day
     , _mhpToDay        :: !Day
     , _mhpTotalHours   :: !(NDT 'Hours Centi)
+    , _mhpFumPublicUrl :: !Text
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -201,7 +204,7 @@ missingHoursReport predicate interval = do
     fpm2 <- traverse (uncurry perUser) fpm1
     let total = sumOf (folded . folded . folded . missingHourCapacity) fpm2
 
-    pure $ Report (MissingHoursParams now (inf interval) (sup interval) total) fpm2
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval) total (fumPublicUrl <> "/")) fpm2
   where
     perUser :: P.Employee -> PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pEmployee pmUser = (S.:!:)

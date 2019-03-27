@@ -170,7 +170,7 @@ renderDoWeStudyData (DWS today month mtribe mskind xs) = page_ "Do we study..." 
         <> maybe "" (\t -> " " <> tribeToText t) mtribe
         <> maybe "" (\s -> " " <> enumToText s) mskind
     when (mtribe == Nothing) $ do
-        fullRow_ $ table_ $ do
+        fullRow_ $ sortableTable_ $ do
             thead_ $ do
                 th_ $ "Tribe"
                 for_ [ minBound .. maxBound ] $ \(trainingType :: TrainingType) -> do
