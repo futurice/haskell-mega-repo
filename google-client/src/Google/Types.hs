@@ -59,6 +59,7 @@ data CalendarEvent = CalendarEvent
     , _ceEndTime     :: !UTCTime
     , _ceDescription :: !Text
     , _ceSummary     :: !Text
+    , _ceAttendees   :: ![Text]
     } deriving (Eq, Show, GhcGeneric, SopGeneric, Hashable, HasDatatypeInfo)
       deriving (FromJSON) via (Sopica CalendarEvent)
 
