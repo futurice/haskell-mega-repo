@@ -1,10 +1,9 @@
+{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 module Google.Eval where
 
-import Data.Binary.Builder
 import Futurice.Prelude
 import Network.Google
 import Network.Google.AppsCalendar hiding (events)
@@ -15,8 +14,7 @@ import System.IO                   (stderr)
 import Google.Request
 import Google.Types
 
-import qualified Data.ByteString.Lazy as DBL
-import qualified Network.Google.Auth  as GA
+import qualified Network.Google.Auth as GA
 
 -- Think how to combine to MonadLog
 -- withLogger :: Futurice.Prelude.Logger -> (LogLevel -> Builder -> IO ())
@@ -32,12 +30,10 @@ import qualified Network.Google.Auth  as GA
 
 -- Used scopes has to be exactly same as the scope privileges that the credentials have
 -- i.e you can't use readonly scope with write premitted scope
-evalGoogleReq :: (MonadIO m,
-                  MonadCatch m,
-                  MonadBaseControl IO m,
-                  MonadReader env m,
-                  HasGoogleCfg env,
-                  HasHttpManager env) => Req a -> m a
+
+type GoogleConstrains m env = (MonadIO m,MonadCatch m, MonadBaseControl IO m, MonadReader env m, HasGoogleCfg env, HasHttpManager env)
+
+evalGoogleReq :: GoogleConstrains m env => Req a -> m a
 evalGoogleReq (ReqCalendarResources ReadOnly) = do
     cfg <- view googleCfg
     mgr <- view httpManager
@@ -84,11 +80,11 @@ evalGoogleReq (ReqEvents AlsoWriteAccess startDay endDay email) = do
                            & elSingleEvents .~ Just True)
         pure $ eventList ^. eveItems
     pure $ filter (\e -> e ^. eStatus /= Just "cancelled" && roomReservationNotCancelled e) events
-evalGoogleReq (ReqInvite attendees calendarEvent) = do
+evalGoogleReq (ReqInvite calendarEvent) = do
     cfg <- view googleCfg
     mgr <- view httpManager
     let cred = GA.serviceAccountUser (Just $ serviceAccountUser cfg) $ toCredentials cfg
-    let eventAttendees = fmap (\a -> eventAttendee & eaEmail .~ Just a) attendees
+    let eventAttendees = fmap (\a -> eventAttendee & eaEmail .~ Just a) (calendarEvent ^. ceAttendees)
     let eventStart = eventDateTime & edtDateTime .~ Just (calendarEvent ^. ceStartTime)
     let eventEnd   = eventDateTime & edtDateTime .~ Just (calendarEvent ^. ceEndTime)
     lgr <- newLogger Error stderr
@@ -107,6 +103,15 @@ evalGoogleReq (ReqDeleteEvent eventId) = do
     env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
     void $ liftIO $ runResourceT $ runGoogle env $ do
         void $ send (eventsDelete "primary" eventId)
+evalGoogleReq (ReqPatchEvent eventId calendarEvent) = do
+    cfg <- view googleCfg
+    mgr <- view httpManager
+    let cred = GA.serviceAccountUser (Just $ serviceAccountUser cfg) $ toCredentials cfg
+    let eventAttendees = fmap (\a -> eventAttendee & eaEmail .~ Just a) (calendarEvent ^. ceAttendees)
+    lgr <- newLogger Error stderr
+    env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
+    liftIO $ runResourceT $ runGoogle env $ do
+        send (eventsPatch "primary" (event & eAttendees .~ eventAttendees) eventId)
 
 evalGoogleReqIO :: GoogleCredentials -> Manager -> Req a -> IO a
 evalGoogleReqIO cred mgr req = flip runReaderT (Cfg cred mgr) $ evalGoogleReq req
