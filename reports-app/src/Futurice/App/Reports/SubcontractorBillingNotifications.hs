@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Futurice.App.Reports.SubcontractorNotifications where
+module Futurice.App.Reports.SubcontractorBillingNotifications where
 
 import Data.Aeson                  (object, (.=))
 import Data.Ord                    (comparing)
@@ -10,7 +10,7 @@ import Futurice.Integrations       (beginningOfCurrMonth)
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.Reports.ActiveSubcontractors
+import Futurice.App.Reports.ActiveSubcontractorsByHours
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
 import Futurice.App.Reports.Templates

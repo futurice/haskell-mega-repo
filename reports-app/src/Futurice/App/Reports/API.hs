@@ -20,22 +20,25 @@ import Servant.Cached
 import Servant.Chart             (Chart, SVG)
 import Servant.Graph             (ALGA, Graph)
 
-import Futurice.App.Reports.ActiveAccounts            (ActiveAccounts)
-import Futurice.App.Reports.ActiveSubcontractors      (ActiveSubcontractorData)
-import Futurice.App.Reports.DoWeStudy                 (DoWeStudyData, StudyKind)
-import Futurice.App.Reports.IDontKnow                 (IDontKnowData)
-import Futurice.App.Reports.Inventory                 (InventorySummary)
-import Futurice.App.Reports.MissingHours              (MissingHoursReport)
+import Futurice.App.Reports.ActiveAccounts              (ActiveAccounts)
+import Futurice.App.Reports.ActiveSubcontractorsByHours
+       (ActiveSubcontractorData)
+import Futurice.App.Reports.DoWeStudy
+       (DoWeStudyData, StudyKind)
+import Futurice.App.Reports.IDontKnow                   (IDontKnowData)
+import Futurice.App.Reports.Inventory                   (InventorySummary)
+import Futurice.App.Reports.MissingHours                (MissingHoursReport)
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
-import Futurice.App.Reports.PlanMillAccountValidation (PMAccountValidation)
-import Futurice.App.Reports.PowerAbsences             (PowerAbsenceReport)
-import Futurice.App.Reports.PowerProjects             (PowerProjectsReport)
-import Futurice.App.Reports.PowerUser                 (PowerUserReport)
-import Futurice.App.Reports.ProjectHours              (ProjectHoursData)
-import Futurice.App.Reports.SupervisorsGraph          (Emp)
-import Futurice.App.Reports.TimereportsByTask         (TimereportsByTaskReport)
-import Futurice.App.Reports.TimereportsDump           (SimpleTimereport)
+import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
+import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
+import Futurice.App.Reports.PowerProjects               (PowerProjectsReport)
+import Futurice.App.Reports.PowerUser                   (PowerUserReport)
+import Futurice.App.Reports.ProjectHours                (ProjectHoursData)
+import Futurice.App.Reports.SupervisorsGraph            (Emp)
+import Futurice.App.Reports.TimereportsByTask
+       (TimereportsByTaskReport)
+import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
 
 type ReportTypes = '[HTML, CSV, JSON]
 

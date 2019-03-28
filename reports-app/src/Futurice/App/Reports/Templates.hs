@@ -6,6 +6,7 @@ module Futurice.App.Reports.Templates (
     missingHoursSmsTemplate,
     subcontractorEmailTemplate,
     subcontractorSmsTemplate,
+    subcontractorHoursEmailTemplate,
     ) where
 
 import Data.FileEmbed   (embedStringFile, makeRelativeToProject)
@@ -34,3 +35,9 @@ subcontractorSmsTemplate = either (error . show) id
     $ compileMustacheText "subcontractor-sms.template"
     $(makeRelativeToProject "subcontractor-sms.template" >>= embedStringFile)
 {-# NOINLINE subcontractorSmsTemplate #-}
+
+subcontractorHoursEmailTemplate :: Template
+subcontractorHoursEmailTemplate = either (error . show) id
+    $ compileMustacheText "subcontractor-hours-email.template"
+    $(makeRelativeToProject "subcontractor-hours-email.template" >>= embedStringFile)
+{-# NOINLINE subcontractorHoursEmailTemplate #-}
