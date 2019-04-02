@@ -58,6 +58,10 @@ module PlanMill.Endpoints (
     addHook,
     deleteHook,
     hooks,
+    -- * Reports
+    report,
+    reports,
+    allRevenuesReport
     ) where
 
 import PlanMill.Internal.Prelude
@@ -66,8 +70,8 @@ import GHC.TypeLits (KnownSymbol, symbolVal)
 
 import PlanMill.Types
 
+import qualified Data.Map  as Map
 import qualified Data.Text as T
-import qualified Data.Map as Map
 
 -- | Get a list of absences.
 --
@@ -322,6 +326,23 @@ addHook h = planMillPost h $ t "hooks"
 
 deleteHook :: HookId -> PlanMill ()
 deleteHook hid = planMillDeleteNoResponse $ t "hooks" // hid
+
+-- | Get a list of reports
+--
+-- See <https://developers.planmill.com/api/#reports>
+
+reports :: PlanMill Reports
+reports = planMillGet $ t "reports"
+
+-- | Get a report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+report :: ReportName -> PlanMill Report
+report reportName = planMillGet $ t "reports" // reportName
+
+-- | Get a spesific report
+allRevenuesReport :: Integer -> Integer -> PlanMill AllRevenues2
+allRevenuesReport year month = planMillGetQs (Map.fromList [("param1",textShow year), ("param2", textShow month)]) $ t "reports" // t "All Revenues 2"
 
 -------------------------------------------------------------------------------
 -- Utilities

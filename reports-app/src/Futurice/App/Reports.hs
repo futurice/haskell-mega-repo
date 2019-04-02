@@ -21,6 +21,7 @@ import Futurice.Prelude
 import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
+import Futurice.Time.Month            (Month (..))
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
@@ -32,6 +33,8 @@ import Servant.Server.Generic         (genericServer)
 
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
+import qualified PlanMill               as PM
+import qualified PlanMill.Queries       as PMQ
 
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractorsByHours
@@ -242,6 +245,14 @@ serveActiveSubcontractorReport ctx Nothing = do
     now <- currentDay
     serveDataParam now activeSubcontractorsReport ctx
 
+allRevenuesReport :: (PM.MonadPlanMillQuery m) => Integer -> Integer -> m PM.AllRevenues2
+allRevenuesReport = PMQ.allRevenuesReport
+
+serveAllRevenues2Report :: Ctx -> Maybe Month -> IO PM.AllRevenues2
+serveAllRevenues2Report ctx mmonth = do
+    month <- maybe currentMonth pure mmonth
+    cachedIO' ctx () $ runIntegrations' ctx $ allRevenuesReport (monthYear month) (toInteger $ fromEnum month)
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -284,6 +295,7 @@ server ctx = genericServer $ Record
     , recPowerUsers    = liftIO $ servePowerUsersReport ctx
     , recPowerProjects = liftIO $ servePowerProjectsReport ctx
     , recPowerAbsences = liftIO . servePowerAbsencesReport ctx
+    , recPowerAllRevenueReport = liftIO . serveAllRevenues2Report ctx
 
     -- missing hours notification
     , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx

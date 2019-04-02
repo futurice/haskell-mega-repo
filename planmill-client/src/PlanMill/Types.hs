@@ -30,6 +30,7 @@ module PlanMill.Types (
     module PlanMill.Types.Inserted,
     module PlanMill.Types.Me,
     module PlanMill.Types.Request,
+    module PlanMill.Types.Report,
     module PlanMill.Types.ResultInterval,
     module PlanMill.Types.ResultOrder,
     module PlanMill.Types.Task,
@@ -61,6 +62,7 @@ import PlanMill.Types.Error
 import PlanMill.Types.Identifier
 import PlanMill.Types.Inserted
 import PlanMill.Types.Me
+import PlanMill.Types.Report
 import PlanMill.Types.Request
 import PlanMill.Types.ResultInterval
 import PlanMill.Types.ResultOrder

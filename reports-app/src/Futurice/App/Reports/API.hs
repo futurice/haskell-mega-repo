@@ -40,6 +40,8 @@ import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport)
 import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
 
+import qualified PlanMill as PM
+
 type ReportTypes = '[HTML, CSV, JSON]
 
 data Record route = Record
@@ -83,6 +85,7 @@ data Record route = Record
     , recPowerUsers    :: route :- "power" :> "users" :> Get '[JSON] PowerUserReport
     , recPowerProjects :: route :- "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     , recPowerAbsences :: route :- "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+    , recPowerAllRevenueReport :: route :- "power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] PM.AllRevenues2
 
     -- missing hours notification
     , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text

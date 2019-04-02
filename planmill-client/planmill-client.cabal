@@ -4,6 +4,7 @@ version:            0
 synopsis:           PlanMill API
 description:
   Bindings to <https://online.planmill.com/pmtrial/schemas/v1_5/index.html PlanMill API 1.5>.
+
 category:           Web
 homepage:           https://github.com/futurice/haskell-planmill-client#readme
 bug-reports:        https://github.com/futurice/haskell-planmill-client/issues
@@ -31,6 +32,8 @@ library
     DeriveTraversable
     DerivingStrategies
     ScopedTypeVariables
+    DerivingVia
+
   build-depends:
     , aeson
     , aeson-compat
@@ -98,6 +101,7 @@ library
     , unordered-containers
     , vector
     , zlib
+
   exposed-modules:
     Control.Monad.PlanMill
     PlanMill
@@ -129,6 +133,7 @@ library
     PlanMill.Types.Meta
     PlanMill.Types.Project
     PlanMill.Types.Query
+    PlanMill.Types.Report
     PlanMill.Types.ReportableAssignment
     PlanMill.Types.Request
     PlanMill.Types.ResultInterval
@@ -217,6 +222,7 @@ executable planmill-client
     , vector
     , yaml
     , zlib
+
   other-modules:
     Caching
     MonadPretty
