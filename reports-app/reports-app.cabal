@@ -153,6 +153,7 @@ library
     Futurice.App.Reports.OfficeVibeIntegration
     Futurice.App.Reports.PlanMillAccountValidation
     Futurice.App.Reports.PowerAbsences
+    Futurice.App.Reports.PowerAllRevenues
     Futurice.App.Reports.PowerProjects
     Futurice.App.Reports.PowerUser
     Futurice.App.Reports.ProjectHours

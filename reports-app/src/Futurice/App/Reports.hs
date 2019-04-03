@@ -33,8 +33,6 @@ import Servant.Server.Generic         (genericServer)
 
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
-import qualified PlanMill               as PM
-import qualified PlanMill.Queries       as PMQ
 
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractorsByHours
@@ -63,6 +61,8 @@ import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
+import Futurice.App.Reports.PowerAllRevenues
+       (PowerAllRevenues, powerAllRevenuesReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
@@ -245,13 +245,9 @@ serveActiveSubcontractorReport ctx Nothing = do
     now <- currentDay
     serveDataParam now activeSubcontractorsReport ctx
 
-allRevenuesReport :: (PM.MonadPlanMillQuery m) => Integer -> Integer -> m PM.AllRevenues2
-allRevenuesReport = PMQ.allRevenuesReport
-
-serveAllRevenues2Report :: Ctx -> Maybe Month -> IO PM.AllRevenues2
-serveAllRevenues2Report ctx mmonth = do
-    month <- maybe currentMonth pure mmonth
-    cachedIO' ctx () $ runIntegrations' ctx $ allRevenuesReport (monthYear month) (toInteger $ fromEnum month)
+serveAllRevenues2Report :: Ctx -> Maybe Month -> IO PowerAllRevenues
+serveAllRevenues2Report ctx mmonth =
+    cachedIO' ctx mmonth $ runIntegrations' ctx $ powerAllRevenuesReport mmonth
 
 -- | API server
 server :: Ctx -> Server ReportsAPI

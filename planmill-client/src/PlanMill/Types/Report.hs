@@ -1,5 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-module PlanMill.Types.Report (AllRevenues2, AllRevenuesPortfolio, Report, Reports, ReportName) where
+module PlanMill.Types.Report (
+    AllRevenues2,
+    AllRevenuesPortfolio (..),
+    Report,
+    Reports,
+    ReportName,
+    getRevenuesData) where
 
 import Data.Aeson
 import Data.Aeson.Types  (Parser)
@@ -25,7 +31,7 @@ instance FromJSON Report where
 
 instance AnsiPretty Report
 
-newtype AllRevenues2 = AllRevenues2 (Map Text [AllRevenuesPortfolio])
+newtype AllRevenues2 = AllRevenues2 {getRevenuesData :: Map Text [AllRevenuesPortfolio]}
     deriving (Eq, Show, Binary, Generic, ToSchema, ToJSON, NFData, HasSemanticVersion)
 
 instance HasStructuralInfo AllRevenues2
