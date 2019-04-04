@@ -4,7 +4,7 @@ module PlanMill.Types.Report (
     AllRevenuesPortfolio (..),
     Report,
     Reports,
-    ReportName,
+    ReportsCategories,
     getRevenuesData) where
 
 import Data.Aeson
@@ -17,17 +17,47 @@ import Prelude ()
 
 import PlanMill.Internal.Prelude
 
-type Reports = Vector Report
+data ReportsCategories = ReportsCategories
+    { _reportsCategoriesProjectHomepage   :: !(Vector Reports)
+    , _reportsCategoriesPortfolioHomepage :: !(Vector Reports)
+    , _reportsCategoriesPortal            :: !(Vector Reports)
+    } deriving (Generic)
 
-type ReportName = Text
+instance AnsiPretty ReportsCategories
+
+instance FromJSON ReportsCategories where
+    parseJSON = withObject "Categories" $ \obj ->
+      ReportsCategories <$> obj .: "Project homepage"
+                        <*> obj .: "Portfolio homepage"
+                        <*> obj .: "Portal"
+
+data Reports = Reports
+    { _reportsReports       :: !(Vector Report)
+    , _reportsLocalizedName :: !Text
+    } deriving (Generic)
+
+instance AnsiPretty Reports
+
+instance FromJSON Reports where
+    parseJSON = withObject "Reports" $ \obj ->
+      Reports <$> obj .: "reports"
+              <*> obj .: "localizedName"
 
 data Report = Report
-    { _localizedName :: !Text
+    { _reportLocalizedName :: !Text
+    , _reportModern        :: !Bool
+    , _reportHasAccess     :: !Bool
+    , _reportName          :: !Text
+    , _reportFavorite      :: !Bool
     } deriving (Generic)
 
 instance FromJSON Report where
     parseJSON = withObject "Report" $ \obj ->
       Report <$> obj .: "localizedName"
+             <*> obj .: "modern"
+             <*> obj .: "hasAccess"
+             <*> obj .: "name"
+             <*> obj .: "favorite"
 
 instance AnsiPretty Report
 

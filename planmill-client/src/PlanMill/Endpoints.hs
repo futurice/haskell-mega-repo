@@ -59,7 +59,6 @@ module PlanMill.Endpoints (
     deleteHook,
     hooks,
     -- * Reports
-    report,
     reports,
     allRevenuesReport
     ) where
@@ -331,18 +330,14 @@ deleteHook hid = planMillDeleteNoResponse $ t "hooks" // hid
 --
 -- See <https://developers.planmill.com/api/#reports>
 
-reports :: PlanMill Reports
+reports :: PlanMill ReportsCategories
 reports = planMillGet $ t "reports"
 
--- | Get a report
+-- | Get a spesific report
 --
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
-report :: ReportName -> PlanMill Report
-report reportName = planMillGet $ t "reports" // reportName
-
--- | Get a spesific report
-allRevenuesReport :: Integer -> Integer -> PlanMill AllRevenues2
-allRevenuesReport year month = planMillGetQs (Map.fromList [("param1",textShow year), ("param2", textShow month)]) $ t "reports" // t "All Revenues 2"
+allRevenuesReport :: PlanMill AllRevenues2
+allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
 
 -------------------------------------------------------------------------------
 -- Utilities
