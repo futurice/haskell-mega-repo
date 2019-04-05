@@ -28,6 +28,7 @@ module PlanMill.Queries (
     projectTasks,
     task,
     capacitycalendars,
+    allRevenuesReport,
     -- * Queries
     usersQuery,
     absencesQuery,
@@ -41,17 +42,17 @@ import PlanMill.Internal.Prelude
 
 import Control.Lens          (alongside, withIndex)
 import Control.Monad.Memoize (MonadMemoize (memo))
-import Data.List (find)
 import Data.Constraint       (Dict (..))
+import Data.List             (find)
 import Data.Reflection       (reifySymbol)
 import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
-       (Absence, Absences, Account, AccountId, CapacityCalendars, Me,
-       Project (..), ProjectId, Projects, Task, TaskId, Tasks, Team, TeamId,
-       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
-       Users, identifier)
+       (Absence, Absences, Account, AccountId, AllRevenues2, CapacityCalendars,
+       Me, Project (..), ProjectId, Projects, Task, TaskId, Tasks, Team,
+       TeamId, TimeBalance, Timereport, Timereports, User, UserCapacities,
+       UserId, Users, identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -312,6 +313,14 @@ capacitycalendars :: MonadPlanMillQuery m => m CapacityCalendars
 capacitycalendars = planmillVectorQuery
     $ QueryPagedGet QueryTagCalendar mempty
     $ toUrlParts $ ("capacitycalendars" :: Text)
+
+-- | Get All Revenues 2 Report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+allRevenuesReport :: (MonadPlanMillQuery m) => Integer -> Integer -> m AllRevenues2
+allRevenuesReport year month = planmillQuery
+    $ QueryGet QueryTagReport (Map.fromList [("param1",textShow year), ("param2", textShow month)])
+    $ toUrlParts ("reports" :: Text) // ("All Revenues 2" :: Text)
 
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations

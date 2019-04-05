@@ -32,6 +32,7 @@ import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
 import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
+import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
 import Futurice.App.Reports.PowerProjects               (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser                   (PowerUserReport)
 import Futurice.App.Reports.ProjectHours                (ProjectHoursData)
@@ -83,6 +84,7 @@ data Record route = Record
     , recPowerUsers    :: route :- "power" :> "users" :> Get '[JSON] PowerUserReport
     , recPowerProjects :: route :- "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     , recPowerAbsences :: route :- "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+    , recPowerAllRevenueReport :: route :- "power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] PowerAllRevenues
 
     -- missing hours notification
     , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text

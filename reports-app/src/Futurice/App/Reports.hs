@@ -21,6 +21,7 @@ import Futurice.Prelude
 import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
+import Futurice.Time.Month            (Month (..))
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
@@ -60,6 +61,8 @@ import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
+import Futurice.App.Reports.PowerAllRevenues
+       (PowerAllRevenues, powerAllRevenuesReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
@@ -242,6 +245,10 @@ serveActiveSubcontractorReport ctx Nothing = do
     now <- currentDay
     serveDataParam now activeSubcontractorsReport ctx
 
+serveAllRevenues2Report :: Ctx -> Maybe Month -> IO PowerAllRevenues
+serveAllRevenues2Report ctx mmonth =
+    cachedIO' ctx mmonth $ runIntegrations' ctx $ powerAllRevenuesReport mmonth
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -284,6 +291,7 @@ server ctx = genericServer $ Record
     , recPowerUsers    = liftIO $ servePowerUsersReport ctx
     , recPowerProjects = liftIO $ servePowerProjectsReport ctx
     , recPowerAbsences = liftIO . servePowerAbsencesReport ctx
+    , recPowerAllRevenueReport = liftIO . serveAllRevenues2Report ctx
 
     -- missing hours notification
     , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
