@@ -1,0 +1,59 @@
+cabal-version: 2.2
+name:          okta-client
+version:       0
+synopsis:      Okta management client
+category:      Integration
+description:   Simplified bindings to Okta Management API
+
+library
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+    StandaloneDeriving
+
+  build-depends:
+    , aeson
+    , base
+    , base64-bytestring
+    , binary
+    , bytestring
+    , constraints
+    , env-config
+    , free
+    , futurice-prelude
+    , http-client
+    , http-types
+    , servant
+    , servant-client
+    , servant-client-core
+    , text
+
+  exposed-modules:
+    Okta
+    Okta.Class
+    Okta.Eval
+    Okta.Request
+    Okta.Types
+
+executable okta-cli
+  main-is:        Main.hs
+  hs-source-dirs: cli
+  ghc-options:    -Wall -threaded
+  build-depends:
+    , aeson
+    , base
+    , env-config
+    , futurice-prelude
+    , okta-client
+    , optparse-applicative
+    , text
