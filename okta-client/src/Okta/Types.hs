@@ -37,19 +37,22 @@ instance HasHttpManager Cfg where
 
 data Status = Active
             | Provisioned
+            | Staged
             | Other Text
             deriving Show
 
 instance FromJSON Status where
     parseJSON = let go "ACTIVE"      = pure Active
                     go "PROVISIONED" = pure Provisioned
+                    go "STAGED"      = pure Staged
                     go t             = pure $ Other t
                 in withText "Status" go
 
 instance ToJSON Status where
-    toJSON Active = toJSON ("ACTIVE" :: Text)
+    toJSON Active      = toJSON ("ACTIVE" :: Text)
     toJSON Provisioned = toJSON ("PROVISIONED" :: Text)
-    toJSON (Other t) = toJSON t
+    toJSON Staged      = toJSON ("STAGED" :: Text)
+    toJSON (Other t)   = toJSON t
 
 data Profile = Profile
     { profileFirstName   :: !Text
