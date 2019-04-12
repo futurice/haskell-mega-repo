@@ -67,6 +67,8 @@ import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
 import Futurice.App.Reports.PowerUser
        (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.PowerUTZ
+       (PowerUTZReport, powerUTZReport)
 import Futurice.App.Reports.ProjectHours                      (projectHoursData)
 import Futurice.App.Reports.SubcontractorBillingNotifications
 import Futurice.App.Reports.SubcontractorHoursNotifications
@@ -249,6 +251,10 @@ serveAllRevenues2Report :: Ctx -> Maybe Month -> IO PowerAllRevenues
 serveAllRevenues2Report ctx mmonth =
     cachedIO' ctx mmonth $ runIntegrations' ctx $ powerAllRevenuesReport mmonth
 
+servePowerUTZReport :: Ctx -> Maybe Month -> IO PowerUTZReport
+servePowerUTZReport ctx mmonth =
+    cachedIO' ctx mmonth $ runIntegrations' ctx $ powerUTZReport mmonth
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -292,6 +298,7 @@ server ctx = genericServer $ Record
     , recPowerProjects = liftIO $ servePowerProjectsReport ctx
     , recPowerAbsences = liftIO . servePowerAbsencesReport ctx
     , recPowerAllRevenueReport = liftIO . serveAllRevenues2Report ctx
+    , recPowerUTZ      = liftIO . servePowerUTZReport ctx
 
     -- missing hours notification
     , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx

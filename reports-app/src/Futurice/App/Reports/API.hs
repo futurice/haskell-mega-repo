@@ -35,6 +35,7 @@ import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
 import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
 import Futurice.App.Reports.PowerProjects               (PowerProjectsReport)
 import Futurice.App.Reports.PowerUser                   (PowerUserReport)
+import Futurice.App.Reports.PowerUTZ                    (PowerUTZReport)
 import Futurice.App.Reports.ProjectHours                (ProjectHoursData)
 import Futurice.App.Reports.SupervisorsGraph            (Emp)
 import Futurice.App.Reports.TimereportsByTask
@@ -85,6 +86,7 @@ data Record route = Record
     , recPowerProjects :: route :- "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     , recPowerAbsences :: route :- "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
     , recPowerAllRevenueReport :: route :- "power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] PowerAllRevenues
+    , recPowerUTZ      :: route :- "power" :> "utz" :> QueryParam "month" Month :> Get '[JSON] PowerUTZReport
 
     -- missing hours notification
     , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text

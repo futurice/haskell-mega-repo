@@ -84,6 +84,7 @@ indexPage today = page_ "Reports" $ do
         li_ $ a_ [ recordHref_ recPowerProjects         ] "Projects"
         li_ $ a_ [ recordHref_ recPowerAbsences Nothing ] "Absences"
         li_ $ a_ [ recordHref_ recPowerAllRevenueReport Nothing ] "All Revenues 2 report"
+        li_ $ a_ [ recordHref_ recPowerUTZ Nothing ] "UTZ"
 
     fullRow_ $ h2_ "Swagger UI"
     fullRow_ $ ul_ $ do
