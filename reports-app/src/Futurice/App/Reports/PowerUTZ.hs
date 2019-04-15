@@ -29,6 +29,7 @@ data PowerUTZPerson = PowerUTZPerson
     , powerUTZBillableHours    :: !(NDT 'Hours Centi)
     , powerUTZNonBillableHours :: !(NDT 'Hours Centi)
     , powerUTZInternalHours    :: !(NDT 'Hours Centi)
+    , powerUTZAbsenceHours     :: !(NDT 'Hours Centi)
 --    , powerPMuid               :: !(PM.UserId)
     } deriving (GhcGeneric, SopGeneric, ToSchema, HasDatatypeInfo, NFData)
       deriving (ToJSON) via (Sopica PowerUTZPerson)
@@ -53,10 +54,11 @@ powerUTZReport mmonth = do
             , powerUTZBillableHours    = billable
             , powerUTZNonBillableHours = nonBillable
             , powerUTZInternalHours    = internal
+            , powerUTZAbsenceHours     = absence
             , powerUTZUtz       =
                   if total == 0
                   then 0
-                  else 100 * realToFrac (unNDT billable) / realToFrac (unNDT total)
+                  else 100 * realToFrac (unNDT (billable + nonBillable)) / realToFrac (unNDT total)
 --            , powerPMuid = puser ^. key
             }
 
@@ -64,6 +66,8 @@ powerUTZReport mmonth = do
         , let billable    = trs' ^. ix (puser ^. key, KindBillable)
         , let nonBillable = trs' ^. ix (puser ^. key, KindNonBillable)
         , let internal    = trs' ^. ix (puser ^. key, KindInternal)
+        , let absence     = trs' ^. ix (puser ^. key, KindAbsence)
+                          + trs' ^. ix (puser ^. key, KindSickLeave)
 
         , let total = billable + nonBillable + internal -- note: doesn't include absences.
         ]
