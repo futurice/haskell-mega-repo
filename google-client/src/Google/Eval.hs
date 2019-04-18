@@ -88,7 +88,7 @@ evalGoogleReq (ReqInvite calendarEvent) = do
     let eventStart = eventDateTime & edtDateTime .~ Just (calendarEvent ^. ceStartTime)
     let eventEnd   = eventDateTime & edtDateTime .~ Just (calendarEvent ^. ceEndTime)
     lgr <- newLogger Error stderr
-    env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
+    env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarEventsScope)
     liftIO $ runResourceT $ runGoogle env $
         send (eventsInsert "primary" (event & eAttendees   .~ eventAttendees
                                             & eStart       .~ Just eventStart

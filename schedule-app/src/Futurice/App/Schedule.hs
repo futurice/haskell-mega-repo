@@ -7,6 +7,7 @@ import Control.Concurrent.STM    (atomically, readTVar, readTVarIO)
 import FUM.Types.Login
 import Futurice.IdMap            (Key, fromFoldable)
 import Futurice.Integrations     (runIntegrations)
+import Futurice.Lomake
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
@@ -24,6 +25,7 @@ import Futurice.App.Schedule.Command.DeleteTemplate
 import Futurice.App.Schedule.Config
 import Futurice.App.Schedule.Ctx
 import Futurice.App.Schedule.Pages.CreateNewSchedulePage
+import Futurice.App.Schedule.Pages.EditScheduleTemplatePage
 import Futurice.App.Schedule.Pages.IndexPage
 import Futurice.App.Schedule.Pages.NewSchedulePage
 import Futurice.App.Schedule.Pages.PersonalSchedulesPage
@@ -36,27 +38,37 @@ import Futurice.App.Schedule.Types.Schedule
 import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.World
 
+import qualified Google
 import qualified Personio as P
 
 server :: Ctx -> Server ScheduleAPI
 server ctx = genericServer $ Record
-    { createScheduleTemplate   = createScheduleTemplateImpl ctx
-    , addEventTemplates        = addEventTemplatesImpl ctx
-    , scheduleTemplateGet      = scheduleTemplateGetImpl ctx
-    , schedulePdfGet           = schedulePdfGetImpl ctx
-    , scheduleTemplateDelete   = scheduleTemplateDeleteImpl ctx
+    { createScheduleTemplate     = createScheduleTemplateImpl ctx
+    , addEventTemplates          = addEventTemplatesImpl ctx
+    , scheduleTemplateGet        = scheduleTemplateGetImpl ctx
+    , schedulePdfGet             = schedulePdfGetImpl ctx
+    , scheduleTemplateDelete     = scheduleTemplateDeleteImpl ctx
+    , commandapi                 = commandServer ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
 htmlServer ctx = genericServer $ HtmlRecord
-    { indexPageGet               = getIndexPage ctx
-    , newSchedulePageGet         = newSchedulePageGetImpl ctx
-    , schedulingRequestPageGet   = schedulingRequestPageGetImpl ctx
-    , personalSchedulesPageGet   = personalSchedulesPageGetImpl ctx
-    , createScheduleTemplateForm = createScheduleTemplateFormImpl ctx
-    , createNewScheduleStartForm = createNewScheduleStartFormImpl ctx
-    , createNewScheduleForm      = createNewScheduleFormImpl ctx
-    , personSchedulePageGet      = personSchedulePageGetImpl ctx
+    { indexPageGet                = getIndexPage ctx
+    , newSchedulePageGet          = newSchedulePageGetImpl ctx
+    , schedulingRequestPageGet    = schedulingRequestPageGetImpl ctx
+    , personalSchedulesPageGet    = personalSchedulesPageGetImpl ctx
+    , createScheduleTemplateForm  = createScheduleTemplateFormImpl ctx
+    , createNewScheduleStartForm  = createNewScheduleStartFormImpl ctx
+    , createNewScheduleForm       = createNewScheduleFormImpl ctx
+    , personSchedulePageGet       = personSchedulePageGetImpl ctx
+    , editScheduleTemplatePageGet = editScheduleTemplatePageGetImpl ctx
+    }
+
+commandServer :: Ctx -> Server CommandAPIRoute
+commandServer ctx = genericServer $ CommandAPI
+    { addEmployeesToSchedule     = processCommandInput ctx
+    , removeEmployeeFromSchedule = processCommandInput ctx
+    , addEventTemplate           = processCommandInput ctx
     }
 
 getIndexPage :: Ctx -> Handler (HtmlPage "indexpage")
@@ -97,11 +109,22 @@ personalSchedulesPageGetImpl ctx = do
     lgr = ctxLogger ctx
     integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
 
+editScheduleTemplatePageGetImpl :: Ctx -> Key ScheduleTemplate -> Handler (HtmlPage "edit-scheduletemplate-page")
+editScheduleTemplatePageGetImpl ctx sid = do
+    now <- currentTime
+    w <- liftIO $ readTVarIO (ctxWorld ctx)
+    emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    pure $ editScheduleTemplatePage w emps sid
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    integrationCfg = cfgIntegrationsConfig (ctxConfig ctx)
+
 processInputCommand :: (Command cmd, ICT cmd) => Ctx -> Maybe Login -> cmd 'Input -> Handler (CommandResponse ())
 processInputCommand ctx loc cmd = withAuthUser ctx loc $ \login world -> runLogT "process-command" (ctxLogger ctx) $ do
     now <- currentTime
     cmdInternal' <- hoist liftIO $ runExceptT $
-        runReaderT (processCommand now login cmd) world
+        runReaderT (processCommand now login cmd) (world, (mgr, lgr, googleCfg))
     case cmdInternal' of
       Left err -> pure (CommandResponseError err)
       Right cmdInternal -> do
@@ -109,6 +132,10 @@ processInputCommand ctx loc cmd = withAuthUser ctx loc $ \login world -> runLogT
           case res of
             Right res' -> pure res'
             Left err   -> pure (CommandResponseError err)
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    googleCfg = cfgIntegrationsConfig $ ctxConfig ctx
 
 createScheduleTemplateImpl :: Ctx -> Maybe Login -> AddScheduleTemplate 'Input -> Handler (CommandResponse ())
 createScheduleTemplateImpl = processInputCommand
@@ -133,6 +160,9 @@ addEventTemplatesImpl = processInputCommand
 scheduleTemplateDeleteImpl :: Ctx -> Maybe Login -> DeleteTemplate 'Input -> Handler (CommandResponse ())
 scheduleTemplateDeleteImpl = processInputCommand
 
+processCommandInput :: (Command cmd, ICT cmd) => Ctx -> Maybe Login -> LomakeRequest (cmd 'Input) -> Handler (CommandResponse ())
+processCommandInput ctx loc (LomakeRequest req) = processInputCommand ctx loc req
+
 scheduleTemplateGetImpl :: Ctx -> Handler [ScheduleTemplate]
 scheduleTemplateGetImpl ctx =  do
     w <- liftIO $ readTVarIO (ctxWorld ctx)
@@ -142,7 +172,9 @@ createNewScheduleStartFormImpl :: Ctx -> Maybe Login -> CreateScheduleStart -> H
 createNewScheduleStartFormImpl ctx _loc scheduleStart = do
     w <- liftIO $ readTVarIO (ctxWorld ctx)
     now <- currentTime
-    emps <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    (emps, locations) <- liftIO $ runIntegrations mgr lgr now integrationCfg $
+        (,) <$> P.personioEmployees
+            <*> (Google.googleCalendarResources Google.ReadOnly)
     pure $ createNewSchedulePage scheduleStart emps w
   where
     mgr = ctxManager ctx

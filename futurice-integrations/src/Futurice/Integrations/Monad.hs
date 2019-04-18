@@ -319,7 +319,7 @@ instance Contains ServGH ss => MonadGitHub (Integrations ss) where
         typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
 
 -------------------------------------------------------------------------------
--- MonadGitHub
+-- MonadGoogle
 -------------------------------------------------------------------------------
 
 instance Contains ServGO ss => MonadGoogle (Integrations ss) where

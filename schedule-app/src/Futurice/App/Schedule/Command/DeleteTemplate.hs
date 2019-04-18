@@ -16,8 +16,8 @@ import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.World
 
 newtype DeleteTemplate (phase :: Phase) = DeleteTemplate (Key ScheduleTemplate)
-    deriving (Generic)
-    deriving anyclass (ToJSON, FromJSON, ToSchema)
+    deriving (GhcGeneric)
+    deriving anyclass (ToJSON, FromJSON, ToSchema, SopGeneric, HasDatatypeInfo)
 
 instance Command DeleteTemplate where
     type CommandTag DeleteTemplate = "delete-template"

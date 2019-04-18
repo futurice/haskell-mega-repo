@@ -54,6 +54,7 @@ data Field a where
     TextField   :: TextFieldOptions a -> Field a
     HiddenField :: TextFieldOptions a -> Field a
     EnumField   :: EnumFieldOptions a -> Field a
+    BoolField   :: BoolFieldOptions a -> Field a
 
 -------------------------------------------------------------------------------
 -- TextField
@@ -82,6 +83,19 @@ data EnumFieldOptions a = EnumFieldOptions
 
 instance HasFieldName (EnumFieldOptions a) where
     fieldName = lens efoName $ \s x -> s { efoName = x }
+
+-------------------------------------------------------------------------------
+-- BoolField
+-------------------------------------------------------------------------------
+
+data BoolFieldOptions a = BoolFieldOptions
+    { bfoName   :: FieldName
+    , bfoEncode :: a -> Text
+    , bfoDecode :: Text -> Either Text a
+    }
+
+instance HasFieldName (BoolFieldOptions a) where
+    fieldName = lens bfoName $ \s x -> s { bfoName = x }
 
 -------------------------------------------------------------------------------
 -- Field smart constructors
@@ -139,6 +153,15 @@ dynEnumField n = EnumField EnumFieldOptions
     , efoEncode = toQueryParam
     , efoDecode = parseQueryParam
     , efoValues = []
+    }
+
+boolField
+    :: (ToHttpApiData a, FromHttpApiData a)
+    => FieldName -> Field a
+boolField n = BoolField BoolFieldOptions
+    { bfoName = n
+    , bfoEncode = toQueryParam
+    , bfoDecode = parseQueryParam
     }
 
 -------------------------------------------------------------------------------
@@ -292,6 +315,23 @@ lomakeHtml' formOpts fields names values = do
             V _ xs | not (null xs) -> xs
             _                      -> efoValues opts
 
+    render (BoolField opts) n value@VHidden {} = do
+        input_
+            [ data_ "lomake-id" n
+            , name_ n
+            , type_ "hidden"
+            , value_ $ vMaybe "" (bfoEncode opts) value
+            ]
+
+    render (BoolField opts) n value = do
+        tell 1
+        row_ $ large_ 12 $ label_ $ do
+            toHtml (opts ^. fieldName)
+            input_ [ data_ "lomake-id" n
+                   , name_ n
+                   , type_ "checkbox"
+                   , value_ $ vMaybe "" (bfoEncode opts) value ]
+
 -------------------------------------------------------------------------------
 -- FromJSON
 -------------------------------------------------------------------------------
@@ -321,8 +361,10 @@ lomakeParseJSON' hm fs ns =
         lookupField n (tfoDecode opts)
     parse (TextField opts) (K n) = do
         lookupField n (tfoDecode opts)
-    parse (EnumField opts) (K n)= do
+    parse (EnumField opts) (K n) = do
         lookupField n (efoDecode opts)
+    parse (BoolField opts) (K n) = do
+        lookupField n (bfoDecode opts)
 
     lookupField :: FieldName -> (Text -> Either Text x) -> m x
     lookupField n decoder = case HM.lookup n hm of

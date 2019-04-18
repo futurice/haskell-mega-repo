@@ -14,6 +14,8 @@ import Futurice.EnvConfig
 import Text.Parsec         (alphaNum, many1, parse, sepBy1)
 import Text.Parsec.Char    (char)
 import Data.Swagger        (NamedSchema (..), ToSchema (..))
+import Data.UUID.V4 (nextRandom)
+import Data.Time.LocalTime (midnight)
 
 import Futurice.App.Schedule.Types.TimeZoneInfo
 import Futurice.App.Schedule.Types.Identifier
@@ -23,10 +25,15 @@ import qualified Data.Text as T
 newtype MonthOffset = MonthOffset Integer
     deriving (Show, Generic)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
+    deriving newtype (FromHttpApiData, ToHttpApiData)
 
 newtype DayOffset = DayOffset Integer
-    deriving (Show, Generic)
+    deriving (Show, Generic, Ord, Eq)
     deriving anyclass (FromJSON, ToJSON, ToSchema)
+    deriving newtype (FromHttpApiData, ToHttpApiData)
+
+getOffset :: DayOffset -> Integer
+getOffset (DayOffset i) = i
 
 newtype Calendar = Calendar Text
     deriving (Show, Generic)
@@ -54,6 +61,11 @@ data EventTemplate = EventTemplate
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving (FromJSON, ToJSON) via (Sopica EventTemplate)
 
+instance Entity EventTemplate where entityName _ = "EventTemplate"
+
+instance ToSchema TimeOfDay where
+    declareNamedSchema _p = pure $ NamedSchema (Just "TimeOfDay") $ mempty
+
 instance ToSchema EventTemplate where
     declareNamedSchema _p = pure $ NamedSchema (Just "EventTemplate") $ mempty
 
@@ -62,6 +74,21 @@ makeLenses ''EventTemplate
 instance HasKey EventTemplate where
     type Key EventTemplate = Identifier EventTemplate
     key = etEventTemplateId
+
+emptyEventTemplate :: IO EventTemplate
+emptyEventTemplate = do
+    newUUID <- nextRandom
+    pure EventTemplate
+        { _etEventTemplateId   = Identifier newUUID
+        , _etSummary           = ""
+        , _etDescription       = ""
+        , _etTimeOffset        = Left $ DayOffset 0
+        , _etStartTime         = midnight
+        , _etEndTime           = midnight
+        , _etInviteEmployees   = False
+        , _etInviteSupervisors = False
+        , _etIsCollective      = False
+        }
 
 instance ToJSON (IdMap EventTemplate) where
     toJSON = toJSON . toMap

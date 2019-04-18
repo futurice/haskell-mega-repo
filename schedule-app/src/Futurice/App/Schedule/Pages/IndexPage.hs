@@ -29,7 +29,7 @@ indexPage ctx world = page_ "Home" (Just NavHome) $ do
                 th_ $ "Actions"
             tbody_ $ do
                 for_ (world ^. worldScheduleTemplates) $ \s -> tr_ $ do
-                    td_ $ toHtml $ s ^. scheduleName
+                    td_ $ a_ [ recordHref_ editScheduleTemplatePageGet (s ^. key) ] $ toHtml $ s ^. scheduleName
                     td_ $ toHtml $ timeZoneToText $ s ^. scheduleTimezone
                     td_ $ toHtml $ calendarToText $ s ^. scheduleCalendar
                     td_ $ button_ [ class_ "alert button", type_ "button", futuId_ "delete-template", data_ "schedule-template" (s ^. key) ] "Delete"

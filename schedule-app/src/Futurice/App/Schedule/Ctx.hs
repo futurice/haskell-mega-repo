@@ -29,7 +29,6 @@ data Ctx = Ctx
 instance HasPostgresPool Ctx where
     postgresPool = ctxPostgres
 
-
 newCtx :: Logger -> Manager -> Config -> IO Ctx
 newCtx lgr mgr cfg = do
     pool <- createPostgresPool $ cfgPostgesConnInfo cfg

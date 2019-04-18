@@ -27,9 +27,6 @@ data MeetingRoom = MeetingRoom
 
 data EventTask = EventTask
 
-newtype Identifier a = Identifier UUID
-    deriving (Show, Eq, Ord)
-
 data World = World
     { _worldStarters           :: ![Starter]
     , _worldScheduleTemplates  :: !(IdMap ScheduleTemplate)

@@ -7,6 +7,7 @@ module Futurice.App.Schedule.Markup(
     page_,
     futuId_) where
 
+import Control.Lens              ((<>~))
 import Futurice.Generics
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
@@ -15,6 +16,8 @@ import Prelude ()
 import Servant                   (Link)
 
 import Futurice.App.Schedule.API
+
+import qualified Clay as C
 
 data Nav = NavHome
          | NavNewSchedule
@@ -30,10 +33,34 @@ instance Navigation Nav where
     navLink NavSchedulingRequest = (recordHref_ schedulingRequestPageGet, "Scheduling Requests")
     navLink NavPersonalSchedules = (recordHref_ personalSchedulesPageGet, "Personal Schedules")
 
-    pageParams = pageParamsWithJS $(makeRelativeToProject "schedule-app.js" >>= embedJS)
+    pageParams = (\x -> x & pageCss <>~ [css]) . (pageParamsWithJS $(makeRelativeToProject "schedule-app.js" >>= embedJS))
 
 linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l
 
 futuId_ :: Text -> Attribute
 futuId_ = data_ "futu-id"
+
+css :: C.Css
+css = do
+    C.label C.# ".error" C.? do
+        C.color C.red
+        "input[type=text]" C.? do
+            C.borderColor C.red
+        "input[type=date]" C.? do
+            C.borderColor C.red
+        "select" C.? do
+            C.borderColor C.red
+        ".select2-container--default .select2-selection--single" C.? do
+            C.borderColor C.red
+
+    C.label C.# ".pending" C.? do
+        C.color C.orange
+        "input[type=text]" C.?  do
+            C.borderColor C.orange
+        "input[type=date]" C.? do
+            C.borderColor C.orange
+        "select" C.? do
+            C.borderColor C.orange
+        ".select2-container--default .select2-selection--single" C.? do
+            C.borderColor C.orange

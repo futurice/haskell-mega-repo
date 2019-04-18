@@ -37,6 +37,7 @@ library
     , async
     , base
     , bytestring
+    , clay
     , constraints
     , containers
     , env-config
@@ -49,7 +50,9 @@ library
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , google-client
     , http-api-data
+    , kleene
     , lens
     , lifted-base
     , lucid
@@ -75,16 +78,21 @@ library
     Futurice.App.Schedule
     Futurice.App.Schedule.API
     Futurice.App.Schedule.Command
+    Futurice.App.Schedule.Command.AddEmployeesToSchedule
+    Futurice.App.Schedule.Command.AddEventTemplate
     Futurice.App.Schedule.Command.AddEventTemplates
     Futurice.App.Schedule.Command.AddScheduleTemplate
     Futurice.App.Schedule.Command.CreateEventTemplate
     Futurice.App.Schedule.Command.CreateSchedule
     Futurice.App.Schedule.Command.Definition
     Futurice.App.Schedule.Command.DeleteTemplate
+    Futurice.App.Schedule.Command.EditScheduleTemplate
+    Futurice.App.Schedule.Command.RemoveEmployeesFromSchedule
     Futurice.App.Schedule.Config
     Futurice.App.Schedule.Ctx
     Futurice.App.Schedule.Markup
     Futurice.App.Schedule.Pages.CreateNewSchedulePage
+    Futurice.App.Schedule.Pages.EditScheduleTemplatePage
     Futurice.App.Schedule.Pages.IndexPage
     Futurice.App.Schedule.Pages.NewSchedulePage
     Futurice.App.Schedule.Pages.PersonSchedule
@@ -104,7 +112,7 @@ executable schedule-server
   default-language: Haskell2010
   main-is:          Main.hs
   hs-source-dirs:   srv
-  ghc-options:      -Wall -Wall -threaded -rtsopts
+  ghc-options:      -Wall -threaded -rtsopts
   build-depends:
     , base
     , schedule-app

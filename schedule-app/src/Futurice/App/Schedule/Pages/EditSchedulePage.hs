@@ -1,0 +1,1 @@
+module Futurice.App.Schedule.Pages.EditSch

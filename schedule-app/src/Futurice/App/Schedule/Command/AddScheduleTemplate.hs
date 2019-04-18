@@ -29,9 +29,8 @@ data AddScheduleTemplate (phase :: Phase) = AddScheduleTemplate
     { astName     :: !Text -- TODO: change to better type
     , astCalendar :: !Calendar
     , astTimeZone :: !Text
-    } deriving (Show, Generic)
-
-deriveGeneric ''AddScheduleTemplate
+    } deriving (Show, GhcGeneric)
+      deriving anyclass (SopGeneric, HasDatatypeInfo)
 
 deriveVia [t| forall phase. (phase ~ 'Done => ToJSON (AddScheduleTemplate phase))   `Via` Sopica (AddScheduleTemplate phase) |]
 deriveVia [t| (FromJSON (AddScheduleTemplate 'Input)) `Via` Sopica (AddScheduleTemplate 'Input) |]

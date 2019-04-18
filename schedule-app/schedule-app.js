@@ -23,4 +23,5 @@ futu.onload(function () {
                 .catch(function (error) { console.log("Got error " + error); });
         });
     });
+    jQuery(document).foundation();
 });

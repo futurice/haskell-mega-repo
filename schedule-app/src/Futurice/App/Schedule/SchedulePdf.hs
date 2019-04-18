@@ -24,5 +24,5 @@ instance MimeRender OctetStream SchedulePdf where
     mimeRender c (SchedulePdf bs) = mimeRender c bs
 
 generateSchedulePdf :: World -> Key Schedule -> Maybe SchedulePdf
-generateSchedulePdf w sid = let schedule = w ^. worldSchedules . at sid --TODO implement pdf functionality
+generateSchedulePdf w sid = let _schedule = w ^. worldSchedules . at sid --TODO implement pdf functionality
                             in Just $ SchedulePdf mempty
