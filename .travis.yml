@@ -81,8 +81,8 @@ script:
 matrix:
   fast_finish: true
   include:
-  - env: BUILD=cabal GHCVER=8.6.3 # PEDANTIC=YES
-    compiler: ghc-8.6.3
+  - env: BUILD=cabal GHCVER=8.6.5 # PEDANTIC=YES
+    compiler: ghc-8.6.5
     addons:
       apt:
         sources:
@@ -90,5 +90,5 @@ matrix:
         packages:
         - libfftw3-dev
         - cabal-install-2.4
-        - ghc-8.6.3
+        - ghc-8.6.5
         - libgmp-dev
