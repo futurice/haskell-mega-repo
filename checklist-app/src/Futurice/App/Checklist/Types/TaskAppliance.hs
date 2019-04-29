@@ -6,9 +6,8 @@
 module Futurice.App.Checklist.Types.TaskAppliance where
 
 import Algebra.Lattice
-       (BoundedJoinSemiLattice (..), BoundedLattice,
-       BoundedMeetSemiLattice (..), JoinSemiLattice (..), Lattice,
-       MeetSemiLattice (..), joins1, meets1)
+       (BoundedJoinSemiLattice (..), BoundedMeetSemiLattice (..), Lattice (..),
+       joins1, meets1)
 import Data.Aeson.Compat         (withText)
 import Data.Functor.Foldable     (cata, embed)
 import Data.Functor.Foldable.TH
@@ -47,12 +46,11 @@ makeBaseFunctor ''TaskAppliance
 -- Lattice
 -------------------------------------------------------------------------------
 
-instance MeetSemiLattice TaskAppliance where
+instance Lattice TaskAppliance where
     TAAll /\ y     = y
     x     /\ TAAll = x
     x     /\ y     = TAAnd x y
 
-instance JoinSemiLattice TaskAppliance where
     TAAll \/ _     = TAAll
     _     \/ TAAll = TAAll
     x     \/ y     = TAOr x y
@@ -62,9 +60,6 @@ instance BoundedJoinSemiLattice TaskAppliance where
 
 instance BoundedMeetSemiLattice TaskAppliance where
     top = TAAll
-
-instance Lattice TaskAppliance
-instance BoundedLattice TaskAppliance
 
 -------------------------------------------------------------------------------
 -- negation

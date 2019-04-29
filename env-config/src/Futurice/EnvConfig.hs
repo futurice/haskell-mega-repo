@@ -21,8 +21,7 @@ module Futurice.EnvConfig (
     (<!>),
     ) where
 
-import Algebra.Lattice
-       (JoinSemiLattice (..), MeetSemiLattice (..))
+import Algebra.Lattice                (Lattice (..))
 import Control.Monad.Logger           (LogLevel (..))
 import Data.Functor.Alt               (Alt (..))
 import Data.List                      (foldl')
@@ -317,14 +316,14 @@ instance Functor (Validation e) where
    fmap _ (Failure e) = Failure e
    fmap f (Success a) = Success (f a)
 
-instance MeetSemiLattice e => Applicative (Validation e) where
+instance Lattice e => Applicative (Validation e) where
     pure = Success
     Failure e1 <*> Failure e2 = Failure (e1 /\ e2)
     Failure e1 <*> Success _  = Failure e1
     Success _  <*> Failure e2 = Failure e2
     Success f  <*> Success a  = Success (f a)
 
-instance JoinSemiLattice e => Alt (Validation e) where
+instance Lattice e => Alt (Validation e) where
     Failure e1 <!> Failure e2 = Failure (e1 \/ e2)
     Failure _  <!> Success a  = Success a
     Success a  <!> _          = Success a
@@ -344,10 +343,8 @@ newtype CNF = CNF (Set (Set Text))
 cnf :: String -> CNF
 cnf = CNF . Set.singleton . Set.singleton . T.pack
 
-instance MeetSemiLattice CNF where
+instance Lattice CNF where
     CNF a /\ CNF b = CNF (a <> b)
-
-instance JoinSemiLattice CNF where
     CNF a \/ CNF b = CNF $ optimise $ [ a' <> b' | a' <- toList a, b' <- toList b]
 
 optimise :: [Set Text] -> Set (Set Text)
