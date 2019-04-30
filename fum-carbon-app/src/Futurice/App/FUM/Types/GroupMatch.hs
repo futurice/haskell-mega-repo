@@ -5,9 +5,8 @@
 module Futurice.App.FUM.Types.GroupMatch where
 
 import Algebra.Lattice
-       (BoundedJoinSemiLattice (..), BoundedLattice,
-       BoundedMeetSemiLattice (..), JoinSemiLattice (..), Lattice,
-       MeetSemiLattice (..), joins1, meets1)
+       (BoundedJoinSemiLattice (..), BoundedMeetSemiLattice (..), Lattice (..),
+       joins1, meets1)
 import Data.Aeson.Compat         (withText)
 import Data.Functor.Foldable     (cata, embed)
 import Data.Functor.Foldable.TH
@@ -43,7 +42,7 @@ makeBaseFunctor ''GroupMatch
 -- Lattice
 -------------------------------------------------------------------------------
 
-instance MeetSemiLattice GroupMatch where
+instance Lattice GroupMatch where
     GMAll       /\ y                       = y
     x           /\ GMAll                   = x
     GMNot GMAll /\ _                       = GMNot GMAll
@@ -51,7 +50,6 @@ instance MeetSemiLattice GroupMatch where
     x           /\ y           | x == y    = x
                                | otherwise = GMAnd x y
 
-instance JoinSemiLattice GroupMatch where
     GMAll       \/ _                       = GMAll
     _           \/ GMAll                   = GMAll
     GMNot GMAll \/ x                       = x
@@ -64,9 +62,6 @@ instance BoundedJoinSemiLattice GroupMatch where
 
 instance BoundedMeetSemiLattice GroupMatch where
     top = GMAll
-
-instance Lattice GroupMatch
-instance BoundedLattice GroupMatch
 
 -------------------------------------------------------------------------------
 -- negation

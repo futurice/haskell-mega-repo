@@ -109,20 +109,20 @@ data Routes = Routes
         ("power" :> "api" :> "v3" :> "competences" :> Get '[JSON] Value)
 
     , routePowerV3People :: ProxiedEndpoint 'PowerService
-        ("uiapi" :> "person/" :> Get '[JSON] Value)
-        ("power" :> "api" :> "v3" :> "people" :> Get '[JSON] Value)
+        ("uiapi" :> "person" :> "" :>  QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "people" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
 
     , routePowerV3Tribes :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "tribe/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "tribes" :> Get '[JSON] Value)
 
     , routePowerV3Allocations :: ProxiedEndpoint 'PowerService
-        ("uiapi" :> "allocation/" :> Get '[JSON] Value)
-        ("power" :> "api" :> "v3" :> "allocations" :> Get '[JSON] Value)
+        ("uiapi" :> "allocation" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "allocations" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
 
     , routePowerV3Projects :: ProxiedEndpoint 'PowerService
-        ("uiapi" :> "project/" :> Get '[JSON] Value)
-        ("power" :> "api" :> "v3" :> "projects" :> Get '[JSON] Value)
+        ("uiapi" :> "project" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "projects" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
 
 
     -- FUM
