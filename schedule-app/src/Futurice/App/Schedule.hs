@@ -125,7 +125,7 @@ processInputCommand :: (Command cmd, ICT cmd) => Ctx -> Maybe Login -> cmd 'Inpu
 processInputCommand ctx loc cmd = withAuthUser ctx loc $ \login world -> runLogT "process-command" (ctxLogger ctx) $ do
     now <- currentTime
     cmdInternal' <- hoist liftIO $ runExceptT $
-        runReaderT (processCommand now login cmd) (world, (mgr, lgr, googleCfg))
+        runReaderT (runProcessMonad $ processCommand now login cmd) (CommandConfig world mgr lgr googleCfg)
     case cmdInternal' of
       Left err -> pure (CommandResponseError err)
       Right cmdInternal -> do
@@ -176,7 +176,7 @@ createNewScheduleStartFormImpl ctx _loc scheduleStart = do
     (emps, locations) <- liftIO $ runIntegrations mgr lgr now integrationCfg $
         (,) <$> P.personioEmployees
             <*> (Google.googleCalendarResources Google.ReadOnly)
-    pure $ createNewSchedulePage scheduleStart emps w
+    pure $ createNewSchedulePage scheduleStart locations emps w
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx

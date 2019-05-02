@@ -50,6 +50,7 @@ library
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , gogol-admin-directory
     , gogol-apps-calendar
     , google-client
     , http-api-data

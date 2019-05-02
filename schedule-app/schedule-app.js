@@ -8,6 +8,7 @@ futu.onload(function () {
     var buttonOnClick = futu.buttonOnClick;
 
     $$('select[data-futu-id=schedule-employees]').$el = jQuery($$('select[data-futu-id=schedule-employees]')).select2();
+    $$('select[data-futu-id=schedule-locations]').$el = jQuery($$('select[data-futu-id=schedule-locations]')).select2();
 
     $$('button[data-futu-id=delete-template]').forEach(function (btn) {
         buttonOnClick(btn, function () {

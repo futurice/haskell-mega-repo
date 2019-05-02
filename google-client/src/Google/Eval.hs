@@ -112,6 +112,14 @@ evalGoogleReq (ReqPatchEvent eventId calendarEvent) = do
     env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
     liftIO $ runResourceT $ runGoogle env $ do
         send (eventsPatch "primary" (event & eAttendees .~ eventAttendees) eventId)
+evalGoogleReq (ReqEvent eventId) = do
+    cfg <- view googleCfg
+    mgr <- view httpManager
+    let cred = GA.serviceAccountUser (Just $ serviceAccountUser cfg) $ toCredentials cfg
+    lgr <- newLogger Error stderr
+    env <- newEnvWith cred lgr mgr <&> (envScopes .~ calendarScope)
+    liftIO $ runResourceT $ runGoogle env $ do
+        send (eventsGet "primary" eventId)
 
 evalGoogleReqIO :: GoogleCredentials -> Manager -> Req a -> IO a
 evalGoogleReqIO cred mgr req = flip runReaderT (Cfg cred mgr) $ evalGoogleReq req

@@ -25,6 +25,7 @@ data Req a where
     ReqInvite                    :: CalendarEvent -> Req Event
     ReqDeleteEvent               :: Text -> Req ()
     ReqPatchEvent                :: Text -> CalendarEvent -> Req Event
+    ReqEvent                     :: Text -> Req Event
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
@@ -35,6 +36,7 @@ instance Hashable (Req a) where
     hashWithSalt salt (ReqInvite ev) = hashWithSalt salt (2::Int, ev)
     hashWithSalt salt (ReqDeleteEvent eventId) = hashWithSalt salt (3::Int, eventId)
     hashWithSalt salt (ReqPatchEvent eventId ev) = hashWithSalt salt (4::Int, eventId, ev)
+    hashWithSalt salt (ReqEvent ev) = hashWithSalt salt (5::Int, ev)
 
 requestDict
     :: ( c [CalendarResource]
@@ -49,3 +51,4 @@ requestDict _ (ReqCalendarResources _) = Dict
 requestDict _ (ReqInvite _)            = Dict
 requestDict _ (ReqDeleteEvent _)       = Dict
 requestDict _ (ReqPatchEvent _ _)      = Dict
+requestDict _ (ReqEvent _)             = Dict

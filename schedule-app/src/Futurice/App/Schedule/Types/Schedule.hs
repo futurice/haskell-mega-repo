@@ -22,6 +22,7 @@ data EventRequest = EventRequest
     { _eventRequestSummary      :: !Text
     , _eventRequestDescription  :: !Text
     , _eventRequestLocations    :: ![Text]   -- TODO: change to location type
+    , _eventStartDate           :: !Day
     , _eventRequestStartTime    :: !TimeOfDay
     , _eventRequestEndTime      :: !TimeOfDay
     , _eventRequestEmployees    :: ![P.EmployeeId]

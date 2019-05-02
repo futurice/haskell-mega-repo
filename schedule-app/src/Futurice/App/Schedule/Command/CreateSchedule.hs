@@ -26,7 +26,6 @@ import Futurice.App.Schedule.Types.Phase
 import Futurice.App.Schedule.Types.Schedule
 import Futurice.App.Schedule.Types.Templates
 import Futurice.App.Schedule.Types.World
-import Futurice.Integrations
 import Google
 
 import qualified Data.Set  as S
@@ -67,7 +66,8 @@ instance FromMultipart Mem (CreateSchedule 'Input) where
             buildEvent eventId = EventRequest
                 <$> lookupInputWithId eventId "summary"
                 <*> lookupInputWithId eventId "description"
-                <*> Just [] -- TODO: Lisää oikea lokaatiokäsittely
+                <*> (Just $ fetchLocations eventId)
+                <*> (lookupInputWithId eventId "start-date" >>= readMaybe . T.unpack)
                 <*> (lookupInputWithId eventId "from" >>= readMaybe . T.unpack)
                 <*> (lookupInputWithId eventId "to" >>= readMaybe . T.unpack)
                 <*> (Just $ fetchEmployees eventId)
@@ -76,12 +76,14 @@ instance FromMultipart Mem (CreateSchedule 'Input) where
             fetchEmployees iid = catMaybes
                 $ fmap (fmap P.EmployeeId . readMaybe . T.unpack . iValue)
                 $ filter (\i -> iName i == ("employees-" <> iid)) $ inputs multipartData
+            fetchLocations iid = fmap iValue $ filter (\i -> iName i == ("locations-" <> iid)) $ inputs multipartData
         in CreateSchedule <$> lookupInput "schedule-template" multipartData <*> schedule <*> pure ()
 
 data CheckedEventRequest = CheckedEventRequest
     { evSummary      :: !Text
     , evDescription  :: !Text
     , evLocations    :: ![Text]   -- TODO: change to location type
+    , evStartDate    :: !Day
     , evStartTime    :: !TimeOfDay
     , evEndTime      :: !TimeOfDay
     , evEmployees    :: ![Text]
@@ -92,9 +94,7 @@ instance Command CreateSchedule where
     type CommandTag CreateSchedule = "create-schedule"
 
     processCommand _time _log (CreateSchedule sid schedule _) = do
-        params <- snd <$> ask
-        now <- currentTime
-        employees <- liftIO $ runIntegrations (params ^. _1) (params ^. _2) now (params ^. _3) $ P.personioEmployees
+        employees <- P.personioEmployees
         let emap = fromFoldable employees
         let toChecked ev = do
                 emails <- for (ev ^. eventRequestEmployees) $ \emp -> do
@@ -105,6 +105,7 @@ instance Command CreateSchedule where
                     { evSummary      = ev ^. eventRequestSummary
                     , evDescription  = ev ^. eventRequestDescription
                     , evLocations    = ev ^. eventRequestLocations
+                    , evStartDate    = ev ^. eventStartDate
                     , evStartTime    = ev ^. eventRequestStartTime
                     , evEndTime      = ev ^. eventRequestEndTime
                     , evEmployees    = emails
@@ -112,22 +113,22 @@ instance Command CreateSchedule where
                     }
         let toEvents event
                 | evIsCollective event == True = pure $ CalendarEvent
-                    { _ceStartTime   = UTCTime (utctDay now) (timeOfDayToTime $ evStartTime event)
-                    , _ceEndTime     = UTCTime (utctDay now) (timeOfDayToTime $ evEndTime event)
+                    { _ceStartTime   = UTCTime (evStartDate event) (timeOfDayToTime $ evStartTime event)
+                    , _ceEndTime     = UTCTime (evStartDate event) (timeOfDayToTime $ evEndTime event)
                     , _ceDescription = evDescription event
                     , _ceSummary     = evSummary event
-                    , _ceAttendees   = evEmployees event
+                    , _ceAttendees   = evEmployees event <> evLocations event
                     }
                 | otherwise = flip fmap (evEmployees event) $ \emp -> CalendarEvent
-                    { _ceStartTime   = UTCTime (utctDay now) (timeOfDayToTime $ evStartTime event)
-                    , _ceEndTime     = UTCTime (utctDay now) (timeOfDayToTime $ evEndTime event)
+                    { _ceStartTime   = UTCTime (evStartDate event) (timeOfDayToTime $ evStartTime event)
+                    , _ceEndTime     = UTCTime (evStartDate event) (timeOfDayToTime $ evEndTime event)
                     , _ceDescription = evDescription event
                     , _ceSummary     = evSummary event
-                    , _ceAttendees   = [emp]
+                    , _ceAttendees   = [emp] <> evLocations event
                     }
         checkedEvents <- traverse toChecked schedule
         evs <- for (concat $ toEvents <$> checkedEvents) $ \ev ->
-          liftIO $ runIntegrations (params ^. _1) (params ^. _2) now (params ^. _3) (googleSendInvite ev)
+          googleSendInvite ev
         pure $ CreateSchedule sid schedule ((^. eId) <$> evs)
 
     applyCommand time login (CreateSchedule sid schedule evs) = do

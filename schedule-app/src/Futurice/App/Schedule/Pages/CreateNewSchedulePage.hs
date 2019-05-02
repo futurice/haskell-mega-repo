@@ -2,8 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Schedule.Pages.CreateNewSchedulePage where
 
-import Futurice.IdMap   (toMap)
+import Futurice.IdMap                 (toMap)
 import Futurice.Prelude
+import Network.Google.Directory.Types (crResourceEmail, crResourceName)
 import Prelude ()
 
 import Futurice.App.Schedule.API
@@ -14,10 +15,11 @@ import Futurice.App.Schedule.Types.World
 
 import qualified Data.Map as M
 import qualified Data.Set as S
+import qualified Google
 import qualified Personio as P
 
-createNewSchedulePage :: CreateScheduleStart -> [P.Employee] -> World -> HtmlPage "create-new-schedule-page"
-createNewSchedulePage (CreateScheduleStart name date scheduleEmps) emps world = page_ "New Schedule" (Just NavNewSchedule) $ do
+createNewSchedulePage :: CreateScheduleStart -> [Google.CalendarResource] -> [P.Employee] -> World -> HtmlPage "create-new-schedule-page"
+createNewSchedulePage (CreateScheduleStart name date scheduleEmps) locations emps world = page_ "New Schedule" (Just NavNewSchedule) $ do
     form_ [recordAction_ createNewScheduleForm, method_ "Post", enctype_ "multipart/form-data"] $ for_ (world ^. worldScheduleTemplates . at name) $ \template -> do
         input_ [ type_ "hidden", name_ "schedule-template", value_ name ]
         ifor_ (M.elems . toMap $ template  ^. scheduleEventTemplates) $ \i eventTemplate -> do
@@ -31,7 +33,11 @@ createNewSchedulePage (CreateScheduleStart name date scheduleEmps) emps world = 
                     td_ $ textarea_ [ name_ ("description-" <> textShow i) ] $ toHtml (eventTemplate ^. etDescription)
                 tr_ $ do
                     th_ "Locations:"
-                    td_ $ ""
+                    td_ $ select_ [ futuId_ "schedule-locations", multiple_ "multiple", name_ ("locations-" <> textShow i)] $ do
+                        for_ locations $ \l -> do
+                            case (l ^. crResourceEmail, l ^. crResourceName) of
+                              (Just rid, Just rname) -> optionSelected_ False [ value_ rid] $ toHtml rname
+                              _ -> pure ()
                 tr_ $ do
                     th_ "Date:"
                     td_ $ input_ [ type_ "date", name_ ("start-date-" <> textShow i), value_ (textShow date)] -- TODO: lisää offset
