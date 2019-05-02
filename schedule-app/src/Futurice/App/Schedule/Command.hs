@@ -28,6 +28,7 @@ import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.CreateSchedule
 import Futurice.App.Schedule.Command.Definition
+import Futurice.App.Schedule.Command.DeleteSchedule
 import Futurice.App.Schedule.Command.DeleteTemplate
 import Futurice.App.Schedule.Command.RemoveEmployeesFromSchedule
 import Futurice.App.Schedule.Types.Phase
@@ -40,7 +41,8 @@ type Commands = '[ AddScheduleTemplate
                  , DeleteTemplate
                  , AddEmployeesToSchedule
                  , RemoveEmployeeFromSchedule
-                 , AddEventTemplate ]
+                 , AddEventTemplate
+                 , DeleteSchedule ]
 
 type CT = TT Commands
 

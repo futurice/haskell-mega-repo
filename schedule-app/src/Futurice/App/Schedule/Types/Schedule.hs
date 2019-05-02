@@ -79,6 +79,7 @@ data Schedule = Schedule
     , _scheduleEvents           :: ![Event]
     , _scheduleCreatedBy        :: !Login
     , _scheduleCreatedOn        :: !UTCTime
+    , _scheduleEventIds         :: ![Maybe Text]
     }
 
 makeLenses ''Schedule

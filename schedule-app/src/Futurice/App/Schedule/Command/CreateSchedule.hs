@@ -1,34 +1,37 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE DerivingVia           #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Schedule.Command.CreateSchedule where
 
+import Control.Lens                      (use, (<>=))
 import Data.Time.Format
-import Futurice.IdMap    (Key, fromFoldable)
-import Futurice.Prelude
-import Futurice.Lomake
-import Futurice.Generics
-import Control.Lens      ((<>=), use)
-import Prelude ()
+import Data.Time.LocalTime               (timeOfDayToTime)
 import Futurice.Email
+import Futurice.Generics
+import Futurice.IdMap                    (Key, fromFoldable)
+import Futurice.Lomake
+import Futurice.Prelude
+import Network.Google.AppsCalendar.Types (eId)
+import Prelude ()
 import Servant.Multipart
        (FromMultipart, Mem, fromMultipart, iName, iValue, inputs, lookupInput)
-import Data.Time.LocalTime (timeOfDayToTime)
 
 import Futurice.App.Schedule.Command.Definition
-import Futurice.App.Schedule.Types.World
+import Futurice.App.Schedule.Types.Phase
 import Futurice.App.Schedule.Types.Schedule
 import Futurice.App.Schedule.Types.Templates
-import Futurice.App.Schedule.Types.Phase
+import Futurice.App.Schedule.Types.World
 import Futurice.Integrations
 import Google
 
+import qualified Data.Set  as S
 import qualified Data.Text as T
 import qualified Personio  as P
-import qualified Data.Set  as S
 
 data CreateScheduleStart = CreateScheduleStart
     { _csTemplateName :: !(Key ScheduleTemplate)
@@ -49,9 +52,12 @@ instance FromMultipart Mem CreateScheduleStart where
 data CreateSchedule (phase :: Phase) = CreateSchedule
     { _csScheduleTemplateId :: !(Key ScheduleTemplate)
     , _csEventSchedule      :: !ScheduleRequest
+    , _csCreatedEvents      :: !(Phased phase () () [Maybe Text])
     } deriving (GhcGeneric, SopGeneric, HasDatatypeInfo)
-      deriving (ToJSON) via (Sopica (CreateSchedule 'Done))
-      deriving (FromJSON) via (Sopica (CreateSchedule 'Input))
+
+deriveVia [t| forall phase. (phase ~ 'Done => ToJSON (CreateSchedule phase))   `Via` Sopica (CreateSchedule phase) |]
+deriveVia [t| FromJSON (CreateSchedule 'Done) `Via` Sopica (CreateSchedule 'Done) |]
+deriveVia [t| FromJSON (CreateSchedule 'Input) `Via` Sopica (CreateSchedule 'Input) |]
 
 instance FromMultipart Mem (CreateSchedule 'Input) where
     fromMultipart multipartData =
@@ -70,7 +76,7 @@ instance FromMultipart Mem (CreateSchedule 'Input) where
             fetchEmployees iid = catMaybes
                 $ fmap (fmap P.EmployeeId . readMaybe . T.unpack . iValue)
                 $ filter (\i -> iName i == ("employees-" <> iid)) $ inputs multipartData
-        in CreateSchedule <$> lookupInput "schedule-template" multipartData <*> schedule
+        in CreateSchedule <$> lookupInput "schedule-template" multipartData <*> schedule <*> pure ()
 
 data CheckedEventRequest = CheckedEventRequest
     { evSummary      :: !Text
@@ -85,7 +91,7 @@ data CheckedEventRequest = CheckedEventRequest
 instance Command CreateSchedule where
     type CommandTag CreateSchedule = "create-schedule"
 
-    processCommand _time _log (CreateSchedule sid schedule) = do
+    processCommand _time _log (CreateSchedule sid schedule _) = do
         params <- snd <$> ask
         now <- currentTime
         employees <- liftIO $ runIntegrations (params ^. _1) (params ^. _2) now (params ^. _3) $ P.personioEmployees
@@ -113,18 +119,18 @@ instance Command CreateSchedule where
                     , _ceAttendees   = evEmployees event
                     }
                 | otherwise = flip fmap (evEmployees event) $ \emp -> CalendarEvent
-                          { _ceStartTime   = UTCTime (utctDay now) (timeOfDayToTime $ evStartTime event)
-                          , _ceEndTime     = UTCTime (utctDay now) (timeOfDayToTime $ evEndTime event)
-                          , _ceDescription = evDescription event
-                          , _ceSummary     = evSummary event
-                          , _ceAttendees   = [emp]
-                          }
+                    { _ceStartTime   = UTCTime (utctDay now) (timeOfDayToTime $ evStartTime event)
+                    , _ceEndTime     = UTCTime (utctDay now) (timeOfDayToTime $ evEndTime event)
+                    , _ceDescription = evDescription event
+                    , _ceSummary     = evSummary event
+                    , _ceAttendees   = [emp]
+                    }
         checkedEvents <- traverse toChecked schedule
-        for_ (concat $ toEvents <$> checkedEvents) $ \ev ->
-          void $ liftIO $ runIntegrations (params ^. _1) (params ^. _2) now (params ^. _3) (googleSendInvite ev)
-        pure $ CreateSchedule sid schedule
+        evs <- for (concat $ toEvents <$> checkedEvents) $ \ev ->
+          liftIO $ runIntegrations (params ^. _1) (params ^. _2) now (params ^. _3) (googleSendInvite ev)
+        pure $ CreateSchedule sid schedule ((^. eId) <$> evs)
 
-    applyCommand time login (CreateSchedule sid schedule) = do
+    applyCommand time login (CreateSchedule sid schedule evs) = do
         templateName <- use (worldScheduleTemplates . ix sid . scheduleName)
         let eventRequestToEvent er = Event
                 { _eventSummary = er ^. eventRequestSummary
@@ -137,5 +143,5 @@ instance Command CreateSchedule where
                 , _eventIsCollective = False
                 , _eventEmployees = S.fromList $ er ^. eventRequestEmployees
                 }
-        worldSchedules <>= (fromFoldable $ [Schedule templateName (fmap eventRequestToEvent schedule) login time])
+        worldSchedules <>= (fromFoldable $ [Schedule templateName (fmap eventRequestToEvent schedule) login time evs])
         pure $ CommandResponseOk ()

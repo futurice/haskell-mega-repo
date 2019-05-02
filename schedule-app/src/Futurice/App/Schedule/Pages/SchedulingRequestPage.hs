@@ -11,6 +11,7 @@ import Prelude ()
 import Futurice.App.Schedule.API
 import Futurice.App.Schedule.Command
 import Futurice.App.Schedule.Command.AddEmployeesToSchedule
+import Futurice.App.Schedule.Command.DeleteSchedule
 import Futurice.App.Schedule.Command.RemoveEmployeesFromSchedule
 import Futurice.App.Schedule.Markup
 import Futurice.App.Schedule.Types.Schedule
@@ -50,7 +51,9 @@ schedulingRequestPage world emps = page_ "Scheduling Requests" (Just NavScheduli
                     Nil
                 td_ $ a_ [ class_ "button", recordHref_ schedulePdfGet (schedule ^. key)] "Download"
                 td_ $ toHtml $ scheduleStatus schedule
-                td_ $ button_ [ class_ "alert button", type_ "button"] "Delete"
+                td_ $ commandHtmlSubmit (Proxy :: Proxy DeleteSchedule) "Delete" "success" $
+                    vHidden (schedule ^. key) :*
+                    Nil
   where
     toEmployeeString [] = ""
     toEmployeeString [a] = a

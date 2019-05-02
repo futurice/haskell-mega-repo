@@ -17,3 +17,6 @@ googleCalendarEvents readonly startDay endDay email = googleReq (ReqEvents reado
 
 googleSendInvite :: MonadGoogle m => CalendarEvent -> m Event
 googleSendInvite ev = googleReq (ReqInvite ev)
+
+googleDeleteEvent :: MonadGoogle m => Text -> m ()
+googleDeleteEvent eid = googleReq (ReqDeleteEvent eid)

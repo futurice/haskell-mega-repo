@@ -24,10 +24,10 @@ editScheduleTemplatePage w _emps sid = page_ "Edit template" (Just NavHome) $ do
             ul_ [ class_ "accordion", data_ "accordion" "", data_ "multi-expand" "true", data_ "allow-all-closed" "true"] $ do
                 for_ (w ^. worldScheduleTemplates . at sid) $ \scheduleTemplate -> do
                     for_ (M.keys $ eventTemplateMap (toList $ scheduleTemplate ^. scheduleEventTemplates)) $ \eid -> do
-                        h2_ $ weekdays !! (fromIntegral $ getOffset eid)
+                        h2_ $ weekdays !! fromIntegral (getOffset eid)
                         for_ ((eventTemplateMap (toList $ scheduleTemplate ^. scheduleEventTemplates)) ^. ix eid) $ \eventTemplate -> do
                             li_ [ class_ "accordion-item", data_ "accordion-item" ""] $ do
-                                let _i = 1
+                                let _i = 1 :: Integer
                                 a_ [ class_ "accordion-title", href_ "#"] $ toHtml $ eventTemplate ^. etSummary
                                 div_ [class_ "accordion-content", data_ "tab-content" ""] $ do
                                     commandHtmlSubmit (Proxy :: Proxy EditEventTemplate) "Edit" "success" $

@@ -69,6 +69,7 @@ commandServer ctx = genericServer $ CommandAPI
     { addEmployeesToSchedule     = processCommandInput ctx
     , removeEmployeeFromSchedule = processCommandInput ctx
     , addEventTemplate           = processCommandInput ctx
+    , deleteSchedule             = processCommandInput ctx
     }
 
 getIndexPage :: Ctx -> Handler (HtmlPage "indexpage")

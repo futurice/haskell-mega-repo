@@ -19,6 +19,7 @@ import Futurice.App.Schedule.Command.AddEventTemplate
 import Futurice.App.Schedule.Command.AddEventTemplates
 import Futurice.App.Schedule.Command.AddScheduleTemplate
 import Futurice.App.Schedule.Command.CreateSchedule
+import Futurice.App.Schedule.Command.DeleteSchedule
 import Futurice.App.Schedule.Command.DeleteTemplate
 import Futurice.App.Schedule.Command.RemoveEmployeesFromSchedule
 import Futurice.App.Schedule.SchedulePdf
@@ -45,6 +46,7 @@ data CommandAPI route = CommandAPI
     { addEmployeesToSchedule     :: route :- CommandEndpoint AddEmployeesToSchedule
     , removeEmployeeFromSchedule :: route :- CommandEndpoint RemoveEmployeeFromSchedule
     , addEventTemplate           :: route :- CommandEndpoint AddEventTemplate
+    , deleteSchedule             :: route :- CommandEndpoint DeleteSchedule
     } deriving (Generic)
 
 scheduleApi :: Proxy ScheduleAPI

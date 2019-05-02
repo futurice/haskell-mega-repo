@@ -50,6 +50,7 @@ library
     , futurice-tribes
     , generics-sop
     , generics-sop-lens
+    , gogol-apps-calendar
     , google-client
     , http-api-data
     , kleene
@@ -85,6 +86,7 @@ library
     Futurice.App.Schedule.Command.CreateEventTemplate
     Futurice.App.Schedule.Command.CreateSchedule
     Futurice.App.Schedule.Command.Definition
+    Futurice.App.Schedule.Command.DeleteSchedule
     Futurice.App.Schedule.Command.DeleteTemplate
     Futurice.App.Schedule.Command.EditScheduleTemplate
     Futurice.App.Schedule.Command.RemoveEmployeesFromSchedule
