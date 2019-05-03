@@ -89,10 +89,6 @@ groupToText OktaGroup = "OKTA_GROUP"
 groupToText AppGroup  = "APP_GROUP"
 groupToText BuiltIn   = "BUILT_IN"
 
-   -- "profile": {
-   --    "name": "West Coast Users",
-   --    "description": "All Users West of The Rockies"
-
 instance FromJSON GroupType where
     parseJSON x = do
         t <- parseJSON x
