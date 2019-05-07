@@ -174,6 +174,7 @@ cmdBuildDocker appnames = do
             -- To compile own use sfdp
             -- /configure --prefix=/opt/graphviz --with-gtk=no --with-glade=no --with-glut=no --with-gts=yes --with-smyrna=no --with-pangocairo=yes --enable-static --disable-shared
             copyFile "vendor/sfdp" (directory </> "sfdp")
+            copyFile "entrust.crt" (directory </> "entrust.crt")
 
             -- write dockerfile
             T.hPutStrLn handle dockerfile
