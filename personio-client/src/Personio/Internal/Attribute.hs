@@ -3,9 +3,9 @@
 module Personio.Internal.Attribute where
 
 import Data.Aeson.Compat
+import Data.Aeson.Internal (JSONPathElement (Key), (<?>))
 import Futurice.Aeson
 import Futurice.Generics
-import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
 import Futurice.Prelude
 import Prelude ()
 
@@ -28,6 +28,7 @@ instance ToSchema Attribute where
     declareNamedSchema _ = pure $ Swagger.NamedSchema (Just "Attribute") mempty
 
 instance NFData Attribute
+instance Hashable Attribute
 
 instance Arbitrary Attribute where
     arbitrary = pure (Attribute "arbitrary" "value")
