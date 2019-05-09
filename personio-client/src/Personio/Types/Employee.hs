@@ -14,17 +14,17 @@ module Personio.Types.Employee where
 -- #define PERSONIO_DEBUG 1
 
 import Data.Aeson.Compat
-import Data.Fixed          (Centi)
-import Data.Semigroup      (Min (..))
-import Data.Time           (zonedTimeToLocalTime)
-import FUM.Types.Login     (Login)
+import Data.Fixed           (Centi)
+import Data.Semigroup       (Min (..))
+import Data.Time            (zonedTimeToLocalTime)
+import FUM.Types.Login      (Login)
 import Futurice.Aeson
-import Futurice.Company
 import Futurice.CareerLevel
+import Futurice.Company
 import Futurice.CostCenter
-import Futurice.Email      (Email)
+import Futurice.Email       (Email)
 import Futurice.Generics
-import Futurice.IdMap      (HasKey (..))
+import Futurice.IdMap       (HasKey (..))
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Time
@@ -40,8 +40,8 @@ import Personio.Types.SimpleEmployee
 import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST as FD
-import qualified GitHub             as GH
 import qualified Data.Text          as T
+import qualified GitHub             as GH
 
 import Personio.Types.Internal
 
@@ -76,6 +76,8 @@ data Employee = Employee
     , _employeeExpat            :: !Bool
     , _employeeBirthday         :: !(Maybe Day)
     , _employeeJobOfferAccepted :: !(Maybe Day)
+    , _employeeSummary          :: !(Maybe Text)
+    , _employeeFutubuddy        :: !(Maybe Email)
 #ifdef PERSONIO_DEBUG
     , _employeeRest             :: !(HashMap Text Attribute)
 #endif
@@ -179,6 +181,8 @@ parseEmployeeObject obj' = Employee
     <*> fmap getExpat (parseDynamicAttribute obj  "Expat")
     <*> fmap2 zonedDay (parseDynamicAttribute obj "Birthday")
     <*> fmap2 zonedDay (parseDynamicAttribute obj "Job offer accepted")
+    <*> optional (parseDynamicAttribute obj "Summary text")
+    <*> optional (parseDynamicAttribute obj "Futubuddy's email")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif

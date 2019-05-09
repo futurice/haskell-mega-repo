@@ -28,6 +28,7 @@ data ScheduleEmployee = ScheduleEmployee
     , _seSupervisorName  :: !(Maybe Text)
     , _seSupervisorEmail :: !(Maybe Email)
     , _seHrnumber        :: !(Maybe Int)
+    , _seFutubuddy       :: !(Maybe Email)
     }
   deriving (Show, Typeable, Generic)
 
@@ -55,6 +56,7 @@ fromPersonio es = map mk es
         , _seSupervisorName  = withSupervisor $ \s -> s ^? employeeFullname
         , _seSupervisorEmail = withSupervisor $ \s -> s ^. employeeEmail
         , _seHrnumber        = e ^. employeeHRNumber
+        , _seFutubuddy       = e ^. employeeFutubuddy
         }
       where
         withSupervisor :: (Employee -> Maybe a) -> Maybe a
