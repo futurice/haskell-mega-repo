@@ -65,6 +65,14 @@ instance ToSchema TimereportKind where declareNamedSchema = enumDeclareNamedSche
 -- Integrations
 -------------------------------------------------------------------------------
 
+-- | Sick leave data is sensitive so don't highlight unless really necessary
+timereportKindFutuqu :: (MonadPlanMillQuery m, MonadMemoize m) => PM.Timereport -> m TimereportKind
+timereportKindFutuqu tr = do
+    t <- timereportKind tr
+    case t of
+      KindSickLeave -> pure KindAbsence
+      _             -> pure t
+
 timereportKind :: (MonadPlanMillQuery m, MonadMemoize m) => PM.Timereport -> m TimereportKind
 timereportKind tr = do
     billableStatus <- PMQ.enumerationValue (PM.trBillableStatus tr) "Non-billable"

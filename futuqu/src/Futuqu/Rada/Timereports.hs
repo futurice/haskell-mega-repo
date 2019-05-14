@@ -90,7 +90,7 @@ timereportsData' interval users sts bss =
         trs <- PMQ.timereports interval uid
 
         for (toList trs) $ \tr -> do
-            ki <- timereportKind tr
+            ki <- timereportKindFutuqu tr
 
             prjId <- case PM.trProject tr of
                 Just pid -> return (Just pid)
