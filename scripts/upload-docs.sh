@@ -10,7 +10,7 @@ if [ `uname` = "Darwin" ]; then
 	. env-postgres-osx.sh
 fi
 
-. venv/bin/activate
+# . venv/bin/activate
 
 set -ex
 
@@ -22,6 +22,6 @@ aws help > /dev/null
 # Generate documentation
 stack --no-terminal build --no-keep-going --test --no-run-tests --haddock -j 2
 
-aws s3 --profile docs-futurice-com --region eu-central-1 sync --delete \
+aws s3 --region eu-central-1 sync --delete \
     $(stack path --local-doc-root) \
     s3://docs-futurice-com/haskell-mega-repo
