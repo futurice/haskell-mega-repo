@@ -18,7 +18,7 @@ data ISBNType
 instance FromJSON ISBNType where
     parseJSON (String "ISBN_10") = pure ISBN10
     parseJSON (String "ISBN_13") = pure ISBN13
-    parseJSON _ = mzero
+    parseJSON _                  = mzero
 
 data ISBN = ISBN
     { _isbnType :: !ISBNType 
@@ -26,10 +26,9 @@ data ISBN = ISBN
     }
 
 instance FromJSON ISBN where
-    parseJSON (Object v) = do
-        t <- v .: "type"
-        idnum <- v .: "identifier"
-        pure $ ISBN t idnum
+    parseJSON (Object v) = 
+        ISBN <$> v .: "type"
+             <*> v .: "identifier"
     parseJSON _ = mzero
 
 data GoogleBookResponse = GoogleBookResponse
