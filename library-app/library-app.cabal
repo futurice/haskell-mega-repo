@@ -66,6 +66,7 @@ library
     , swagger2
     , text
     , time
+    , unordered-containers
     , xeno
   exposed-modules:
     Futurice.App.Library
