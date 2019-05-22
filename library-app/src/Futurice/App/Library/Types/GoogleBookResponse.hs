@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeOperators     #-}
 module Futurice.App.Library.Types.GoogleBookResponse where
 
+import Control.Lens
 import Data.Aeson
 import Futurice.Generics
 import Futurice.Prelude
@@ -40,6 +41,8 @@ data GoogleBookResponse = GoogleBookResponse
     , _gbrBooksLink :: !Text
     , _gbrCoverLink :: !Text
     }
+
+makeLenses ''GoogleBookResponse
 
 instance FromJSON GoogleBookResponse where
     parseJSON (Object o) = do

@@ -91,6 +91,7 @@ library
     Futurice.App.Library.Types.BookInformationResponse
     Futurice.App.Library.Types.BorrowRequest
     Futurice.App.Library.Types.EditItemRequest
+    Futurice.App.Library.Types.GoogleBookResponse
     Futurice.App.Library.Types.Item
     Futurice.App.Library.Types.ItemType
     Futurice.App.Library.Types.Library

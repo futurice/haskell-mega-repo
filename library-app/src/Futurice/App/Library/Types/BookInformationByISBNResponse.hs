@@ -18,6 +18,7 @@ import Futurice.App.Library.Types.Library
 
 data DataSource = DSDatabase BookInformationId ContentHash
                 | DSAmazon Text
+                | DSGoogle Text
                 deriving (Show, Generic)
 
 instance ToSchema DataSource where

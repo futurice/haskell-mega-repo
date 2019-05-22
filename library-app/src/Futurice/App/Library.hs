@@ -6,7 +6,9 @@
 module Futurice.App.Library (defaultMain) where
 
 import Codec.Picture                (DynamicImage, decodeImage)
+import Control.Lens
 import Crypto.Hash.SHA256           (hmac)
+import Data.Aeson                   (eitherDecode)
 import Data.Char                    (isSpace)
 import Data.Maybe                   (isJust)
 import Data.Time
@@ -42,11 +44,13 @@ import Futurice.App.Library.Pages.IndexPage
 import Futurice.App.Library.Pages.PersonalLoansPage
 import Futurice.App.Library.Reminder
 import Futurice.App.Library.Types
+import Futurice.App.Library.Types.GoogleBookResponse
 
 import qualified Data.ByteString        as BS
 import qualified Data.ByteString.Base64 as Base64
 import qualified Data.ByteString.Char8  as BS8
 import qualified Data.ByteString.Lazy   as LBS
+import qualified Data.Char              as C
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 import qualified Data.Text              as T
@@ -145,6 +149,37 @@ addNewCover :: Ctx -> LBS.ByteString -> IO ContentHash
 addNewCover ctx cover = do
     url <- parseBaseUrl $ T.unpack $ cfgSisosotaUrl $ ctxConfig ctx
     sisosotaPut (ctxManager ctx) url cover
+
+makeGoogleAddress :: Ctx -> Text -> IO String
+makeGoogleAddress ctx isbn = do
+    pure $ "https://www.googleapis.com/books/v1/volumes?q=isbn:" <> T.unpack isbn
+
+fetchBookInformationFromGoogle :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
+fetchBookInformationFromGoogle ctx isbn = do
+    address <- makeGoogleAddress ctx isbn
+    request <- HTTP.parseRequest address
+    response <- HTTP.httpLbs request (ctxManager ctx)
+    runLogT "fetch-from-google" (ctxLogger ctx) $
+        case eitherDecode $ HTTP.responseBody response of
+            Left err -> do
+                _ <- error $ "Error parsing Google Books response: " <> show err
+                pure Nothing
+            Right book -> do
+                let info = Just $ bookToInfo book
+                pure info
+    where
+        bookToInfo :: GoogleBookResponse -> BookInformationByISBNResponse
+        bookToInfo book =
+            BookInformationByISBNResponse
+                (book ^. gbrTitle)
+                isbn
+                (T.intercalate ", " $ book ^. gbrAuthors)
+                (book ^. gbrPublisher)
+                (book ^. gbrPublished)
+                (book ^. gbrBooksLink)
+                Map.empty
+                (DSGoogle $ book ^. gbrCoverLink)
+                
 
 makeAmazonAddress :: Ctx -> Text -> IO ByteString
 makeAmazonAddress ctx isbn = do
