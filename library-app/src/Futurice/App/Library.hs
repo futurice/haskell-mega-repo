@@ -7,12 +7,9 @@ module Futurice.App.Library (defaultMain) where
 
 import Codec.Picture                (DynamicImage, decodeImage)
 import Control.Lens
-import Crypto.Hash.SHA256           (hmac)
 import Data.Aeson                   (eitherDecode)
 import Data.Char                    (isSpace)
 import Data.Maybe                   (isJust)
-import Data.Time
-       (defaultTimeLocale, formatTime, getCurrentTime, iso8601DateFormat)
 import FUM.Types.Login
 import Futurice.App.Sisosota.Client
 import Futurice.App.Sisosota.Types  (ContentHash)
@@ -23,13 +20,11 @@ import Futurice.Lucid.Foundation    (HtmlPage)
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
-import Network.HTTP.Types.URI       (urlEncode)
 import Prelude ()
 import Servant
 import Servant.Client
 import Servant.Multipart
 import Servant.Server.Generic
-import Text.Read                    (readMaybe)
 
 import Futurice.App.Library.API
 import Futurice.App.Library.Config
@@ -46,17 +41,12 @@ import Futurice.App.Library.Reminder
 import Futurice.App.Library.Types
 import Futurice.App.Library.Types.GoogleBookResponse
 
-import qualified Data.ByteString        as BS
-import qualified Data.ByteString.Base64 as Base64
-import qualified Data.ByteString.Char8  as BS8
 import qualified Data.ByteString.Lazy   as LBS
-import qualified Data.Char              as C
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 import qualified Data.Text              as T
 import qualified Network.HTTP.Client    as HTTP
 import qualified Personio               as P
-import qualified Xeno.DOM               as X
 
 apiServer :: Ctx -> Server LibraryAPI
 apiServer ctx = genericServer $ Record
@@ -150,17 +140,17 @@ addNewCover ctx cover = do
     url <- parseBaseUrl $ T.unpack $ cfgSisosotaUrl $ ctxConfig ctx
     sisosotaPut (ctxManager ctx) url cover
 
-makeGoogleAddress :: Ctx -> Text -> IO String
-makeGoogleAddress ctx isbn = do
+makeGoogleAddress :: Text -> IO String
+makeGoogleAddress isbn = do
     pure $ "https://www.googleapis.com/books/v1/volumes?q=isbn:" <> T.unpack isbn
 
 fetchBookInformationFromGoogle :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
 fetchBookInformationFromGoogle ctx isbn = do
-    address <- makeGoogleAddress ctx isbn
+    address <- makeGoogleAddress isbn
     request <- HTTP.parseRequest address
     response <- HTTP.httpLbs request (ctxManager ctx)
     runLogT "fetch-from-google" (ctxLogger ctx) $
-        case eitherDecode $ HTTP.responseBody response of
+        case eitherDecode $ HTTP.responseBody response of
             Left err -> do
                 _ <- error $ "Error parsing Google Books response: " <> show err
                 pure Nothing
@@ -179,85 +169,9 @@ fetchBookInformationFromGoogle ctx isbn = do
                 (book ^. gbrBooksLink)
                 Map.empty
                 (DSGoogle $ book ^. gbrCoverLink)
-                
 
-makeAmazonAddress :: Ctx -> Text -> IO ByteString
-makeAmazonAddress ctx isbn = do
-    timeStamp <- formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S%EZ")) <$> getCurrentTime
-    pure $ "https://webservices.amazon.com/onca/xml?"
-        <> queryParameters timeStamp
-        <> "&Signature="
-        <> (urlEncode True . Base64.encode . calcSign $ baseAddress timeStamp)
-  where
-    queryParameters ts = BS.intercalate "&"
-        [ "AWSAccessKeyId=" <> encodeUtf8 (cfgAmazonAccessKey cfg)
-        , "AssociateTag=" <> encodeUtf8 (cfgAmazonAssociateTag cfg)
-        , "IdType=ISBN"
-        , "ItemId=" <> encodeUtf8 isbn
-        , "Operation=ItemLookup"
-        , "ResponseGroup=Medium"
-        , "SearchIndex=Books"
-        , "Service=AWSECommerceService"
-        , "Timestamp=" <> encodeUtf8 (T.replace ":" "%3A" $ T.pack ts)]
-    baseAddress ts = BS.intercalate "\n"
-        [ "GET"
-        , "webservices.amazon.com"
-        , "/onca/xml"
-        , queryParameters ts]
-    calcSign :: ByteString -> ByteString
-    calcSign = hmac (encodeUtf8 $ cfgAmazonSecretKey cfg)
-    cfg = ctxConfig ctx
-
-fetchBookInformationFromAmazon :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
-fetchBookInformationFromAmazon ctx isbn = do
-    amazonAddress <- makeAmazonAddress ctx isbn
-    request <- HTTP.parseRequest $ BS8.unpack amazonAddress
-    response <- HTTP.httpLbs request (ctxManager ctx)
-    runLogT "fetch-from-amazon" (ctxLogger ctx) $
-        case X.parse $ LBS.toStrict $ HTTP.responseBody response of
-          Left err -> do
-              _ <- error $ "Error while parsing Amazon response: " <> show err
-              pure Nothing
-          Right ns -> pure $ do
-              items <- (findItems . X.children) ns
-              item <- (findItem . X.children) items
-              itemAttributes <- (findItemAttributes . X.children) item
-              detailPageUrl <- (findDetailPageUrl . X.children) item
-              image <- (findImage . X.children) item
-              imageUrl <- (findImageUrl . X.children) image
-              BookInformationByISBNResponse
-                  <$> (decodeUtf8Lenient <$> (getTitle . X.children) itemAttributes)
-                  <*> Just isbn
-                  <*> (decodeUtf8Lenient <$> (getAuthors . X.children) itemAttributes)
-                  <*> (decodeUtf8Lenient <$> (getPublisher . X.children) itemAttributes)
-                  <*> (((take 4 . T.unpack . decodeUtf8Lenient) <$> (getPublished . X.children) itemAttributes) >>= readMaybe)
-                  <*> (decodeUtf8Lenient <$> getUrlLink detailPageUrl)
-                  <*> Just Map.empty
-                  <*> (DSAmazon . decodeUtf8Lenient <$> getUrlLink imageUrl)
-  where
-      findValue val = listToMaybe . filter (\n -> X.name n == val)
-      findItems = findValue "Items"
-      findItem = findValue "Item"
-      findItemAttributes = findValue "ItemAttributes"
-      findDetailPageUrl = findValue "DetailPageURL"
-      findImage = findValue "LargeImage"
-      findImageUrl = findValue "URL"
-      getUrlLink urlNode = (listToMaybe $ X.contents urlNode) >>= contentText
-      getAuthors attrs = do
-          authors <- traverse contentText (concat (X.contents <$> (filter (\n -> X.name n == "Author") attrs)))
-          pure $ BS.intercalate " and " authors
-      getValue val attrs =  do
-          content <- X.contents <$> (listToMaybe . filter (\n -> X.name n == val)) attrs
-          firstElement <- listToMaybe content
-          contentText firstElement
-      getTitle = getValue "Title"
-      getPublisher = getValue "Publisher"
-      getPublished = getValue "PublicationDate"
-      contentText (X.Text text) = Just text
-      contentText _             = Nothing
-
-fetchImageFromAmazon :: Ctx -> Text -> IO LBS.ByteString
-fetchImageFromAmazon ctx url = do
+fetchImageFromUrl :: Ctx -> Text -> IO LBS.ByteString
+fetchImageFromUrl ctx url = do
     request <- HTTP.parseRequest $ T.unpack url
     response <- HTTP.httpLbs request (ctxManager ctx)
     pure $ HTTP.responseBody response
@@ -405,8 +319,8 @@ getBookImpl ctx lid = do
 getBookByISBNImpl :: Ctx -> Text -> Handler BookInformationByISBNResponse
 getBookByISBNImpl ctx isbn = do
     info <- runLogT "fetch-by-isbn" (ctxLogger ctx) $ fetchBookInformationByISBN ctx cleanedISBN
-    amazonInfo <- liftIO $ fetchBookInformationFromAmazon ctx cleanedISBN
-    case (bookInformationToISBNresponse <$> info) <|> amazonInfo of
+    googleInfo <- liftIO $ fetchBookInformationFromGoogle ctx cleanedISBN
+    case (bookInformationToISBNresponse <$> info) <|> googleInfo of
       Just i -> pure i
       Nothing -> throwError $ err404 { errBody = "No book with that ISBN found" }
   where
@@ -452,7 +366,7 @@ addBookPostImpl ctx addBook@AddBookInformation{..} = do
     contentHash <- case existingBook of
       Nothing -> liftIO $ Just <$> case _addBookCover of
         CoverData coverData -> addNewCover ctx (fdPayload coverData)
-        CoverUrl url -> fetchImageFromAmazon ctx url >>= addNewCover ctx
+        CoverUrl url -> fetchImageFromUrl ctx url >>= addNewCover ctx
       Just _binfoid -> pure Nothing
     res <- runLogT "add-book" (ctxLogger ctx) $ addNewBook ctx addBook contentHash
     if res then

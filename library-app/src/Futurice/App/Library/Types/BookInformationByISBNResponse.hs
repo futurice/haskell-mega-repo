@@ -31,6 +31,7 @@ instance ToSchema DataSource where
 instance ToJSON DataSource where
     toJSON (DSDatabase binfoId contentHash) = object ["source" .= ("Database" :: Text), "bookinformationid" .= binfoId, "coverhash" .= contentHash]
     toJSON (DSAmazon imageUrl)              = object ["source" .= ("Amazon" :: Text), "coverurl" .= imageUrl]
+    toJSON (DSGoogle imageUrl)              = object ["source" .= ("Google" :: Text), "coverurl" .= imageUrl]
 
 data BookInformationByISBNResponse = BookInformationByISBNResponse
     { _byISBNTitle           :: !Text
