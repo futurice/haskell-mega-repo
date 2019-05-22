@@ -15,9 +15,6 @@ import qualified FUM.Types.Login     as FUM
 
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
-    , cfgAmazonAccessKey    :: !Text
-    , cfgAmazonAssociateTag :: !Text
-    , cfgAmazonSecretKey    :: !Text
     , cfgSisosotaUrl        :: !Text
     , cfgEmailProxyUrl      :: !BaseUrl
     , cfgAccessGroups       :: ![FUM.GroupName]
@@ -28,9 +25,6 @@ data Config = Config
 instance Configure Config where
     configure = Config
         <$> optionalAlt (envVar "MOCKUSER")
-        <*> envVar "AMAZON_ACCESSKEY"
-        <*> envVar "AMAZON_ASSOCIATETAG"
-        <*> envVar "AMAZON_SECRETKEY"
         <*> envVar "SISOSOTA_BASEURL"
         <*> envVar "EMAILPROXY_BASEURL"
         <*> envVar "REMINDER_ACCESS_GROUPS"
