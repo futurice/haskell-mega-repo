@@ -155,6 +155,16 @@ futu.onload(function () {
                             $("form[data-futu-id=add-new-book] input[name='cover-url']").value = response.dataSource.coverurl;
                             $("img#cover-image").src = response.dataSource.coverurl;
                             $("img#cover-image").style.display = "block";
+                        } else if(response.dataSource.source === 'Google') {
+                            $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
+                            $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
+                            $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
+                            $("form[data-futu-id=add-new-book] input[name='published']").value = response.published;
+                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLink;
+                            $("div#info-box").innerHTML = '<span class="label warning">Book information found from Google Books</span>';
+                            $("form[data-futu-id=add-new-book] input[name='cover-url']").value = response.dataSource.coverurl;
+                            $("img#cover-image").src = response.dataSource.coverurl;
+                            $("img#cover-image").style.display = "block";
                         }
                         $("button[data-futu-id=find-by-isbn]").style.display = "none";
                         $("button[data-futu-id=clear-add-new-book]").style.display = "block";
