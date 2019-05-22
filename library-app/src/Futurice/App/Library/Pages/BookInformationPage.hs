@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import qualified Personio  as P
 
 bookInformationPage :: BookInformationResponse -> [LoanData] -> IdMap P.Employee -> HtmlPage ("bookinformation")
-bookInformationPage (BookInformationResponse binfoid title isbn author publisher published cover _amazonLink books) ls es = page_ "Book details " (Nothing :: Maybe Nav) $ do
+bookInformationPage (BookInformationResponse binfoid title isbn author publisher published cover _infoLink books) ls es = page_ "Book details " (Nothing :: Maybe Nav) $ do
     fullRow_ $ do
         div_ [ class_ "large-2 columns"] $ do
             img_ [style_ "max-height: 400px; display: block; margin-left: auto; margin-right: auto;", src_ $ linkToText $ fieldLink bookCoverGet cover ]

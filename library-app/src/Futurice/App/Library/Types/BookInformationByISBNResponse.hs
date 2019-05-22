@@ -39,7 +39,7 @@ data BookInformationByISBNResponse = BookInformationByISBNResponse
     , _byISBNAuthor          :: !Text
     , _byISBNPublisher       :: !Text
     , _byISBNPublished       :: !Int
-    , _byISBNAmazonLink      :: !Text
+    , _byISBNInfoLink      :: !Text
     , _byISBNBooks           :: !(Map Library Int)
     , _byISBNDataSource      :: !DataSource
     } deriving (Show, Typeable, Generic, ToSchema)

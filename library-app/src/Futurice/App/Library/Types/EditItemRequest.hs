@@ -22,7 +22,7 @@ data EditBookInformation = EditBookInformation
     , _editBookAuthor                 :: !Text
     , _editBookPublisher              :: !Text
     , _editBookPublished              :: !Int
-    , _editBookAmazonLink             :: !Text
+    , _editBookInfoLink             :: !Text
     } deriving Show
 
 deriveGeneric ''EditBookInformation
@@ -48,7 +48,7 @@ instance FromMultipart Mem EditBookInformation where
         <*> lookupInputAndClean "author" multipartData
         <*> lookupInputAndClean "publisher" multipartData
         <*> (lookupInputAndClean "published" multipartData >>= readMaybe . T.unpack)
-        <*> lookupInputAndClean "amazon-link" multipartData
+        <*> lookupInputAndClean "info-link" multipartData
 
 instance FromMultipart Mem EditBoardGameInformation where
     fromMultipart multipartData = EditBoardGameInformation

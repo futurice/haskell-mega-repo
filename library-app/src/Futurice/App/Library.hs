@@ -331,7 +331,7 @@ getBookByISBNImpl ctx isbn = do
           , _byISBNAuthor     = _author
           , _byISBNPublisher  = _publisher
           , _byISBNPublished  = _published
-          , _byISBNAmazonLink = _amazonLink
+          , _byISBNInfoLink   = _infoLink
           , _byISBNBooks      = booksPerLibrary _books
           , _byISBNDataSource = DSDatabase _id _cover}
       cleanedISBN = T.filter (/= '-') isbn
