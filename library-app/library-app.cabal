@@ -67,7 +67,6 @@ library
     , text
     , time
     , unordered-containers
-    , xeno
   exposed-modules:
     Futurice.App.Library
     Futurice.App.Library.API

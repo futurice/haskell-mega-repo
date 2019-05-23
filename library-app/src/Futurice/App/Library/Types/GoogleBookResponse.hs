@@ -9,10 +9,9 @@ module Futurice.App.Library.Types.GoogleBookResponse where
 import Control.Lens
 import Data.Aeson
 import Futurice.Aeson
+import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
-
-import qualified Data.HashMap.Strict as HM
 
 data ISBNType 
     = ISBN10
@@ -28,11 +27,9 @@ data ISBN = ISBN
     , _isbnIdentifier :: !Text
     }
 
-instance FromJSON ISBN where
-    parseJSON (Object v) = 
-        ISBN <$> v .: "type"
-             <*> v .: "identifier"
-    parseJSON _ = mzero
+deriveGeneric ''ISBN
+
+deriveVia [t| FromJSON ISBN `Via` Sopica ISBN |]
 
 data GoogleBookResponse = GoogleBookResponse
     { _gbrTitle     :: !Text
@@ -49,7 +46,7 @@ makeLenses ''GoogleBookResponse
 instance FromJSON GoogleBookResponse where
     parseJSON (Object o) = do
         maybeBook <- listToMaybe <$> o .: "items"
-        let book = fromMaybe HM.empty maybeBook
+        let book = fromMaybe mempty maybeBook
         vi <- book .: "volumeInfo"
         il <- vi .: "imageLinks"
         GoogleBookResponse  <$> vi .: "title"
