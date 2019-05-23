@@ -22,7 +22,7 @@ CREATE TABLE library.bookinformation (
     publisher text NOT NULL,
     publishedYear smallint NOT NULL,
     cover text,
-    book_link text
+    info_link text
 );
 
 -- Board games are another type of items we have in the library
