@@ -155,16 +155,15 @@ fetchBookInformationFromGoogle ctx isbn = do
                 _ <- error $ "Error parsing Google Books response: " <> show err
                 pure Nothing
             Right book -> do
-                let info = Just $ BookInformationByISBNResponse
-                                    (book ^. gbrTitle)
-                                    isbn
-                                    (T.intercalate ", " $ book ^. gbrAuthors)
-                                    (book ^. gbrPublisher)
-                                    (book ^. gbrPublished)
-                                    (book ^. gbrBooksLink)
-                                    Map.empty
-                                    (DSGoogle $ book ^. gbrCoverLink)
-                pure info
+                pure $ Just $ BookInformationByISBNResponse
+                                (book ^. gbrTitle)
+                                isbn
+                                (T.intercalate ", " $ book ^. gbrAuthors)
+                                (book ^. gbrPublisher)
+                                (book ^. gbrPublished)
+                                (book ^. gbrBooksLink)
+                                Map.empty
+                                (DSGoogle $ book ^. gbrCoverLink)
 
 fetchImageFromUrl :: Ctx -> Text -> IO LBS.ByteString
 fetchImageFromUrl ctx url = do

@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DerivingVia       #-}
 module Futurice.App.Library.Types.GoogleBookResponse where
 
 import Control.Lens
@@ -25,11 +26,9 @@ instance FromJSON ISBNType where
 data ISBN = ISBN
     { _isbnType :: !ISBNType 
     , _isbnIdentifier :: !Text
-    }
-
-deriveGeneric ''ISBN
-
-deriveVia [t| FromJSON ISBN `Via` Sopica ISBN |]
+    } deriving stock (GhcGeneric)
+      deriving anyclass (SopGeneric, HasDatatypeInfo)
+      deriving (FromJSON) via (Sopica ISBN)
 
 data GoogleBookResponse = GoogleBookResponse
     { _gbrTitle     :: !Text
