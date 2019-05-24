@@ -32,7 +32,7 @@ data AddBookInformation = AddBookInformation
     , _addBookAuthor                 :: !Text
     , _addBookPublisher              :: !Text
     , _addBookPublished              :: !Int
-    , _addBookAmazonLink             :: !Text
+    , _addBookInfoLink               :: !Text
     , _addBookLibraries              :: ![(Library, Int)]
     , _addBookCover                  :: !CoverData
     , _addBookInformationId          :: !(Maybe BookInformationId)
@@ -96,7 +96,7 @@ instance FromMultipart Mem AddBookInformation where
         <*> lookupInputAndClean "author" multipartData
         <*> lookupInputAndClean "publisher" multipartData
         <*> (lookupInputAndClean "published" multipartData >>= readMaybe . T.unpack)
-        <*> lookupInputAndClean "amazon-link" multipartData
+        <*> lookupInputAndClean "info-link" multipartData
         <*> pure (booksPerLibrary multipartData)
         <*> cover
         <*> pure (BookInformationId <$> fromIntegral <$> (lookupInputAndClean "bookinformationid" multipartData >>= fromtextToInt))

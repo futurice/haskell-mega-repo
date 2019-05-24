@@ -103,7 +103,7 @@ fetchInformationsWithCriteria ctx crit mii direction limit search library onlyAv
 -------------------------------------------------------------------------------
 
 selectStatement :: SortCriteria ty -> Query
-selectStatement (BookSort _) = "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation "
+selectStatement (BookSort _) = "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, info_link FROM library.bookinformation "
 selectStatement (BoardGameSort _) = "SELECT boardgameinfo_id, name, publisher, publishedYear, designer, artist FROM library.boardgameinformation "
 
 startDirection :: SortDirection -> Query

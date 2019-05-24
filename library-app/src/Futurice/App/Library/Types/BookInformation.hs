@@ -25,7 +25,7 @@ data BookInformation = BookInformation
     , _bookPublisher              :: !Text
     , _bookPublished              :: !Int
     , _bookCover                  :: !ContentHash
-    , _bookAmazonLink             :: !Text
+    , _bookInfoLink             :: !Text
     }
   deriving (Show, Typeable, Generic, FromRow)
 

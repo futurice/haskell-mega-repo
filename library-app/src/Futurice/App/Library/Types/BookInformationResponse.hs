@@ -28,7 +28,7 @@ data BookInformationResponse = BookInformationResponse
     , _publisher   :: !Text
     , _published   :: !Int
     , _cover       :: !ContentHash
-    , _amazonLink  :: !Text
+    , _infoLink    :: !Text
     , _books       :: ![Books]
     } deriving  (Show, Typeable, Generic)
 

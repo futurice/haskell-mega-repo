@@ -33,8 +33,8 @@ editItemPage (Left (info, books)) = page_ "Edit book information" (Nothing :: Ma
                 th_ "Published"
                 td_ $ input_ [ name_ "published", type_ "number", required_ "", value_ ((T.pack . show) $ info ^. bookPublished)]
             tr_ $ do
-                th_ "Amazon link"
-                td_ $ input_ [ name_ "amazon-link", type_ "text", value_ (info ^. bookAmazonLink)]
+                th_ "Info link"
+                td_ $ input_ [ name_ "info-link", type_ "text", value_ (info ^. bookInfoLink)]
         button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Edit"
     h3_ "Books"
     ul_ [class_ ""] $ do

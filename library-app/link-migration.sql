@@ -1,0 +1,1 @@
+ALTER TABLE library.bookinformation RENAME COLUMN amazon_link to info_link;

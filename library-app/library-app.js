@@ -135,7 +135,7 @@ futu.onload(function () {
                             $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
                             $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
                             $("form[data-futu-id=add-new-book] input[name='published']").value = response.published;
-                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLink;
+                            $("form[data-futu-id=add-new-book] input[name='info-link']").value = response.infoLink;
                             var currentBooks = '<ul>';
                             for (var lib in response.books) {
                                 currentBooks = currentBooks + '<li>' + lib + ' ' + response.books[lib] + '</li>';
@@ -150,8 +150,18 @@ futu.onload(function () {
                             $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
                             $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
                             $("form[data-futu-id=add-new-book] input[name='published']").value = response.published;
-                            $("form[data-futu-id=add-new-book] input[name='amazon-link']").value = response.amazonLink;
+                            $("form[data-futu-id=add-new-book] input[name='info-link']").value = response.infoLink;
                             $("div#info-box").innerHTML = '<span class="label warning">Book information found from Amazon</span>';
+                            $("form[data-futu-id=add-new-book] input[name='cover-url']").value = response.dataSource.coverurl;
+                            $("img#cover-image").src = response.dataSource.coverurl;
+                            $("img#cover-image").style.display = "block";
+                        } else if(response.dataSource.source === 'Google') {
+                            $("form[data-futu-id=add-new-book] input[name='title']").value = response.title;
+                            $("form[data-futu-id=add-new-book] input[name='author']").value = response.author;
+                            $("form[data-futu-id=add-new-book] input[name='publisher']").value = response.publisher;
+                            $("form[data-futu-id=add-new-book] input[name='published']").value = response.published;
+                            $("form[data-futu-id=add-new-book] input[name='info-link']").value = response.infoLink;
+                            $("div#info-box").innerHTML = '<span class="label warning">Book information found from Google Books</span>';
                             $("form[data-futu-id=add-new-book] input[name='cover-url']").value = response.dataSource.coverurl;
                             $("img#cover-image").src = response.dataSource.coverurl;
                             $("img#cover-image").style.display = "block";

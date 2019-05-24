@@ -25,7 +25,7 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                     div_ [ class_ "input-group"] $ do
                         input_ [ class_ "input-group-field", name_ "isbn", id_ "isbn", type_ "text", required_ ""]
                         div_ [ class_ "input-group-button"] $ do
-                            button_ [ class_ "button", data_ "futu-id" "find-by-isbn"] $ "Magic"
+                            button_ [ class_ "button", data_ "futu-id" "find-by-isbn"] $ "Search"
                             button_ [ class_ "button", data_ "futu-id" "clear-add-new-book", style_ "display: none"] $ "Clear"
                     div_ [ id_ "info-box"] ""
             tr_ $ do
@@ -41,8 +41,8 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                 th_ "Published"
                 td_ $ input_ [ name_ "published", type_ "number", required_ ""]
             tr_ $ do
-                th_ "Amazon link"
-                td_ $ input_ [ name_ "amazon-link", type_ "text"]
+                th_ "Info link"
+                td_ $ input_ [ name_ "info-link", type_ "text"]
             tr_ $ do
                 th_ "Cover"
                 td_ $ do

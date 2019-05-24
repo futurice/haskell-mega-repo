@@ -66,7 +66,6 @@ library
     , swagger2
     , text
     , time
-    , xeno
   exposed-modules:
     Futurice.App.Library
     Futurice.App.Library.API
@@ -91,6 +90,7 @@ library
     Futurice.App.Library.Types.BookInformationResponse
     Futurice.App.Library.Types.BorrowRequest
     Futurice.App.Library.Types.EditItemRequest
+    Futurice.App.Library.Types.GoogleBookResponse
     Futurice.App.Library.Types.Item
     Futurice.App.Library.Types.ItemType
     Futurice.App.Library.Types.Library

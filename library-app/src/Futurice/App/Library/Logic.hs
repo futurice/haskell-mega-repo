@@ -218,7 +218,7 @@ loanDataToLoan ctx es ldatas = do
 -------------------------------------------------------------------------------
 
 fetchBookInformations :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [BookInformation]
-fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation" ()
+fetchBookInformations ctx = safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, info_link FROM library.bookinformation" ()
 
 fetchCoverInformationsAsText :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> m [(BookInformationId, Text)]
 fetchCoverInformationsAsText ctx = safePoolQuery ctx "SELECT bookinfo_id, cover FROM library.bookinformation" ()
@@ -231,7 +231,7 @@ fetchBookInformationByISBN ctx isbn = do
       Nothing -> pure Nothing
 
 fetchBookInformation :: (Monad m, MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BookInformationId -> m (Maybe BookInformation)
-fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, amazon_link FROM library.bookinformation WHERE bookinfo_id = ?" (Only binfoid)
+fetchBookInformation ctx binfoid = listToMaybe <$> safePoolQuery ctx "SELECT bookinfo_id, title, isbn, author, publisher, publishedYear, cover, info_link FROM library.bookinformation WHERE bookinfo_id = ?" (Only binfoid)
 
 fetchBookResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BookInformationId -> m [BookInformationResponse]
 fetchBookResponse ctx binfoid = do
@@ -242,8 +242,8 @@ fetchBookResponse ctx binfoid = do
       Just info -> pure $ [toBookInformationResponse (fold (toBooks <$> books)) info]
   where
       toBooks item = [Books (idLibrary item) (idItemId item)]
-      toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover amazonLink) =
-          BookInformationResponse infoid title isbn author publisher published cover amazonLink books
+      toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover infoLink) =
+          BookInformationResponse infoid title isbn author publisher published cover infoLink books
 
 fetchBoardGameResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BoardGameInformationId -> m (Maybe BoardGameInformationResponse)
 fetchBoardGameResponse ctx infoid = do
@@ -274,8 +274,8 @@ fetchBooksResponse ctx bookInfos = do
           case bookinfoid of
               BookInfoId binfoid -> Just (binfoid, [Books lib iid])
               _                  -> Nothing
-      toBookInformationResponse books (BookInformation binfoid title isbn author publisher published cover amazonLink) =
-          BookInformationResponse binfoid title isbn author publisher published cover amazonLink (fromMaybe [] (books ^.at binfoid))
+      toBookInformationResponse books (BookInformation binfoid title isbn author publisher published cover infoLink) =
+          BookInformationResponse binfoid title isbn author publisher published cover infoLink (fromMaybe [] (books ^.at binfoid))
 
 bookIdToInformation :: ItemId -> Map ItemId (Maybe BookInformationId, Library) -> Map BookInformationId BookInformation -> Maybe BookInformation
 bookIdToInformation iid bookidmap bookinfomap = do
@@ -290,15 +290,15 @@ checkIfExistingBook ctx binfoid isbn = runMaybeT $ do
     if bookInformation ^. bookISBN == isbn then pure $ bookInformation ^. bookInformationId else MaybeT $ pure Nothing
 
 addNewBook :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> AddBookInformation -> Maybe ContentHash -> m Bool
-addNewBook ctx (AddBookInformation title isbn author publisher published amazonLink libraryBooks _ binfoid) contentHash = do
+addNewBook ctx (AddBookInformation title isbn author publisher published infoLink libraryBooks _ binfoid) contentHash = do
     checkedInfoId <- checkIfExistingBook ctx binfoid isbn
     bookInfoId <- case checkedInfoId of
                     Nothing -> runMaybeT $ do
                         ch <- pure contentHash
                         MaybeT $ listToMaybe <$> safePoolQuery
                             ctx
-                            "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, cover, amazon_link) VALUES (?,?,?,?,?,?,?) returning bookinfo_id"
-                            (title, isbn, author, publisher, published, ch, amazonLink)
+                            "INSERT INTO library.bookinformation (title, isbn, author, publisher, publishedyear, cover, info_link) VALUES (?,?,?,?,?,?,?) returning bookinfo_id"
+                            (title, isbn, author, publisher, published, ch, infoLink)
                     Just info -> pure $ Just info
     case bookInfoId of
       Just infoId -> do
@@ -311,7 +311,7 @@ updateBookCover :: (MonadLog m, MonadBaseControl IO m, MonadCatch m) => Pool Con
 updateBookCover ctx binfoid contentHash = safePoolExecute ctx "UPDATE library.bookinformation SET cover = ? where bookinfo_id = ?" (contentHash, binfoid)
 
 updateBookInformation :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> EditBookInformation -> m Int64
-updateBookInformation ctx info = safePoolExecute ctx "UPDATE library.bookinformation SET title = ?, isbn = ?, author = ?, publisher = ?, publishedyear = ?, amazon_link = ? where bookinfo_id = ?" (info ^. editBookTitle, info ^. editBookISBN, info ^. editBookAuthor, info ^. editBookPublisher, info ^. editBookPublished, info ^. editBookAmazonLink, info ^. editBookInformationId)
+updateBookInformation ctx info = safePoolExecute ctx "UPDATE library.bookinformation SET title = ?, isbn = ?, author = ?, publisher = ?, publishedyear = ?, info_link = ? where bookinfo_id = ?" (info ^. editBookTitle, info ^. editBookISBN, info ^. editBookAuthor, info ^. editBookPublisher, info ^. editBookPublished, info ^. editBookInfoLink, info ^. editBookInformationId)
 
 -------------------------------------------------------------------------------
 -- Boardgame functions

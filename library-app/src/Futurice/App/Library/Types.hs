@@ -31,7 +31,7 @@ module Futurice.App.Library.Types (
     bookPublisher,
     bookPublished,
     bookCover,
-    bookAmazonLink,
+    bookInfoLink,
     BoardGameInformationId,
     BookInformation (..),
     BookInformationId,
@@ -45,7 +45,7 @@ module Futurice.App.Library.Types (
     editBookAuthor,
     editBookPublisher,
     editBookPublished,
-    editBookAmazonLink,
+    editBookInfoLink,
     EditBoardGameInformation,
     editBoardGameInformationId,
     editBoardGameName,
@@ -85,6 +85,7 @@ module Futurice.App.Library.Types (
     ItemBuckets (..),
     partitionItems,
     HasItemType (..),
+    GoogleBookResponse (..)
     ) where
 
 import Futurice.App.Library.Types.AddItemRequest
@@ -100,3 +101,4 @@ import Futurice.App.Library.Types.ItemType
 import Futurice.App.Library.Types.Library
 import Futurice.App.Library.Types.Loan
 import Futurice.App.Library.Types.Search
+import Futurice.App.Library.Types.GoogleBookResponse
