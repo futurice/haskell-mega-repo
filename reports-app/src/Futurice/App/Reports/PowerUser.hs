@@ -36,6 +36,7 @@ import qualified PlanMill        as PM
 
 data PowerUser = PowerUser
     { _powerUserUsername       :: !FUM.Login
+    , _powerUserPersonioId     :: !P.EmployeeId
     , _powerUserFirst          :: !Text
     , _powerUserLast           :: !Text
     , _powerUserTeam           :: !Text
@@ -83,6 +84,7 @@ powerUser today es e = do
     login <- e ^. P.employeeLogin
     pure PowerUser
         { _powerUserUsername       = login
+        , _powerUserPersonioId     = e ^. P.employeeId
         , _powerUserFirst          = e ^. P.employeeFirst
         , _powerUserLast           = e ^. P.employeeLast
         , _powerUserTeam           = team
