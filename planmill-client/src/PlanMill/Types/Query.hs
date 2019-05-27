@@ -54,7 +54,8 @@ import PlanMill.Types.Enumeration      (EnumDesc)
 import PlanMill.Types.Identifier       (Identifier (..))
 import PlanMill.Types.Me               (Me)
 import PlanMill.Types.Meta             (Meta)
-import PlanMill.Types.Project          (Project, Projects)
+import PlanMill.Types.Project
+       (Project, ProjectMember, ProjectMembers, Projects)
 import PlanMill.Types.Report           (AllRevenues2)
 import PlanMill.Types.Request
        (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
@@ -74,19 +75,20 @@ import PlanMill.Types.UserCapacity     (UserCapacities)
 
 -- | Arbitrary queries are tagged by this values
 data QueryTag f a where
-    QueryTagMe          :: QueryTag I Me
-    QueryTagMeta        :: QueryTag I Meta
-    QueryTagTeam        :: QueryTag f Team -- can be I or Vector
-    QueryTagUser        :: QueryTag f User -- can be I or Vector
-    QueryTagTimebalance :: QueryTag I TimeBalance
-    QueryTagTimereport  :: QueryTag I Timereport
-    QueryTagTask        :: QueryTag f Task    -- can be I or Vector
-    QueryTagProject     :: QueryTag f Project -- can be I or Vector
-    QueryTagAbsence     :: QueryTag f Absence -- can be I or Vector
-    QueryTagAccount     :: QueryTag f Account -- can be I or Vector
-    QueryTagCalendar    :: QueryTag f CapacityCalendar -- can be I or Vector
-    QueryTagEnumDesc    :: KnownSymbol enum => !(Proxy enum) -> QueryTag I (EnumDesc enum)
-    QueryTagReport      :: QueryTag I AllRevenues2 -- TODO: make this more general later
+    QueryTagMe             :: QueryTag I Me
+    QueryTagMeta           :: QueryTag I Meta
+    QueryTagTeam           :: QueryTag f Team -- can be I or Vector
+    QueryTagUser           :: QueryTag f User -- can be I or Vector
+    QueryTagTimebalance    :: QueryTag I TimeBalance
+    QueryTagTimereport     :: QueryTag I Timereport
+    QueryTagTask           :: QueryTag f Task    -- can be I or Vector
+    QueryTagProject        :: QueryTag f Project -- can be I or Vector
+    QueryTagProjectMember  :: QueryTag f ProjectMember -- can be I or Vector
+    QueryTagAbsence        :: QueryTag f Absence -- can be I or Vector
+    QueryTagAccount        :: QueryTag f Account -- can be I or Vector
+    QueryTagCalendar       :: QueryTag f CapacityCalendar -- can be I or Vector
+    QueryTagEnumDesc       :: KnownSymbol enum => !(Proxy enum) -> QueryTag I (EnumDesc enum)
+    QueryTagReport         :: QueryTag I AllRevenues2 -- TODO: make this more general later
 
 -- | Planmill query (i.e. read-only operation).
 --
@@ -150,17 +152,18 @@ instance Eq (QueryTag f a) where _ == _ = True
 instance Ord (QueryTag f a) where compare _ _ = EQ
 
 instance GEq (QueryTag f) where
-    geq QueryTagMe QueryTagMe                      = Just Refl
-    geq QueryTagMeta QueryTagMeta                  = Just Refl
-    geq QueryTagTeam QueryTagTeam                  = Just Refl
-    geq QueryTagUser QueryTagUser                  = Just Refl
-    geq QueryTagTimebalance QueryTagTimebalance    = Just Refl
-    geq QueryTagTimereport QueryTagTimereport      = Just Refl
-    geq QueryTagTask QueryTagTask                  = Just Refl
-    geq QueryTagProject QueryTagProject            = Just Refl
-    geq QueryTagAbsence QueryTagAbsence            = Just Refl
-    geq QueryTagAccount QueryTagAccount            = Just Refl
-    geq QueryTagCalendar QueryTagCalendar          = Just Refl
+    geq QueryTagMe QueryTagMe                       = Just Refl
+    geq QueryTagMeta QueryTagMeta                   = Just Refl
+    geq QueryTagTeam QueryTagTeam                   = Just Refl
+    geq QueryTagUser QueryTagUser                   = Just Refl
+    geq QueryTagTimebalance QueryTagTimebalance     = Just Refl
+    geq QueryTagTimereport QueryTagTimereport       = Just Refl
+    geq QueryTagTask QueryTagTask                   = Just Refl
+    geq QueryTagProject QueryTagProject             = Just Refl
+    geq QueryTagProjectMember QueryTagProjectMember = Just Refl
+    geq QueryTagAbsence QueryTagAbsence             = Just Refl
+    geq QueryTagAccount QueryTagAccount             = Just Refl
+    geq QueryTagCalendar QueryTagCalendar           = Just Refl
     geq (QueryTagEnumDesc p) (QueryTagEnumDesc p') = do
         Refl <- sameSymbol p p'
         pure Refl
@@ -172,17 +175,18 @@ instance Eq (SomeQueryTag f) where
 
 instance Show (QueryTag f a) where
     showsPrec d r = case r of
-        QueryTagMe          -> showString "QueryTagMe"
-        QueryTagMeta        -> showString "QueryTagMeta"
-        QueryTagTeam        -> showString "QueryTagTeam"
-        QueryTagUser        -> showString "QueryTagUser"
-        QueryTagTimebalance -> showString "QueryTagTimebalance"
-        QueryTagTimereport  -> showString "QueryTagTimereport"
-        QueryTagTask        -> showString "QueryTagTask"
-        QueryTagProject     -> showString "QueryTagProject"
-        QueryTagAbsence     -> showString "QueryTagAbsence"
-        QueryTagAccount     -> showString "QueryTagAccount"
-        QueryTagCalendar    -> showString "QueryTagCalendar"
+        QueryTagMe            -> showString "QueryTagMe"
+        QueryTagMeta          -> showString "QueryTagMeta"
+        QueryTagTeam          -> showString "QueryTagTeam"
+        QueryTagUser          -> showString "QueryTagUser"
+        QueryTagTimebalance   -> showString "QueryTagTimebalance"
+        QueryTagTimereport    -> showString "QueryTagTimereport"
+        QueryTagTask          -> showString "QueryTagTask"
+        QueryTagProject       -> showString "QueryTagProject"
+        QueryTagProjectMember -> showString "QueryTagProjectMember"
+        QueryTagAbsence       -> showString "QueryTagAbsence"
+        QueryTagAccount       -> showString "QueryTagAccount"
+        QueryTagCalendar      -> showString "QueryTagCalendar"
         QueryTagEnumDesc p  -> showParen (d > 10)
             $ showString "QueryTagEnumDesc "
             . showsPrec 11 (symbolVal p)
@@ -203,7 +207,8 @@ instance Hashable (QueryTag f a) where
     hashWithSalt salt (QueryTagEnumDesc p) = salt
         -- We don't add a int prehash, as it's unnecessary
         `hashWithSalt` (symbolVal p)
-    hashWithSalt salt QueryTagReport       = salt `hashWithSalt` (11 :: Int)
+    hashWithSalt salt QueryTagReport        = salt `hashWithSalt` (11 :: Int)
+    hashWithSalt salt QueryTagProjectMember = salt `hashWithSalt` (12 :: Int)
 
 instance NFData (QueryTag f a) where
     rnf x = x `seq` ()
@@ -218,18 +223,19 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
     put (SomeQueryTag (QueryTagEnumDesc p)) = do
         put (0 :: Word8)
         put (symbolVal p)
-    put (SomeQueryTag QueryTagMe)           = put (1 :: Word8)
-    put (SomeQueryTag QueryTagMeta)         = put (2 :: Word8)
-    put (SomeQueryTag QueryTagTeam)         = put (3 :: Word8)
-    put (SomeQueryTag QueryTagUser)         = put (4 :: Word8)
-    put (SomeQueryTag QueryTagTimebalance)  = put (5 :: Word8)
-    put (SomeQueryTag QueryTagTimereport)   = put (6 :: Word8)
-    put (SomeQueryTag QueryTagTask)         = put (7 :: Word8)
-    put (SomeQueryTag QueryTagProject)      = put (8 :: Word8)
-    put (SomeQueryTag QueryTagAbsence)      = put (9 :: Word8)
-    put (SomeQueryTag QueryTagAccount)      = put (10 :: Word8)
-    put (SomeQueryTag QueryTagCalendar)     = put (11 :: Word8)
-    put (SomeQueryTag QueryTagReport)       = put (12 :: Word8)
+    put (SomeQueryTag QueryTagMe)            = put (1  :: Word8)
+    put (SomeQueryTag QueryTagMeta)          = put (2  :: Word8)
+    put (SomeQueryTag QueryTagTeam)          = put (3  :: Word8)
+    put (SomeQueryTag QueryTagUser)          = put (4  :: Word8)
+    put (SomeQueryTag QueryTagTimebalance)   = put (5  :: Word8)
+    put (SomeQueryTag QueryTagTimereport)    = put (6  :: Word8)
+    put (SomeQueryTag QueryTagTask)          = put (7  :: Word8)
+    put (SomeQueryTag QueryTagProject)       = put (8  :: Word8)
+    put (SomeQueryTag QueryTagAbsence)       = put (9  :: Word8)
+    put (SomeQueryTag QueryTagAccount)       = put (10 :: Word8)
+    put (SomeQueryTag QueryTagCalendar)      = put (11 :: Word8)
+    put (SomeQueryTag QueryTagReport)        = put (12 :: Word8)
+    put (SomeQueryTag QueryTagProjectMember) = put (13 :: Word8)
 
     get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I)) of
         (0, Just Refl) -> do
@@ -252,19 +258,20 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
         _ -> fail $ "Invalid tag " ++ show n
 
 instance ToJSON (QueryTag f a) where
-    toJSON QueryTagMe           = String "me"
-    toJSON QueryTagMeta         = String "meta"
-    toJSON QueryTagTeam         = String "team"
-    toJSON QueryTagUser         = String "user"
-    toJSON QueryTagTimebalance  = String "timebalance"
-    toJSON QueryTagTimereport   = String "timereport"
-    toJSON QueryTagTask         = String "task"
-    toJSON QueryTagProject      = String "project"
-    toJSON QueryTagAbsence      = String "absence"
-    toJSON QueryTagAccount      = String "account"
-    toJSON QueryTagCalendar     = String "calendar"
-    toJSON (QueryTagEnumDesc p) = String $ "enumdesc-" <> symbolVal p ^. packed
-    toJSON QueryTagReport       = String "report"
+    toJSON QueryTagMe            = String "me"
+    toJSON QueryTagMeta          = String "meta"
+    toJSON QueryTagTeam          = String "team"
+    toJSON QueryTagUser          = String "user"
+    toJSON QueryTagTimebalance   = String "timebalance"
+    toJSON QueryTagTimereport    = String "timereport"
+    toJSON QueryTagTask          = String "task"
+    toJSON QueryTagProject       = String "project"
+    toJSON QueryTagProjectMember = String "projectmember"
+    toJSON QueryTagAbsence       = String "absence"
+    toJSON QueryTagAccount       = String "account"
+    toJSON QueryTagCalendar      = String "calendar"
+    toJSON (QueryTagEnumDesc p)  = String $ "enumdesc-" <> symbolVal p ^. packed
+    toJSON QueryTagReport        = String "report"
 
 instance ToJSON (SomeQueryTag f) where
     toJSON (SomeQueryTag t) = toJSON t
@@ -431,7 +438,7 @@ type QueryTypes = '[ Timereports, UserCapacities
     , Team, Teams
     , TimeBalance
     , Timereport
-    , Project, Projects
+    , Project, ProjectMember, ProjectMembers, Projects
     , Task, Tasks
     , Absence, Absences
     , Account, Accounts
@@ -446,30 +453,32 @@ data IsSomeEnumDesc a where
 queryTagType
     :: QueryTag I a
     -> Either (IsSomeEnumDesc a) (NS ((:~:) a) QueryTypes)
-queryTagType QueryTagMe           = Right $ insertNS Refl
-queryTagType QueryTagUser         = Right $ insertNS Refl
-queryTagType QueryTagMeta         = Right $ insertNS Refl
-queryTagType QueryTagTeam         = Right $ insertNS Refl
-queryTagType QueryTagTimebalance  = Right $ insertNS Refl
-queryTagType QueryTagTimereport   = Right $ insertNS Refl
-queryTagType QueryTagTask         = Right $ insertNS Refl
-queryTagType QueryTagProject      = Right $ insertNS Refl
-queryTagType QueryTagAbsence      = Right $ insertNS Refl
-queryTagType QueryTagAccount      = Right $ insertNS Refl
-queryTagType QueryTagCalendar     = Right $ insertNS Refl
-queryTagType (QueryTagEnumDesc p) = Left $ IsSomeEnumDesc p
-queryTagType QueryTagReport       = Right $ insertNS Refl
+queryTagType QueryTagMe            = Right $ insertNS Refl
+queryTagType QueryTagUser          = Right $ insertNS Refl
+queryTagType QueryTagMeta          = Right $ insertNS Refl
+queryTagType QueryTagTeam          = Right $ insertNS Refl
+queryTagType QueryTagTimebalance   = Right $ insertNS Refl
+queryTagType QueryTagTimereport    = Right $ insertNS Refl
+queryTagType QueryTagTask          = Right $ insertNS Refl
+queryTagType QueryTagProject       = Right $ insertNS Refl
+queryTagType QueryTagProjectMember = Right $ insertNS Refl
+queryTagType QueryTagAbsence       = Right $ insertNS Refl
+queryTagType QueryTagAccount       = Right $ insertNS Refl
+queryTagType QueryTagCalendar      = Right $ insertNS Refl
+queryTagType (QueryTagEnumDesc p)  = Left $ IsSomeEnumDesc p
+queryTagType QueryTagReport        = Right $ insertNS Refl
 
 queryTagVectorType
     :: QueryTag Vector a
     -> NS ((:~:) (Vector a)) QueryTypes
-queryTagVectorType QueryTagUser     = insertNS Refl
-queryTagVectorType QueryTagTeam     = insertNS Refl
-queryTagVectorType QueryTagTask     = insertNS Refl
-queryTagVectorType QueryTagProject  = insertNS Refl
-queryTagVectorType QueryTagAbsence  = insertNS Refl
-queryTagVectorType QueryTagAccount  = insertNS Refl
-queryTagVectorType QueryTagCalendar = insertNS Refl
+queryTagVectorType QueryTagUser          = insertNS Refl
+queryTagVectorType QueryTagTeam          = insertNS Refl
+queryTagVectorType QueryTagTask          = insertNS Refl
+queryTagVectorType QueryTagProject       = insertNS Refl
+queryTagVectorType QueryTagProjectMember = insertNS Refl
+queryTagVectorType QueryTagAbsence       = insertNS Refl
+queryTagVectorType QueryTagAccount       = insertNS Refl
+queryTagVectorType QueryTagCalendar      = insertNS Refl
 
 -- | Reflect the type of 'Query'.
 queryType

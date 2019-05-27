@@ -24,6 +24,7 @@ module PlanMill.Queries (
     absences,
     account,
     project,
+    projectMembers,
     projects,
     projectTasks,
     task,
@@ -50,9 +51,9 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, CapacityCalendars,
-       Me, Project (..), ProjectId, Projects, Task, TaskId, Tasks, Team,
-       TeamId, TimeBalance, Timereport, Timereports, User, UserCapacities,
-       UserId, Users, identifier)
+       Me, Project (..), ProjectId, ProjectMembers, Projects, Task, TaskId,
+       Tasks, Team, TeamId, TimeBalance, Timereport, Timereports, User,
+       UserCapacities, UserId, Users, identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -321,6 +322,14 @@ allRevenuesReport :: (MonadPlanMillQuery m) => Integer -> Integer -> m AllRevenu
 allRevenuesReport year month = planmillQuery
     $ QueryGet QueryTagReport (Map.fromList [("param1",textShow year), ("param2", textShow month)])
     $ toUrlParts ("reports" :: Text) // ("All Revenues 2" :: Text)
+
+-- | Get a list of tasks.
+--
+-- See <https://developers.planmill.com/api/#projects__project_id__tasks_get>
+projectMembers :: MonadPlanMillQuery m => ProjectId -> m ProjectMembers
+projectMembers pid = planmillVectorQuery
+    $ QueryPagedGet QueryTagProjectMember mempty
+    $ toUrlParts $ ("projects" :: Text) // pid // ("members" :: Text)
 
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations

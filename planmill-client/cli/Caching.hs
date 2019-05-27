@@ -65,6 +65,7 @@ instance MonadPlanMillC m CapacityCalendar     => CachingTC m CapacityCalendar
 instance MonadPlanMillC m Me                   => CachingTC m Me
 instance MonadPlanMillC m Meta                 => CachingTC m Meta
 instance MonadPlanMillC m Project              => CachingTC m Project
+instance MonadPlanMIllC m ProjectMembers       => CachingTC m ProjectMembers
 instance MonadPlanMillC m ReportableAssignment => CachingTC m ReportableAssignment
 instance MonadPlanMillC m Task                 => CachingTC m Task
 instance MonadPlanMillC m Team                 => CachingTC m Team
