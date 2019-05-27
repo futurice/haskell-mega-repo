@@ -254,6 +254,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
         (10, _)         -> pure $ SomeQueryTag QueryTagAccount
         (11, _)         -> pure $ SomeQueryTag QueryTagCalendar
         (12, Just Refl) -> pure $ SomeQueryTag QueryTagReport
+        (13, _)         -> pure $ SomeQueryTag QueryTagProjectMember
 
         _ -> fail $ "Invalid tag " ++ show n
 
@@ -290,6 +291,7 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
         ("account", _)             -> pure $ SomeQueryTag QueryTagAccount
         ("calendar", _)            -> pure $ SomeQueryTag QueryTagCalendar
         ("report", Just Refl)      -> pure $ SomeQueryTag QueryTagReport
+        ("projectmember", _)       -> pure $ SomeQueryTag QueryTagProjectMember
         (_, Just Refl) | T.isPrefixOf pfx t
             -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
           where
@@ -308,6 +310,7 @@ instance HasStructuralInfo (QueryTag f a) where
         ,  NominalType "QueryTagTimereport"
         ,  NominalType "QueryTagTask"
         ,  NominalType "QueryTagProject"
+        ,  NominalType "QueryTagProjectMember"
         ,  NominalType "QueryTagAbsence"
         ,  NominalType "QueryTagAccount"
         ,  NominalType "QueryTagCalendar"
