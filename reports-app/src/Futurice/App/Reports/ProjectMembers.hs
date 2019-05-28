@@ -17,14 +17,14 @@ data ProjectMember = ProjectMember
     { memberId   :: !PM.UserId
     , memberName :: !Text
     } deriving (GhcGeneric, SopGeneric,ToSchema, HasDatatypeInfo, NFData)
-      deriving (ToJSON) via (Sopica ProjectMember)
+      deriving (FromJSON, ToJSON) via (Sopica ProjectMember)
 
 data ProjectMembers = ProjectMembers
     { prjmProjectId      :: !PM.ProjectId
     , prjmName           :: !Text
     , prjmProjectMembers :: ![ProjectMember]
     } deriving (GhcGeneric, SopGeneric,ToSchema, HasDatatypeInfo, NFData)
-      deriving (ToJSON) via (Sopica ProjectMembers)
+      deriving (FromJSON, ToJSON) via (Sopica ProjectMembers)
 
 -------------------------------------------------------------------------------
 -- Endpoint
