@@ -133,8 +133,8 @@ powerAbsence idsLookup idsPLookup ab  = do
     uc <- PMQ.capacities absenceInterval (PM.absencePerson ab)
     let uc' = capacities uc
     pure PowerAbsence
-        { _powerAbsenceUsername     = HM.lookup (PM.absencePerson ab) revLookup
-        , _powerAbsencePersonioId   = HM.lookup (PM.absencePerson ab) revLookup >>= \a -> (HM.lookup a idsPLookup) >>= \b -> pure $ b ^. P.employeeId
+        { _powerAbsenceUsername     = fumLogin
+        , _powerAbsencePersonioId   = fumLogin >>= \a -> (HM.lookup a idsPLookup) ^? _Just . P.employeeId
         , _powerAbsenceStart        = PM.absenceStart ab
         , _powerAbsenceEnd          = PM.absenceFinish ab
         , _powerAbsencePlanmillId   = ab ^. PM.identifier
@@ -142,6 +142,9 @@ powerAbsence idsLookup idsPLookup ab  = do
         , _powerAbsenceBusinessDays = NDT $ length uc'
         }
   where
+    fumLogin :: Maybe FUM.Login
+    fumLogin = HM.lookup (PM.absencePerson ab) revLookup
+
     revLookup :: HashMap PM.UserId FUM.Login
     revLookup
         = HM.fromList
