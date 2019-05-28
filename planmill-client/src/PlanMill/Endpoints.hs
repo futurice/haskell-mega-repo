@@ -30,6 +30,7 @@ module PlanMill.Endpoints (
     me,
     -- * Projects
     project,
+    projectMembers,
     projects,
     -- * Tasks
     task,
@@ -339,6 +340,11 @@ reports = planMillGet $ t "reports"
 allRevenuesReport :: PlanMill AllRevenues2
 allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
 
+-- | Get a list of project's members
+--
+-- See <https://developers.planmill.com/api/#panel_projects__project_id__members>
+projectMembers :: ProjectId -> PlanMill ProjectMembers
+projectMembers i = planMillGet $ t "projects" // i // t "members"
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------

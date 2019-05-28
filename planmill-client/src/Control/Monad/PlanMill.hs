@@ -40,7 +40,7 @@ import PlanMill.Types.Query (Query)
 --
 -- Requiring these reduces boilerplate greatly!
 type MonadPlanMillTypes =
-    '[ Absence, Assignment, Me, Meta, Project, ReportableAssignment
+    '[ Absence, Assignment, Me, Meta, Project, ProjectMember, ReportableAssignment
      , Task, TimeBalance, Timereport, Team, User, UserCapacity
      ]
 -- Note: to update do:
@@ -58,6 +58,7 @@ class
     , MonadPlanMillC m Me
     , MonadPlanMillC m Meta
     , MonadPlanMillC m Project
+    , MonadPlanMillC m ProjectMember
     , MonadPlanMillC m ReportableAssignment
     , MonadPlanMillC m Task
     , MonadPlanMillC m TimeBalance

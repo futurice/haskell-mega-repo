@@ -7,7 +7,7 @@
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
 -- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
-module PlanMill.Types.Project (Project(..), Projects, ProjectId) where
+module PlanMill.Types.Project (Project(..), Projects, ProjectId, ProjectMember(..), ProjectMembers) where
 
 import PlanMill.Internal.Prelude
 
@@ -80,3 +80,15 @@ instance FromJSON Project where
         <*> obj .: "totalCost"
         <*> obj .:? "actualEffort"    .!= 0
         <*> obj .:? "totalEffort"     .!= 0
+
+data ProjectMember = ProjectMember
+    { _projectMemberName   :: !Text
+    , _projectMemberUserId :: !UserId
+    } deriving (Eq, Show, Generic, Binary, NFData, HasStructuralInfo, Typeable, HasSemanticVersion)
+
+instance FromJSON ProjectMember where
+    parseJSON = withObject "ProjectMember" $ \p -> do
+        ProjectMember <$> p .: "lastName"
+                      <*> p .: "id"
+
+type ProjectMembers = Vector ProjectMember

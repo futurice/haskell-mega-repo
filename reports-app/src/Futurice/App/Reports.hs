@@ -70,6 +70,8 @@ import Futurice.App.Reports.PowerUser
 import Futurice.App.Reports.PowerUTZ
        (PowerUTZReport, powerUTZReport)
 import Futurice.App.Reports.ProjectHours                      (projectHoursData)
+import Futurice.App.Reports.ProjectMembers
+       (projectMemberData)
 import Futurice.App.Reports.SubcontractorBillingNotifications
 import Futurice.App.Reports.SubcontractorHoursNotifications
        (subcontractorHoursNotifications)
@@ -299,6 +301,9 @@ server ctx = genericServer $ Record
     , recPowerAbsences = liftIO . servePowerAbsencesReport ctx
     , recPowerAllRevenueReport = liftIO . serveAllRevenues2Report ctx
     , recPowerUTZ      = liftIO . servePowerUTZReport ctx
+
+    -- For bubbleburster
+    , recProjectMembers = liftIO $ serveData projectMemberData ctx
 
     -- missing hours notification
     , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
