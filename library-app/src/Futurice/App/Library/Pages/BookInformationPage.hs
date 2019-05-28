@@ -30,7 +30,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                 vertRow_ "Publisher" $ toHtml $ publisher
                 vertRow_ "Published" $ toHtml $ show published
                 vertRow_ "ISBN" $ toHtml $ isbn
-                vertRow_ "Info link" $ a_ [ src_ infoLink ] $ toHtml $ T.take 80 infoLink <> "..."
+                vertRow_ "Info link" $ a_ [ src_ infoLink ] $ toHtml $ truncLink
             a_ [class_ "button small", href_ $ linkToText $ fieldLink editBookPageGet binfoid] "Edit book information"
     fullRow_ $ do
         h2_ "Books"
@@ -56,6 +56,10 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                                           data_ "item-id" (T.pack $ show (_booksBookId b))] $ toHtml ("Take over" :: Text)
               _ -> pure ()
     where
+      truncLink :: Text
+      truncLink =
+        if T.length infoLink > 80 then T.take 80 infoLink <> "..." else infoLink
+
       idT :: Text -> Text
       idT = id
       officeMap = M.toList $ M.fromListWith (++) $ (\x -> (_booksLibrary x, [x])) <$> books
