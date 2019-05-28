@@ -30,6 +30,7 @@ import FUM.Types.Login                        (Login)
 import Futurice.App.Avatar.API                (AvatarFumEndpoint)
 import Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
 import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.ProjectMembers    (ProjectMembers)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 import Futurice.Signed                        (Signed)
 import Servant.Binary.Tagged                  (BINARYTAGGED)
@@ -75,6 +76,9 @@ data Routes = Routes
     , routeActiveAccounts :: ProxiedEndpoint 'ReportsService
         ("tables" :> "active-accounts.json" :> Get '[JSON] ActiveAccounts)
         ("reports" :> "active-accounts" :> Get '[JSON] ActiveAccounts)
+    , routeProjectMembers :: ProxiedEndpoint 'ReportsService
+        ("project" :> "members" :> Get '[JSON] [ProjectMembers])
+        ("reports" :> "project" :> "members" :> Get '[JSON] [ProjectMembers])
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
