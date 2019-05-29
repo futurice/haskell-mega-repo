@@ -30,7 +30,7 @@ bookInformationPage (BookInformationResponse binfoid title isbn author publisher
                 vertRow_ "Publisher" $ toHtml $ publisher
                 vertRow_ "Published" $ toHtml $ show published
                 vertRow_ "ISBN" $ toHtml $ isbn
-                vertRow_ "Info link" $ a_ [ src_ infoLink ] $ toHtml $ truncLink
+                vertRow_ "Info link" $ a_ [ href_ infoLink ] $ toHtml $ truncLink
             a_ [class_ "button small", href_ $ linkToText $ fieldLink editBookPageGet binfoid] "Edit book information"
     fullRow_ $ do
         h2_ "Books"
