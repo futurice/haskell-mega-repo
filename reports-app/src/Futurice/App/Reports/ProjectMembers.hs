@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Reports.ProjectMembers where
 
 import Futurice.Generics
@@ -8,6 +9,7 @@ import Prelude ()
 
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
+import qualified Data.Text as T
 
 -------------------------------------------------------------------------------
 -- Data
@@ -33,7 +35,7 @@ data ProjectMembers = ProjectMembers
 projectMemberData :: (MonadPlanMillQuery m) => m [ProjectMembers]
 projectMemberData = do
     prjs <- PMQ.projects
-    traverse toProjectMembers $ toList prjs
+    traverse toProjectMembers $ filter (\t -> not $ T.isInfixOf "absence" (T.toLower $ PM.pName t)) $ toList prjs
   where
     toProjectMembers project = do
         members <- PMQ.projectMembers (PM._pId project)
