@@ -128,6 +128,9 @@ data Routes = Routes
         ("uiapi" :> "project" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "projects" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
 
+    , routePowerV3Customers :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "customer" :> "" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "customers" :> Get '[JSON] Value)
 
     -- FUM
     , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
