@@ -39,9 +39,8 @@ import Personio.Types.SalaryType
 import Personio.Types.SimpleEmployee
 import Personio.Types.Status
 
-import qualified Chat.Flowdock.REST as FD
-import qualified Data.Text          as T
-import qualified GitHub             as GH
+import qualified Data.Text as T
+import qualified GitHub    as GH
 
 import Personio.Types.Internal
 
@@ -60,10 +59,9 @@ data Employee = Employee
     , _employeeTribe            :: !Tribe  -- ^ defaults to 'defaultTribe'
     , _employeeOffice           :: !Office  -- ^ defaults to 'OffOther'
     , _employeeEmployer         :: !Company -- ^ default so Futurice Oy, 'companyFuturiceOy'
-    , _employeeCountry          :: !Country
+    , _employeeCountry          :: !(Maybe Country)
     , _employeeCostCenter       :: !(Maybe CostCenter)
     , _employeeGithub           :: !(Maybe (GH.Name GH.User))
-    , _employeeFlowdock         :: !(Maybe FD.UserId)
     , _employeeStatus           :: !Status
     , _employeeHRNumber         :: !(Maybe Int)
     , _employeeEmploymentType   :: !(Maybe EmploymentType)
@@ -165,10 +163,9 @@ parseEmployeeObject obj' = Employee
     <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
     <*> fmap (fromMaybe offOther . getName) (parseAttribute obj "office")
     <*> (parseDynamicAttribute obj "Employer" <|> pure companyFuturiceOy)
-    <*> (parseDynamicAttribute obj "Country/Managing Company" <|> pure countryFinland)
+    <*> (parseDynamicAttribute obj "Country/Managing Company")
     <*> fmap (fmap getCostCenter' . listToMaybe) (parseAttribute obj "cost_centers")
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
-    <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
     <*> parseAttribute obj "status"
     <*> fmap (>>= notZero) (parseDynamicAttribute obj "(FI) HR number")
     <*> parseAttribute obj "employment_type"

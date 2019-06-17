@@ -38,7 +38,6 @@ library
     , constraints
     , containers
     , env-config
-    , flowdock-rest
     , fum-types
     , futurice-constants
     , futurice-prelude
@@ -98,7 +97,6 @@ test-suite unit-tests
     , containers
     , env-config
     , file-embed
-    , flowdock-rest
     , fum-types
     , futurice-constants
     , futurice-prelude
