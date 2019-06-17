@@ -28,9 +28,8 @@ import qualified Data.Text               as T
 import qualified Futurice.App.Avatar.API as Avatar
 
 -- Data definition
-import qualified Chat.Flowdock.REST as FD
-import qualified FUM.Types.Login    as FUM
-import qualified GitHub             as GH
+import qualified FUM.Types.Login as FUM
+import qualified GitHub          as GH
 import qualified Personio
 import qualified Power
 
@@ -57,7 +56,6 @@ contacts = contacts'
     <*> Personio.personio Personio.PersonioEmployees
     <*> Power.powerPeople
     <*> githubDetailedMembers
-    <*> flowdockOrganisation
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
@@ -65,15 +63,13 @@ contacts'
     -> [Personio.Employee]
     -> [Power.Person]
     -> Vector GH.User
-    -> FD.Organisation
     -> [Contact Text]
-contacts' today employees powPeople githubMembers flowdockOrg =
+contacts' today employees powPeople githubMembers =
     let employees' = filter (Personio.employeeIsActive today) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
-        res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
-        res3 = addPowerInfo powPeople res2
-    in sortBy (compareUnicodeText `on` contactName) res3
+        res2 = addPowerInfo powPeople res1
+    in sortBy (compareUnicodeText `on` contactName) res2
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
@@ -85,8 +81,6 @@ employeeToContact e = Contact
     , contactTitle      = e ^. Personio.employeePosition
     , contactThumb      = avatarPublicUrl <> fieldLink' linkToText Avatar.recFum fumLogin Nothing False
     , contactImage      = avatarPublicUrl <> fieldLink' linkToText Avatar.recFum fumLogin (Just Avatar.Original) False
-    , contactFlowdock   = mcase (e ^. Personio.employeeFlowdock) Nothing $
-        Just . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage)
     , contactGithub     = mcase (e ^. Personio.employeeGithub) Nothing $
         Just . flip (ContactGH . GH.untagName) noImage
     , contactTeam       = e ^. Personio.employeeTribe
@@ -140,51 +134,6 @@ fromDetailedOwner gh = ContactGH
     { cghNick   = GH.untagName . GH.userLogin $ gh
     , cghAvatar = GH.getUrl $ GH.userAvatarUrl gh
     }
-
-addFlowdockInfo
-    :: forall u f g. (FD.UserLike u, Functor f, Foldable g)
-    => g u
-    -> f (Contact Text)
-    -> f (Contact Text)
-addFlowdockInfo us = fmap add
-  where
-    -- we could use ixsed-typed for these
-    emailMap :: HM.HashMap Text u
-    emailMap = foldMap (\u -> HM.singleton (u ^. FD.userEmail) u) us
-
-    nameMap :: HM.HashMap Text u
-    nameMap = foldMap (\u -> HM.singleton (u ^. FD.userName) u) us
-
-    uidMap :: HM.HashMap FD.UserId u
-    uidMap = foldMap (\u -> HM.singleton (u ^. FD.userId) u) us
-
-    add :: Contact Text -> Contact Text
-    add c = c
-        { contactFlowdock =
-            (cfd >>= byId . FD.mkIdentifier . fromIntegral . cfdId)
-            <|> byEmail
-            <|> byName
-        }
-      where
-        cfd = contactFlowdock c
-        name = contactName c
-        email = contactEmail c
-
-        byId uid = fmap f (HM.lookup uid uidMap)
-        byEmail = fmap f (HM.lookup email emailMap)
-        byName  = fmap f (HM.lookup name nameMap)
-
-        f :: u -> ContactFD Text
-        f u = ContactFD
-            { cfdId     = fromIntegral $ FD.getIdentifier $ u ^. FD.userId
-            , cfdNick   = truncateNick $ u ^. FD.userNick
-            , cfdAvatar = u ^. FD.userAvatar
-            }
-
-        truncateNick :: Text -> Text
-        truncateNick t
-            | T.length t >= 20 = T.take 17 t <> "..."
-            | otherwise        = t
 
 linkToText :: Link -> Text
 linkToText l = "/" <> toUrlPiece l
