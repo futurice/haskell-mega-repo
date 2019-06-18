@@ -6,6 +6,7 @@
 module Futuqu.Rada.People where
 
 import Data.Fixed            (Centi)
+import Data.Time             (addDays)
 import FUM.Types.Login       (Login)
 import Futurice.Company      (Company, Country)
 import Futurice.CostCenter   (CostCenter)
@@ -13,17 +14,16 @@ import Futurice.Email        (Email)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Office       (Office)
-import Data.Time (addDays)
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Tribe        (Tribe)
 import Prelude ()
 
+import qualified Data.Map.Strict  as Map
 import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 import qualified Power
-import qualified Data.Map.Strict as  Map
 
 -------------------------------------------------------------------------------
 -- Data
@@ -46,7 +46,7 @@ data Person = Person
     , pTribe          :: !Tribe
     , pOffice         :: !Office
     , pEmployer       :: !Company
-    , pCountry        :: !Country
+    , pCountry        :: !(Maybe Country)
     , pCostCenter     :: !(Maybe CostCenter)
     , pStatus         :: !P.Status
     , pHRNumber       :: !(Maybe Int)
