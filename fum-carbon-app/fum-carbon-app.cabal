@@ -50,7 +50,6 @@ library
     , distributive
     , DRBG
     , env-config
-    , flowdock-rest
     , fum-api
     , fum-client
     , fum-types
