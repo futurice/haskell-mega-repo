@@ -30,6 +30,7 @@ library
     DerivingStrategies
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , async
@@ -52,7 +53,6 @@ library
     , lens
     , mtl
     , periocron
-    , personio-client
     , postgresql-simple
     , servant
     , servant-cached
@@ -66,6 +66,7 @@ library
     , time
     , vector
     , xss-sanitize
+
   exposed-modules:
     Futurice.App.FlowdockProxy.API
     Futurice.App.FlowdockProxy.Charts
@@ -76,7 +77,6 @@ library
     Futurice.App.FlowdockProxy.IndexPage
     Futurice.App.FlowdockProxy.Main
     Futurice.App.FlowdockProxy.Markup
-    Futurice.App.FlowdockProxy.UsersPage
 
 executable flowdock-proxy-server
   default-language: Haskell2010
