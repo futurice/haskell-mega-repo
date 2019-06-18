@@ -69,15 +69,15 @@ data AchooReport = AchooReport
 
     , arPercentsTribe   :: Map Tribe   (PerSickDays Int)
     , arPercentsOffice  :: Map Office  (PerSickDays Int)
-    , arPercentsCountry :: Map Country (PerSickDays Int)
+    , arPercentsCountry :: Map (Maybe Country) (PerSickDays Int)
 
     , arAverageTribe   :: Map Tribe   Double
     , arAverageOffice  :: Map Office  Double
-    , arAverageCountry :: Map Country Double
+    , arAverageCountry :: Map (Maybe Country) Double
 
     , arDistrTribe   :: Map Tribe (Map Duration Int)
     , arDistrOffice  :: Map Office (Map Duration Int)
-    , arDistrCountry :: Map Country (Map Duration Int)
+    , arDistrCountry :: Map (Maybe Country) (Map Duration Int)
     }
   deriving Generic
 
