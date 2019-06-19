@@ -75,7 +75,7 @@ avatarProcessLambda = makeAwsLambda impl where
 -------------------------------------------------------------------------------
 
 transformImage :: Int -> Image PixelRGBA8 -> Image PixelRGBA8
-transformImage avatarSize = convoluteM33 mask . scale (avatarSize, avatarSize) . cropImage
+transformImage avatarSize = convoluteM33 mask . scaleBilinear avatarSize avatarSize . cropImage
   where
     mask (V3 (V3 y0 z0 y1) (V3 z1 x z2) (V3 y2 z3 y3)) = truncate $ clamp $ sum
         [ k0 * fromIntegral x
@@ -109,8 +109,7 @@ avatar :: Int -> Bool -> BS.ByteString -> Either String BSL.ByteString
 avatar avatarSize grey contents = do
     origImg <- decodeImage contents
     let toRGB = convertRGBA8 origImg
-    let cropped = cropImage toRGB
-    let scaled = scaleBilinear avatarSize avatarSize cropped
+    let scaled = transformImage avatarSize toRGB
     encodeDynamicPng $ constr scaled
   where
     constr | grey      = ImageY8 . extractLumaPlane
