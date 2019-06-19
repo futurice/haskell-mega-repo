@@ -163,7 +163,7 @@ parseEmployeeObject obj' = Employee
     <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
     <*> fmap (fromMaybe offOther . getName) (parseAttribute obj "office")
     <*> (parseDynamicAttribute obj "Employer" <|> pure companyFuturiceOy)
-    <*> (parseDynamicAttribute obj "Country/Managing Company")
+    <*> optional (parseDynamicAttribute obj "Country/Managing Company")
     <*> fmap (fmap getCostCenter' . listToMaybe) (parseAttribute obj "cost_centers")
     <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
     <*> parseAttribute obj "status"
