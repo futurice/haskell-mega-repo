@@ -66,7 +66,6 @@ examples = testGroup "HUnit"
         $(mkTribe "Tammerforce") @=? e ^. employeeTribe
         offTampere @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
-        Nothing @=? e ^. employeeFlowdock
         Active @=? e ^. employeeStatus
         Just 2 @=? e ^. employeeHRNumber
         Just Internal @=? e ^. employeeEmploymentType

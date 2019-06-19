@@ -276,7 +276,7 @@ officeVibeData = do
     hardGroupRelations p =
         [ OfficeVibeRelation (tribeToId (p ^. P.employeeTribe))     (employeeToId p) Empty true false
         , OfficeVibeRelation (officeToId (p ^. P.employeeOffice))   (employeeToId p) Empty true false
-        , OfficeVibeRelation (countryToId (p ^. P.employeeCountry)) (employeeToId p) Empty true false
+        , OfficeVibeRelation (countryToId' (p ^. P.employeeCountry)) (employeeToId p) Empty true false
         ]
 
     employeeToId :: P.Employee -> OfficeVibeId OfficeVibeUser
@@ -292,6 +292,10 @@ officeVibeData = do
 
     countryToId :: Country -> OfficeVibeId OfficeVibeGroup
     countryToId t = toGroupId "country" (countryToText' t)
+
+    countryToId' :: Maybe Country -> OfficeVibeId OfficeVibeGroup
+    countryToId' (Just t) = toGroupId "country" (countryToText' t)
+    countryToId' Nothing  = toGroupId "country" "no-country"
 
 -------------------------------------------------------------------------------
 -- Misc

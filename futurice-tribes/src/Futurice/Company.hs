@@ -113,7 +113,7 @@ companyLookup
 
 countryLookup :: Map Text Country
 countryLookup = Map.fromList
-    [ (T.toLower (cCountry ci), Country (Company i))
+    [ (T.toLower (fromMaybe "No country" $ cCountry ci), Country (Company i))
     | (i, ci) <- Map.elems companyLookup
     ]
 
@@ -219,11 +219,11 @@ instance C.PlotValue Country where
     autoAxis  = C.enumAutoAxis $ T.takeWhile (/= '/') . countryToText
 
 countryToText :: Country -> Text
-countryToText (Country c) = cCountry ci <> " / " <> cName ci where
+countryToText (Country c) = (fromMaybe "No country" $ cCountry ci) <> " / " <> cName ci where
     ci = companyInfo c
 
 countryToText' :: Country -> Text
-countryToText' (Country c) = cCountry ci where
+countryToText' (Country c) = fromMaybe "No country" (cCountry ci) where
     ci = companyInfo c
 
 countryFromText :: Text -> Maybe Country
@@ -251,7 +251,7 @@ countryFromTextE k =
 
 instance ToHtml Country where
     toHtmlRaw = toHtml
-    toHtml (Country c) = toHtml (cCountry ci) <> " / " <> toHtml c where
+    toHtml (Country c) = toHtml (fromMaybe "No country" $ cCountry ci) <> " / " <> toHtml c where
         ci = companyInfo c
 
 instance Arbitrary Country where

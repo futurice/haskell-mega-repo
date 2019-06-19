@@ -90,12 +90,11 @@ data Contact avatar = Contact
     , contactTitle      :: !(Maybe Text)
     , contactThumb      :: !avatar
     , contactImage      :: !Text
-    , contactFlowdock   :: !(Maybe (ContactFD avatar))
     , contactGithub     :: !(Maybe (ContactGH avatar))
     , contactTeam       :: !Tribe
     , contactOffice     :: !Office
     , contactEmployer   :: !Company
-    , contactCountry    :: !Country
+    , contactCountry    :: !(Maybe Country)
     , contactCompetence :: !Text
     , contactExternal   :: !Bool
     , contactHrnumber   :: !(Maybe Int)
@@ -129,7 +128,6 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "title"      $ toField contactTitle
         , (,) "thumb"      $ toField contactThumb
         , (,) "image"      $ toField contactImage
-        , (,) "flowdock"   $ toField contactFlowdock
         , (,) "github"     $ toField contactGithub
         , (,) "team"       $ toField contactTeam
         , (,) "competence" $ toField contactCompetence

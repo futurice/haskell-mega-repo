@@ -4,8 +4,9 @@
 module Futurice.App.HC.Achoo.Render where
 
 import Data.Monoid               (Sum (..))
+import Data.Time                 (diffDays)
+import Futurice.Company          (Country, countryToText)
 import Futurice.Prelude
-import Data.Time (diffDays)
 import Numeric.Interval.NonEmpty (inf, sup)
 import Prelude ()
 import Servant                   (toQueryParam)
@@ -57,7 +58,7 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
 
     h2_ "Percentages: Per country"
     img_ [ recordSrc_ recAchooChart ACCountry dayMin dayMax whole ]
-    renderPercentages "Country" (arPercentsCountry report)
+    renderPercentages "Country" (countryKeyToText $ arPercentsCountry report)
 
     h2_ "Sickness days per person (averages)"
 
@@ -68,7 +69,7 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
     renderAverages "Office" (arAverageOffice report)
 
     h3_ "Per country"
-    renderAverages "Country" (arAverageCountry report)
+    renderAverages "Country" (countryKeyToText $ arAverageCountry report)
 
   where
     dayMin = inf $ arInterval report
@@ -96,7 +97,7 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
             for_ abc $ \(Sum x) -> td_ $ showN x
             td_ $ toHtml $ show total
 
-    renderAverages :: forall m a. (Monad m, Ord a, Enum a, Bounded a, ToHtml a) => Text -> Map a Double -> HtmlT m ()
+    renderAverages :: forall m a. (Monad m, Ord a, ToHtml a) => Text -> Map a Double -> HtmlT m ()
     renderAverages title xs = table_ $ do
         thead_ $ do
             th_ $ toHtml title
@@ -112,7 +113,7 @@ achooRenderChart :: AchooChart -> AchooReport -> Chart "achoo-chart"
 achooRenderChart ty report = case ty of
     ACTribe   -> Chart . C.toRenderable $ tribeChart "Per tribe"   (arPercentsTribe report)
     ACOffice  -> Chart . C.toRenderable $ tribeChart "Per office"  (arPercentsOffice report)
-    ACCountry -> Chart . C.toRenderable $ tribeChart "Per country" (arPercentsCountry report)
+    ACCountry -> Chart . C.toRenderable $ tribeChart "Per country(without family company members)" (maybeCountryToCountry $ arPercentsCountry report)
   where
     tribeChart :: C.PlotValue x => String -> Map x (PerSickDays Int) -> C.EC (C.Layout x Double) ()
     tribeChart title pers = do
@@ -132,3 +133,12 @@ achooRenderChart ty report = case ty of
         [ C.opaque $ FC.colourToDataColour c
         | c <- toList bucketColors
         ]
+
+countryKeyToText :: Map (Maybe Country) a -> Map Text a
+countryKeyToText = Map.mapKeys (maybe "No country" countryToText)
+
+maybeCountryToCountry :: Map (Maybe Country) a -> Map Country a
+maybeCountryToCountry m =
+    let invertKey (Just k, v) = Just (k,v)
+        invertKey (Nothing,_) = Nothing
+    in Map.fromList $ catMaybes $ map invertKey $ Map.toList m

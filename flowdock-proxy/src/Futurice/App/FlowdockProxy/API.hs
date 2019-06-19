@@ -21,10 +21,6 @@ data Record route = Record
         :> QueryParam "nick" Text
         :> QueryParam "flow" FD.FlowId
         :> Get '[HTML] (HtmlPage "index-page")
-    , recUsers :: route
-        :- "users"
-        :> SSOUser
-        :> Get '[HTML] (HtmlPage "users-page")
     , recCharts :: route
         :- "charts"
         :> Get '[HTML] (HtmlPage "charts")

@@ -95,8 +95,8 @@ data ValidationMessage
     | WorkPermitMissing
     | WorkPhoneMissing
     | SupervisorNotActive !Text
-    | OfficeCountryDontMatch Office Country
-    | EmployerCountryDontMatch Country Company
+    | OfficeCountryDontMatch Office (Maybe Country)
+    | EmployerCountryDontMatch (Maybe Country) Company
     | StartDateMissing
     | EndDateBeforeStart Day Day
   deriving stock (Eq, Ord, Show, Typeable, Generic)
@@ -513,14 +513,14 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 else tell [IdentificationNumberMissing]
 
         officeCountryDontMatch :: WriterT [ValidationMessage] Parser ()
-        officeCountryDontMatch = unless (c == officeCountry o) $
+        officeCountryDontMatch = unless (isNothing c || c == Just (officeCountry o)) $
             tell [OfficeCountryDontMatch o c]
           where
             c = e ^. employeeCountry
             o = e ^. employeeOffice
 
         employerCountryDontMatch :: WriterT [ValidationMessage] Parser ()
-        employerCountryDontMatch = cond (c /= companyCountry em) $
+        employerCountryDontMatch = cond (isJust c && c /= Just (companyCountry em)) $
             tell [EmployerCountryDontMatch c em]
           where
             cond | isExternal || not isExpat = when

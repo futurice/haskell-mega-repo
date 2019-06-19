@@ -15,7 +15,6 @@ import Text.Regex.Applicative.Text (RE', anySym, match, string)
 import Personio.Internal.Attribute
 import Personio.Types.EmployeeId
 
-import qualified Chat.Flowdock.REST            as FD
 import qualified Data.Text                     as T
 import qualified GitHub                        as GH
 import qualified Text.Regex.Applicative.Common as RE
@@ -59,14 +58,6 @@ instance FromJSON GithubUsername where
 
 githubRegexp :: RE' Text
 githubRegexp = string "https://github.com/" *> (T.pack <$> some anySym)
-
--- | Parses @"https://www.flowdock.com/app/private/123456"@.
-newtype FlowdockId = FlowdockId
-    { getFlowdockId :: Maybe FD.UserId }
-
-instance FromJSON FlowdockId where
-    parseJSON = withText "Flowdock" $
-        pure . FlowdockId . fmap FD.mkIdentifier . match flowdockRegexp
 
 flowdockRegexp :: RE' Word64
 flowdockRegexp = "https://" *> optional "www." *> "flowdock.com/app/private/" *> RE.decimal

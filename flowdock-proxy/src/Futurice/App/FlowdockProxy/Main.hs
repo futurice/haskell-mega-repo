@@ -19,7 +19,6 @@ import Data.Aeson                (object, (.=))
 import Data.Char                 (toLower)
 import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
-import FUM.Types.Login           (Login)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
@@ -38,7 +37,6 @@ import qualified Data.Map.Strict       as Map
 import qualified Data.Text             as T
 import qualified Data.Text.Short       as TS
 import qualified Futurice.Postgres     as PQ
-import qualified Personio              as P
 import qualified Servant.Types.SourceT as S
 
 import Futurice.App.FlowdockProxy.API
@@ -47,12 +45,10 @@ import Futurice.App.FlowdockProxy.Config
 import Futurice.App.FlowdockProxy.Ctx
 import Futurice.App.FlowdockProxy.DB
 import Futurice.App.FlowdockProxy.IndexPage
-import Futurice.App.FlowdockProxy.UsersPage
 
 server :: Ctx -> Server FlowdockProxyAPI
 server ctx = genericServer $ Record
     { recIndex = indexPageAction ctx
-    , recUsers = usersPageAction ctx
     , recCharts = return chartsPage
     , recChartActivity
         = liftIO
@@ -170,26 +166,6 @@ indexPageAction ctx mneedle muserText mflow = do
         LT -> y : merge2 xs ys'
         GT -> x : merge2 xs' ys
         EQ -> x : y : merge2 xs' ys'
-
--------------------------------------------------------------------------------
--- Users
--------------------------------------------------------------------------------
-
-usersPageAction :: Ctx -> Maybe Login -> Handler (HtmlPage "users-page")
-usersPageAction ctx _ = do
-    extraOrgs' <- runLogT "users" lgr $ PQ.safePoolQuery_ ctx
-        "SELECT organisation_name FROM \"flowdock-proxy\".organisations ORDER BY organisation_name ASC;"
-    let extraOrgs :: [FD.ParamName FD.Organisation]
-        extraOrgs = map (FD.mkParamName . fromOnly) extraOrgs'
-    (today, ps, orgs) <- liftIO $ cachedIO lgr cch 600 () $ runIntegrations' ctx $ do
-        today <- currentDay
-        ps <- personio P.PersonioEmployees
-        orgs <- traverse flowdockOrganisationReq extraOrgs
-        return (today, ps, orgs)
-    return $ usersPage today (ctxFlowOrg ctx) orgs ps
-  where
-    lgr = ctxLogger ctx
-    cch = ctxCache ctx
 
 -------------------------------------------------------------------------------
 -- API: flows

@@ -7,7 +7,7 @@ category:      Web
 homepage:      https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
 author:        Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Toni Okuogume <toni.okuogume@futurice.com>
 license:       BSD-3-Clause
 license-file:  LICENSE
 build-type:    Simple
@@ -29,6 +29,7 @@ library
     DeriveTraversable
     DerivingStrategies
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , base
@@ -70,6 +71,7 @@ library
     , time
     , unordered-containers
     , vec
+
   exposed-modules:
     Futurice.App.HC.API
     Futurice.App.HC.Achoo.Fetch

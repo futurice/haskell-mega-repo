@@ -20,8 +20,7 @@ import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Personio
 import Futurice.App.Checklist.Types
 
-import qualified Chat.Flowdock.REST as FD
-import qualified Personio           as P
+import qualified Personio as P
 
 -- |
 --
@@ -82,7 +81,6 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
         vertRow_ "HR Number"  $ traverse_ (toHtml . show) $ p ^. P.employeeHRNumber
         vertRow_ "FUM"        $ traverse_ toHtml $ p ^. P.employeeLogin
         vertRow_ "GitHub"     $ traverse_ toHtml $ p ^. P.employeeGithub
-        vertRow_ "Flowdock"   $ traverse_ fdToHtml $ p ^. P.employeeFlowdock
         vertRow_ "Private phone"   $ traverse_ toHtml $ p ^. P.employeeHomePhone
         vertRow_ "Private email"   $ traverse_ toHtml $ p ^. P.employeeHomeEmail
 
@@ -232,8 +230,3 @@ encodeToText = view strict . encodeToLazyText
 
 phoneToHtml :: Monad m => Text -> HtmlT m ()
 phoneToHtml t = a_ [ href_ $ "tel://" <> t ] $ toHtml t
-
-fdToHtml :: Monad m => FD.Identifier Word64 res -> HtmlT m ()
-fdToHtml i = a_ [ href_ $ "https://www.flowdock.com/app/private/" <> t ] $ toHtml t
-  where
-    t = textShow (FD.getIdentifier i)

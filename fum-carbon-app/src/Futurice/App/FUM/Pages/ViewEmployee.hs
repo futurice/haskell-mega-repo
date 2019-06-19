@@ -15,7 +15,6 @@ import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
 
 import qualified Personio
-import qualified Chat.Flowdock.REST as FD
 
 viewEmployeePage
     :: AuthUser
@@ -46,7 +45,6 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
             vertRow_ "Email"    $ traverse_ toHtml $ p ^. Personio.employeeEmail
             vertRow_ "Int/Ext"  $ traverse_ toHtml $ p ^. Personio.employeeEmploymentType
             vertRow_ "GitHub"   $ traverse_ toHtml $ p ^. Personio.employeeGithub
-            vertRow_ "Flowdock" $ traverse_ fdToHtml $ p ^. Personio.employeeFlowdock
             --
             when (authRights auth == RightsIT || authLogin auth == login) $ do
                 vertRow_ "Contract span" $ toHtml $ formatDateSpan
@@ -108,7 +106,7 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
             Nil
 
     block_ "SSH Keys" $ do
-        unless (null $ e ^. employeeSshKeys) $ fullRow_ $ table_ $ tbody_ $ 
+        unless (null $ e ^. employeeSshKeys) $ fullRow_ $ table_ $ tbody_ $
             for_ (e ^. employeeSshKeys) $ \sshKey -> tr_ $ do
                 td_ $ toHtml sshKey
                 td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveSSHKeyFromEmployee) "Remove" "warning" $
@@ -155,8 +153,3 @@ formatDateSpan s e =
 
 phoneToHtml :: Monad m => Text -> HtmlT m ()
 phoneToHtml t = a_ [ href_ $ "tel://" <> t ] $ toHtml t
-
-fdToHtml :: Monad m => FD.Identifier Word64 res -> HtmlT m ()
-fdToHtml i = a_ [ href_ $ "https://www.flowdock.com/app/private/" <> t ] $ toHtml t
-  where
-    t = textShow (FD.getIdentifier i)
