@@ -9,6 +9,7 @@ import Codec.Picture
 import Codec.Picture.Png      (encodeDynamicPng)
 import Codec.Picture.ScaleDCT (scale)
 import Codec.Picture.Types    (extractLumaPlane)
+import Codec.Picture.Extra    (scaleBilinear, crop)
 import Control.Monad          (forM_)
 import Foreign.Marshal.Utils  (copyBytes)
 import Foreign.Ptr            (plusPtr)
@@ -95,9 +96,9 @@ transformImage avatarSize = convoluteM33 mask . scale (avatarSize, avatarSize) .
     clamp = max 0 . min 255
 
 cropImage :: Image PixelRGBA8 -> Image PixelRGBA8
-cropImage img@(Image w h _) = trimImage img wh tl
+cropImage img@(Image w h _) = crop x y nw nh img
   where
-    (wh, tl) = toSquare (w, h)
+    ((nw, nh), (x, y)) = toSquare (w, h)
 
 toSquare :: (Int, Int) -> ((Int, Int), (Int, Int))
 toSquare (w, h)
@@ -107,9 +108,10 @@ toSquare (w, h)
 avatar :: Int -> Bool -> BS.ByteString -> Either String BSL.ByteString
 avatar avatarSize grey contents = do
     origImg <- decodeImage contents
-    convImg <- encodeDynamicPng $ constr $ transformImage avatarSize
-        $ convertRGBA8 origImg
-    return convImg
+    let toRGB = convertRGBA8 origImg
+    let cropped = cropImage toRGB
+    let scaled = scaleBilinear avatarSize avatarSize cropped
+    encodeDynamicPng $ constr scaled
   where
     constr | grey      = ImageY8 . extractLumaPlane
            | otherwise = ImageRGBA8

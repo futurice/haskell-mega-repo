@@ -51,6 +51,7 @@ library
     , http-client
     , http-client-tls
     , JuicyPixels
+    , JuicyPixels-extra
     , lens
     , lucid
     , servant
@@ -113,6 +114,7 @@ executable avatar-process-lambda
     , http-client
     , JuicyPixels            >=3.2.7
     , JuicyPixels-scale-dct  >=0.1.0.0
+    , JuicyPixels-extra
     , linear
     , vector
   build-depends:    aeson
