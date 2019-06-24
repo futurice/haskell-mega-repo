@@ -254,6 +254,7 @@ combineProjects p p' = Project
     , pAccount         = combineMaybe pAccount p p'
     , pAccountName     = combineMaybe pAccountName p p'
     , pCategory        = pCategory p
+    , pOperationalId   = pOperationalId p
     , pStart           = combineMaybe pStart p p'
     , pFinish          = combineMaybe pFinish p p'
     , pProjectManager  = combineMaybe pProjectManager p p'

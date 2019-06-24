@@ -25,6 +25,7 @@ data Project = Project
     , pAccount                    :: !(Maybe AccountId)
     , pAccountName                :: !(Maybe Text)
     , pCategory                   :: !(EnumValue Project "category")
+    , pOperationalId              :: !(Maybe Int)
 
     -- these fields are asked for dashboards:
     , pStart                      :: !(Maybe UTCTime)
@@ -66,6 +67,7 @@ instance FromJSON Project where
         <*> obj .:? "account"
         <*> obj .:? "accountName"
         <*> (obj .:? "category" .!= EnumValue (-1)) -- seems not all projects have category?
+        <*> (join <$> readMaybe <$$> obj .:? "operationalId")
 
         <*> (getU <$$> obj .:? "start")
         <*> (getU <$$> obj .:? "finish")

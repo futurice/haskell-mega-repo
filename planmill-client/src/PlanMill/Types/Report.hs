@@ -77,7 +77,7 @@ data AllRevenuesPortfolio = AllRevenuesPortfolio
     { _arpPortfolioName     :: !Text
     , _arpCustomer          :: !Text
     , _arpProject           :: !Text
-    , _arpProjectId         :: !(Maybe Int)
+    , _arpOperationalId     :: !(Maybe Int)
     , _arpValueCreation     :: !(Maybe Double) -- TODO: Think of better type for all these
     , _arpActualRevenue     :: !(Maybe Double)
     , _arpInvoicedNoVat     :: !(Maybe Double)

@@ -27,6 +27,7 @@ data Project = Project
     -- planmill
     , prjName     :: !Text
     , prjCategory :: !Text -- TODO, make EnumTextValue
+    , prjOperationalId :: !(Maybe Int)
 
     -- these fields are asked for dashboards:
     , prjStart                      :: !(Maybe UTCTime)
@@ -74,6 +75,7 @@ projectsData fAccIds = do
             , prjAccountId = accId
             , prjName      = PM.pName p
             , prjCategory  = fromMaybe "-" $ cats ^? ix (PM.pCategory p)
+            , prjOperationalId = PM.pOperationalId p
 
             , prjStart           = PM.pStart p
             , prjFinish          = PM.pFinish p
