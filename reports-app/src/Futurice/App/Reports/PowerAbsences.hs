@@ -15,6 +15,7 @@ module Futurice.App.Reports.PowerAbsences (
     PowerAbsence (..),
     -- * Lenses
     powerAbsenceUsername,
+    powerAbsencePersonioId,
     powerAbsenceStart,
     powerAbsenceEnd,
     powerAbsencePlanmillId,
@@ -38,6 +39,7 @@ import qualified Data.Map.Strict           as Map
 import qualified Data.Vector               as V
 import qualified FUM
 import qualified Numeric.Interval.NonEmpty as I
+import qualified Personio                  as P
 import qualified PlanMill                  as PM
 import qualified PlanMill.Queries          as PMQ
 
@@ -47,6 +49,7 @@ import qualified PlanMill.Queries          as PMQ
 
 data PowerAbsence = PowerAbsence
     { _powerAbsenceUsername     :: !(Maybe FUM.Login)
+    , _powerAbsencePersonioId   :: !(Maybe P.EmployeeId)
     , _powerAbsenceStart        :: !Day
     , _powerAbsenceEnd          :: !Day
     , _powerAbsencePlanmillId   :: !PM.AbsenceId
@@ -64,10 +67,11 @@ instance ToSchema PowerAbsence where declareNamedSchema = sopDeclareNamedSchema
 
 instance ToColumns PowerAbsence where
     type Columns PowerAbsence =
-        '[ Maybe FUM.Login, Day, Day, NDT 'Days Int, NDT 'Days Int ]
+        '[ Maybe FUM.Login, Maybe P.EmployeeId, Day, Day, NDT 'Days Int, NDT 'Days Int ]
 
     columnNames _ =
         K "fum" :*
+        K "employee-id" :*
         K "start" :*
         K "end" :*
         K "calendar-days" :*
@@ -76,6 +80,7 @@ instance ToColumns PowerAbsence where
 
     toColumns ab  = pure $
         I (ab ^. powerAbsenceUsername) :*
+        I (ab ^. powerAbsencePersonioId) :*
         I (ab ^. powerAbsenceStart) :*
         I (ab ^. powerAbsenceEnd) :*
         I (NDT $ fromInteger $ 1 +
@@ -110,23 +115,26 @@ powerAbsenceReport mmonth = do
     let interval = startDay ... endDay
     -- Users
     fpm <- snd <$$> personioPlanmillMap
+    fp <- fst <$$> personioPlanmillMap
     -- Fetch all absences, on purpose
     as0 <- PMQ.absences
     -- Take intervals which overlap our interval of the interest
     let as1 = V.filter (\ab -> PM.absenceStart ab `I.member` interval) as0
-    traverse (powerAbsence fpm) as1
+    traverse (powerAbsence fpm fp) as1
 
 powerAbsence
     :: MonadPlanMillQuery m
     => HashMap FUM.Login PM.User
+    -> HashMap FUM.Login P.Employee
     -> PM.Absence
     -> m PowerAbsence
-powerAbsence idsLookup ab  = do
+powerAbsence idsLookup idsPLookup ab  = do
     let absenceInterval = PM.absenceInterval ab
     uc <- PMQ.capacities absenceInterval (PM.absencePerson ab)
     let uc' = capacities uc
     pure PowerAbsence
-        { _powerAbsenceUsername     = HM.lookup (PM.absencePerson ab) revLookup
+        { _powerAbsenceUsername     = fumLogin
+        , _powerAbsencePersonioId   = fumLogin >>= \a -> (HM.lookup a idsPLookup) ^? _Just . P.employeeId
         , _powerAbsenceStart        = PM.absenceStart ab
         , _powerAbsenceEnd          = PM.absenceFinish ab
         , _powerAbsencePlanmillId   = ab ^. PM.identifier
@@ -134,6 +142,9 @@ powerAbsence idsLookup ab  = do
         , _powerAbsenceBusinessDays = NDT $ length uc'
         }
   where
+    fumLogin :: Maybe FUM.Login
+    fumLogin = HM.lookup (PM.absencePerson ab) revLookup
+
     revLookup :: HashMap PM.UserId FUM.Login
     revLookup
         = HM.fromList
