@@ -41,9 +41,9 @@ binaryTagTests = testGroup "BinaryTagged tags" $ map mk tags
     tags :: [BTTest]
     tags =
         [ BTTest "PlanMill.SomeResponse" (Proxy :: Proxy PM.SomeResponse)
-            0 "d590fc201a275e8fc36043075704aea9f1db662f"
+            0 "a63534ce5176ce356f996bb34b63f2b5b781ad08"
         , BTTest "planmill-haxl endpoint" (Proxy :: Proxy [Either Text PM.SomeResponse])
-            0 "d6057dff901112074db0653cbdd7c8b00245dbcc"
+            0 "14f6d4cbe4d7278e4f9f24667f08104b05ff061b"
         , BTTest "PlanMill.Projects" (Proxy :: Proxy PM.Projects)
             0 "df7ab11865b56c8350dfc6afde343224509ddf2c"
         , BTTest "PlanMill.Tasks" (Proxy :: Proxy PM.Tasks)
