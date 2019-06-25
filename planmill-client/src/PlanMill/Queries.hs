@@ -50,7 +50,7 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
-       (Absence, Absences, Account, AccountId, AllRevenues2, CapacityCalendars,
+       (Absence, Absences, Account, AccountId, AllRevenues2, Assignments, CapacityCalendars,
        Me, Project (..), ProjectId, ProjectMembers, Projects, Task, TaskId,
        Tasks, Team, TeamId, TimeBalance, Timereport, Timereports, User,
        UserCapacities, UserId, Users, identifier)
@@ -330,6 +330,14 @@ projectMembers :: MonadPlanMillQuery m => ProjectId -> m ProjectMembers
 projectMembers pid = planmillVectorQuery
     $ QueryPagedGet QueryTagProjectMember mempty
     $ toUrlParts $ ("projects" :: Text) // pid // ("members" :: Text)
+
+-- | Get assignments for project
+--
+-- See <https://developers.planmill.com/api/#projects__project_id__assignments_get>
+assignments :: MonadPlanMillQuery m => ProjectId -> m Assignments
+assignments pid = planmillVectorQuery 
+    $ QueryPagedGet QueryTagAssignment mempty
+    $ toUrlParts $ ("projects" :: Text) // pid // ("assignments" :: Text)
 
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations
