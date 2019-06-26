@@ -9,9 +9,11 @@
 {-# LANGUAGE TypeOperators       #-}
 module Futurice.App.Reports.OKRCompetencies where
 
+import Futuqu.Rada.People           (peopleData, Person(..))
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
+import Futurice.Tribe               (tribeName)
 import PlanMill.Types.Project
 import Prelude ()
 
@@ -40,6 +42,14 @@ ongoingProject interval p =
         Just d ->
             member (utctDay d) interval || (utctDay d > sup interval)
 
+findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => Project -> m (String, Project)
+findTribeForProject project = do
+    let uid = pProjectManager project
+    ppl <- peopleData
+    let person = head $ filter (\p -> pPlanmill p == uid) ppl
+    let tribe = fromMaybe "NO TRIBE" . tribeName $ pTribe person
+    return (tribe, project)
+
 competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m) => m CompetencyReport
 competencyData = do
     today <- currentDay
@@ -52,6 +62,7 @@ competencyData = do
     let projectsForInterval = DV.filter (ongoingProject interval) projects
 
     -- map tribe to project by looking up team of project manager
+    withTribe <- mapM findTribeForProject projectsForInterval
 
     -- get assignments for each project
 
