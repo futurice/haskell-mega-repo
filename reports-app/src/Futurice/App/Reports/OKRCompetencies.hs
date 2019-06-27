@@ -12,6 +12,7 @@ module Futurice.App.Reports.OKRCompetencies where
 import Futuqu.Rada.People           (peopleData, Person(..))
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Integrations.TimereportKind (projectKind, TimereportKind(..))
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Tribe               (Tribe, defaultTribe, tribeToText)
@@ -55,10 +56,15 @@ instance ToSchema CompetencyReport where declareNamedSchema = newtypeDeclareName
 ongoingProject :: Interval Day -> Project -> Bool
 ongoingProject interval p =
     case pFinish p of
-        Nothing -> False
+        Nothing -> True
 
         Just d ->
             member (utctDay d) interval || (utctDay d > sup interval)
+
+filterByBillable :: forall m. (MonadMemoize m, MonadPlanMillQuery m) => PM.Project -> m Bool
+filterByBillable project = do
+    kind <- projectKind project
+    return $ kind == KindBillable     
 
 findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => Project -> m (Tribe, Project)
 findTribeForProject project = do
@@ -76,16 +82,18 @@ findAssignmentsForProject (tribe, project) = do
 
 findUserForAssignment :: forall m. (MonadPlanMillQuery m) => (Tribe, Text, PM.Assignments) -> m (Tribe, Text, [PM.User])
 findUserForAssignment (tribe, project, assignments) = do
-    users <- mapM getUser $ V.map PM.aPersonOrTeam assignments
-    let cleaned = catMaybes $ V.toList users
+    let assignedUsers = V.map PM.aPersonOrTeam assignments
+    planMillUsers <- PMQ.users
+    let pmuserMap = Map.fromList . map (\pu -> (PM._uId pu, pu)) $ V.toList planMillUsers
+    let assignedToPMUsers = V.map (getUser pmuserMap) assignedUsers
+    let cleaned = catMaybes $ V.toList assignedToPMUsers
     return (tribe, project, cleaned)
     where
-        getUser :: forall n. (MonadPlanMillQuery n) => (Either PM.UserId PM.TeamId) -> n (Maybe PM.User)
-        getUser (Left uid) = do
-            user <- PMQ.user uid
-            return $ Just user
-        getUser _ = do
-            return Nothing
+        getUser :: Map PM.UserId PM.User -> Either PM.UserId PM.TeamId -> Maybe PM.User
+        getUser pmus (Left uid) =
+            Map.lookup uid pmus
+        getUser _ _ = 
+            Nothing
 
 competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReport
 competencyData = do
@@ -97,9 +105,10 @@ competencyData = do
 
     -- filter projects by time interval (finish date during or after interval)
     let projectsForInterval = V.filter (ongoingProject interval) projects
+    billableProjects <- V.filterM filterByBillable projectsForInterval
 
     -- map tribe to project by looking up team of project manager
-    withTribe <- mapM findTribeForProject projectsForInterval
+    withTribe <- mapM findTribeForProject billableProjects
 
     -- get assignments for each project
     withAssignments <- mapM findAssignmentsForProject withTribe
@@ -119,6 +128,7 @@ competencyData = do
 
     return $ CR report
 
+
 -- HTML table
 
 instance ToHtml CompetencyReport where
@@ -129,4 +139,4 @@ renderCompetencyReport :: CompetencyReport -> HtmlPage "okr-competences"
 renderCompetencyReport (CR report) = page_ "OKR Competence Report" $ do
     h1_ "OKR Competences"
 
-    
+

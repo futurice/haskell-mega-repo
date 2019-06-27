@@ -13,6 +13,7 @@ module PlanMill.Types.Assignment (
     AssignmentId,
     ) where
 
+import Data.Aeson.Types          (Parser)
 import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
@@ -70,7 +71,7 @@ instance FromJSON Assignment where
         Assignment <$> obj .: "id"
                    <*> obj .: "task"
                    <*> obj .: "taskName"
-                   <*> obj .: "personOrTeam"
+                   <*> ((fmap Left $ obj .: "personOrTeam") <|> (fmap Right $ obj .: "personOrTeam"))
                    <*> obj .: "personOrTeamName"
                    <*> obj .:? "actualAmount"
                    <*> obj .:? "comment"
