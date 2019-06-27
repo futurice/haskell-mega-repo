@@ -23,6 +23,7 @@ module PlanMill.Queries (
     userTimebalance,
     absences,
     account,
+    assignments,
     project,
     projectMembers,
     projects,

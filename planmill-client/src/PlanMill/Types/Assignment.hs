@@ -17,7 +17,7 @@ import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
 import PlanMill.Types.Task       (TaskId)
-import PlanMill.Types.User       (Team, User)
+import PlanMill.Types.User       (TeamId, UserId)
 
 type AssignmentId = Identifier Assignment
 type Assignments = Vector Assignment
@@ -30,7 +30,7 @@ data Assignment = Assignment
     { _aId                  :: !AssignmentId
     , aTask                 :: !TaskId
     , aTaskName             :: !Text
-    , aPersonOrTeam         :: !(Identifier (Either User Team))
+    , aPersonOrTeam         :: !(Either UserId TeamId)
     , aPersonOrTeamName     :: !Text
     , aActualAmount         :: !(Maybe Int)
     , aComment              :: !(Maybe Text)
