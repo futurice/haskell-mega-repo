@@ -57,6 +57,7 @@ import Futurice.App.Reports.MissingHoursDailyChart
 import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeData (..), officeVibeData)
+import Futurice.App.Reports.OKRCompetencies                    (competencyData)
 import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
@@ -276,6 +277,7 @@ server ctx = genericServer $ Record
     , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
     , recTablesDoWeStudy            = \skind month tribe -> liftIO $ serveDataParam3 (skind >>= either (const Nothing) Just) month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
     , recActiveSubcontractors       = liftIO . serveActiveSubcontractorReport ctx
+    , recOKRCompetencesJSON         = liftIO $ serveData competencyData ctx
     -- Officevibe
     , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
     , recOfficevibeGroups        = liftIO $ serveData' () (const officeVibeData) ovdGroups ctx

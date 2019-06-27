@@ -30,6 +30,7 @@ import Futurice.App.Reports.Inventory                   (InventorySummary)
 import Futurice.App.Reports.MissingHours                (MissingHoursReport)
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
+import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
 import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
 import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
@@ -62,6 +63,7 @@ data Record route = Record
     , recTablesIDontKnow            :: route :- "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
     , recTablesDoWeStudy            :: route :- "tables" :> "do-we-study"          :> QueryParam' '[Lenient, Optional] "studykind" StudyKind :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
     , recActiveSubcontractors       :: route :- "tables" :> "active-subcontractors" :> QueryParam "day" Day :> Get '[HTML] ActiveSubcontractorData
+    , recOKRCompetencesJSON         :: route :- "tables" :> "okr-competences"      :> Get '[JSON] CompetencyReport
 
     -- Officevibe
     , recOfficevibeUsers         :: route :- "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
