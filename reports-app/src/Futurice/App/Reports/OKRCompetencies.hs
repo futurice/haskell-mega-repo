@@ -10,6 +10,7 @@
 module Futurice.App.Reports.OKRCompetencies where
 
 import Futuqu.Rada.People           (peopleData, Person(..))
+import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -30,7 +31,24 @@ import Numeric.Interval.NonEmpty            (Interval, (...), member, sup)
 
 -- Data types
 
-type CompetencyReport = Map Tribe [(Project, Int)] -- Project, # of competencies
+data ProjectCompetences = ProjectCompetences
+    { pcProjectName :: Text
+    , pcNumberOfCompetences :: Int
+    }
+    deriving stock (Show, Generic)
+    deriving anyclass (NFData)
+  
+deriveGeneric ''ProjectCompetences
+instance ToSchema ProjectCompetences where declareNamedSchema = sopDeclareNamedSchema
+deriveVia [t| ToJSON ProjectCompetences   `Via` Sopica ProjectCompetences |]
+deriveVia [t| FromJSON ProjectCompetences `Via` Sopica ProjectCompetences |]
+
+newtype CompetencyReport = CR (Map Tribe [ProjectCompetences])
+    deriving newtype (Show, NFData, ToJSON, FromJSON) 
+
+deriveGeneric ''CompetencyReport
+
+instance ToSchema CompetencyReport where declareNamedSchema = newtypeDeclareNamedSchema
 
 -- Data query
 
@@ -50,19 +68,19 @@ findTribeForProject project = do
     let tribe = fromMaybe defaultTribe $ fmap pTribe person
     return (tribe, project)
 
-findAssignmentsForProject :: forall m. (MonadPlanMillQuery m) => (Tribe, Project) -> m (Tribe, Project, PM.Assignments)
+findAssignmentsForProject :: forall m. (MonadPlanMillQuery m) => (Tribe, Project) -> m (Tribe, Text, PM.Assignments)
 findAssignmentsForProject (tribe, project) = do
     let pid = _pId project
     assignments <- PMQ.assignments pid
-    return (tribe, project, assignments)
+    return (tribe, PM.pName project, assignments)
 
-findUserForAssignment :: forall m. (MonadPlanMillQuery m) => (Tribe, Project, PM.Assignments) -> m (Tribe, Project, [PM.User])
+findUserForAssignment :: forall m. (MonadPlanMillQuery m) => (Tribe, Text, PM.Assignments) -> m (Tribe, Text, [PM.User])
 findUserForAssignment (tribe, project, assignments) = do
     users <- mapM getUser $ V.map PM.aPersonOrTeam assignments
     let cleaned = catMaybes $ V.toList users
     return (tribe, project, cleaned)
     where
-        getUser :: forall m. (MonadPlanMillQuery m) => (Either PM.UserId PM.TeamId) -> m (Maybe PM.User)
+        getUser :: forall n. (MonadPlanMillQuery n) => (Either PM.UserId PM.TeamId) -> n (Maybe PM.User)
         getUser (Left uid) = do
             user <- PMQ.user uid
             return $ Just user
@@ -96,8 +114,8 @@ competencyData = do
     let grouped = L.groupBy (\(t1, _, _) (t2, _, _) -> t1 == t2) $ V.toList withCompetences
 
     -- Return as type
-    let rawReport = map (\((t, p, u):xs) -> (t, ((p, u) : map (\(_, p', u') -> (p', u')) xs))) grouped
+    let rawReport = map (\((t, p, u):xs) -> (t, (ProjectCompetences p u : map (\(_, p', u') -> ProjectCompetences p' u') xs))) grouped
     let report = Map.fromList rawReport
 
-    return report
+    return $ CR report
 

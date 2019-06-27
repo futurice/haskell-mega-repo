@@ -12,6 +12,9 @@ module Futurice.Tribe (
     ) where
 
 import Control.Monad           ((>=>))
+import Data.Aeson.Types
+       (FromJSONKey (..), FromJSONKeyFunction (..), ToJSONKey (..),
+       toJSONKeyText)
 import Futurice.CostCenter
 import Futurice.Generics
 import Futurice.Office
@@ -164,6 +167,13 @@ instance ToJSON Tribe where
 instance FromJSON Tribe where
     parseJSON = Aeson.withTextDump "Tribe" $
         either (fail . view unpacked) pure . tribeFromTextE
+
+instance ToJSONKey Tribe where
+    toJSONKey = toJSONKeyText tribeToText
+
+instance FromJSONKey Tribe where
+    fromJSONKey = FromJSONKeyTextParser $
+        either fail pure . tribeFromTextE
 
 instance Csv.ToField Tribe where
     toField = Csv.toField . tribeToText
