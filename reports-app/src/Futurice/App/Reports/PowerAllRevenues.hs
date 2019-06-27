@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia       #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
 module Futurice.App.Reports.PowerAllRevenues where
 
 import Futurice.Generics
