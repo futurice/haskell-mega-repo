@@ -17,6 +17,7 @@ import Futurice.Tribe               (Tribe, defaultTribe, tribeToText)
 import PlanMill.Types.Project
 import Prelude ()
 
+import qualified Data.Map.Strict  as Map
 import qualified Data.List        as L
 import qualified Data.Set         as S
 import qualified Data.Vector      as V
@@ -29,12 +30,7 @@ import Numeric.Interval.NonEmpty            (Interval, (...), member, sup)
 
 -- Data types
 
-data CompetencyReport = CompetencyReport
-    { crTribe :: Tribe
-    , crProjects :: [(Project, Int)] -- Project name, # of competencies
-    }
-
-type CompetencyReports = [CompetencyReport]
+type CompetencyReport = Map Tribe [(Project, Int)] -- Project, # of competencies
 
 -- Data query
 
@@ -73,7 +69,7 @@ findUserForAssignment (tribe, project, assignments) = do
         getUser _ = do
             return Nothing
 
-competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReports
+competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReport
 competencyData = do
     today <- currentDay
     let interval = beginningOfCurrMonth today ... pred today
@@ -100,7 +96,8 @@ competencyData = do
     let grouped = L.groupBy (\(t1, _, _) (t2, _, _) -> t1 == t2) $ V.toList withCompetences
 
     -- Return as type
-    let report = map (\((t, p, u):xs) -> CompetencyReport t ((p, u) : map (\(_, p', u') -> (p', u')) xs)) grouped
+    let rawReport = map (\((t, p, u):xs) -> (t, ((p, u) : map (\(_, p', u') -> (p', u')) xs))) grouped
+    let report = Map.fromList rawReport
 
     return report
 
