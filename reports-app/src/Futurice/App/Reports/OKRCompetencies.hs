@@ -120,7 +120,7 @@ competencyData = do
     let withCompetences = V.map (\(t, p, u) -> (t, p, S.size . S.fromList . catMaybes $ map PM.uCompetence u)) toUsers
     
     -- group by tribe
-    let grouped = L.groupBy (\(t1, _, _) (t2, _, _) -> t1 == t2) $ V.toList withCompetences
+    let grouped = L.groupBy (\(t1, _, _) (t2, _, _) -> t1 == t2) . L.sortBy (\(t1, _, _) (t2, _, _) -> compare t1 t2) $ V.toList withCompetences
 
     -- Return as type
     let rawReport = map (\((t, p, u):xs) -> (t, (ProjectCompetences p u : map (\(_, p', u') -> ProjectCompetences p' u') xs))) grouped
