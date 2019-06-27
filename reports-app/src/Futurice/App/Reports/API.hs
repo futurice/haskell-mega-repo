@@ -63,7 +63,8 @@ data Record route = Record
     , recTablesIDontKnow            :: route :- "tables" :> "i-dont-know"          :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] IDontKnowData
     , recTablesDoWeStudy            :: route :- "tables" :> "do-we-study"          :> QueryParam' '[Lenient, Optional] "studykind" StudyKind :> QueryParam "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] DoWeStudyData
     , recActiveSubcontractors       :: route :- "tables" :> "active-subcontractors" :> QueryParam "day" Day :> Get '[HTML] ActiveSubcontractorData
-    , recOKRCompetencesJSON         :: route :- "tables" :> "okr-competences"      :> Get '[JSON] CompetencyReport
+    , recOKRCompetences             :: route :- "tables" :> "okr-competences"      :> Get '[HTML] CompetencyReport
+    , recOKRCompetencesJSON         :: route :- "tables" :> "okr-competences.json" :> Get '[JSON] CompetencyReport
 
     -- Officevibe
     , recOfficevibeUsers         :: route :- "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]

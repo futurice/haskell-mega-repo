@@ -119,3 +119,14 @@ competencyData = do
 
     return $ CR report
 
+-- HTML table
+
+instance ToHtml CompetencyReport where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . renderCompetencyReport
+
+renderCompetencyReport :: CompetencyReport -> HtmlPage "okr-competences"
+renderCompetencyReport (CR report) = page_ "OKR Competence Report" $ do
+    h1_ "OKR Competences"
+
+    

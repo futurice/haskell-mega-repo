@@ -277,6 +277,7 @@ server ctx = genericServer $ Record
     , recTablesIDontKnow            = \month tribe -> liftIO $ serveDataParam2 month (tribe >>= either (const Nothing) Just) iDontKnowData ctx
     , recTablesDoWeStudy            = \skind month tribe -> liftIO $ serveDataParam3 (skind >>= either (const Nothing) Just) month (tribe >>= either (const Nothing) Just) doWeStudyData ctx
     , recActiveSubcontractors       = liftIO . serveActiveSubcontractorReport ctx
+    , recOKRCompetences             = liftIO $ serveData competencyData ctx
     , recOKRCompetencesJSON         = liftIO $ serveData competencyData ctx
     -- Officevibe
     , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
