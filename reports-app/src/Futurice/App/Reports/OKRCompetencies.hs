@@ -13,7 +13,7 @@ import Futuqu.Rada.People           (peopleData, Person(..))
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Futurice.Tribe               (tribeName)
+import Futurice.Tribe               (Tribe, defaultTribe)
 import PlanMill.Types.Project
 import Prelude ()
 
@@ -42,15 +42,15 @@ ongoingProject interval p =
         Just d ->
             member (utctDay d) interval || (utctDay d > sup interval)
 
-findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => Project -> m (String, Project)
+findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => Project -> m (Tribe, Project)
 findTribeForProject project = do
     let uid = pProjectManager project
     ppl <- peopleData
-    let person = head $ filter (\p -> pPlanmill p == uid) ppl
-    let tribe = fromMaybe "NO TRIBE" . tribeName $ pTribe person
+    let person = listToMaybe $ filter (\p -> pPlanmill p == uid) ppl
+    let tribe = fromMaybe defaultTribe $ fmap pTribe person
     return (tribe, project)
 
-competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m) => m CompetencyReport
+competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReport
 competencyData = do
     today <- currentDay
     let interval = beginningOfCurrMonth today ... pred today
