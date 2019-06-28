@@ -24,6 +24,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict  as Map
 import qualified Data.List        as L
 import qualified Data.Set         as S
+import qualified Data.Text        as T
 import qualified Data.Vector      as V
 import qualified FUM.Types.Login  as FUM
 import qualified Personio         as P
@@ -158,4 +159,16 @@ renderCompetencyReport :: CompetencyReport -> HtmlPage "okr-competences"
 renderCompetencyReport (CR report) = page_ "OKR Competence Report" $ do
     h1_ "OKR Competences"
 
-
+    table_ $ do
+        thead_ $ do 
+            th_ "Tribe"
+            th_ "Project"
+            th_ "# of competences"
+    
+        tbody_ $ for_ (Map.assocs report) $ \(tribe, competences) -> tr_ $ do
+            tr_ $ do
+                td_ [rowspan_ $ T.pack $ show $ (+1) $ length competences] $ toHtml tribe
+            for_ competences $ \comp -> do
+                tr_ $ do
+                    td_ $ toHtml $ pcProjectName comp
+                    td_ $ toHtml $ show $ pcNumberOfCompetences comp
