@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia       #-}
+{-# LANGUAGE GADTs             #-}
 module Futurice.App.Reports.PowerAllRevenues where
 
 import Futurice.Generics
@@ -24,7 +25,7 @@ data PowerAllRevenues = PowerAllRevenues
 data PowerAllRevenuesRow = PowerAllRevenuesRow
     { powerAllRevenuesRowCustomer          :: !Text
     , powerAllRevenuesRowProject           :: !Text
-    , powerAllRevenuesRowProjectId         :: !(Maybe Int)
+    , powerAllRevenuesRowProjectId         :: !(Maybe PM.ProjectId)
     , powerAllRevenuesRowValueCreation     :: !(Maybe Double) -- TODO: Think of better type for all these
     , powerAllRevenuesRowActualRevenue     :: !(Maybe Double)
     , powerAllRevenuesRowInvoicedNoVat     :: !(Maybe Double)
@@ -39,18 +40,20 @@ powerAllRevenuesReport :: (MonadTime m, MonadPlanMillQuery m) => Maybe Month -> 
 powerAllRevenuesReport mmonth = do
     month <- maybe currentMonth pure mmonth
     report <- PMQ.allRevenuesReport (monthYear month) (toInteger $ fromEnum $ monthName month)
+    projects <- PMQ.projects
+    let operationalMap = M.fromList $ fmap (\p -> (PM.pOperationalId p, p)) $ toList projects
     let report' = M.toList $ PM.getRevenuesData report
-        report'' = fmap toPowerAllRevenuesRow report'
+        report'' = fmap (toPowerAllRevenuesRow operationalMap) report'
     pure $ PowerAllRevenues month $ M.fromList report''
   where
-    toPowerAllRevenuesRow (portfolioName, portfolios) =
+    toPowerAllRevenuesRow operationalMap (portfolioName, portfolios) =
         let tribe = keyName $ T.splitOn "-" portfolioName
             keyName [_costcenter, name] = T.intercalate " " $ take 2 $ T.splitOn " " $ T.strip name
             keyName xs = fold xs
             row p = PowerAllRevenuesRow
                 { powerAllRevenuesRowCustomer          = PM._arpCustomer p
                 , powerAllRevenuesRowProject           = PM._arpProject p
-                , powerAllRevenuesRowProjectId         = PM._arpProjectId p
+                , powerAllRevenuesRowProjectId         = PM._pId <$> (operationalMap ^.at (PM._arpOperationalId p))
                 , powerAllRevenuesRowValueCreation     = PM._arpValueCreation p
                 , powerAllRevenuesRowActualRevenue     = PM._arpActualRevenue p
                 , powerAllRevenuesRowInvoicedNoVat     = PM._arpInvoicedNoVat p

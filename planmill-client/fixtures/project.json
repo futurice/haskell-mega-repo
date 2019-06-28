@@ -17,7 +17,7 @@
   "invoiceAppendix": -1,
   "invoiceReference": "",
   "name": "Test Project A",
-  "operationalId": 12779,
+  "operationalId": "12779",
   "portfolio": 464553,
   "requireBillableComment": 0,
   "requireCommentForOvertime": 0,
