@@ -2,7 +2,7 @@
   {
     "projectManager": 580283,
     "accountName": "BillionMill Inc.",
-    "operationalId": 12779,
+    "operationalId": "12779",
     "actualRevenue": 9524.192374981776,
     "portfolio": 464553,
     "actualEffort": 0,
@@ -32,7 +32,7 @@
   {
     "projectManager": null,
     "accountName": "BillionMill Inc",
-    "operationalId": 12780,
+    "operationalId": "12780",
     "actualRevenue": 10,
     "portfolio": 464553,
     "actualEffort": 0,
@@ -62,7 +62,7 @@
   {
     "projectManager": 557098,
     "accountName": "Good Hood Oy",
-    "operationalId": 12783,
+    "operationalId": "12783",
     "actualRevenue": 2000,
     "portfolio": 464553,
     "actualEffort": 0,
