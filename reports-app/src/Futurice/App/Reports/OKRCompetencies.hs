@@ -12,6 +12,7 @@ module Futurice.App.Reports.OKRCompetencies where
 import Futuqu.Rada.People           (peopleData, Person(..))
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Integrations.Common         (personioPlanmillMap)
 import Futurice.Integrations.TimereportKind (projectKind, TimereportKind(..))
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -19,6 +20,7 @@ import Futurice.Tribe               (Tribe, defaultTribe, tribeToText)
 import PlanMill.Types.Project
 import Prelude ()
 
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict  as Map
 import qualified Data.List        as L
 import qualified Data.Set         as S
@@ -38,14 +40,14 @@ data ProjectCompetences = ProjectCompetences
     }
     deriving stock (Show, Generic)
     deriving anyclass (NFData)
-  
+
 deriveGeneric ''ProjectCompetences
 instance ToSchema ProjectCompetences where declareNamedSchema = sopDeclareNamedSchema
 deriveVia [t| ToJSON ProjectCompetences   `Via` Sopica ProjectCompetences |]
 deriveVia [t| FromJSON ProjectCompetences `Via` Sopica ProjectCompetences |]
 
 newtype CompetencyReport = CR (Map Tribe [ProjectCompetences])
-    deriving newtype (Show, NFData, ToJSON, FromJSON) 
+    deriving newtype (Show, NFData, ToJSON, FromJSON)
 
 deriveGeneric ''CompetencyReport
 
@@ -64,7 +66,7 @@ ongoingProject interval p =
 filterByBillable :: forall m. (MonadMemoize m, MonadPlanMillQuery m) => PM.Project -> m Bool
 filterByBillable project = do
     kind <- projectKind project
-    return $ kind == KindBillable     
+    return $ kind == KindBillable
 
 findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => Project -> m (Tribe, Project)
 findTribeForProject project = do
@@ -92,8 +94,21 @@ findUserForAssignment (tribe, project, assignments) = do
         getUser :: Map PM.UserId PM.User -> Either PM.UserId PM.TeamId -> Maybe PM.User
         getUser pmus (Left uid) =
             Map.lookup uid pmus
-        getUser _ _ = 
+        getUser _ _ =
             Nothing
+
+planmillUserToPersonioEmployee :: forall m. (MonadPlanMillQuery m, MonadPersonio m) => (Tribe, Text, [PM.User]) -> m (Tribe, Text, [P.Employee])
+planmillUserToPersonioEmployee (tribe, project, users) = do
+    ppMap <- personioPlanmillMap
+    let employees = map (pToP ppMap) users
+    return (tribe, project, catMaybes employees)
+    where
+        pToP ppMap user =
+            fmap fst $ andThen (`HM.lookup` ppMap) $ PM.userLogin user
+
+        andThen _ Nothing  = Nothing
+        andThen f (Just a) = f a
+
 
 competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReport
 competencyData = do
@@ -116,9 +131,13 @@ competencyData = do
     -- map assigned users to Planmill user
     toUsers <- mapM findUserForAssignment withAssignments
 
+    -- map Planmill user to personio user
+    toPersonio <- mapM planmillUserToPersonioEmployee toUsers
+
+    -- get competence by _employeeRole
     -- flatmap project users to competencies and count uniques
-    let withCompetences = V.map (\(t, p, u) -> (t, p, S.size . S.fromList . catMaybes $ map PM.uCompetence u)) toUsers
-    
+    let withCompetences = V.map (\(t, p, u) -> (t, p, S.size . S.fromList $ map P._employeeRole u)) toPersonio
+
     -- group by tribe
     let grouped = L.groupBy (\(t1, _, _) (t2, _, _) -> t1 == t2) . L.sortBy (\(t1, _, _) (t2, _, _) -> compare t1 t2) $ V.toList withCompetences
 
