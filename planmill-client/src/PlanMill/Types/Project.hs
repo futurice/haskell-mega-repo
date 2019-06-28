@@ -1,23 +1,67 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
 -- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
-module PlanMill.Types.Project (Project(..), Projects, ProjectId, ProjectMember(..), ProjectMembers) where
+module PlanMill.Types.Project (Project(..), Projects, ProjectId, ProjectMember(..), ProjectMembers, Portfolios) where
 
 import PlanMill.Internal.Prelude
 
-import PlanMill.Types.Account     (AccountId)
-import PlanMill.Types.Enumeration (EnumValue (..))
-import PlanMill.Types.Identifier  (HasIdentifier (..), Identifier)
-import PlanMill.Types.User        (UserId)
+import PlanMill.Types.Account                  (AccountId)
+import PlanMill.Types.Enumeration              (EnumValue (..))
+import PlanMill.Types.Identifier               (HasIdentifier (..), Identifier)
+import PlanMill.Types.User                     (UserId)
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
+
+import qualified Data.Aeson.Lens     as L
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Text           as T
+import qualified Data.Vector         as V
 
 type ProjectId = Identifier Project
 type Projects = Vector Project
+
+newtype PortfolioId = PortfolioId Int
+    deriving (Eq, Ord, Show, Read, Generic)
+    deriving newtype ( AnsiPretty,Hashable, Binary, HasStructuralInfo, FromJSON, NFData)
+
+newtype Portfolios = Portfolios (Vector Portfolio)
+    deriving (Generic)
+    deriving newtype (AnsiPretty)
+
+data ProjectType = CustomerProject | InternalProject deriving (Show, Generic)
+
+instance AnsiPretty ProjectType where ansiPretty = ansiPretty . show
+
+data Portfolio = Portfolio
+    { _portfolioId          :: !PortfolioId
+    , _portfolioProjectType :: !ProjectType
+    , _portfolioName        :: !Text
+    } deriving (Show, Generic, AnsiPretty)
+
+instance FromJSON Portfolios where
+    parseJSON val =
+        let filters = val ^? L.key "filters" . L._Array
+            filters' = join $ listToMaybe . filter (\v -> v ^. L.key "name" . L._String == "portfolioFilter") . V.toList <$> filters
+            portfolios = filters' ^. _Just . L.key "values" . L._Object
+            checkProjectType s =
+                let projectTypeString = T.toLower $ T.strip $ T.takeWhile (/= '\\') s
+                in case projectTypeString of
+                  "customer projects" -> Just CustomerProject
+                  "internal projects" -> Just InternalProject
+                  _                   -> Nothing
+            getPortfolioName s = last $ T.splitOn "\\\\" s
+            toPortfolio (k,v) = Portfolio
+                <$> (PortfolioId <$> readMaybe (T.unpack k))
+                <*> checkProjectType (v ^. L._String)
+                <*> (Just $ getPortfolioName $ v ^. L._String)
+            res = mapMaybe toPortfolio $ HM.toList portfolios
+        in pure $ Portfolios $ V.fromList res
 
 data Project = Project
     { _pId                        :: !ProjectId
@@ -26,6 +70,7 @@ data Project = Project
     , pAccountName                :: !(Maybe Text)
     , pCategory                   :: !(EnumValue Project "category")
     , pOperationalId              :: !(Maybe Int)
+    , pPortfolioId                :: !(Maybe PortfolioId)
 
     -- these fields are asked for dashboards:
     , pStart                      :: !(Maybe UTCTime)
@@ -68,7 +113,7 @@ instance FromJSON Project where
         <*> obj .:? "accountName"
         <*> (obj .:? "category" .!= EnumValue (-1)) -- seems not all projects have category?
         <*> (join <$> readMaybe <$$> obj .:? "operationalId")
-
+        <*> obj .:? "portfolio"
         <*> (getU <$$> obj .:? "start")
         <*> (getU <$$> obj .:? "finish")
         <*> obj .:? "projectManager"

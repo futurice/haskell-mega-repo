@@ -65,6 +65,7 @@ data Cmd
     | CmdAbsencesInterval (PM.Interval Day)
     | CmdReports
     | CmdAllRevenuesReport
+    | CmdPortfolios
 
 deriveGeneric ''Cmd
 
@@ -240,7 +241,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdAllRevenuesReport -> do
         x <- PM.planmillAction $ PM.allRevenuesReport
         putPretty x
-
+    CmdPortfolios -> do
+        x <- PM.planmillAction $ PM.portfolios
+        putPretty x
 -------------------------------------------------------------------------------
 -- M - monad with custom instances
 -------------------------------------------------------------------------------
