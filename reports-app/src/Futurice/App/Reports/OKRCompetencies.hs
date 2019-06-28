@@ -69,10 +69,9 @@ filterByBillable project = do
     kind <- projectKind project
     return $ kind == KindBillable
 
-findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => Project -> m (Tribe, Project)
-findTribeForProject project = do
+findTribeForProject :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => [Person] -> Project -> m (Tribe, Project)
+findTribeForProject ppl project = do
     let uid = pProjectManager project
-    ppl <- peopleData
     let person = listToMaybe $ filter (\p -> pPlanmill p == uid) ppl
     let tribe = fromMaybe defaultTribe $ fmap pTribe person
     return (tribe, project)
@@ -83,10 +82,9 @@ findAssignmentsForProject (tribe, project) = do
     assignments <- PMQ.assignments pid
     return (tribe, PM.pName project, assignments)
 
-findUserForAssignment :: forall m. (MonadPlanMillQuery m) => (Tribe, Text, PM.Assignments) -> m (Tribe, Text, [PM.User])
-findUserForAssignment (tribe, project, assignments) = do
+findUserForAssignment :: forall m. (MonadPlanMillQuery m) => PM.Users -> (Tribe, Text, PM.Assignments) -> m (Tribe, Text, [PM.User])
+findUserForAssignment planMillUsers (tribe, project, assignments) = do
     let assignedUsers = V.map PM.aPersonOrTeam assignments
-    planMillUsers <- PMQ.users
     let pmuserMap = Map.fromList . map (\pu -> (PM._uId pu, pu)) $ V.toList planMillUsers
     let assignedToPMUsers = V.map (getUser pmuserMap) assignedUsers
     let cleaned = catMaybes $ V.toList assignedToPMUsers
@@ -98,9 +96,12 @@ findUserForAssignment (tribe, project, assignments) = do
         getUser _ _ =
             Nothing
 
-planmillUserToPersonioEmployee :: forall m. (MonadPlanMillQuery m, MonadPersonio m) => (Tribe, Text, [PM.User]) -> m (Tribe, Text, [P.Employee])
-planmillUserToPersonioEmployee (tribe, project, users) = do
-    ppMap <- personioPlanmillMap
+planmillUserToPersonioEmployee 
+    :: forall m. (MonadPlanMillQuery m, MonadPersonio m) 
+        => HashMap FUM.Login (P.Employee, PM.User) 
+        -> (Tribe, Text, [PM.User]) 
+        -> m (Tribe, Text, [P.Employee])
+planmillUserToPersonioEmployee ppMap (tribe, project, users) = do
     let employees = map (pToP ppMap) users
     return (tribe, project, catMaybes employees)
     where
@@ -114,22 +115,25 @@ competencyData = do
 
     -- get projects
     projects <- PMQ.projects
+    planMillUsers <- PMQ.users
+    ppl <- peopleData
 
     -- filter projects by time interval (finish date during or after interval)
     let projectsForInterval = V.filter (ongoingProject interval) projects
     billableProjects <- V.filterM filterByBillable projectsForInterval
 
     -- map tribe to project by looking up team of project manager
-    withTribe <- mapM findTribeForProject billableProjects
+    withTribe <- mapM (findTribeForProject ppl) billableProjects
 
     -- get assignments for each project
     withAssignments <- mapM findAssignmentsForProject withTribe
 
     -- map assigned users to Planmill user
-    toUsers <- mapM findUserForAssignment withAssignments
+    toUsers <- mapM (findUserForAssignment planMillUsers) withAssignments
 
     -- map Planmill user to personio user
-    toPersonio <- mapM planmillUserToPersonioEmployee toUsers
+    ppMap <- personioPlanmillMap
+    toPersonio <- mapM (planmillUserToPersonioEmployee ppMap) toUsers
 
     -- get competence by _employeeRole
     -- flatmap project users to competencies and count uniques
