@@ -105,11 +105,7 @@ planmillUserToPersonioEmployee (tribe, project, users) = do
     return (tribe, project, catMaybes employees)
     where
         pToP ppMap user =
-            fmap fst $ andThen (`HM.lookup` ppMap) $ PM.userLogin user
-
-        andThen _ Nothing  = Nothing
-        andThen f (Just a) = f a
-
+            fmap fst $ (=<<) (`HM.lookup` ppMap) $ PM.userLogin user
 
 competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReport
 competencyData = do
