@@ -17,6 +17,7 @@ module Futurice.Integrations.Common (
     personioPlanmillMap,
     personioPlanmillMap',
     planmillEmployee,
+    planmillEmployeeToPersonio,
     -- * Classy lenses
     HasFUMEmployeeListName(..),
     HasFlowdockOrgName(..),
@@ -185,6 +186,13 @@ planmillEmployee uid = do
         , employeeTribe    = t
         , employeeContract = c
         }
+
+planmillEmployeeToPersonio :: (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m) => PM.UserId -> m (Maybe P.Employee)
+planmillEmployeeToPersonio uid = do
+    u <- PMQ.user uid 
+    ps <- P.personio P.PersonioEmployees
+    let f p = p ^. P.employeeLogin == PM.userLogin u
+    pure $ find f ps
 
 -- $setup
 -- >>> :set -XTemplateHaskell

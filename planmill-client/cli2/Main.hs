@@ -52,6 +52,7 @@ data Cmd
     | CmdTimereports PM.UserId (PM.Interval Day)
     | CmdCapacity PM.UserId (PM.Interval Day)
     | CmdTimereport PM.TimereportId
+    | CmdAssignments PM.ProjectId
     | CmdReportableAssignments PM.UserId
     | CmdBalance PM.UserId
     | CmdTask PM.TaskId
@@ -201,6 +202,11 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
             else x ^.. taking 10 traverse
     CmdReportableAssignments uid -> do
         x <- PM.planmillAction $ PM.reportableAssignments uid
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdAssignments pid -> do
+        x <- PM.planmillAction $ PM.projectAssignments pid
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse

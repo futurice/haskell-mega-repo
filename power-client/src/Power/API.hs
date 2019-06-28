@@ -15,7 +15,7 @@ import Power.Types
 import Power.PyJSON
 
 data PowerRoutes route = PowerRoutes
-    { routePeople :: route :- "person/" :> Get '[PYJSON] [Person]
+    { routePeople :: route :- "people" :> Get '[PYJSON] [Person]
     -- TODO: add more routes
     }
   deriving stock (Generic)
