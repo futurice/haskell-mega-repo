@@ -238,6 +238,7 @@ extra-deps:
 - hashable-1.2.7.0
 - hashable-time-0.2.0.2
 - haxl-2.0.1.1
+- hfsevents-0.1.6
 - hinotify-0.4
 - hourglass-0.2.12
 - hsc2hs-0.68.4
