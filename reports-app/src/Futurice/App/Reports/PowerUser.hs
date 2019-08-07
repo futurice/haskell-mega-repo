@@ -108,6 +108,7 @@ powerUser today es e = do
         case (tribeName, officeToText $ e ^. P.employeeOffice) of
             ("Germany", "Munich") -> "Munich"
             ("Germany", "Berlin") -> "Berlin"
+            ("Germany", "Stuttgart") -> "Stuttgart"
             _ -> tribeName
 
 
