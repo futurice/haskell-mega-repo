@@ -32,6 +32,7 @@ module PlanMill.Endpoints (
     project,
     projectMembers,
     projects,
+    portfolios,
     -- * Tasks
     task,
     projectTasks,
@@ -345,6 +346,12 @@ allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
 -- See <https://developers.planmill.com/api/#panel_projects__project_id__members>
 projectMembers :: ProjectId -> PlanMill ProjectMembers
 projectMembers i = planMillGet $ t "projects" // i // t "members"
+
+-- | Get a hashmap of all possible portfolios
+--
+-- Uses the project meta field to fetch the values
+portfolios :: PlanMill Portfolios
+portfolios = planMillGet $ t "projects" // t "meta"
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------

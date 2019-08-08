@@ -31,8 +31,8 @@ library
     DeriveGeneric
     DeriveTraversable
     DerivingStrategies
-    ScopedTypeVariables
     DerivingVia
+    ScopedTypeVariables
 
   build-depends:
     , aeson
@@ -75,6 +75,7 @@ library
     , http-types
     , intervals
     , lens
+    , lens-aeson
     , log-base
     , lucid
     , monad-http
