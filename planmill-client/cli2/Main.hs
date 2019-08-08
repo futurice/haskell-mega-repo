@@ -66,6 +66,7 @@ data Cmd
     | CmdReports
     | CmdAllRevenuesReport
     | CmdPortfolios
+    | CmdValueCreationPerMonth
 
 deriveGeneric ''Cmd
 
@@ -236,13 +237,16 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
             then x ^.. folded
             else x ^.. taking 10 traverse
     CmdReports -> do
-        x <- PM.planmillAction $ PM.reports
+        x <- PM.planmillAction PM.reports
         putPretty x
     CmdAllRevenuesReport -> do
-        x <- PM.planmillAction $ PM.allRevenuesReport
+        x <- PM.planmillAction PM.allRevenuesReport
         putPretty x
     CmdPortfolios -> do
-        x <- PM.planmillAction $ PM.portfolios
+        x <- PM.planmillAction PM.portfolios
+        putPretty x
+    CmdValueCreationPerMonth -> do
+        x <- PM.planmillAction PM.valueCreationByMonthReport
         putPretty x
 -------------------------------------------------------------------------------
 -- M - monad with custom instances

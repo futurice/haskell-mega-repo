@@ -31,6 +31,7 @@ module PlanMill.Queries (
     task,
     capacitycalendars,
     allRevenuesReport,
+    valueCreationByMonthReport,
     -- * Queries
     usersQuery,
     absencesQuery,
@@ -51,10 +52,11 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import PlanMill.Types
-       (Absence, Absences, Account, AccountId, AllRevenues2, Assignments, CapacityCalendars,
-       Me, Project (..), ProjectId, ProjectMembers, Projects, Task, TaskId,
-       Tasks, Team, TeamId, TimeBalance, Timereport, Timereports, User,
-       UserCapacities, UserId, Users, identifier)
+       (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
+       CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
+       Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance, Timereport,
+       Timereports, User, UserCapacities, UserId, Users, ValueCreationByMonth,
+       identifier)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -323,8 +325,16 @@ capacitycalendars = planmillVectorQuery
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
 allRevenuesReport :: (MonadPlanMillQuery m) => Integer -> Integer -> m AllRevenues2
 allRevenuesReport year month = planmillQuery
-    $ QueryGet QueryTagReport (Map.fromList [("param1",textShow year), ("param2", textShow month)])
+    $ QueryGet QueryTagAllRevenue (Map.fromList [("param1",textShow year), ("param2", textShow month)])
     $ toUrlParts ("reports" :: Text) // ("All Revenues 2" :: Text)
+
+-- | Get Value creation by month per employee Report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+valueCreationByMonthReport :: (MonadPlanMillQuery m) => Integer -> m ValueCreationByMonth
+valueCreationByMonthReport year = planmillQuery
+    $ QueryGet QueryTagValueCreation (Map.fromList [("param1",textShow year)])
+    $ toUrlParts ("reports" :: Text) // ("Value creation per month by employee" :: Text)
 
 -- | Get a list of tasks.
 --
@@ -338,7 +348,7 @@ projectMembers pid = planmillVectorQuery
 --
 -- See <https://developers.planmill.com/api/#projects__project_id__assignments_get>
 assignments :: MonadPlanMillQuery m => ProjectId -> m Assignments
-assignments pid = planmillVectorQuery 
+assignments pid = planmillVectorQuery
     $ QueryPagedGet QueryTagAssignment mempty
     $ toUrlParts $ ("projects" :: Text) // pid // ("assignments" :: Text)
 

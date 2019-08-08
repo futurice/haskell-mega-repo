@@ -13,7 +13,6 @@ module PlanMill.Types.Assignment (
     AssignmentId,
     ) where
 
-import Data.Aeson.Types          (Parser)
 import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)

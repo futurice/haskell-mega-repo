@@ -43,6 +43,7 @@ import Futurice.App.Reports.SupervisorsGraph            (Emp)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport)
 import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
+import Futurice.App.Reports.ValueCreation               (ValueCreationReport)
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -94,6 +95,9 @@ data Record route = Record
 
     -- For Bubbleburster
     , recProjectMembers :: route :- "project" :> "members" :> Get '[JSON] [ProjectMembers]
+
+    -- For Data lake
+    , recValueCreation :: route :- "report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport
 
     -- missing hours notification
     , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text

@@ -57,7 +57,7 @@ import Futurice.App.Reports.MissingHoursDailyChart
 import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeData (..), officeVibeData)
-import Futurice.App.Reports.OKRCompetencies                    (competencyData)
+import Futurice.App.Reports.OKRCompetencies                   (competencyData)
 import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
@@ -82,6 +82,8 @@ import Futurice.App.Reports.TimereportsByTask
 import Futurice.App.Reports.TimereportsDump                   (timereportsDump)
 import Futurice.App.Reports.UtzChart
        (utzChartData, utzChartRender)
+import Futurice.App.Reports.ValueCreation
+       (ValueCreationReport, valueCreationReport)
 
 -------------------------------------------------------------------------------
 -- Endpoints
@@ -258,6 +260,10 @@ servePowerUTZReport :: Ctx -> Maybe Month -> IO PowerUTZReport
 servePowerUTZReport ctx mmonth =
     cachedIO' ctx mmonth $ runIntegrations' ctx $ powerUTZReport mmonth
 
+serveValueCreationReport :: Ctx -> Maybe Integer -> IO ValueCreationReport
+serveValueCreationReport ctx myear =
+    cachedIO' ctx myear $ runIntegrations' ctx $ valueCreationReport myear
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -307,6 +313,9 @@ server ctx = genericServer $ Record
 
     -- For bubbleburster
     , recProjectMembers = liftIO $ serveData projectMemberData ctx
+
+    -- For Data lake
+    , recValueCreation = liftIO . serveValueCreationReport ctx
 
     -- missing hours notification
     , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
