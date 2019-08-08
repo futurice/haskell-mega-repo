@@ -62,7 +62,8 @@ module PlanMill.Endpoints (
     hooks,
     -- * Reports
     reports,
-    allRevenuesReport
+    allRevenuesReport,
+    valueCreationByMonthReport
     ) where
 
 import PlanMill.Internal.Prelude
@@ -340,6 +341,12 @@ reports = planMillGet $ t "reports"
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
 allRevenuesReport :: PlanMill AllRevenues2
 allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
+
+-- | Get the "Value creation per month by employee" report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+valueCreationByMonthReport :: PlanMill ValueCreationByMonth
+valueCreationByMonthReport = planMillGet $ t "reports" // t "Value creation per month by employee"
 
 -- | Get a list of project's members
 --

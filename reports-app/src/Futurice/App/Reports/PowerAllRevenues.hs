@@ -20,7 +20,7 @@ data PowerAllRevenues = PowerAllRevenues
     }
     deriving (GhcGeneric, SopGeneric)
     deriving anyclass (NFData, HasDatatypeInfo, ToSchema)
-    deriving (ToJSON) via (Sopica PowerAllRevenues)
+    deriving (FromJSON, ToJSON) via (Sopica PowerAllRevenues)
 
 data PowerAllRevenuesRow = PowerAllRevenuesRow
     { powerAllRevenuesRowCustomer          :: !Text
@@ -34,7 +34,7 @@ data PowerAllRevenuesRow = PowerAllRevenuesRow
     , powerAllRevenuesRowSalesPrice        :: !(Maybe Double)
     , powerAllRevenuesRowEffectivePrice    :: !(Maybe Double)
     } deriving (GhcGeneric, SopGeneric, HasDatatypeInfo, NFData, ToSchema)
-      deriving (ToJSON) via (Sopica PowerAllRevenuesRow)
+      deriving (FromJSON, ToJSON) via (Sopica PowerAllRevenuesRow)
 
 powerAllRevenuesReport :: (MonadTime m, MonadPlanMillQuery m) => Maybe Month -> m PowerAllRevenues
 powerAllRevenuesReport mmonth = do

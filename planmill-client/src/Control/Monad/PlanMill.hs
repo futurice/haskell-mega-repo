@@ -68,6 +68,7 @@ class
     , MonadPlanMillC m UserCapacity
     , ForallFSymbol (MonadPlanMillC m) EnumDesc
     , MonadPlanMillC m AllRevenues2
+    , MonadPlanMillC m ValueCreationByMonth
     )
   => MonadPlanMillConstraint m where
 

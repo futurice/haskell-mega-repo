@@ -30,8 +30,10 @@ import FUM.Types.Login                        (Login)
 import Futurice.App.Avatar.API                (AvatarFumEndpoint)
 import Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
 import Futurice.App.Reports.MissingHours      (MissingHoursReport)
+import Futurice.App.Reports.PowerAllRevenues  (PowerAllRevenues)
 import Futurice.App.Reports.ProjectMembers    (ProjectMembers)
 import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
+import Futurice.App.Reports.ValueCreation     (ValueCreationReport)
 import Futurice.Signed                        (Signed)
 import Servant.Binary.Tagged                  (BINARYTAGGED)
 
@@ -79,6 +81,12 @@ data Routes = Routes
     , routeProjectMembers :: ProxiedEndpoint 'ReportsService
         ("project" :> "members" :> Get '[JSON] [ProjectMembers])
         ("reports" :> "project" :> "members" :> Get '[JSON] [ProjectMembers])
+    , routeAllRevenue :: ProxiedEndpoint 'ReportsService
+        ("power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] [PowerAllRevenues])
+        ("reports" :> "all-revenues" :>  QueryParam "month" Month :> Get '[JSON] [PowerAllRevenues])
+    , routeValueCreation :: ProxiedEndpoint 'ReportsService
+        ("report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] [ValueCreationReport])
+        ("reports" :> "value-creation" :>  QueryParam "year" Integer :> Get '[JSON] [ValueCreationReport])
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))

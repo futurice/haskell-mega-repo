@@ -9,28 +9,28 @@
 {-# LANGUAGE TypeOperators       #-}
 module Futurice.App.Reports.OKRCompetencies where
 
-import Futuqu.Rada.People           (peopleData, Person(..))
+import Futuqu.Rada.People                   (Person (..), peopleData)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Integrations.Common         (personioPlanmillMap)
-import Futurice.Integrations.TimereportKind (projectKind, TimereportKind(..))
+import Futurice.Integrations.TimereportKind (TimereportKind (..), projectKind)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Futurice.Tribe               (Tribe, defaultTribe, tribeToText)
+import Futurice.Tribe                       (Tribe, defaultTribe)
 import PlanMill.Types.Project
 import Prelude ()
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Map.Strict  as Map
-import qualified Data.List        as L
-import qualified Data.Set         as S
-import qualified Data.Text        as T
-import qualified Data.Vector      as V
-import qualified FUM.Types.Login  as FUM
-import qualified Personio         as P
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
-import Numeric.Interval.NonEmpty            (Interval, (...), member, sup)
+import qualified Data.HashMap.Strict       as HM
+import qualified Data.List                 as L
+import qualified Data.Map.Strict           as Map
+import qualified Data.Set                  as S
+import qualified Data.Text                 as T
+import qualified Data.Vector               as V
+import qualified FUM.Types.Login           as FUM
+import           Numeric.Interval.NonEmpty (Interval, member, sup, (...))
+import qualified Personio                  as P
+import qualified PlanMill                  as PM
+import qualified PlanMill.Queries          as PMQ
 
 
 -- Data types
@@ -96,10 +96,10 @@ findUserForAssignment planMillUsers (tribe, project, assignments) = do
         getUser _ _ =
             Nothing
 
-planmillUserToPersonioEmployee 
-    :: forall m. (MonadPlanMillQuery m, MonadPersonio m) 
-        => HashMap FUM.Login (P.Employee, PM.User) 
-        -> (Tribe, Text, [PM.User]) 
+planmillUserToPersonioEmployee
+    :: forall m. (MonadPlanMillQuery m, MonadPersonio m)
+        => HashMap FUM.Login (P.Employee, PM.User)
+        -> (Tribe, Text, [PM.User])
         -> m (Tribe, Text, [P.Employee])
 planmillUserToPersonioEmployee ppMap (tribe, project, users) = do
     let employees = map (pToP ppMap) users
@@ -160,11 +160,11 @@ renderCompetencyReport (CR report) = page_ "OKR Competence Report" $ do
     h1_ "OKR Competences"
 
     table_ $ do
-        thead_ $ do 
+        thead_ $ do
             th_ "Tribe"
             th_ "Project"
             th_ "# of competences"
-    
+
         tbody_ $ for_ (Map.assocs report) $ \(tribe, competences) -> tr_ $ do
             tr_ $ do
                 td_ [rowspan_ $ T.pack $ show $ (+1) $ length competences] $ toHtml tribe

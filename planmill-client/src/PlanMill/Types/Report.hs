@@ -1,11 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module PlanMill.Types.Report (
     AllRevenues2,
     AllRevenuesPortfolio (..),
     Report,
     Reports,
     ReportsCategories,
-    getRevenuesData) where
+    ValueCreationByMonth,
+    PersonValueCreation (..),
+    getRevenuesData,
+    getValueCreationData) where
 
 import Data.Aeson
 import Data.Aeson.Types  (Parser)
@@ -62,7 +66,9 @@ instance FromJSON Report where
 instance AnsiPretty Report
 
 newtype AllRevenues2 = AllRevenues2 {getRevenuesData :: Map Text [AllRevenuesPortfolio]}
-    deriving (Eq, Show, Binary, Generic, ToSchema, ToJSON, NFData, HasSemanticVersion)
+    deriving (Eq, Show, Generic)
+    deriving anyclass (Binary, ToSchema, NFData, HasSemanticVersion)
+    deriving newtype (ToJSON)
 
 instance HasStructuralInfo AllRevenues2
 
@@ -122,4 +128,73 @@ instance FromJSON AllRevenuesPortfolio where
                 <*> effectivePrice
         case res of
           Just a -> pure a
+          Nothing -> mempty
+
+newtype ValueCreationByMonth = ValueCreationByMonth { getValueCreationData :: Vector PersonValueCreation }
+    deriving (Eq, Show, Generic)
+    deriving anyclass (Binary, ToSchema, NFData, HasSemanticVersion)
+    deriving newtype (ToJSON, FromJSON)
+
+instance AnsiPretty ValueCreationByMonth
+instance HasStructuralInfo ValueCreationByMonth
+
+data PersonValueCreation = PersonValueCreation
+    { _pvcTeam           :: !Text
+    , _pvcPerson         :: !Text
+    , _pvcJanuaryValue   :: !Double --TODO: is the better type for this?
+    , _pvcFebruaryValue  :: !Double
+    , _pvcMarchValue     :: !Double
+    , _pvcAprilValue     :: !Double
+    , _pvcMayValue       :: !Double
+    , _pvcJuneValue      :: !Double
+    , _pvcJulyValue      :: !Double
+    , _pvcAugustValue    :: !Double
+    , _pvcSeptemberValue :: !Double
+    , _pvcOctoberValue   :: !Double
+    , _pvcNovemberValue  :: !Double
+    , _pvcDecemberValue  :: !Double
+    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasSemanticVersion, HasDatatypeInfo)
+
+instance AnsiPretty PersonValueCreation
+instance HasStructuralInfo PersonValueCreation where structuralInfo = sopStructuralInfo
+
+instance FromJSON PersonValueCreation where
+    parseJSON = withArray "Valuecreation" $ \array -> do
+        let parseNum :: Value -> Parser Double
+            parseNum s = do
+                s' <- parseJSON s :: Parser String
+                case readMaybe s' of
+                  Just s'' -> pure s''
+                  Nothing -> mempty
+        team <- traverse parseJSON (array !? 0)
+        person <- traverse parseJSON (array !? 1)
+        january <- traverse parseNum (array !? 2)
+        february <- traverse parseNum (array !? 3)
+        march <- traverse parseNum (array !? 4)
+        april <- traverse parseNum (array !? 5)
+        may <- traverse parseNum (array !? 6)
+        june <- traverse parseNum (array !? 7)
+        july <- traverse parseNum (array !? 8)
+        august <- traverse parseNum (array !? 9)
+        september <- traverse parseNum (array !? 10)
+        october <- traverse parseNum (array !? 11)
+        november <- traverse parseNum (array !? 12)
+        december <- traverse parseNum (array !? 13)
+        let res = PersonValueCreation
+                <$> team
+                <*> person
+                <*> january
+                <*> february
+                <*> march
+                <*> april
+                <*> may
+                <*> june
+                <*> july
+                <*> august
+                <*> september
+                <*> october
+                <*> november
+                <*> december
+        case res of
+          Just r -> pure r
           Nothing -> mempty
