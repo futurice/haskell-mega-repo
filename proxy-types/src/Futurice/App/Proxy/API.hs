@@ -82,11 +82,11 @@ data Routes = Routes
         ("project" :> "members" :> Get '[JSON] [ProjectMembers])
         ("reports" :> "project" :> "members" :> Get '[JSON] [ProjectMembers])
     , routeAllRevenue :: ProxiedEndpoint 'ReportsService
-        ("power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] [PowerAllRevenues])
-        ("reports" :> "all-revenues" :>  QueryParam "month" Month :> Get '[JSON] [PowerAllRevenues])
+        ("power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] PowerAllRevenues)
+        ("reports" :> "all-revenues" :>  QueryParam "month" Month :> Get '[JSON] PowerAllRevenues)
     , routeValueCreation :: ProxiedEndpoint 'ReportsService
-        ("report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] [ValueCreationReport])
-        ("reports" :> "value-creation" :>  QueryParam "year" Integer :> Get '[JSON] [ValueCreationReport])
+        ("report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport)
+        ("reports" :> "value-creation" :>  QueryParam "year" Integer :> Get '[JSON] ValueCreationReport)
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
