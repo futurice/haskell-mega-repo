@@ -50,7 +50,7 @@ addPolicyHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) ->
         -- Insert new policy
         void $ safePoolExecute ctxPostgresPool
             "INSERT INTO proxyapp.policy (policyname, created) VALUES (?, ?);"
-            (addPolicyPolicy e, addPolicyEndpoint e)
+            (addPolicyPolicy e, now)
 
         -- execute action
         void $ safePoolExecute ctxPostgresPool

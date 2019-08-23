@@ -19,6 +19,7 @@ import qualified Data.Set        as Set
 
 import Futurice.App.Proxy.API
 import Futurice.App.ProxyMgmt.API
+import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 import Futurice.App.ProxyMgmt.Ctx
@@ -39,6 +40,14 @@ policiesPageHandler = do
 
 policiesPage :: Map PolicyName (Set LenientEndpoint) -> HtmlPage "policies"
 policiesPage policies = page_ "Policies" (Just NavPolicies) $ do
+    h2_ $ "New policy"
+    let fopts = FormOptions "add-policy-form" (fieldLink routeAddPolicy) ("Add", "success")
+    lomakeHtml (Proxy @AddPolicy) fopts $
+        vNothing :*
+        vNothing :*
+        Nil
+
+
     ifor_ policies $ \policyName endpoints -> do
         h2_ $ "Policy " <> textualToText policyName
 
