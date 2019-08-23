@@ -32,6 +32,7 @@ import Futurice.App.ProxyMgmt.Pages.Policies
 import Futurice.App.ProxyMgmt.Pages.Tokens
 import Futurice.App.ProxyMgmt.Pages.Reports
 import Futurice.App.ProxyMgmt.Commands.RegenerateToken
+import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
@@ -46,6 +47,7 @@ server ctx = genericServer $ ProxyMgmtRoutes
     , routeAuditPage          = \mfu -> nt True  ctx mfu auditPageHandler
     , routeReportsPage        = \mfu -> nt True  ctx mfu reportsPageHandler
     -- commands
+    , routeAddPolicy          = \mfu -> nt True ctx mfu . addPolicyHandler
     , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
     , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
     , routeAddToken           = \mfu -> nt True ctx mfu . addTokenHandler

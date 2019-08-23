@@ -70,6 +70,7 @@ library
     , vector
   exposed-modules:
     Futurice.App.ProxyMgmt.API
+    Futurice.App.ProxyMgmt.Commands.AddPolicy
     Futurice.App.ProxyMgmt.Commands.AddEndpoint
     Futurice.App.ProxyMgmt.Commands.AddToken
     Futurice.App.ProxyMgmt.Commands.RegenerateToken

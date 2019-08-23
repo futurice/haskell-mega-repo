@@ -11,6 +11,7 @@ import Servant
 import Servant.API.Generic
 import Servant.Chart                    (Chart, SVG)
 
+import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
@@ -30,6 +31,10 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
     , routeReportsPage :: route :-
         SSOUser :> "reports" :> Get '[HTML] (HtmlPage "reports")
     -- Commands
+    , routeAddPolicy :: route :-
+        SSOUser :> "command" :> "add-policy"
+        :> ReqBody '[JSON] (LomakeRequest AddPolicy)
+        :> Post '[JSON] (CommandResponse ())
     , routeRemoveEndpoint :: route :-
         SSOUser :> "command" :> "remove-endpoint"
         :> ReqBody '[JSON] (LomakeRequest RemoveEndpoint)
