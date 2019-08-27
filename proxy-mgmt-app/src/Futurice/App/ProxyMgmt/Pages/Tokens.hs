@@ -51,6 +51,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
     lomakeHtml (Proxy @AddToken) fopts $
         vNothing :*
         vDynamic policies' :*
+        vJust User :*
         Nil
 
     h2_ "Users + Tokens"

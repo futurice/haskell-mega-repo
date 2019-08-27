@@ -75,7 +75,7 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
 
         -- execute action
         void $ safePoolExecute ctxPostgresPool insertQuery 
-            (addTokenLogin e, base64T, login, addTokenPolicy e)
+            (addTokenLogin e, base64T, login, addTokenPolicy e, textShow (addTokenType e))
 
         -- ok: reload
         return CommandResponseReload
@@ -84,5 +84,5 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
         [ "INSERT INTO proxyapp.credentials"
         , "  (username, passtext, createdby, policyname, usertype)"
         , "VALUES"
-        , "  (?, ?, ?, ?, 'user')"
+        , "  (?, ?, ?, ?, ?)"
         ]
