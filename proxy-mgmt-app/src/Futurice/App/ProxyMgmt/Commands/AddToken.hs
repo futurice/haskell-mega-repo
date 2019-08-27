@@ -7,7 +7,6 @@
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
 {-# LANGUAGE DerivingVia       #-}
-{-# LANGUAGE TemplateHaskell    #-}
 module Futurice.App.ProxyMgmt.Commands.AddToken where
 
 import FUM.Types.Login
@@ -30,18 +29,13 @@ data TokenUser
     | Service
   deriving (Show, Typeable, GhcGeneric, Enum, Bounded)
   deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, ToHtml) via (Enumica TokenUser)
 
 instance TextEnum TokenUser where
     type TextEnumNames TokenUser =
         '[ "user"
          , "service"
          ]
-
-deriveVia [t| ToJSON TokenUser             `Via` Enumica TokenUser |]
-deriveVia [t| FromJSON TokenUser           `Via` Enumica TokenUser |]
-deriveVia [t| ToHttpApiData TokenUser      `Via` Enumica TokenUser |]
-deriveVia [t| FromHttpApiData TokenUser    `Via` Enumica TokenUser |]
-deriveVia [t| ToHtml TokenUser             `Via` Enumica TokenUser |]
 
 data AddToken = AddToken
     { addTokenLogin  :: !Login
