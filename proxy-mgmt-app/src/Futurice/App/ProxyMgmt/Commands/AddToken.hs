@@ -21,9 +21,26 @@ import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Types
 import Futurice.App.ProxyMgmt.Utils
 
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+
+data TokenUser
+    = User
+    | Service
+  deriving (Show, Typeable, GhcGeneric, Enum, Bounded)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, ToHtml) via (Enumica TokenUser)
+
+instance TextEnum TokenUser where
+    type TextEnumNames TokenUser =
+        '[ "user"
+         , "service"
+         ]
+
 data AddToken = AddToken
     { addTokenLogin  :: !Login
     , addTokenPolicy :: !PolicyName
+    , addTokenType   :: !TokenUser
     }
   deriving (Show, Typeable, GhcGeneric)
   deriving anyclass (SopGeneric, HasDatatypeInfo)
@@ -33,6 +50,7 @@ instance HasLomake AddToken where
     lomake _ =
         textFieldWithRegexp "Login" loginKleene :*
         dynEnumField "Policy" :*
+        enumField "User type" enumToText :*
         Nil
 
 addTokenHandler :: LomakeRequest AddToken -> ReaderT (Login, Ctx) IO (CommandResponse ())
@@ -51,7 +69,7 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
 
         -- execute action
         void $ safePoolExecute ctxPostgresPool insertQuery 
-            (addTokenLogin e, base64T, login, addTokenPolicy e)
+            (addTokenLogin e, base64T, login, addTokenPolicy e, textShow (addTokenType e))
 
         -- ok: reload
         return CommandResponseReload
@@ -60,5 +78,5 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
         [ "INSERT INTO proxyapp.credentials"
         , "  (username, passtext, createdby, policyname, usertype)"
         , "VALUES"
-        , "  (?, ?, ?, ?, 'user')"
+        , "  (?, ?, ?, ?, ?)"
         ]
