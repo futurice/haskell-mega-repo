@@ -46,7 +46,7 @@ tokensPageHandler = do
 
 tokensPage :: Month -> [PolicyName] -> [Token] -> [AccessEntry] -> HtmlPage "tokens"
 tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
-    h2_ "New token"
+    h2_ "New or update token"
     let fopts = FormOptions "add-token-form" (fieldLink routeAddToken) ("Add", "success")
     let policies' = fmap (\x -> (x, textualToText x)) policies
     lomakeHtml (Proxy @AddToken) fopts $
@@ -73,12 +73,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
                 pure $ toHtml login
             td_ $ if tActive t then "Active" else "Disabled"
             td_ $ traverse_ (toHtml . formatHumanHelsinkiTime) $ calaf (fmap Max . Option) foldMap (Just . aeStamp) ae
-            td_ $ do
-                let fopts' = FormOptions "update-policy-form" (fieldLink routeUpdatePolicy) ("Update", "success")
-                lomakeHtml (Proxy @UpdatePolicy) fopts' $
-                    vHidden (tUserName t) :*
-                    vJustDynamic (tPolicyName t) policies' :*
-                    Nil
+            td_ $ toHtml $ tPolicyName t
             let xs = calaf (UnionWith' . fmap Max) foldMap (\x -> Map.singleton (aeEndpoint x) (aeStamp x)) ae
             td_ $ ul_ $ ifor_ xs $ \e t -> li_ $ do
                 toHtml e
