@@ -22,7 +22,7 @@ import Futurice.App.ProxyMgmt.Types
 import Futurice.App.ProxyMgmt.Utils
 
 data UpdatePolicy = UpdatePolicy
-    { updatePolicyUser   :: !Login
+    { updatePolicyUser   :: !UserName
     , updatePolicyPolicy :: !PolicyName
     }
   deriving (Show, Typeable, GhcGeneric)
@@ -31,7 +31,7 @@ data UpdatePolicy = UpdatePolicy
 
 instance HasLomake UpdatePolicy where 
     lomake _ =
-        hiddenField "Login" :*
+        hiddenField "Username" :*
         dynEnumField "Policy" :*
         Nil
 

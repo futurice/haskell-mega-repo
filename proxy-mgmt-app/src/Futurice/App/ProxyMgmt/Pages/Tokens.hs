@@ -24,6 +24,7 @@ import Futurice.App.Proxy.API     (LenientEndpoint)
 
 import Futurice.App.ProxyMgmt.API
 import Futurice.App.ProxyMgmt.Commands.AddToken
+import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
@@ -72,7 +73,12 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
                 pure $ toHtml login
             td_ $ if tActive t then "Active" else "Disabled"
             td_ $ traverse_ (toHtml . formatHumanHelsinkiTime) $ calaf (fmap Max . Option) foldMap (Just . aeStamp) ae
-            td_ $ toHtml $ tPolicyName t
+            td_ $ do
+                let fopts' = FormOptions "update-policy-form" (fieldLink routeUpdatePolicy) ("Update", "success")
+                lomakeHtml (Proxy @UpdatePolicy) fopts' $
+                    vHidden (tUserName t) :*
+                    vJustDynamic (tPolicyName t) policies' :*
+                    Nil
             let xs = calaf (UnionWith' . fmap Max) foldMap (\x -> Map.singleton (aeEndpoint x) (aeStamp x)) ae
             td_ $ ul_ $ ifor_ xs $ \e t -> li_ $ do
                 toHtml e

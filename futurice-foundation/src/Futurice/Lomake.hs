@@ -172,6 +172,9 @@ vHidden = VHidden
 vDynamic :: [(a, Text)] -> V a
 vDynamic = V Nothing
 
+vJustDynamic :: a -> [(a, Text)] -> V a
+vJustDynamic a opts = V (Just a) opts
+
 -- | 'maybe' for 'V'.
 vMaybe :: b -> (a -> b) -> V a -> b
 vMaybe  def f (V x _)     = maybe def f x
