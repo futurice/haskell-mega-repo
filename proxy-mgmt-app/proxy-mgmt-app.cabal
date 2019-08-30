@@ -75,6 +75,7 @@ library
     Futurice.App.ProxyMgmt.Commands.AddToken
     Futurice.App.ProxyMgmt.Commands.RegenerateToken
     Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
+    Futurice.App.ProxyMgmt.Commands.UpdatePolicy
     Futurice.App.ProxyMgmt.Config
     Futurice.App.ProxyMgmt.Ctx
     Futurice.App.ProxyMgmt.Main

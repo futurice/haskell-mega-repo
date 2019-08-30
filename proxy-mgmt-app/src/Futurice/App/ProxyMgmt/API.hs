@@ -15,6 +15,7 @@ import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
+import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
 
 data ProxyMgmtRoutes route = ProxyMgmtRoutes
     { routeIndexPage :: route :-
@@ -46,6 +47,10 @@ data ProxyMgmtRoutes route = ProxyMgmtRoutes
     , routeAddToken :: route :-
         SSOUser :> "command" :> "add-token"
         :> ReqBody '[JSON] (LomakeRequest AddToken)
+        :> Post '[JSON] (CommandResponse ())
+    , routeUpdatePolicy :: route :-
+        SSOUser :> "command" :> "update-policy"
+        :> ReqBody '[JSON] (LomakeRequest UpdatePolicy)
         :> Post '[JSON] (CommandResponse ())
     -- Charts
     , routeChartPerUser :: route :-
