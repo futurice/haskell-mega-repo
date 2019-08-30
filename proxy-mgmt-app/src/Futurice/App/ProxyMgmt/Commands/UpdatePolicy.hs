@@ -28,3 +28,28 @@ data UpdatePolicy = UpdatePolicy
   deriving (Show, Typeable, GhcGeneric)
   deriving anyclass (SopGeneric, HasDatatypeInfo)
   deriving (ToJSON, FromJSON) via (Sopica UpdatePolicy)
+
+instance HasLomake UpdatePolicy where 
+    lomake _ =
+        hiddenField "Login" :*
+        dynEnumField "Policy" :*
+        Nil
+
+updatePolicyHandler :: LomakeRequest UpdatePolicy -> ReaderT (Login, Ctx) IO (CommandResponse ())
+updatePolicyHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
+    runLogT "update-policy" ctxLogger $ do
+        logInfoI "updating policy for $user with $policy" e
+
+        -- audit
+        now <- currentTime
+        void $ safePoolExecute ctxPostgresPool 
+            "INSERT INTO proxyapp.auditlog (username, created, message) VALUES (?, ?, ?)"
+            (login, now, textShow e)
+
+        -- execute action
+        void $ safePoolExecute ctxPostgresPool
+            "UPDATE proxyapp.credentials SET policyname = ? where username = ?"
+            (updatePolicyPolicy e, updatePolicyUser e)
+
+        -- ok: reload
+        return CommandResponseReload
