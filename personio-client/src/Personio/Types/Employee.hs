@@ -178,7 +178,7 @@ parseEmployeeObject obj' = Employee
     <*> fmap getExpat (parseDynamicAttribute obj  "Expat")
     <*> fmap2 zonedDay (parseDynamicAttribute obj "Birthday")
     <*> fmap2 zonedDay (parseDynamicAttribute obj "Job offer accepted")
-    <*> optional (parseDynamicAttribute obj "Summary text")
+    <*> pure Nothing --optional (parseDynamicAttribute obj "Summary text")
     <*> optional (parseDynamicAttribute obj "Futubuddy's email")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
