@@ -150,7 +150,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             updateSES ctx
 
             runLogT "update" (ctxLogger ctx) $ do
-                logInfo "Personio updated: data changed" changed
+                logInfo_ "Personio updated: data changed" --changed
                 -- Save in DB
                 _ <- Postgres.safePoolExecute ctx insertQuery (Only $ toJSON employees)
                 -- Tell the world
