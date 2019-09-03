@@ -126,7 +126,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         let newMap' = IdMap.fromFoldable employees
         let allData' = P.PersonioAllData employees validations cl clRole
 
-#if __GLASGOW_HASKELL__ >= 804
+#if __GLASGOW_HASKELL__ >= 884
         (newMap, allData) <- do
             region0 <- compactWithSharing allData'
             region1 <- compactAddWithSharing region0 newMap'
