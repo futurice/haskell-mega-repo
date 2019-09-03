@@ -69,7 +69,7 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
 
         -- execute action
         void $ safePoolExecute ctxPostgresPool insertQuery 
-            (addTokenLogin e, base64T, login, addTokenPolicy e, textShow (addTokenType e))
+            (addTokenLogin e, base64T, login, addTokenPolicy e, textShow (addTokenType e), addTokenPolicy e)
 
         -- ok: reload
         return CommandResponseReload
@@ -79,4 +79,5 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
         , "  (username, passtext, createdby, policyname, usertype)"
         , "VALUES"
         , "  (?, ?, ?, ?, ?)"
+        , "ON CONFLICT (username) DO UPDATE SET policyname = ?;"
         ]

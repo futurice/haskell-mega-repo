@@ -24,6 +24,7 @@ import Futurice.App.Proxy.API     (LenientEndpoint)
 
 import Futurice.App.ProxyMgmt.API
 import Futurice.App.ProxyMgmt.Commands.AddToken
+import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Markup
 import Futurice.App.ProxyMgmt.Types
@@ -45,7 +46,7 @@ tokensPageHandler = do
 
 tokensPage :: Month -> [PolicyName] -> [Token] -> [AccessEntry] -> HtmlPage "tokens"
 tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ do
-    h2_ "New token"
+    h2_ "New or update token"
     let fopts = FormOptions "add-token-form" (fieldLink routeAddToken) ("Add", "success")
     let policies' = fmap (\x -> (x, textualToText x)) policies
     lomakeHtml (Proxy @AddToken) fopts $

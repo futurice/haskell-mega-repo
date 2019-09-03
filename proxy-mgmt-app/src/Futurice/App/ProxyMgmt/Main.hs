@@ -36,6 +36,7 @@ import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
+import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
 
 server :: Ctx -> Server ProxyMgmtAPI
 server ctx = genericServer $ ProxyMgmtRoutes
@@ -51,6 +52,7 @@ server ctx = genericServer $ ProxyMgmtRoutes
     , routeAddEndpoint        = \mfu -> nt True ctx mfu . addEndpointHandler
     , routeRemoveEndpoint     = \mfu -> nt True ctx mfu . removeEndpointHandler
     , routeAddToken           = \mfu -> nt True ctx mfu . addTokenHandler
+    , routeUpdatePolicy       = \mfu -> nt True ctx mfu . updatePolicyHandler
     -- charts
     , routeChartPerUser       = \mfu -> nt True ctx mfu $ chartHandler chartPerUser
     , routeChartPerEndpoint   = \mfu -> nt True ctx mfu $ chartHandler chartPerEndpoint
