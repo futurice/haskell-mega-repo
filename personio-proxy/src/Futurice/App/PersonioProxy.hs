@@ -126,7 +126,8 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         let newMap' = IdMap.fromFoldable employees
         let allData' = P.PersonioAllData employees validations cl clRole
 
-#if __GLASGOW_HASKELL__ >= 884
+-- Disable compacting for now to try to see if it effects personio-proxy stability
+#if __GLASGOW_HASKELL__ >= 804 && 0
         (newMap, allData) <- do
             region0 <- compactWithSharing allData'
             region1 <- compactAddWithSharing region0 newMap'
@@ -150,7 +151,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             updateSES ctx
 
             runLogT "update" (ctxLogger ctx) $ do
-                logInfo_ "Personio updated: data changed" --changed
+                logInfo_ "Personio updated: data changed"
                 -- Save in DB
                 _ <- Postgres.safePoolExecute ctx insertQuery (Only $ toJSON employees)
                 -- Tell the world
