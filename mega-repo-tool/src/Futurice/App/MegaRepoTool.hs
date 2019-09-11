@@ -215,7 +215,7 @@ defaultMain :: IO ()
 defaultMain = do
     (_, _, _, testGPG) <- createProcess (shell "gpg --version") { std_out = CreatePipe }
     gpgExitCode <- waitForProcess testGPG
-    case (gpgExitCode) of
+    case gpgExitCode of
         ExitSuccess -> do
             cmd <- O.execParser opts
             main' cmd
