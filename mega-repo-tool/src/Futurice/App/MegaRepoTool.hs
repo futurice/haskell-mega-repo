@@ -5,6 +5,8 @@ import Data.Aeson       (Value (Null, String), eitherDecodeStrict)
 import Data.Char        (isAlphaNum)
 import Futurice.Prelude
 import Prelude ()
+import System.Process
+import System.Exit
 
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (ansiPretty)
 
@@ -210,7 +212,16 @@ main' (CmdLambda flib payload mlimit) = cmdLambda flib payload mlimit
 main' (CmdCopyArtifacts bl rd bd)     = cmdCopyArtifacts (CAO rd bd bl)
 
 defaultMain :: IO ()
-defaultMain = O.execParser opts >>= main'
+defaultMain = do
+    (_, _, _, testGPG) <- createProcess (shell "gpg --version") { std_out = CreatePipe }
+    gpgExitCode <- waitForProcess testGPG
+    case gpgExitCode of
+        ExitSuccess -> do
+            cmd <- O.execParser opts
+            main' cmd
+
+        ExitFailure code ->
+            die $ "GPG2 not found or incorrectly installed. Error code: " ++ show code
   where
     opts = O.info (O.helper <*> optsParser) $ mconcat
         [ O.fullDesc
