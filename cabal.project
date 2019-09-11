@@ -162,6 +162,9 @@ package checklist-app
 package futurice-integrations
   ghc-options: +RTS -M2G -RTS
 
+package personio-proxy
+  ghc-options: +RTS -M4G -RTS
+
 -- installed
 constraints:
   Cabal            installed,

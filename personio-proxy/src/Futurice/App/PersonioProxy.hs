@@ -8,7 +8,7 @@ import Control.Concurrent.Async (async)
 import Control.Concurrent.STM
        (atomically, newTVarIO, readTVar, readTVarIO, writeTVar)
 import Data.Aeson.Types         (object, parseEither, parseJSON, toJSON, (.=))
-import Futurice.IdMap           (IdMap)
+import Futurice.IdMap           (IdMap, keysSet)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
@@ -23,6 +23,7 @@ import Futurice.App.PersonioProxy.Logic
 import Futurice.App.PersonioProxy.Types
 
 import qualified Data.Map.Strict   as Map
+import qualified Data.Set          as Set
 import qualified Futurice.IdMap    as IdMap
 import qualified Futurice.Postgres as Postgres
 import qualified Personio          as P
@@ -126,7 +127,8 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         let newMap' = IdMap.fromFoldable employees
         let allData' = P.PersonioAllData employees validations cl clRole
 
-#if __GLASGOW_HASKELL__ >= 804
+-- Disable compacting for now to try to see if it effects personio-proxy stability
+#if __GLASGOW_HASKELL__ >= 804 && 0
         (newMap, allData) <- do
             region0 <- compactWithSharing allData'
             region1 <- compactAddWithSharing region0 newMap'
@@ -142,7 +144,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             oldMap <- readTVar (ctxPersonio ctx)
             writeTVar (ctxPersonio ctx) newMap
             writeTVar (ctxPersonioData ctx) allData
-            return (comparePersonio oldMap newMap)
+            return (comparePersonioList oldMap newMap)
 
         if null changed
         then runLogT "update" (ctxLogger ctx) $ logInfo_ "Personio updated: no changes"
@@ -150,7 +152,8 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
             updateSES ctx
 
             runLogT "update" (ctxLogger ctx) $ do
-                logInfo "Personio updated: data changed" changed
+                logInfo_ "Personio updated: data changed"
+                logInfo "Personio updated: number of employee changed: " (length changed)
                 -- Save in DB
                 _ <- Postgres.safePoolExecute ctx insertQuery (Only $ toJSON employees)
                 -- Tell the world
@@ -207,3 +210,15 @@ comparePersonio old new =
     f x = case x of
         These o n | o == n -> Nothing
         _                  -> Just x
+
+comparePersonioList
+    :: IdMap P.Employee
+    -> IdMap P.Employee
+    -> List P.EmployeeId
+comparePersonioList old new =
+    let employeeIds = Set.toList $ keysSet old <> keysSet new
+        hasChanged eid = case (old ^. at eid, new ^. at eid) of
+            (Just oldEmployee, Just newEmployee) -> if oldEmployee == newEmployee then Nothing else Just eid
+            _ -> Just eid
+        changed = fmap hasChanged employeeIds
+    in catMaybes changed
