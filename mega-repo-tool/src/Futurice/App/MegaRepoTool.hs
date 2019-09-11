@@ -215,12 +215,13 @@ defaultMain :: IO ()
 defaultMain = do
     (_, _, _, testGPG) <- createProcess (shell "gpg --version") { std_out = CreatePipe }
     gpgExitCode <- waitForProcess testGPG
-    if (gpgExitCode == ExitSuccess) then
-        do
+    case (gpgExitCode) of
+        ExitSuccess -> do
             cmd <- O.execParser opts
             main' cmd
-    else
-        die "GPG2 not found or incorrectly installed"
+
+        ExitFailure code ->
+            die $ "GPG2 not found or incorrectly installed. Error code: " ++ show code
   where
     opts = O.info (O.helper <*> optsParser) $ mconcat
         [ O.fullDesc
