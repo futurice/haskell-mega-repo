@@ -155,9 +155,19 @@ instance ToHtml CompetencyReport where
     toHtmlRaw = toHtml
     toHtml = toHtml . renderCompetencyReport
 
-renderCompetencyReport :: CompetencyReport -> HtmlPage "okr-competences"
-renderCompetencyReport (CR report) = page_ "OKR Competence Report" $ do
-    h1_ "OKR Competences"
+renderCompetencyReport :: CompetencyReport -> HtmlPage "multdisciplinary-projects-count"
+renderCompetencyReport (CR report) = page_ "Futurice’s ongoing multidisciplinary projects" $ do
+    h1_ "Futurice’s ongoing multidisciplinary projects"
+
+    table_ $ do
+        thead_ $ do
+            th_ ">3 competences"
+            th_ ">4 competences"
+        
+        tbody_ $ do
+            tr_ $ do
+                td_ $ toHtml $ show . length . filter (>2) . map pcNumberOfCompetences . concat $ Map.elems report
+                td_ $ toHtml $ show . length . filter (>3) . map pcNumberOfCompetences . concat $ Map.elems report
 
     table_ $ do
         thead_ $ do
