@@ -39,7 +39,7 @@ data Status = Active
             | Provisioned
             | Staged
             | Other Text
-            deriving Show
+            deriving (Show, Generic, NFData)
 
 instance FromJSON Status where
     parseJSON = let go "ACTIVE"      = pure Active
@@ -61,7 +61,7 @@ data Profile = Profile
     , profileSecondEmail :: !(Maybe Text)
     , profileLogin       :: !Text
     , profileEmail       :: !Text
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Profile)
 
 data User = User
@@ -70,7 +70,7 @@ data User = User
     , userCreated :: !UTCTime
     , userActive  :: !(Maybe UTCTime)
     , userProfile :: !Profile
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica User)
 
 data GroupType = OktaGroup

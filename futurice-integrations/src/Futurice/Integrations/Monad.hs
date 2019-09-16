@@ -51,6 +51,8 @@ import qualified Google.Request
 import qualified Haxl.Core                    as H
 import qualified Log.Data                     as L
 import qualified Log.Logger                   as L
+import qualified Okta.Haxl
+import qualified Okta.Request
 import qualified Personio
 import qualified Personio.Haxl
 import qualified PlanMill.Types.Query         as Q
@@ -208,6 +210,7 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
         IntCfgFUM6 req cfg2       -> stateSetFUM6 lgr mgr req (f cfg2)
         IntCfgGitHub req cfg2     -> stateSetGitHub lgr mgr req (f cfg2)
         IntCfgGoogle cred cfg2    -> stateSetGoogle lgr mgr cred (f cfg2)
+        IntCfgOkta cfg cfg2       -> stateSetOkta lgr mgr cfg (f cfg2)
         IntCfgPersonio req cfg2   -> stateSetPersonio lgr mgr req (f cfg2)
         IntCfgPlanMill req cfg2   -> stateSetPlanMill lgr mgr req (f cfg2)
         IntCfgPower req cfg2      -> stateSetPower lgr mgr req (f cfg2)
@@ -319,7 +322,7 @@ instance Contains ServGH ss => MonadGitHub (Integrations ss) where
         typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
 
 -------------------------------------------------------------------------------
--- MonadGitHub
+-- MonadGoogle
 -------------------------------------------------------------------------------
 
 instance Contains ServGO ss => MonadGoogle (Integrations ss) where
@@ -328,6 +331,17 @@ instance Contains ServGO ss => MonadGoogle (Integrations ss) where
       where
         showDict     = Google.Request.requestDict (Proxy :: Proxy Show) r
         typeableDict = Google.Request.requestDict (Proxy :: Proxy Typeable) r
+
+-------------------------------------------------------------------------------
+-- MonadOkta
+-------------------------------------------------------------------------------
+
+instance Contains ServOK ss => MonadOkta (Integrations ss) where
+    oktaReq r =  case (showDict, typeableDict) of
+        (Dict, Dict) -> liftHaxl . Okta.Haxl.request $ r
+      where
+        showDict     = Okta.Request.requestDict (Proxy :: Proxy Show) r
+        typeableDict = Okta.Request.requestDict (Proxy :: Proxy Typeable) r
 
 -------------------------------------------------------------------------------
 -- MonadPersonio

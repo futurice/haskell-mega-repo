@@ -15,7 +15,7 @@ module Futurice.Integrations.Serv (
     Serv (..),
     AllServs,
     ServNat,
-    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServPE, ServPM, ServPO,
+    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -111,18 +111,20 @@ data Serv
     | ServFUM6  -- ^ fum-carbon
     | ServGH    -- ^ github
     | ServGO    -- ^ google
+    | ServOK    -- ^ okta
     | ServPE    -- ^ personio
     | ServPM    -- ^ planmill
     | ServPO    -- ^ power
   deriving (Show)
 
-type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServPE, ServPM, ServPO ]
+type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO ]
 
 type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
 type ServFUM6 = 'ServFUM6
 type ServGH   = 'ServGH
 type ServGO   = 'ServGO
+type ServOK   = 'ServOK
 type ServPE   = 'ServPE
 type ServPM   = 'ServPM
 type ServPO   = 'ServPO
@@ -139,9 +141,10 @@ type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
     ServNat 'ServFUM6 = N.Nat2
     ServNat 'ServGH   = N.Nat3
     ServNat 'ServGO   = N.Nat4
-    ServNat 'ServPE   = N.Nat5
-    ServNat 'ServPM   = N.Nat6
-    ServNat 'ServPO   = N.Nat7
+    ServNat 'ServOK   = N.Nat5
+    ServNat 'ServPE   = N.Nat6
+    ServNat 'ServPM   = N.Nat7
+    ServNat 'ServPO   = N.Nat8
 
 -------------------------------------------------------------------------------
 -- Services Singleton
@@ -153,6 +156,7 @@ data SServ :: Serv -> Type where
     SServFUM6 :: SServ 'ServFUM6
     SServGH   :: SServ 'ServGH
     SServGO   :: SServ 'ServGO
+    SServOK   :: SServ 'ServOK
     SServPE   :: SServ 'ServPE
     SServPM   :: SServ 'ServPM
     SServPO   :: SServ 'ServPO
@@ -170,6 +174,7 @@ instance ServI 'ServFUM    where sserv = SServFUM
 instance ServI 'ServFUM6   where sserv = SServFUM6
 instance ServI 'ServGH     where sserv = SServGH
 instance ServI 'ServGO     where sserv = SServGO
+instance ServI 'ServOK     where sserv = SServOK
 instance ServI 'ServPE     where sserv = SServPE
 instance ServI 'ServPM     where sserv = SServPM
 instance ServI 'ServPO     where sserv = SServPO
@@ -204,8 +209,8 @@ deriving instance Show (ServSetProof ss)
 --
 -- Sanity test: all services
 --
--- >>> ssProof :: ServSetProof '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServPE, ServPM ]
--- SSCons SServFD LTZ (SSCons SServFUM (LTS LTZ) (SSCons SServFUM6 (LTS (LTS LTZ)) (SSCons SServGH (LTS (LTS (LTS LTZ))) (SSCons SServGO (LTS (LTS (LTS (LTS LTZ)))) (SSCons SServPE (LTS (LTS (LTS (LTS (LTS LTZ))))) (SSSing SServPM))))))
+-- >>> ssProof :: ServSetProof '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM ]
+-- SSCons SServFD LTZ (SSCons SServFUM (LTS LTZ) (SSCons SServFUM6 (LTS (LTS LTZ)) (SSCons SServGH (LTS (LTS (LTS LTZ))) (SSCons SServGO (LTS (LTS (LTS (LTS LTZ)))) (SSCons SServOK (LTS (LTS (LTS (LTS (LTS LTZ))))) (SSCons SServPE (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))) (SSSing SServPM)))))))
 --
 -- Error case: duplicate
 --
