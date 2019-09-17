@@ -118,7 +118,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                 hr_ []
 
         -- The table
-        row_ $ large_ 12 $ sortableTable_ $ do
+        div_ [ class_ "row expanded"] $ large_ 12 $ sortableTable_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
                 th_ [title_ "Personio"]                    "P"
