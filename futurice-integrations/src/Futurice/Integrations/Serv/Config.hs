@@ -23,6 +23,7 @@ import Prelude ()
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified Google.Types
+import qualified Okta.Types
 
 import Futurice.Integrations.Serv
 
@@ -55,6 +56,11 @@ data IntegrationsConfig :: [Serv] -> Type where
         :: Google.Types.GoogleCredentials
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServGO ': ss)
+
+    IntCfgOkta
+        :: Okta.Types.OktaCfg
+        -> IntegrationsConfig ss
+        -> IntegrationsConfig (ServOK ': ss)
 
     IntCfgPersonio
         :: Request
@@ -91,6 +97,8 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
         cons SServGH = IntCfgGitHub
             <$> (f <$> envVar "GITHUBPROXY_HAXLURL")
         cons SServGO = IntCfgGoogle
+            <$> configure
+        cons SServOK = IntCfgOkta
             <$> configure
         cons SServPE = IntCfgPersonio
             <$> (f <$> envVar "PERSONIOPROXY_REQUESTURL")

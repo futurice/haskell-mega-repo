@@ -12,6 +12,7 @@ module Futurice.Integrations.Monad.StateSet (
     stateSetFUM6,
     stateSetGitHub,
     stateSetGoogle,
+    stateSetOkta,
     stateSetPersonio,
     stateSetPlanMill,
     stateSetPower,
@@ -31,6 +32,8 @@ import qualified Futurice.Integrations.GitHub as GH
 import qualified Google.Haxl
 import qualified Google.Types
 import qualified Haxl.Core                    as H
+import qualified Okta.Haxl
+import qualified Okta.Types
 import qualified Personio.Haxl
 import qualified Power.Haxl
 
@@ -100,3 +103,11 @@ stateSetGoogle
     -> Tagged (ServGO ': ss) H.StateStore
 stateSetGoogle _lgr mgr cred (Tagged store) = Tagged $
     H.stateSet (Google.Haxl.initDataSource cred mgr) store
+
+stateSetOkta
+    :: Logger -> Manager
+    -> Okta.Types.OktaCfg
+    -> Tagged ss H.StateStore
+    -> Tagged (ServOK ': ss) H.StateStore
+stateSetOkta _lgr mgr cfg (Tagged store) = Tagged $
+    H.stateSet (Okta.Haxl.initDataSource cfg mgr) store

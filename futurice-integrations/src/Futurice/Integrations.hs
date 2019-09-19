@@ -6,7 +6,7 @@
 module Futurice.Integrations (
     -- * Serv
     Serv (..),
-    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServPE, ServPM, ServPO,
+    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO,
     AllServs,
     -- * Modules
     module Futurice.Integrations.Classes,

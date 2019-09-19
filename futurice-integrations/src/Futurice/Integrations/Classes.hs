@@ -12,6 +12,7 @@ module Futurice.Integrations.Classes (
     MonadFlowdock(..),
     MonadGitHub(..),
     MonadGoogle(..),
+    MonadOkta(..),
     MonadPersonio(..),
     MonadPower(..),
     MonadPlanMillQuery(..),
@@ -30,6 +31,7 @@ import Futurice.GitHub        (GHTypes)
 import Futurice.Prelude
 import Generics.SOP           (All)
 import Google                 (MonadGoogle (..))
+import Okta                   (MonadOkta (..))
 import PlanMill.Queries.Haxl  (PlanmillBatchError (..))
 import Power                  (MonadPower (..))
 import Prelude ()
