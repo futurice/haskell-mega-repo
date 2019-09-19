@@ -94,6 +94,7 @@ evalPlanMill pm = do
             -- BEGIN HACK: 2018-12-17, PlanMill is sad so we do this
                       { responseTimeout =
                           if BS8.isSuffixOf "tasks/28532" (path req)
+                            || BS8.isSuffixOf "tasks/28531" (path req) -- HACK: 2019-09-19, we are yet again sad
                             || BS8.isSuffixOf "absences" (path req)
                           then responseTimeoutMicro $ 120 * 1000000
                           else responseTimeout req' -- otherwise do nothing
