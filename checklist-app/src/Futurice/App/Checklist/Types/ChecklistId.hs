@@ -19,6 +19,8 @@ module Futurice.App.Checklist.Types.ChecklistId (
     PerChecklist (..),
     perNewEmployee,
     perLeavingEmployee,
+    perFromInternalToExternal,
+    perFromFuturiceToSubsidiary,
     ) where
 
 import Control.Lens      (Index, IxValue, Ixed (..))
@@ -33,6 +35,8 @@ import qualified Data.Csv as Csv
 data ChecklistId
     = NewEmployeeChecklist
     | LeavingEmployeeChecklist
+    | FromInternalToExternalChecklist
+    | FromFuturiceToSubsidiaryChecklist
  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Generic)
  deriving anyclass (NFData, Hashable)
 
@@ -44,6 +48,8 @@ instance TextEnum ChecklistId where
     type TextEnumNames ChecklistId =
         '["new-employee"
         , "leaving-employee"
+        , "from-internal-to-external"
+        , "from-futurice-to-subsidiary"
         ]
 
 checklistIdToText :: ChecklistId -> Text
@@ -72,8 +78,10 @@ instance ToSchema ChecklistId where declareNamedSchema = enumDeclareNamedSchema
 -------------------------------------------------------------------------------
 
 data PerChecklist a = PerChecklist
-    { _perNewEmployee     :: !a
-    , _perLeavingEmployee :: !a
+    { _perNewEmployee              :: !a
+    , _perLeavingEmployee          :: !a
+    , _perFromInternalToExternal   :: !a
+    , _perFromFuturiceToSubsidiary :: !a
     }
   deriving stock (Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
@@ -87,8 +95,10 @@ instance Ixed (PerChecklist a) where
     ix = pick
 
 instance Pick (PerChecklist a) where
-    pick NewEmployeeChecklist f     = perNewEmployee f
-    pick LeavingEmployeeChecklist f = perLeavingEmployee f
+    pick NewEmployeeChecklist f              = perNewEmployee f
+    pick LeavingEmployeeChecklist f          = perLeavingEmployee f
+    pick FromInternalToExternalChecklist f   = perFromInternalToExternal f
+    pick FromFuturiceToSubsidiaryChecklist f = perFromFuturiceToSubsidiary f
 
 instance Semigroup a => Semigroup (PerChecklist a) where
     (<>) = liftR2 (<>)
@@ -106,8 +116,11 @@ instance Representable PerChecklist where
     tabulate f = PerChecklist
         { _perNewEmployee     = f NewEmployeeChecklist
         , _perLeavingEmployee = f LeavingEmployeeChecklist
+        , _perFromInternalToExternal = f FromInternalToExternalChecklist
+        , _perFromFuturiceToSubsidiary = f FromFuturiceToSubsidiaryChecklist
         }
 
-    index xs NewEmployeeChecklist     = _perNewEmployee xs
-    index xs LeavingEmployeeChecklist = _perLeavingEmployee xs
-
+    index xs NewEmployeeChecklist              = _perNewEmployee xs
+    index xs LeavingEmployeeChecklist          = _perLeavingEmployee xs
+    index xs FromInternalToExternalChecklist   = _perFromInternalToExternal xs
+    index xs FromFuturiceToSubsidiaryChecklist = _perFromFuturiceToSubsidiary xs
