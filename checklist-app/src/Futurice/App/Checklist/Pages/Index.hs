@@ -66,6 +66,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
             Nothing                       -> "Due date"
             Just NewEmployeeChecklist     -> "Starting date"
             Just LeavingEmployeeChecklist -> "Leaving date"
+            _                             -> "Change date"
 
     in checklistPage_ "Employees" titleParts authUser (Just NavIndex) $ do
         -- List filtering controls
@@ -118,7 +119,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                 hr_ []
 
         -- The table
-        row_ $ large_ 12 $ sortableTable_ $ do
+        div_ [ class_ "row expanded"] $ large_ 12 $ sortableTable_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
                 th_ [title_ "Personio"]                    "P"
@@ -133,12 +134,13 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                         when (task ^. taskComment) $ th_ "Comment"
                         unless (null $ fold $ closure (world ^. worldTasks) (task ^.. taskPrereqs . folded)) $ th_ "Prerequisites"
                 -- for_ mtask $ \_task -> th_ [ title_ "Additional info for task + employee" ] "Task info"
-                th_ [title_ "due date + offset of next undone task" ] "Next task due"
+                mcase mtask (th_ [title_ "due date + offset of next undone task" ] "Next task due") $ \_ -> do
+                    th_ [ title_ "Employee due date + currently selected task due date" ] "Task due date"
                 th_ [title_ dateName]                      $ toHtml dateName
                 th_ [title_ "Confirmed - contract signed"] "Confirmed"
-                th_ [title_ "Days till due date"]          "ETA"
+                when (mtask == Nothing) $ th_ [title_ "Days till due date"]          "ETA"
                 -- viewerItemsHeader viewerRole
-                th_ [title_ "Task items todo/done"]        "Tasks"
+                when (mtask == Nothing) $ th_ [title_ "Task items todo/done"]        "Tasks"
             tbody_ $ for_ employees' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
                 let eid = employee ^. identifier
                 let firstFutureDay = employees' ^? folded . employeeStartingDay . filtered (> today)
@@ -167,7 +169,9 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                     td_ $ do
                         locationHtml mlistId $ employee ^. employeeOffice
                         personioCheck' employeeOffice (Just . view P.employeeOffice) toHtml
-                    td_ $ employeeLink employee
+                    td_ $ do
+                        when (employee ^. employeeNotice == Just True) $ span_ [ class_ "label alert"] "Warning"
+                        employeeLink employee
                     td_ $ do
                         case tribeOffices (employee ^. employeeTribe) of
                             [off] | off == employee ^. employeeOffice ->
@@ -192,25 +196,30 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                                         for_ (world ^? worldTaskItems . ix eid . ix (prereqTask ^. identifier)) $ \_ ->
                                             li_ $ shortTaskCheckbox_ world employee prereqTask
 
-                    td_ $ do
-                        let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
-                        let arg       t = Arg (t ^. taskOffset) t
-                        case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
-                            Nothing                -> span_ [ title_ "Archive me!" ] "All done"
-                            Just (Arg offset task) -> a_
-                                [ indexPageHref mloc mlistId (Just task) showDone showOld
-                                , title_ $ "Filter to: " <> task ^. nameText
-                                ] $
-                                day'_ (addDays offset startingDay)
+                    mcase mtask
+                        (td_ $ do
+                              let predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
+                              let arg       t = Arg (t ^. taskOffset) t
+                              case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
+                                Nothing                -> span_ [ title_ "Archive me!" ] "All done"
+                                Just (Arg offset task) -> a_
+                                  [ indexPageHref mloc mlistId (Just task) showDone showOld
+                                  , title_ $ "Filter to: " <> task ^. nameText
+                                  ] $
+                                  day'_ (addDays offset startingDay)) $ \task ->
+                      td_ $ day'_ $ addDays (task ^. taskOffset) $ employee ^. employeeStartingDay
+
                     td_ $ do
                         day_ startingDay
                         let f = case employee ^. employeeChecklist  of
                                     NewEmployeeChecklist     -> view P.employeeHireDate
                                     LeavingEmployeeChecklist -> view P.employeeEndDate
+                                    _ -> const Nothing
                         personioCheck' employeeStartingDay f day_
                     td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed
-                    td_ $ toHtml $ show (diffDays startingDay today) <> "d"
-                    case ifoldMapOf
+                    when (mtask == Nothing) $ td_ $ toHtml $ show (diffDays startingDay today) <> "d"
+                    when (mtask == Nothing) $
+                        case ifoldMapOf
                         (worldTaskItems . ix eid . ifolded)
                         (toTodoCounter world)
                         world

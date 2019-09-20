@@ -76,6 +76,7 @@ data Employee = Employee
     , _employeeContactEmail :: !(Maybe Text)
     , _employeeFUMLogin     :: !(Maybe FUM.Login)
     , _employeeHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
+    , _employeeNotice       :: !(Maybe Bool) -- employee with some special case which needs to be noticed
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -197,8 +198,10 @@ makeLenses ''IntegrationData
 
 checklistIdName :: Getter ChecklistId (Name Checklist)
 checklistIdName = getter $ \cid -> case cid of
-    NewEmployeeChecklist     -> Name "New employee"
-    LeavingEmployeeChecklist -> Name "Leaving employee"
+    NewEmployeeChecklist              -> Name "New employee"
+    LeavingEmployeeChecklist          -> Name "Leaving employee"
+    FromInternalToExternalChecklist   -> Name "From Internal to External"
+    FromFuturiceToSubsidiaryChecklist -> Name "From Futurice to Subsidiary"
 
 checklistName :: Getter Checklist (Name Checklist)
 checklistName = checklistId . checklistIdName

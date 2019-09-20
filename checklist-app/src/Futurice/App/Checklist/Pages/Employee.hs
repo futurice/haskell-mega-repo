@@ -7,6 +7,7 @@ import Control.Lens              (Getting, forOf_, re)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
+import Data.Time                 (addDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
@@ -147,6 +148,10 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             "HR number"
             input_ $ [ futuId_ "employee-hr-number", type_ "text" ] ++
                 catMaybes [ value_ . textShow <$> employee ^. employeeHRNumber ]
+        row_ $ large_ 12 $ label_ $ do
+            "Add notice sign"
+            br_ []
+            checkbox_ (fromMaybe False $ employee ^. employeeNotice) [ futuId_ "employee-notice" ]
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Save"
             button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
@@ -160,6 +165,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             th_ [ title_ "Check" ] "Check"
             th_ [ title_ "Infot" ] "Info"
             th_ [ title_ "Comment" ] "Comment"
+            th_ [ title_ "Due date" ] "Due date"
             th_ [ title_ "Who and when have done this task" ] "Audit"
         tbody_ $ forOf_ (worldTasksSorted (authUser ^. authUserTaskRole) . folded) world $ \task -> do
             let tid = task ^. identifier
@@ -169,6 +175,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
                 td_ $ taskCheckbox_ world employee task
                 td_ $ taskInfo_ task employee integrationData
                 td_ $ taskCommentInput_ world employee task
+                td_ $ day'_ $ addDays (task ^. taskOffset) (employee ^. employeeStartingDay)
                 td_ $ forOf_ _AnnTaskItemDone taskItem $ \(_, fumUser, timestamp) -> do
                     toHtml fumUser
                     " "

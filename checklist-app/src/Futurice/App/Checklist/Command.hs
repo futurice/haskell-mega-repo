@@ -179,6 +179,7 @@ data EmployeeEdit f = EmployeeEdit
     , eeContactEmail :: !(Maybe Text)
     , eeFumLogin     :: !(Maybe FUM.Login)
     , eeHrNumber     :: !(Maybe Int)
+    , eeNotice       :: !(Maybe Bool)
     -- Personio
     , eePersonio     :: !(Maybe PersonioId)
     }
@@ -207,6 +208,7 @@ fromEmployeeEdit eid cid EmployeeEdit {..} = Employee
     , _employeeContactEmail = eeContactEmail
     , _employeeFUMLogin     = eeFumLogin
     , _employeeHRNumber     = eeHrNumber
+    , _employeeNotice       = eeNotice
     }
 
 applyEmployeeEdit :: EmployeeEdit Maybe -> Employee -> Employee
@@ -225,6 +227,7 @@ applyEmployeeEdit ee
     . Lens.over employeeFUMLogin (eeFumLogin ee <|>)
     . Lens.over employeeHRNumber (eeHrNumber ee <|>)
     . Lens.over employeePersonio (getPersonioId <$> eePersonio ee <|>)
+    . Lens.over employeeNotice (eeNotice ee <|>)
 
 type EmployeeEditTypes =
     '[Text, ContractType, Office, Bool, FUM.Login, Int, Day, Tribe]

@@ -97,7 +97,7 @@ checklistPage_ title titleParts authUser nav body =
             div_ [ futuId_ "error-callout-content" ] $ pure ()
             button_ [ class_ "button" ] "Close"
         header_ (header title titleParts)
-        row_ $ large_ 12 [ class_ "futu-block" ] body
+        div_ [ class_ "row expanded"] $ large_ 12 [ class_ "futu-block" ] body
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
 navigation :: Monad m => AuthUser -> Maybe Nav -> HtmlT m ()

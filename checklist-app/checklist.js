@@ -120,6 +120,7 @@ futu.onload(function () {
       contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
       fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
       hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: optionalCheck(numberCheck) },
+      notice: { sel: "input[data-futu-id=employee-notice" },
     };
 
     var actions = initialiseFormDefs(defs, form);
@@ -149,6 +150,7 @@ futu.onload(function () {
       contactEmail: { sel: "input[data-futu-id=employee-contact-email" },
       fumLogin: { sel: "input[data-futu-id=employee-fum-login" },
       hrNumber: { sel: "input[data-futu-id=employee-hr-number", check: optionalCheck(numberCheck) },
+      notice: { sel: "input[data-futu-id=employee-notice" },
     };
 
     var actions = initialiseFormDefs(defs, form);
