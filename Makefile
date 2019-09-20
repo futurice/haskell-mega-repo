@@ -27,6 +27,7 @@ $(LOCALBIN) :
 
 # Dependency graph
 deps.png :
+	cabal new-build all
 	cabal-plan --hide-builtin --hide-global dot --tred --tred-weights | dot -Tpng -o$@
 
 packdeps :

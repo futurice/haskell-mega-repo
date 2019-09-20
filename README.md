@@ -68,7 +68,7 @@ mega-repo-tool stats
 ### Update deps graph
 
 ```
-mega-repo-tool dot
+make deps.png
 ```
 
 ### LTS version bumps
