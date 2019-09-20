@@ -14,8 +14,8 @@ import Prelude ()
 import Web.HttpApiData           (toQueryParam)
 
 import Futurice.App.Checklist.Markup
-import Futurice.App.Checklist.Types
 import Futurice.App.Checklist.Personio
+import Futurice.App.Checklist.Types
 
 import qualified Data.Text as T
 import qualified Personio
@@ -198,7 +198,10 @@ createEmployeePage world authUser mcid memployee pemployee pes = checklistPage_ 
                 [ futuId_ "employee-hr-number", type_ "text"
                 , value_ $ maybe "" textShow $ tmpl >>= tmplHRNumber
                 ]
-
+        row_ $ large_ 12 $ label_ $ do
+            "Add notice sign"
+            br_ []
+            input_ [ futuId_ "employee-notice", type_ "checkbox" ]
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
             button_ [ class_ "button success", data_ "futu-action" "submit" ] "Create"
             button_ [ class_ "button", data_ "futu-action" "reset" ] "Reset"
