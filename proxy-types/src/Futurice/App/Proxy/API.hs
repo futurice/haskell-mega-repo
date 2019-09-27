@@ -124,6 +124,10 @@ data Routes = Routes
         ("uiapi" :> "person" :> "" :>  QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "people" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
 
+    , routePowerV3PeopleAlternative :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "person" :> "" :>  QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "person" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+
     , routePowerV3Tribes :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "tribe/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "tribes" :> Get '[JSON] Value)
