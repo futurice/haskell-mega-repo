@@ -73,7 +73,7 @@ instance ToSchema IDontKnow where declareNamedSchema = sopDeclareNamedSchema
 deriveVia [t| ToJSON IDontKnow   `Via` Sopica IDontKnow |]
 deriveVia [t| FromJSON IDontKnow `Via` Sopica IDontKnow |]
 
-data IDontKnowData = IDK 
+data IDontKnowData = IDK
     { idkToday         :: !Day
     , idkMonth         :: !Month
     , idkSelectedTribe :: !(Maybe Tribe)
@@ -164,7 +164,10 @@ iDontKnowData mmonth mtribe = do
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
-                | not ("sales" `T.isInfixOf` T.toLower taskName), kind == KindInternal, not (Set.disjoint commentWs accNames) ->
+                | not ("sales" `T.isInfixOf` T.toLower taskName)
+                  , kind == KindInternal
+                  , T.strip comment /= "description here"
+                  , not (Set.disjoint commentWs accNames) ->
                     return $ Just IDontKnow
                         { idkDate     = PM.trStart tr
                         , idkName     = p ^. P.employeeFullname
