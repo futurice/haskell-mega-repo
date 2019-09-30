@@ -15,11 +15,12 @@ import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
 import Data.These                  (_That, _These, _This)
-import FUM.Types.Login             (Login, loginRegexp, loginToText)
+import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Company
        (companyToText, countryCompany, countryFinland)
 import Futurice.Constants          (competenceMap)
 import Futurice.CostCenter
+import Futurice.Email              (emailToText)
 import Futurice.Prelude
 import Prelude ()
 import Servant                     (toUrlPiece)
@@ -321,13 +322,17 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
                 toHtml name
 
         -- PM email
-        cell_ $ case PM.uEmail pmu of
-            Nothing -> markFixableCell "PlanMill employee doesn't have email set"
-            Just e  ->
-                if (e == loginToText login <> "@futurice.com")
+        cell_ $ case (PM.uEmail pmu, p ^. P.employeeEmail) of
+            (Nothing, _) -> markFixableCell "PlanMill user doesn't have email set"
+            (Just e, Nothing) -> do
+                markFixableCell "No email or wrong format email in Personio"
+                toHtml e
+            (Nothing, Nothing) -> markFixableCell "No email in Planmill and in Personio"
+            (Just e, Just pe)  ->
+                if e == emailToText pe
                 then "OK"
                 else do
-                    markFixableCell "Email should be `login`@futurice.com"
+                    markFixableCell ("Email should be '" <> emailToText pe <> "' according to Personio")
                     toHtml e
 
         -- Role & Competence
