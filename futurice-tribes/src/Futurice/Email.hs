@@ -21,10 +21,10 @@ import Test.QuickCheck             (Arbitrary (..))
 import Text.Regex.Applicative.Text (RE', match)
 import Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 
+import qualified Data.Csv       as Csv
+import qualified Data.Swagger   as S
+import qualified Data.Text      as T
 import qualified Kleene.Functor as K
-import qualified Data.Csv     as Csv
-import qualified Data.Swagger as S
-import qualified Data.Text    as T
 
 -- | Futurice email. i.e. @someone@@futurice.com@.
 newtype Email = Email Text
@@ -90,7 +90,7 @@ instance ToJSON Email where
     toJSON = toJSON . emailToText
 
 instance FromJSON Email where
-    parseJSON = withText "Email" parseEmail
+    parseJSON = withText "Email" (parseEmail . T.strip)
 
 instance ToJSONKey Email where
     toJSONKey = emailToText >$< toJSONKey
