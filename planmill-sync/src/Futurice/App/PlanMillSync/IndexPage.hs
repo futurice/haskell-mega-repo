@@ -323,13 +323,11 @@ indexPage today planmills personios = page_ "PlanMill sync" (Just NavHome) $ do
 
         -- PM email
         cell_ $ case (PM.uEmail pmu, p ^. P.employeeEmail) of
-            (Nothing, Just e) -> do
-                markFixableCell "PlanMill user doesn't have email set"
-                toHtml e
+            (Nothing, _) -> markFixableCell "PlanMill user doesn't have email set"
             (Just e, Nothing) -> do
                 markFixableCell "No email or wrong format email in Personio"
                 toHtml e
-            (Nothing, Nothing) -> markFixableCell "No email in Planmill or in Personio"
+            (Nothing, Nothing) -> markFixableCell "No email in Planmill and in Personio"
             (Just e, Just pe)  ->
                 if e == emailToText pe
                 then "OK"
