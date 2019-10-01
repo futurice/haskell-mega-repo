@@ -46,8 +46,8 @@ server ctx = indexPage'
     :<|> rolesDistributionChart ctx
   where
     indexPage' = liftIO $ do
-        ps <- readTVarIO (ctxPersonio ctx)
-        return (indexPage ps)
+        ps <- readTVarIO (ctxPersonioData ctx)
+        return (indexPage $ IdMap.fromFoldable $ P.paEmployees ps)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -69,8 +69,7 @@ newCtx lgr cache pool es allData = do
     let active = Map.singleton today $ P.internSimpleEmployees traverse $
             es ^.. folded . P.simpleEmployee
     Ctx lgr cache pool
-        <$> newTVarIO es
-        <*> newTVarIO allData
+        <$> newTVarIO allData
         <*> newTVarIO active
 
 selectLastQuery :: Postgres.Query
@@ -124,27 +123,25 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
         let employees = filter notMachine employees'
         let validations = filter (notMachine . view P.evEmployee) validations'
 
-        let newMap' = IdMap.fromFoldable employees
+        let newMap = IdMap.fromFoldable employees
         let allData' = P.PersonioAllData employees validations cl clRole
 
 -- Disable compacting for now to try to see if it effects personio-proxy stability
-#if __GLASGOW_HASKELL__ >= 804 && 0
-        (newMap, allData) <- do
+#if __GLASGOW_HASKELL__ >= 804
+        allData <- do
             region0 <- compactWithSharing allData'
-            region1 <- compactAddWithSharing region0 newMap'
-            size <- compactSize region1
+            size <- compactSize region0
             runLogT "compact" (ctxLogger ctx) $
                 logInfoI "Compacted personio data $size" $ object [ "size" .= size ]
-            return (getCompact region1, getCompact region0)
+            return $ getCompact region0
 #else
-        (newMap, allData) <- evaluate $ force $ (newMap', allData')
+        allData <- evaluate $ force $ allData'
 #endif
 
         changed <- atomically $ do
-            oldMap <- readTVar (ctxPersonio ctx)
-            writeTVar (ctxPersonio ctx) newMap
+            oldMap <- readTVar (ctxPersonioData ctx)
             writeTVar (ctxPersonioData ctx) allData
-            return (comparePersonioList oldMap newMap)
+            return (comparePersonioList (IdMap.fromFoldable . P.paEmployees $ oldMap) newMap)
 
         if null changed
         then runLogT "update" (ctxLogger ctx) $ logInfo_ "Personio updated: no changes"
