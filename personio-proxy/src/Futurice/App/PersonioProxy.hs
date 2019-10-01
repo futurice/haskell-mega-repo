@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
@@ -61,16 +62,11 @@ newCtx
     :: Logger
     -> Cache
     -> Postgres.Pool Postgres.Connection
-    -> IdMap P.Employee
     -> P.PersonioAllData
     -> IO Ctx
-newCtx lgr cache pool es allData = do
-    today <- currentDay
-    let active = Map.singleton today $ P.internSimpleEmployees traverse $
-            es ^.. folded . P.simpleEmployee
+newCtx lgr cache pool allData = do
     Ctx lgr cache pool
         <$> newTVarIO allData
-        <*> newTVarIO active
 
 selectLastQuery :: Postgres.Query
 selectLastQuery = fromString $ unwords
@@ -105,10 +101,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
 
     -- context
     let emptyData = P.PersonioAllData employees [] mempty mempty
-    ctx <- newCtx lgr cache pool (IdMap.fromFoldable employees) emptyData
-
-    -- Initial update of simple employees (history)
-    _ <- async $ updateSES ctx
+    ctx <- newCtx lgr cache pool emptyData
 
     -- jobs
     let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll
@@ -119,7 +112,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
   where
     updateJob :: Ctx -> IO P.PersonioAllData -> IO ()
     updateJob ctx fetchEmployees = do
-        P.PersonioAllData employees' validations' cl clRole <- fetchEmployees
+        !(P.PersonioAllData employees' validations' cl clRole) <- fetchEmployees
         let employees = filter notMachine employees'
         let validations = filter (notMachine . view P.evEmployee) validations'
 
@@ -137,54 +130,23 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
 #else
         allData <- evaluate $ force $ allData'
 #endif
+        liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ logInfo_ "Checking changes"
 
-        changed <- atomically $ do
+        !changed <- atomically $ do
             oldMap <- readTVar (ctxPersonioData ctx)
             writeTVar (ctxPersonioData ctx) allData
             return (comparePersonioList (IdMap.fromFoldable . P.paEmployees $ oldMap) newMap)
 
-        if null changed
+        if changed
         then runLogT "update" (ctxLogger ctx) $ logInfo_ "Personio updated: no changes"
         else do
-            updateSES ctx
-
             runLogT "update" (ctxLogger ctx) $ do
                 logInfo_ "Personio updated: data changed"
-                logInfo "Personio updated: number of employee changed: " (length changed)
+--                logInfo "Personio updated: number of employee changed: " (length changed)
                 -- Save in DB
                 _ <- Postgres.safePoolExecute ctx insertQuery (Only $ toJSON employees)
                 -- Tell the world
                 liftIO $ publishMessage mq PersonioUpdated
-
-    updateSES :: Ctx -> IO ()
-    updateSES ctx = runLogT "simple-employees" (ctxLogger ctx) $ do
-        res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
-        let ses' :: Map Day [P.SimpleEmployee]
-            ses' = P.internSimpleEmployees (traverse . traverse) $ Map.fromList
-              [ (d, ids)
-              | (t, v) <- res
-              , let d = utctDay t
-              , let ids = case parseEither parseJSON v of
-                      Left _   -> mempty
-                      Right es -> (es :: [P.Employee]) ^.. folded . P.simpleEmployee
-              ]
-
-        -- this is important
-#if __GLASGOW_HASKELL__ >= 804
-        sesCompact <- liftIO $ compactWithSharing ses'
-        let ses = getCompact sesCompact
-        sesSize <- liftIO $ compactSize sesCompact
-#else
-        ses <- liftIO $ evaluate $ force ses'
-#endif
-
-        logInfoI "Updating active list: days $days" $ object
-            [ "days" .= length ses
-#if __GLASGOW_HASKELL__ >= 804
-            , "size" .= sesSize
-#endif
-            ]
-        liftIO $ atomically $ writeTVar (ctxSimpleEmployees ctx) ses
 
 notMachine :: P.Employee -> Bool
 notMachine e = case e ^. P.employeeId of
@@ -211,11 +173,11 @@ comparePersonio old new =
 comparePersonioList
     :: IdMap P.Employee
     -> IdMap P.Employee
-    -> List P.EmployeeId
+    -> Bool--List P.EmployeeId
 comparePersonioList old new =
     let employeeIds = Set.toList $ keysSet old <> keysSet new
         hasChanged eid = case (old ^. at eid, new ^. at eid) of
             (Just oldEmployee, Just newEmployee) -> if oldEmployee == newEmployee then Nothing else Just eid
             _ -> Just eid
         changed = fmap hasChanged employeeIds
-    in catMaybes changed
+    in null $ catMaybes changed

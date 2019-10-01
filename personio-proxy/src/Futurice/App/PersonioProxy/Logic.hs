@@ -58,8 +58,23 @@ scheduleEmployees ctx = do
     -- no filtering, all employees
     pure $ P.fromPersonio $ toList es
 
+getSimpleEmployees :: Ctx -> LogT IO (Map Day [P.SimpleEmployee])
+getSimpleEmployees ctx = do
+    res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"
+    let ses' :: Map Day [P.SimpleEmployee]
+        ses' = P.internSimpleEmployees (traverse . traverse) $ Map.fromList
+            [ (d, ids)
+            | (t, v) <- res
+            , let d = utctDay t
+            , let ids = case parseEither parseJSON v of
+                    Left _   -> mempty
+                    Right es -> (es :: [P.Employee]) ^.. folded . P.simpleEmployee
+            ]
+    pure ses'
+
+--needed so rarely that we can just fetch stuff on need basis
 rawSimpleEmployees :: Ctx -> Handler (Map Day [P.SimpleEmployee])
-rawSimpleEmployees = liftIO . readTVarIO . ctxSimpleEmployees
+rawSimpleEmployees ctx = liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ getSimpleEmployees ctx
 
 -------------------------------------------------------------------------------
 -- Cached
@@ -76,11 +91,12 @@ mkCached' ctx action = liftIO $
 employeesChart :: Ctx -> Handler (Cached SVG (Chart "employees"))
 employeesChart ctx = mkCached' ctx $ runLogT "chart-employees" (ctxLogger ctx) $ do
     today <- currentDay
+    let ses = getSimpleEmployees ctx
 
     values <- do
         fes <- liftIO $ readTVarIO $ ctxPersonioData ctx
         let fes' = IdMap.fromFoldable $ P.paEmployees fes
-        res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
+        res <- fmap (dailyFromMap' []) ses
         return
             [ pair d $ employeesCounts fes' d (res ! d)
             | d <- [ $(mkDay "2018-06-01") .. today ]
@@ -137,11 +153,12 @@ instance Representable PerEmploymentType where
 tribeEmployeesChart :: Ctx -> Handler (Cached SVG (Chart "tribe-employees"))
 tribeEmployeesChart ctx = mkCached' ctx $ runLogT "chart-tribe-employees" (ctxLogger ctx) $ do
     today <- currentDay
+    let ses = getSimpleEmployees ctx
 
     (values, future) <- do
         fes <- liftIO $ readTVarIO $ ctxPersonioData ctx
         let fes' = IdMap.fromFoldable $ P.paEmployees fes
-        res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
+        res <- fmap (dailyFromMap' []) ses
         return $ pair
             [ pair d $ employeesCounts True fes' d (res ! d)
             | d <- [ $(mkDay "2018-06-01") .. today ]
