@@ -22,9 +22,11 @@ import qualified Database.PostgreSQL.Simple as Postgres
 -- PlanmillProxy modules
 import Futurice.App.PlanMillProxy.API
 import Futurice.App.PlanMillProxy.Charts
-import Futurice.App.PlanMillProxy.Config (Config (..))
-import Futurice.App.PlanMillProxy.Logic  (haxlEndpoint, statsEndpoint)
-import Futurice.App.PlanMillProxy.Types  (Ctx (..))
+import Futurice.App.PlanMillProxy.Config               (Config (..))
+import Futurice.App.PlanMillProxy.Logic
+       (haxlEndpoint, statsEndpoint)
+import Futurice.App.PlanMillProxy.Logic.UpdateAbsences
+import Futurice.App.PlanMillProxy.Types                (Ctx (..))
 
 import qualified PlanMill.Queries as PMQ
 
@@ -44,7 +46,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx        .~ "PLANMILLPROXY"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx (Config cfg connectionInfo) logger mgr cache _mq = do
+    makeCtx (Config cfg connectionInfo) logger mgr cache mq = do
         postgresPool <- createPool
             (Postgres.connect connectionInfo)
             Postgres.close
@@ -61,6 +63,10 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
                 [ mkJob "have to be warm" (updateWarmRequests ctx)
                   $ shifted (2 * 60) $ every $ 30 * 60
                 ]
+
+        void $ forEachMessage mq $ \msg -> case msg of
+          AbsenceUpdatePing -> void $ updateAbsences mgr ctx
+          _ -> pure ()
 
         pure (ctx, jobs)
 
