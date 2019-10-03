@@ -166,6 +166,27 @@ executable planmill-proxy-cache-slow-lambda
     , postgresql-simple
     , time
 
+executable planmill-proxy-accounts-lambda
+  ghc-options:      -Wall
+  hs-source-dirs:   src-accounts lambdas
+  main-is:          AccountsLambda.hs
+  default-language: Haskell2010
+  other-modules:    Futurice.Lambda.PlanMillProxy.Accounts
+  build-depends:
+    , aeson
+    , base
+    , binary-tagged
+    , bytestring
+    , constraints
+    , directory
+    , env-config
+    , futurice-lambda
+    , futurice-postgres
+    , futurice-prelude
+    , planmill-client
+    , postgresql-simple
+    , time
+               
 executable planmill-proxy-server
   default-language: Haskell2010
   main-is:          Main.hs
