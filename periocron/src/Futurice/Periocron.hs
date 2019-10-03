@@ -1,5 +1,5 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
-{-# LANGUAGE FlexibleContexts             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TupleSections     #-}
@@ -20,6 +20,7 @@ module Futurice.Periocron (
     ) where
 
 import Control.Concurrent          (ThreadId, forkIO, threadDelay)
+import Control.Concurrent.Async    (Async, async)
 import Control.Concurrent.STM      (atomically)
 import Control.Concurrent.STM.TSem (TSem, newTSem, signalTSem, waitTSem)
 import Control.Exception.Lifted    (bracket)
@@ -29,9 +30,8 @@ import Futurice.Prelude
 import Prelude ()
 import System.Timeout              (timeout)
 import Text.Printf                 (printf)
-import Control.Concurrent.Async (Async, async)
 
-import qualified System.Clock                as Clock
+import qualified System.Clock as Clock
 
 -------------------------------------------------------------------------------
 -- Internals
@@ -102,7 +102,7 @@ mkJob lbl action intervals = Job
     , jobIntervals = ndtToTimeSpec <$> intervals
     }
   where
-    execTime = 10 * 60 * 1000000 -- 10 minutes
+    execTime = 30 * 60 * 1000000 -- 30 minutes
     ndtToTimeSpec = fromInteger . truncate . (* 1000000000) . toRational
 
 -------------------------------------------------------------------------------
