@@ -10,22 +10,20 @@ import Data.Time                    (addDays)
 import Futurice.Postgres
 import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
-import PlanMill.Worker              (Workers, submitPlanMill, withWorkers)
+import PlanMill.Worker              (submitPlanMill)
 import Prelude ()
 
 import Futurice.App.PlanMillProxy.Types (Ctx (..))
 
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified PlanMill                   as PM
 import qualified PlanMill.Types.Query       as PM
 
 -- Updating absences take more than 15 minutes, so we can't use Lambdas for those
 -- For now try to update them in planmill-proxy. Later make better logic with only
 -- updates the needed data
-updateAbsences :: Manager -> Ctx -> IO ()
-updateAbsences mgr ctx = runLogT "update-absences" (ctxLogger ctx) $ do
+updateAbsences ::  Ctx -> IO ()
+updateAbsences ctx = runLogT "update-absences" (ctxLogger ctx) $ do
     -- Setup
-    let pool = ctxPostgresPool ctx
     now <- currentTime
 
    -- We want a UTC 02:00 point before `now`.
@@ -37,38 +35,37 @@ updateAbsences mgr ctx = runLogT "update-absences" (ctxLogger ctx) $ do
     -- limit
     let limit = 1000
 
-    withWorkers lgr mgr (ctxPlanmillCfg ctx) ["worker1", "worker2", "worker3"] $ \ws -> do
-        logInfoI "Fetching outdated queries, limit $limit" $ object
-            [ "older-than" .= stamp
-            , "limit"      .= limit
-            ]
+    logInfoI "Fetching outdated queries, limit $limit" $ object
+        [ "older-than" .= stamp
+        , "limit"      .= limit
+        ]
 
-        qs <- safePoolQueryM pool "planmillproxy" $  do
-            tbl <- from_ "cache"
-            fields_ tbl ["query"]
-            where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
-            where_ [ ecolumn_ tbl "query", " similar to ", eparam_ ("%absence%" :: String)]
-            orderby_ tbl "updated" ASC
-            limit_ limit
+    qs <- safePoolQueryM ctx "planmillproxy" $  do
+        tbl <- from_ "cache"
+        fields_ tbl ["query"]
+        where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
+        where_ [ ecolumn_ tbl "query", " similar to ", eparam_ ("%absence%" :: String)]
+        orderby_ tbl "updated" ASC
+        limit_ limit
 
-        logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
+    logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
 
-        void $ runExceptT $ for_ qs $ \(Only (PM.SomeQuery q)) -> do
-            when (isSlowQuery q) $ do
-                res <- lift $ fetch ws pool q
-                case res of
-                  Right () -> pure ()
-                  Left exc -> do
-                      logAttention "Update failed" $ object
-                          [ "query" .= q
-                          , "exc"   .= show exc
-                          ]
-                      void $ safePoolExecute pool deleteQuery (Postgres.Only q)
+    void $ runExceptT $ for_ qs $ \(Only (PM.SomeQuery q)) -> do
+        when (isSlowQuery q) $ do
+            res <- lift $ fetch q
+            case res of
+              Right () -> pure ()
+              Left exc -> do
+                  logAttention "Update failed" $ object
+                      [ "query" .= q
+                      , "exc"   .= show exc
+                      ]
+                  void $ safePoolExecute ctx deleteQuery (Postgres.Only q)
 
   where
-    fetch :: HasPostgresPool ctx => Workers -> ctx -> PM.Query a -> LogT IO (Either SomeException ())
-    fetch ws ctx q = case (binaryDict, semVerDict, structDict, nfdataDict, fromJsonDict) of
-        (Dict, Dict, Dict, Dict, Dict) -> fetch' ws ctx q
+    fetch :: PM.Query a -> LogT IO (Either SomeException ())
+    fetch q = case (binaryDict, semVerDict, structDict, nfdataDict, fromJsonDict) of
+        (Dict, Dict, Dict, Dict, Dict) -> fetch' q
       where
         binaryDict   = PM.queryDict (Proxy :: Proxy Binary) q
         semVerDict   = PM.queryDict (Proxy :: Proxy HasSemanticVersion) q
@@ -77,10 +74,10 @@ updateAbsences mgr ctx = runLogT "update-absences" (ctxLogger ctx) $ do
         fromJsonDict = PM.queryDict (Proxy :: Proxy FromJSON) q
 
     fetch'
-        :: (Binary a, NFData a, FromJSON a, HasStructuralInfo a, HasSemanticVersion a, HasPostgresPool ctx)
-        => Workers -> ctx -> PM.Query a
+        :: (Binary a, NFData a, FromJSON a, HasStructuralInfo a, HasSemanticVersion a)
+        => PM.Query a
         -> LogT IO (Either SomeException ())
-    fetch' ws ctx q = do
+    fetch' q = do
         x <- liftIO $ tryDeep $ submitPlanMill ws $ PM.queryToRequest q
         case x of
             Left err -> return (Left err)
@@ -92,7 +89,7 @@ updateAbsences mgr ctx = runLogT "update-absences" (ctxLogger ctx) $ do
     isSlowQuery (PM.QueryPagedGet PM.QueryTagAccount _ _) = True
     isSlowQuery _                                         = False
 
-    lgr = ctxLogger ctx
+    ws = ctxWorkers ctx
 
 deleteQuery :: Postgres.Query
 deleteQuery = "DELETE FROM planmillproxy.cache WHERE query = ?;"

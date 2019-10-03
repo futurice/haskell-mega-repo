@@ -65,7 +65,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
                 ]
 
         void $ forEachMessage mq $ \msg -> case msg of
-          AbsenceUpdatePing -> void $ updateAbsences mgr ctx
+          AbsenceUpdatePing -> void $ updateAbsences ctx
           _ -> pure ()
 
         pure (ctx, jobs)
