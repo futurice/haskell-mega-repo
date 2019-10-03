@@ -7,7 +7,7 @@ category:           Web
 homepage:           https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
 build-type:         Simple
@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -67,6 +68,7 @@ library
     , time-parsers           >=0.1.1.0
     , unordered-containers
     , vector
+
   exposed-modules:
     Futurice.App.PlanMillProxy
     Futurice.App.PlanMillProxy.API
@@ -76,6 +78,7 @@ library
     Futurice.App.PlanMillProxy.Logic.Capacities
     Futurice.App.PlanMillProxy.Logic.Common
     Futurice.App.PlanMillProxy.Logic.Timereports
+    Futurice.App.PlanMillProxy.Logic.UpdateAbsences
     Futurice.App.PlanMillProxy.Types
 
 executable planmill-proxy-capacity-lambda
@@ -162,7 +165,7 @@ executable planmill-proxy-cache-slow-lambda
     , planmill-client
     , postgresql-simple
     , time
-    
+
 executable planmill-proxy-server
   default-language: Haskell2010
   main-is:          Main.hs

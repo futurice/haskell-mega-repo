@@ -73,6 +73,7 @@ data Message
     | LibraryReminderPing
     | SubcontractorPing
     | SubcontractorHoursPing
+    | AbsenceUpdatePing
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message
@@ -89,15 +90,17 @@ data Topic
     | TopicLibraryReminderPing
     | TopicSubcontractorPing
     | TopicSubcontractorHoursPing
+    | TopicAbsenceUpdatePing
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 data PerTopic a = PerTopic
-    { perServiceStarting     :: a
-    , perPersonioUpdated     :: a
-    , perMissingHoursPing    :: a
-    , perLibraryReminderPing :: a
-    , perSubcontractorPing   :: a
+    { perServiceStarting        :: a
+    , perPersonioUpdated        :: a
+    , perMissingHoursPing       :: a
+    , perLibraryReminderPing    :: a
+    , perSubcontractorPing      :: a
     , perSubcontractorHoursPing :: a
+    , perAbsenceUpdatePing      :: a
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -114,6 +117,7 @@ instance Representable PerTopic where
     index p TopicLibraryReminderPing    = perLibraryReminderPing p
     index p TopicSubcontractorPing      = perSubcontractorPing p
     index p TopicSubcontractorHoursPing = perSubcontractorHoursPing p
+    index p TopicAbsenceUpdatePing      = perAbsenceUpdatePing p
 
     tabulate f = PerTopic
         { perServiceStarting        = f TopicServiceStarting
@@ -122,6 +126,7 @@ instance Representable PerTopic where
         , perLibraryReminderPing    = f TopicLibraryReminderPing
         , perSubcontractorPing      = f TopicSubcontractorPing
         , perSubcontractorHoursPing = f TopicSubcontractorHoursPing
+        , perAbsenceUpdatePing      = f TopicAbsenceUpdatePing
         }
 
 messageTopic :: Message -> Topic
@@ -131,6 +136,7 @@ messageTopic MissingHoursPing {}       = TopicMissingHoursPing
 messageTopic LibraryReminderPing {}    = TopicLibraryReminderPing
 messageTopic SubcontractorPing {}      = TopicSubcontractorPing
 messageTopic SubcontractorHoursPing {} = TopicSubcontractorHoursPing
+messageTopic AbsenceUpdatePing {}      = TopicAbsenceUpdatePing
 
 -- | A subject of email
 messageSubject :: Message -> Text
@@ -145,6 +151,7 @@ topicName awsGroup TopicMissingHoursPing       = awsGroup <> "-missing-hours-pin
 topicName awsGroup TopicLibraryReminderPing    = awsGroup <> "-library-reminder-ping"
 topicName awsGroup TopicSubcontractorPing      = awsGroup <> "-subcontractor-ping"
 topicName awsGroup TopicSubcontractorHoursPing = awsGroup <> "-subcontractor-hours-ping"
+topicName awsGroup TopicAbsenceUpdatePing      = awsGroup <> "-absence-update-ping"
 
 -------------------------------------------------------------------------------
 -- Functions

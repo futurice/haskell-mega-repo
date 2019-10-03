@@ -65,7 +65,7 @@ planMillProxyCacheSlowLambda = makeAwsLambda impl
                 tbl <- from_ "cache"
                 fields_ tbl ["query"]
                 where_ [ ecolumn_ tbl "updated", " < ", eparam_ stamp ]
-                where_ [ ecolumn_ tbl "query", " similar to ", eparam_ ("%absence%|%accounts%" :: String)]
+                where_ [ ecolumn_ tbl "query", " similar to ", eparam_ ("%accounts%" :: String)]
                 orderby_ tbl "updated" ASC
                 limit_ limit
 
