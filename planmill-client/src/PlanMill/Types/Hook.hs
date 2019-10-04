@@ -21,7 +21,11 @@ import           PlanMill.Types.Project    (ProjectId)
 import           PlanMill.Types.User       (UserId)
 
 -- Non-exhaustive list of possible hooks for testing purposes
-data HookType = RequestAdd | TimeReportInsert
+data HookType = RequestAdd
+--              | TimeReportInsert Not defined anymore?
+              | AccountUpdate
+              | AccountAdd
+              | AccountDelete
     deriving (Eq, Ord, Read, Show, Generic, Typeable)
 
 makeLenses ''HookType
@@ -31,16 +35,19 @@ instance NFData HookType
 instance AnsiPretty HookType
 instance ToJSON HookType where
     toJSON RequestAdd = String "request.add"
-    toJSON TimeReportInsert = String "timereport.insert"
+--    toJSON TimeReportInsert = String "timereport.insert"
+    toJSON AccountUpdate = String "account.update"
+    toJSON AccountAdd = String "account.add"
+    toJSON AccountDelete = String "account.delete"
 
 instance O.FromOptions HookType where
     optionsParser = O.argument O.auto (O.metavar ":hook-type")
 
 data Hook = Hook
-    { _hId :: !HookId
-    , _hHook :: !Text
-    , _hUrl :: !Text
-    , _hEventUser :: !(Maybe UserId)
+    { _hId           :: !HookId
+    , _hHook         :: !Text
+    , _hUrl          :: !Text
+    , _hEventUser    :: !(Maybe UserId)
     , _hEventProject :: !(Maybe ProjectId)
     }
     deriving (Eq, Ord, Show, Read, Generic, Typeable)
@@ -57,8 +64,8 @@ instance FromJSON Hook where
         <$>  obj  .:  "id"
         <*>  obj  .:  "hook"
         <*>  obj  .:  "url"
-        <*>  obj  .:  "eventUser"
-        <*>  obj  .:  "eventProject"
+        <*>  (obj  .:  "eventUser" <|> pure Nothing) -- Planmill return -1 instead of null
+        <*>  (obj  .:  "eventProject" <|> pure Nothing)
 
 -- makeLenses ''Hook
 deriveGeneric ''Hook
