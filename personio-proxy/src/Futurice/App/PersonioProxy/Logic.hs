@@ -45,7 +45,7 @@ rawValidations ctx = P.paValidations <$> liftIO (readTVarIO $ ctxPersonioData ct
 
 rawEmployees :: Ctx -> Handler [P.Employee]
 rawEmployees ctx = do
-    es <- liftIO $ readTVarIO $ ctxPersonio ctx
+    es <- P.paEmployees <$> (liftIO $ readTVarIO $ ctxPersonioData ctx)
     -- no filtering, all employees
     pure $ toList es
 
@@ -54,7 +54,7 @@ rawAllData ctx = liftIO $ readTVarIO $ ctxPersonioData ctx
 
 scheduleEmployees :: Ctx -> Handler [P.ScheduleEmployee]
 scheduleEmployees ctx = do
-    es <- liftIO $ readTVarIO $ ctxPersonio ctx
+    es <- P.paEmployees <$> (liftIO $ readTVarIO $ ctxPersonioData ctx)
     -- no filtering, all employees
     pure $ P.fromPersonio $ toList es
 
@@ -78,10 +78,11 @@ employeesChart ctx = mkCached' ctx $ runLogT "chart-employees" (ctxLogger ctx) $
     today <- currentDay
 
     values <- do
-        fes <- liftIO $ readTVarIO $ ctxPersonio ctx
+        fes <- liftIO $ readTVarIO $ ctxPersonioData ctx
+        let fes' = IdMap.fromFoldable $ P.paEmployees fes
         res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
         return
-            [ pair d $ employeesCounts fes d (res ! d)
+            [ pair d $ employeesCounts fes' d (res ! d)
             | d <- [ $(mkDay "2018-06-01") .. today ]
             ]
 
@@ -138,13 +139,14 @@ tribeEmployeesChart ctx = mkCached' ctx $ runLogT "chart-tribe-employees" (ctxLo
     today <- currentDay
 
     (values, future) <- do
-        fes <- liftIO $ readTVarIO $ ctxPersonio ctx
+        fes <- liftIO $ readTVarIO $ ctxPersonioData ctx
+        let fes' = IdMap.fromFoldable $ P.paEmployees fes
         res <- fmap (dailyFromMap' []) $ liftIO $ readTVarIO $ ctxSimpleEmployees ctx
         return $ pair
-            [ pair d $ employeesCounts True fes d (res ! d)
+            [ pair d $ employeesCounts True fes' d (res ! d)
             | d <- [ $(mkDay "2018-06-01") .. today ]
             ]
-            [ pair d $ employeesCounts False fes d (res ! d)
+            [ pair d $ employeesCounts False fes' d (res ! d)
             | d <- [ today .. addDays 50 today ]
             ]
 
