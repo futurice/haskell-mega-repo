@@ -5,19 +5,19 @@ module Futurice.Lambda.PlanMillProxy.Timereports (
     planMillProxyTimereportsLambda,
     ) where
 
-import Data.Aeson                (Value, object, (.=))
-import Data.Binary.Tagged        (taggedEncode)
-import Data.Time                 (addDays)
+import Data.Aeson                  (Value, object, (.=))
+import Data.Binary.Tagged          (taggedEncode)
+import Data.Time                   (addDays, diffDays)
+import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.EnvConfig
 import Futurice.Lambda
 import Futurice.Postgres
        (ConnectInfo, Connection, Pool, createPostgresPool, poolExecuteMany,
        safePoolExecute, safePoolQuery)
 import Futurice.Prelude
-import Numeric.Interval.NonEmpty (inf, sup, (...))
-import PlanMill.Queries          (usersQuery)
-import PlanMill.Worker
-       (Workers, withWorkers, submitPlanMillE)
+import Numeric.Interval.NonEmpty   (inf, sup, (...))
+import PlanMill.Queries            (usersQuery)
+import PlanMill.Worker             (Workers, submitPlanMillE, withWorkers)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -37,6 +37,17 @@ instance Configure Config where
         <$> configure
         <*> envConnectInfo
 
+checkIsWeekend :: Day -> LogT IO () -> LogT IO ()
+checkIsWeekend day m
+    -- Weekend
+    | wd `elem` [6, 7] = m
+    -- otherwise
+    | otherwise = do
+        logInfo "Not weekend" day
+        return ()
+  where
+    (_, _, wd) = toWeekDate day
+
 planMillProxyTimereportsLambda :: IO ()
 planMillProxyTimereportsLambda = makeAwsLambda impl where
     impl :: LambdaContext -> AWSEnv -> Config -> Logger -> Manager -> Value -> LogT IO ()
@@ -48,10 +59,16 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
             case v of
                 "without-timereports" ->
                     updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (take 2 $ toList intervals)
+                "without-timereports-rest" -> do -- check for older timereports on weekends when there is not that much other traffic
+                    day <- currentDay
+                    checkIsWeekend day $ updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (drop 2 $ toList intervals)
                 "without-timereports-all" ->
                     updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList intervals)
-                _ ->
-                    updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now
+                "all-recent-timereports" -> -- don't try to update old timereports often
+                    updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now 730
+                _ -> do
+                    day <- currentDay
+                    checkIsWeekend day $ updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now 3000
 
 -------------------------------------------------------------------------------
 -- Intervals
@@ -113,8 +130,8 @@ updateWithoutTimereports remaining pool ws is = for_ is $ \interval -> do
 
 -- | Update timereports.
 updateAllTimereports
-    :: IO Int -> Pool Connection -> Workers -> UTCTime -> LogT IO ()
-updateAllTimereports remaining pool ws now = do
+    :: IO Int -> Pool Connection -> Workers -> UTCTime -> Integer -> LogT IO ()
+updateAllTimereports remaining pool ws now updateTimeframe = do
     logInfo_ "Updating timereports for users"
 
     -- We want a UTC 02:00 point before `now`.
@@ -145,9 +162,9 @@ updateAllTimereports remaining pool ws now = do
         uids <- Postgres.fromOnly
             <$$> safePoolQuery pool selectUsersQuery (dayMin, dayMax, stamp)
         if null uids
-        then case is of
-            (i' : is') -> selectUids stamp (i' :| is')
-            []         -> return ([], dayMin, dayMax)
+        then case is of -- update only recent
+            (i' : is') | diffDays (utctDay stamp) (inf i') < updateTimeframe -> selectUids stamp (i' :| is')
+            _ -> return ([], dayMin, dayMax)
         else return (uids, dayMin, dayMax)
 
     selectUsersQuery :: Postgres.Query
