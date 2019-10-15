@@ -175,7 +175,11 @@ futu = (function () {
         var td = tds[index];
 
         // no cell: return null
-        if (!td) return null;
+          if (!td) return null;
+
+          if(td.innerText.match(/\d+.\d+\sh/)) {
+              return parseFloat(td.innerText);
+          }
 
         // otherwise return inner text
         return td.innerText;
