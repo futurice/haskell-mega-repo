@@ -12,6 +12,8 @@ module Futurice.App.Reports.MissingHours (
     -- * Report
     MissingHoursReport,
     missingHoursReport,
+    missingHoursSimplifiedReport,
+    MissingHoursSimplifiedReport,
     -- * Predicate
     missingHoursEmployeePredicate,
     missingHoursEmployeeNotificationPredicate,
@@ -39,7 +41,8 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns
 import Futurice.Time
-import Futurice.Time.Month       (dayToMonth)
+import Futurice.Time.Month
+import Futurice.Tribe
 import Numeric.Interval.NonEmpty (Interval, inf, sup)
 import Prelude ()
 
@@ -215,3 +218,108 @@ missingHoursReport predicate interval = do
         interval' = i PM.... s
         i = inf interval & mcase (pEmployee ^. P.employeeHireDate) id max
         s = sup interval & mcase (pEmployee ^. P.employeeEndDate) id min
+
+data MissingHoursSimplifiedReport = MissingHoursSimplifiedReport
+    { _mhsParams         :: !MissingHoursParams
+    , _mhsData           :: !(HashMap FUM.Login :$ StrictPair Employee :$ Vector :$ MissingHour)
+    , _mhsFilterEmployee :: !(Maybe Text)
+    , _mhsFilterMonth    :: !(Maybe Month)
+    , _mhsFilterTribe    :: !(Maybe Tribe)
+    , _mhsWholeInterval  :: !(PM.Interval Day)
+    , _mhsAllEmployees   :: ![Employee]
+    } deriving (NFData, Generic, ToSchema)
+
+missingHoursSimplifiedReport
+  :: forall m. (PM.MonadTime m, MonadPlanMillQuery m, MonadPersonio m)
+  => (PM.Interval Day -> P.Employee -> Bool)
+  -> PM.Interval Day
+  -> PM.Interval Day
+  -> Maybe Text
+  -> Maybe Month
+  -> Maybe Tribe
+  -> m MissingHoursSimplifiedReport
+missingHoursSimplifiedReport predicate interval wholeInterval memp mmonth mtribe = do
+    now <- currentTime
+
+    fpm0 <- personioPlanmillMap
+    let fpm1 = HM.filter (predicate interval . fst) fpm0
+
+    fpm1' <- traverse (uncurry perUser) fpm1
+    let fpm2' = maybe fpm1' (\emp -> HM.filter (\(e S.:!: _) -> employeeName e == emp) fpm1') memp
+    let fpm2 = maybe fpm2' (\emp -> HM.filter (\(e S.:!: _) -> employeeTribe e == emp) fpm2') mtribe
+    let total = sumOf (folded . folded . folded . missingHourCapacity) fpm2
+    let employees =
+            catMaybes $ fmap (\(_, employee S.:!: vecHours) -> if (sum $ _missingHourCapacity <$> vecHours) > 0 then Just employee else Nothing ) $ HM.toList fpm1'
+
+    pure $ MissingHoursSimplifiedReport
+        (MissingHoursParams now (inf interval) (sup interval) total (fumPublicUrl <> "/"))
+        fpm2
+        memp
+        mmonth
+        mtribe
+        wholeInterval
+        employees
+  where
+    perUser :: P.Employee -> PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
+    perUser pEmployee pmUser = (S.:!:)
+        <$> planmillEmployee (pmUser ^. PM.identifier)
+        <*> missingHoursForUser interval' pmUser
+      where
+        -- shrink interval with end date, if it exists
+        interval' = i PM.... s
+        i = inf interval & mcase (pEmployee ^. P.employeeHireDate) id max
+        s = sup interval & mcase (pEmployee ^. P.employeeEndDate) id min
+
+instance ToHtml MissingHoursSimplifiedReport where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . renderMissingHoursSimplifiedReport
+
+renderMissingHoursSimplifiedReport :: MissingHoursSimplifiedReport -> HtmlPage "missing-hours-simplified"
+renderMissingHoursSimplifiedReport (MissingHoursSimplifiedReport params d memp mmonth mtribe wholeInterval employees) = page_ "Missing hours" $ do
+    fullRow_ $ h1_ "Missing hours markings (internal; salary; Monthly)"
+    fullRow_ $ toHtml params
+    form_ $ div_ [ class_ "row" ] $ do
+        div_ [ class_ "columns medium-3" ] $ select_ [ name_ "month", data_ "futu-id" "missing-hours-month" ] $ do
+            optionSelected_ (mmonth == Nothing) [ value_ "-"] $
+                toHtml (dayToMonth $ params ^. mhpFromDay)
+                <> toHtml (tid " - ")
+                <> toHtml (dayToMonth $ params ^. mhpToDay)
+            for_ [ (dayToMonth $ inf wholeInterval ) .. (dayToMonth $ sup wholeInterval) ] $ \m ->
+              optionSelected_ (Just m == mmonth) [ value_ $ monthToText m ] $ toHtml m
+        div_ [ class_ "columns medium-5" ] $ select_ [ name_ "employee", data_ "futu-id" "missing-hours-employee" ] $ do
+            optionSelected_ (memp == Nothing) [ value_ "-"] "All employees"
+            for_ (sortOn employeeName employees) $ \employee ->
+              optionSelected_ (Just (employeeName employee) == memp) [ value_ $ employeeName employee ] $ toHtml $ employeeName employee
+        div_ [ class_ "columns medium-3" ] $ select_ [ name_ "tribe", data_ "futu-id" "missing-hours-tribe" ] $ do
+            optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
+            for_ [ minBound .. maxBound ] $ \tribe ->
+                optionSelected_ (Just tribe == mtribe) [value_ $ tribeToText tribe ] $ toHtml tribe
+        div_ [ class_ "columns medium-2" ] $ input_ [ class_ "button", type_ "submit", value_ "Update" ]
+
+    fullRow_ $ do
+        h2_ "Missing hours by employee"
+        sortableTable_ [data_ "futu-id" "missing-hours-by-employee-table"] $ do
+            thead_ $ do
+                th_ $ "Name"
+                th_ $ "Hours"
+            tbody_ $ for_ d $ \(employee S.:!: vecHours) ->
+                when ((sum $ _missingHourCapacity <$> vecHours) > 0) $ tr_ $ do
+                    td_ $ toHtml $ employeeName employee
+                    td_ $ toHtml $ sum $ _missingHourCapacity <$> vecHours
+                    td_ [style_ "display:none"] $ toHtml $ employeeTribe employee
+        h2_ "All missing days"
+        sortableTable_ [data_ "futu-id" "missing-hours-all"] $ do
+            thead_ $ do
+                th_ $ "Name"
+                th_ $ "Hours"
+                th_ $ "Date"
+            tbody_ $ for_ d $ \(employee S.:!: vecHours) ->
+              for_ vecHours $ \ a -> tr_ $ do
+                td_ $ toHtml $ employeeName employee
+                td_ $ toHtml $ _missingHourCapacity a
+                td_ $ toHtml $ show $ _missingHourDay a
+                td_ [style_ "display:none"] $ toHtml $ employeeTribe employee
+
+  where
+      tid :: Text -> Text
+      tid = id

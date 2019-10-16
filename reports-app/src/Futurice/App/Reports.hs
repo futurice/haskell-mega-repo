@@ -21,7 +21,8 @@ import Futurice.Prelude
 import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
-import Futurice.Time.Month            (Month (..))
+import Futurice.Time.Month            (Month (..), dayToMonth)
+import Futurice.Tribe
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
 import Prelude ()
@@ -48,8 +49,9 @@ import Futurice.App.Reports.IDontKnow                         (iDontKnowData)
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
-       (MissingHoursReport, mhpTotalHours, missingHoursEmployeePredicate,
-       missingHoursReport)
+       (MissingHoursReport, MissingHoursSimplifiedReport, mhpTotalHours,
+       missingHoursEmployeePredicate, missingHoursReport,
+       missingHoursSimplifiedReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
 import Futurice.App.Reports.MissingHoursDailyChart
@@ -97,6 +99,23 @@ serveMissingHoursReport ctx = cachedIO' ctx () $ do
     day <- currentDay
     let interval = beginningOfPrev2Month day ... previousFriday day
     runIntegrations' ctx (missingHoursReport missingHoursEmployeePredicate interval)
+
+serveMissingHoursSimplifiedReport :: Ctx -> Maybe Text -> Maybe Month -> Maybe Tribe -> IO MissingHoursSimplifiedReport
+serveMissingHoursSimplifiedReport ctx memp mmonth mtribe = cachedIO' ctx (memp, mmonth, mtribe) $ do
+    day <- currentDay
+    let memp' =
+            case memp of
+              Just "-" -> Nothing
+              e -> e
+    let maxCurrentMonth m =
+            let curMonth = dayToMonth day
+            in if curMonth == m  then
+                 min day (lastDayOfMonth m)
+               else
+                 lastDayOfMonth m
+    let filterInterval = fmap (\m -> firstDayOfMonth m ... previousFriday (maxCurrentMonth m)) mmonth
+    let interval = fromMaybe (beginningOfPrev2Month day ... previousFriday day) filterInterval
+    runIntegrations' ctx (missingHoursSimplifiedReport missingHoursEmployeePredicate interval (beginningOfPrev2Month day ... previousFriday day) memp' mmonth mtribe)
 
 missingHoursStats :: Ctx -> IO ()
 missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
@@ -272,6 +291,12 @@ server ctx = genericServer $ Record
     -- "legacy" -reports
     , recMissingHours = liftIO $ serveMissingHoursReport ctx
     , recHoursByTask  = liftIO $ serveTimereportsByTaskReport ctx
+    , recMissingHoursSimplified =
+      \emp month tribe -> liftIO $ serveMissingHoursSimplifiedReport
+                          ctx
+                          (emp >>= either (const Nothing) Just)
+                          (month >>= either (const Nothing) Just)
+                          (tribe >>= either (const Nothing) Just)
 
     -- Tables
     , recTablesActiveAccounts       = liftIO $ serveData activeAccountsData ctx
