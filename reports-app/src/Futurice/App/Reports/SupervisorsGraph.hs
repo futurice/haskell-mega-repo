@@ -4,6 +4,7 @@
 module Futurice.App.Reports.SupervisorsGraph (supervisorsGraph, Emp (..)) where
 
 import Algebra.Graph.Class   (edges)
+import Futurice.Company
 import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Tribe        (Tribe)
@@ -12,6 +13,7 @@ import Servant.Graph         (Graph (..), ToDotVertex (..))
 
 import qualified Algebra.Graph.Export.Dot as Dot
 import qualified Data.Map                 as Map
+import qualified Data.Text                as T
 import qualified Personio                 as P
 
 supervisorsGraph
@@ -20,7 +22,8 @@ supervisorsGraph
 supervisorsGraph = do
     today <- currentDay
     es0 <- P.personio P.PersonioEmployees
-    let es = filter (P.employeeIsActive today) es0
+    let es1 = filter (T.isPrefixOf "Futu" . companyToText . P._employeeEmployer) es0
+    let es = filter (P.employeeIsActive today) es1
     let m = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) es
     let g = edges (mapMaybe (f m) es)
     pure $ Graph g
