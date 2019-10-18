@@ -74,7 +74,7 @@ timereportsAgeDistr ctx = do
     selectTimereportsQuery = fromString $ unwords
         [ "SELECT updated as a"
         , "FROM planmillproxy.timereports"
-        , "WHERE age(day) < '3 years'"
+        , "WHERE age(day) < '1 years'"
         , ";"
         ]
 
