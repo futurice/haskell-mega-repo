@@ -5,6 +5,7 @@ module Futurice.App.PersonioProxy.IndexPage (indexPage) where
 
 import Data.Aeson                (Value (..))
 import FUM.Types.Login
+import Futurice.Company          (companyToText)
 import Futurice.IdMap            (IdMap)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
@@ -61,6 +62,10 @@ indexPage ps = page_ "Personio Proxy" (Just NavHome) $ do
             li_ $ do
                 "Offices"
                 for_ [ minBound .. maxBound ] $ \tribe -> " " <> code_ (toHtml $ toKeyword (officeToText tribe))
+
+            li_ $ do
+                "Employers"
+                for_ [ minBound .. maxBound ] $ \employer -> " " <> code_ (toHtml $ toKeyword (companyToText employer))
 
         h3_ "Notes"
 
@@ -164,6 +169,7 @@ employeeKeywords p = Set.map toKeyword $ mconcat
     , estatus
     , Set.singleton office
     , Set.singleton tribe
+    , Set.singleton employer
     ]
   where
     status = case p ^. P.employeeStatus of
@@ -179,6 +185,7 @@ employeeKeywords p = Set.map toKeyword $ mconcat
 
     office = p ^. P.employeeOffice . getter officeToText
     tribe  = p ^. P.employeeTribe . getter tribeToText
+    employer = p ^. P.employeeEmployer . getter companyToText
 
 toKeyword :: T.Text -> T.Text
 toKeyword = (":" <>) . T.replace " " "-" . T.toLower
