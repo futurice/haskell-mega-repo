@@ -58,6 +58,7 @@ server ctx = genericServer $ Record
     , recAnniversaries       = anniversariesAction ctx
     , recHrNumbers           = hrnumbersAction ctx
     , recEarlyCaring         = earlyCaringAction ctx
+    , recEarlyCaringCSV      = earlyCaringActionCSV ctx
     , recEarlyCaringSubmit   = earlyCaringSubmitAction ctx
     , recAchooReport         = achooReportAction ctx
     , recAchooChart          = achooChartAction ctx
@@ -168,6 +169,35 @@ earlyCaringAction ctx mfu super = impl ctx mfu
         today <- currentDay
         let interval = beginningOfPrev2Month today ... today
         earlyCaringPage (if authed && not super then Right secret else Left fu) today interval
+            <$> personio P.PersonioEmployees
+            <*> pmData interval
+            <*> PMQ.absences
+            <*> PMQ.allEnumerationValues Proxy Proxy
+
+    secret = ctxSecret ctx
+
+    pmData interval = do
+        -- todo: make personio + planmill map function.
+        us <- PMQ.users
+        fmap catMaybes $ for (toList us) $ \u -> do
+            let uid = u ^. PM.identifier
+            for (PM.userLogin u) $ \login -> EarlyCaringPlanMill login uid
+                <$> planmillEmployee uid
+                <*> PMQ.capacities interval uid
+                <*> PMQ.timereports interval uid
+                <*> PMQ.userTimebalance uid
+
+earlyCaringActionCSV
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Bool
+    -> Handler [BalanceCSV]
+earlyCaringActionCSV ctx mfu super = impl ctx mfu
+  where
+    impl = withAuthUser'' [] $ \fu authed -> do
+        today <- currentDay
+        let interval = beginningOfPrev2Month today ... today
+        earlyCaringCSV (if authed && not super then Right secret else Left fu) today
             <$> personio P.PersonioEmployees
             <*> pmData interval
             <*> PMQ.absences

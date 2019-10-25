@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, EarlyCaringPlanMill (..)) where
+module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, earlyCaringCSV, EarlyCaringPlanMill (..)) where
 
 import Data.Either               (isRight)
 import Data.Fixed                (Deci)
@@ -36,6 +36,137 @@ data EarlyCaringPlanMill = EarlyCaringPlanMill
     , ecpmBalance     :: !PM.TimeBalance
     }
   deriving Show
+
+-- TODO: combine this with function after this to remove duplicity
+earlyCaringCSV
+    :: Either Login ByteString
+    -> Day
+    -> [P.Employee]
+    -> [EarlyCaringPlanMill]
+    -> PM.Absences
+    -> Map (PM.EnumValue PM.Absence "absenceType") Text
+    -> [BalanceCSV]
+earlyCaringCSV esecret today personioEmployees0 planmillData absences0 absenceTypes =
+    maybe [] (map balanceToBalanceCSV . NE.toList) $ listToMaybe $ filter (\bs -> isSelfOrSecret $ balanceSupervisor (NE.head bs)) balances
+  where
+    balanceToBalanceCSV balance = BalanceCSV
+        { bcsvName       = (balanceEmployee balance) ^. P.employeeFullname
+        , bcsvBalanceSum = balanceHours balance + balanceMissingHours balance
+        , bcsvAbsences   = countAbsences today $ balanceAbsences balance
+        , bcsvDays       = countAbsenceDays today $ balanceAbsences balance
+        }
+
+    hasSecret = isRight esecret
+    isSelf p = case esecret of
+        Right _    -> False
+        Left login -> Just login == p ^? _Just . P.employeeLogin . _Just
+
+    isSelfOrSecret p = isSelf p || hasSecret
+
+    personioEmployees = filter
+        (\e -> P.employeeIsActive today e && e ^. P.employeeEmploymentType == Just P.Internal)
+        personioEmployees0
+
+    pMap :: Map P.EmployeeId P.Employee
+    pMap = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) personioEmployees
+
+    pmMap :: Map Login EarlyCaringPlanMill
+    pmMap = Map.fromList $ map (\x -> (ecpmLogin x, x)) planmillData
+
+    absences :: PM.UserId -> [Interval Day]
+    absences uid = absenceMap ^. ix uid
+
+    absenceMap :: Map PM.UserId [Interval Day]
+    absenceMap = Map.fromListWith (++) $ mapMaybe f (toList absences0) where
+        f a | PM.absenceAbsenceType a `notElem` sickAbsences = Nothing
+            | PM.absenceFinish a < day                       = Nothing
+            | otherwise = Just (PM.absencePerson a, [PM.absenceStart a ... PM.absenceFinish a])
+
+        -- we aren't interested in older absences, let's filter them
+        day = addDays (negate 365) today
+
+        -- NOTE: hardcoded values, as there is really no way to find out
+        -- which types are sick leaves.
+        sickAbsences = map PM.EnumValue [1010, 1025]
+
+    absencesMap' :: Map PM.UserId [PM.Absence]
+    absencesMap' = Map.fromListWith (++) $ map f $ toList absences0 where
+        f a = (PM.absencePerson a, [a])
+
+    supervisor :: P.Employee -> Maybe P.Employee
+    supervisor e = do
+        eid <- e ^. P.employeeSupervisorId
+        pMap ^? ix eid
+
+    (inPlanMill, _) = partitionMaybe checkInPlanMill personioEmployees where
+        checkInPlanMill e = do
+            login <- e ^. P.employeeLogin
+            pm <- pmMap ^? ix login
+            return (e, pm)
+
+    balances :: [NonEmpty Balance]
+    balances
+        = sortOn (fmap (view P.employeeTribe) . balanceSupervisor . NE.head)
+        $ NE.groupBy ((==) `on` superId)
+        $ sortOn superId
+        $ filter (not . isHourly)
+        $ filter (not . isPermanentAllIn)
+        $ filter (not . balanceNormal today)
+        $ rawBalances
+      where
+        superId = fmap (view P.employeeId) . balanceSupervisor
+
+    rawBalances = map (uncurry toBalance) inPlanMill
+
+    toBalance :: P.Employee -> EarlyCaringPlanMill -> Balance
+    toBalance e pm = Balance
+        { balanceEmployee     = e
+        , balanceSupervisor   = supervisor e
+        , balanceHours        = ndtConvert' balanceMinutes
+        , balanceMissingHours = missingHours (ecpmTimereports pm) (ecpmCapacities pm)
+        , balanceAbsences     = ab
+        , balanceMonthFlex    = monthFlex pm
+        }
+      where
+        PM.TimeBalance balanceMinutes = ecpmBalance pm
+        ab = absences (ecpmPMUid pm)
+
+    monthFlex :: EarlyCaringPlanMill -> Map Month MonthFlex
+    monthFlex pm = Map.unionWith (<>) result absenceResult
+      where
+        -- hours
+        result = Map.fromListWith (<>) $
+            map fromUC (toList $ ecpmCapacities pm) <> map fromTR (toList $ ecpmTimereports pm)
+
+        absenceResult = Map.restrictKeys fromAbsences (Map.keysSet result)
+
+        fromUC :: PM.UserCapacity -> (Month, MonthFlex)
+        fromUC uc =
+            ( dayToMonth $ PM.userCapacityDate uc
+            , MonthFlex 0 (ndtConvert' $ PM.userCapacityAmount uc)
+            )
+
+        ucPerDay :: Map Day (NDT 'Minutes Int)
+        ucPerDay = Map.fromList
+            [ (PM.userCapacityDate uc, PM.userCapacityAmount uc)
+            | uc <- toList $ ecpmCapacities pm
+            ]
+
+        fromTR :: PM.Timereport -> (Month, MonthFlex)
+        fromTR tr = (month , MonthFlex (ndtConvert' $ PM.trAmount tr) 0)
+          where
+            month = dayToMonth (PM.trStart tr)
+
+        -- we go thru absences, substracting flex balances from MonthFlex
+        fromAbsences :: Map Month MonthFlex
+        fromAbsences = Map.unionsWith (<>) $ map f (absencesMap' ^. ix (ecpmPMUid pm)) where
+            f :: PM.Absence -> Map Month MonthFlex
+            f a | absenceTypes ^? ix (PM.absenceAbsenceType a) == Just "Balance leave" =
+                Map.fromListWith (<>)
+                    [ (dayToMonth day, MonthFlex (negate $ maybe 0 ndtConvert' $ ucPerDay ^? ix day) 0)
+                    | day <- [ PM.absenceStart a .. PM.absenceFinish a ]
+                    ]
+                | otherwise = mempty
 
 earlyCaringPage
     :: Either Login ByteString
