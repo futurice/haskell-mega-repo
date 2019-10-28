@@ -11,7 +11,8 @@ import Servant.API.Generic
 import Servant.Chart             (Chart, SVG)
 
 import Futurice.App.HC.Achoo.Types       (AchooChart)
-import Futurice.App.HC.EarlyCaring.Types (EarlyCaringEmail, SignedBlob)
+import Futurice.App.HC.EarlyCaring.Types
+       (BalanceCSV, EarlyCaringEmail, SignedBlob)
 
 data Record route = Record
     { recIndex               :: route :- SSOUser
@@ -32,6 +33,10 @@ data Record route = Record
         :> "early-caring"
         :> QueryFlag "supervisor"
         :> Get '[HTML] (HtmlPage "early-caring")
+    , recEarlyCaringCSV      :: route :- SSOUser
+        :> "early-caring.csv"
+        :> QueryFlag "supervisor"
+        :> Get '[CSV] [BalanceCSV]
     , recEarlyCaringSubmit   :: route :- SSOUser
         :> "early-caring-submit"
         :> ReqBody '[JSON] (SignedBlob EarlyCaringEmail)

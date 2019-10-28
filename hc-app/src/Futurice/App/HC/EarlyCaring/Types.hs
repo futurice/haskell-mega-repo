@@ -21,8 +21,10 @@ import qualified Data.Binary                          as Binary
 import qualified Data.ByteString.Base16               as Base16
 import qualified Data.ByteString.Base64.URL.Lazy.Type as LBS64
 import qualified Data.ByteString.Base64.URL.Type      as BS64
+import qualified Data.Csv                             as CSV
 import qualified Data.Map.Strict                      as Map
 import qualified Data.RangeSet.List                   as RSet
+import qualified Data.Vector                          as V
 import qualified Personio                             as P
 
 -------------------------------------------------------------------------------
@@ -167,3 +169,30 @@ countAbsenceDays today = alaf Sum foldMap $ \a ->
     else 0
   where
     day = addDays (negate 365) today
+
+-------------------------------------------------------------------------------
+-- BalanceCSV
+-------------------------------------------------------------------------------
+
+data BalanceCSV = BalanceCSV
+    { bcsvName       :: !Text
+    , bcsvBalanceSum :: !(NDT 'Hours Deci)
+    , bcsvAbsences   :: !Int
+    , bcsvDays       :: !Integer
+    } deriving (Generic, ToSchema)
+
+instance CSV.ToNamedRecord BalanceCSV where
+    toNamedRecord balance = CSV.namedRecord
+        [ "Name"                 CSV..= bcsvName balance
+        , "Sum (flex + missing)" CSV..= bcsvBalanceSum balance
+        , "Sick. absences (3m)"  CSV..= bcsvAbsences balance
+        , "Sick. days (1y)"      CSV..= bcsvDays balance
+        ]
+
+instance CSV.DefaultOrdered BalanceCSV where
+    headerOrder _ = V.fromList
+        [ "Name"
+        , "Sum (flex + missing)"
+        , "Sick. absences (3m)"
+        , "Sick. days (1y)"
+        ]

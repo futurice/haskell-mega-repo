@@ -36,6 +36,7 @@ library
     , base16-bytestring
     , base64-bytestring-type
     , binary
+    , cassava
     , Chart
     , clay
     , containers
@@ -71,6 +72,7 @@ library
     , time
     , unordered-containers
     , vec
+    , vector
 
   exposed-modules:
     Futurice.App.HC.API
