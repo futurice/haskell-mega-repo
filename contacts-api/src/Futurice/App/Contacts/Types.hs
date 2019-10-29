@@ -130,8 +130,12 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "image"      $ toField contactImage
         , (,) "github"     $ toField contactGithub
         , (,) "team"       $ toField contactTeam
+        , (,) "office"     $ toField contactOffice
+        , (,) "employer"   $ toField contactEmployer
+        , (,) "country"    $ toField contactCountry
         , (,) "competence" $ toField contactCompetence
+        , (,) "external"   $ toField contactExternal
         , (,) "hrnumber"   $ toField contactHrnumber
         , (,) "personio"   $ toField contactPersonio
-        , (,) "targetutz"  $ toField contactUtzTarget
+        , (,) "utzTarget"  $ toField contactUtzTarget
         ]
