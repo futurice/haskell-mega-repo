@@ -8,11 +8,13 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Contacts (defaultMain) where
 
-import Prelude ()
-import Futurice.Prelude
+import Control.Concurrent.STM
+       (TVar, atomically, newTVarIO, readTVarIO, writeTVar)
 import Futurice.Integrations
 import Futurice.Periocron
+import Futurice.Prelude
 import Futurice.Servant
+import Prelude ()
 import Servant
 
 -- Contacts modules
@@ -21,12 +23,12 @@ import Futurice.App.Contacts.Config
 import Futurice.App.Contacts.Logic
 import Futurice.App.Contacts.Types
 
-type Ctx = IO [Contact Text]
+type Ctx = TVar [Contact Text]
 
 server :: Ctx -> Server ContactsAPI
-server action = liftIO action
-    :<|> liftIO action
-    :<|> liftIO action
+server action = liftIO (readTVarIO action)
+    :<|> liftIO (readTVarIO action)
+    :<|> liftIO (readTVarIO action)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
@@ -37,16 +39,17 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx          .~ "CONTACTSAPI"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx cfg lgr mgr cache _mq = do
+    makeCtx cfg lgr mgr _cache _mq = do
         now <- currentTime
 
         -- Contacts action
         let getContacts = runIntegrations mgr lgr now cfg contacts
 
+        cs <- newTVarIO =<< getContacts
         -- Action returning the contact list
-        let action = cachedIO lgr cache 3600 () getContacts
+        let action = atomically . writeTVar cs =<< getContacts
 
         -- Periodically try to fetch new data
-        let job = mkJob "update contacts" action $ every 300
+        let job = mkJob "update contacts" action $ every 3600
 
-        pure (action, [job])
+        pure (cs, [job])
