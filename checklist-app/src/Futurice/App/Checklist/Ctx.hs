@@ -23,6 +23,7 @@ import Prelude ()
 import qualified Data.Map                   as M
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.Login            as FUM
+import qualified GitHub                     as GH
 import qualified Personio
 
 import Futurice.App.Checklist.Command
@@ -42,6 +43,7 @@ data Ctx = Ctx
     , ctxMockUser        :: !(Maybe FUM.Login)
     , ctxACL             :: TVar (Map FUM.Login TaskRole)
     , ctxPersonio        :: TVar [Personio.Employee]
+    , ctxOktaGithub      :: TVar (Map Text (Maybe (GH.Name GH.User)))
     }
 
 newCtx
@@ -62,6 +64,7 @@ newCtx lgr mgr cache cfg ci mockUser w = do
         <*> pure mockUser
         <*> newTVarIO M.empty
         <*> newTVarIO []
+        <*> newTVarIO M.empty
 
 ctxWithCryptoGen
     :: MonadIO m
