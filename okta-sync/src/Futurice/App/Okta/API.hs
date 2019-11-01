@@ -10,8 +10,11 @@ import Servant.API
 import Servant.API.Generic
 import Servant.HTML.Lucid        (HTML)
 
+import qualified Data.Map as Map
+import qualified GitHub   as GH
+
 data Record route = Record
-    { testAPI :: route :- "test" :> Get '[JSON] Bool
+    { githubUsernames :: route :- "github-usernames" :> Get '[JSON] (Map.Map Text (Maybe (GH.Name GH.User)))
     } deriving (Generic)
 
 type OktaSyncAPI = ToServantApi Record

@@ -14,7 +14,8 @@ import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
        (Integrations, IntegrationsConfig, MonadPersonio (..),
-       githubOrganisationMembers, personioPlanmillMap', runIntegrations)
+       githubOrganisationMembers, githubUsernamesFromOkta,
+       personioPlanmillMap', runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -303,9 +304,10 @@ getEmployeeExternalData
     -> m IntegrationData
 getEmployeeExternalData now ctx = liftIO $ do
     ps <- getPersonioEmployees ctx
+    githubOkta <- liftIO $ readTVarIO $ ctxOktaGithub ctx
     cachedIO lgr cache 180 ps $ do
         (githubD, personioD, planmillD) <- runIntegrations mgr lgr now cfg $ fetchEmployeeExternalData ps
-        return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD
+        return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD githubOkta
   where
       githubDataMap gd = Map.fromList $ map (\g -> (GH.simpleUserLogin g, g)) (toList gd)
       personioDataMap pd = Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pd
@@ -326,7 +328,10 @@ personioPlanmillPMuserMap ps = do
             ,pmPassive = passive
             })
 
-fetchEmployeeExternalData :: [Personio.Employee] -> M (Vector GH.SimpleUser, [Personio.Employee], HashMap FUM.Login (Personio.Employee, PMUser))
+fetchEmployeeExternalData :: [Personio.Employee]
+    -> M ( Vector GH.SimpleUser
+         , [Personio.Employee]
+         , HashMap FUM.Login (Personio.Employee, PMUser))
 fetchEmployeeExternalData ps = (,,)
     <$> githubOrganisationMembers
     <*> personio Personio.PersonioEmployees
@@ -429,7 +434,7 @@ fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
 fetchAgentCommands
     :: MonadBaseControl IO m
     => Ctx
-    -> FUM.Login 
+    -> FUM.Login
     -> m [(Command Identity, UTCTime)]
 fetchAgentCommands ctx agent = withResource (ctxPostgres ctx) $ \conn ->
     liftBase $ Postgres.query conn query (Postgres.Only agent)
@@ -503,7 +508,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx Config {..} lgr mgr cache mq = do
+makeCtx cfg@Config {..} lgr mgr cache mq = do
     ctx <- newCtx
         lgr
         mgr
@@ -538,12 +543,21 @@ makeCtx Config {..} lgr mgr cache mq = do
 
     let personioJob = mkJob "update personio data" personioAction $ every 300
 
+    let oktaGithubAction = do
+            runLogT "update-from-okta" lgr $ logTrace_ "Updating"
+            now <- currentTime
+            gs <- runIntegrations mgr lgr now cfgIntegrationsCfg $
+                githubUsernamesFromOkta cfg
+            atomically $ writeTVar (ctxOktaGithub ctx) gs
+
+    let oktaGithubJob = mkJob "update github data from okta" oktaGithubAction $ every 300
+
     -- listen to MQ, especially updated Personio
     void $ forEachMessage mq $ \msg -> case msg of
         PersonioUpdated -> personioAction
         _               -> pure ()
 
-    pure (ctx, [aclJob, personioJob])
+    pure (ctx, [aclJob, personioJob, oktaGithubJob])
 
 fetchGroups
     :: Manager

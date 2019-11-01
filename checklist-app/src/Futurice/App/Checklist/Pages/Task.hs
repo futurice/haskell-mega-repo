@@ -102,10 +102,11 @@ taskPage world today authUser task integrationData = checklistPage_ (view nameTe
     row_ $ large_ 12 $ sortableTable_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
-            th_ [title_ "Office"]                    "Loc"
+            th_ [title_ "Office"]                      "Loc"
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Checklist"]                   "List"
             th_ [title_ "Check"]                       "Check"
+            unless (null $ task ^. taskTags) $ th_     "Tags"
             when (task ^. taskComment) $ th_           "Comment"
             th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"

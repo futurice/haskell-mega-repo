@@ -51,6 +51,7 @@ module Futurice.App.Checklist.Markup (
 
 import Control.Lens     (has, re, _Wrapped)
 import FUM.Types.Login  (Login, loginToText)
+import Futurice.Email
 import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
@@ -288,16 +289,32 @@ isInPlanmillOrganizationHtml planmillEmployee hrnumber =
             , "PM state: " <> toHtml passive
             ]
 
-isInGithubOrganizationHtml :: Monad m => Maybe P.Employee -> Maybe GH.SimpleUser -> [HtmlT m ()]
-isInGithubOrganizationHtml p g = return $ runExit $ do
+isInGithubOrganizationHtml
+    :: Monad m
+    => Maybe P.Employee
+    -> Maybe GH.SimpleUser
+    -> Maybe (GH.Name GH.User)
+    -> [HtmlT m ()]
+isInGithubOrganizationHtml p g githubNick = return $ runExit $ do
     pEmployee  <- exitIfNothing p $
         "No Personio info found"
-    githubUser <- exitIfNothing (pEmployee ^. P.employeeGithub) $
-        "No GitHub username in Personio"
+    githubUser <- exitIfNothing (pEmployee ^. P.employeeGithub <|> githubNick) $
+        "No GitHub username in Personio or Okta"
     _ <- exitIfNothing g $
         b_ "Not" <> " in Futurice GitHub organization" <> ": " <> toHtml githubUser
     return $ do
         b_ "In" <> " Futurice GitHub organization" <> ": " <> toHtml githubUser
+
+checkGithubUsernames
+    :: Monad m
+    => Maybe P.Employee
+    -> Maybe (GH.Name GH.User)
+    -> [HtmlT m ()]
+checkGithubUsernames p githubNick =
+    case ((p >>= (^. P.employeeGithub)), githubNick) of
+      (Just g1, Just g2) -> ["Github user in Personio: " <> toHtml g1 <> " but in Okta: " <> toHtml g2]
+      (Nothing, Just g2) -> ["No Github username in Personio, but in Okta: " <> toHtml g2]
+      _ -> []
 
 showFirstContactInformationHtml :: Monad m => Maybe P.Employee -> [HtmlT m ()]
 showFirstContactInformationHtml = maybe [ "No Personio info found" ] $ \p ->
@@ -339,14 +356,19 @@ taskInfo_ task employee idata
         snd <$> idata ^. planmillData ^. at login
     githubEmployee = do
         pe <- personioEmployee
-        g <- pe ^. P.employeeGithub
+        g <- (pe ^. P.employeeGithub) <|> githubNickInOkta
         idata ^. githubData ^. at g
     employeeHRnumber = checklistHRNumber <|> personioHRNumber
       where
         checklistHRNumber = employee ^. employeeHRNumber
         personioHRNumber = personioEmployee >>= (\p -> zeroToNothing (p ^. P.employeeHRNumber))
+    githubNickInOkta = do
+        pe <- personioEmployee
+        email <- emailToText <$> pe ^. P.employeeEmail
+        join $ idata ^. oktaGithubData . at email
     infos = foldMap info (task ^. taskTags)
-    info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee
+    info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee githubNickInOkta
+                            <> checkGithubUsernames personioEmployee githubNickInOkta
     info PlanmillTask     = isInPlanmillOrganizationHtml planmillEmployee employeeHRnumber
     info FirstContactTask = showFirstContactInformationHtml personioEmployee
     info FUMTask          = hasFUMLoginHtml fumLogin

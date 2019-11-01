@@ -18,10 +18,13 @@ module Futurice.Integrations.Common (
     personioPlanmillMap',
     planmillEmployee,
     planmillEmployeeToPersonio,
+    -- * Okta
+    githubUsernamesFromOkta,
     -- * Classy lenses
     HasFUMEmployeeListName(..),
     HasFlowdockOrgName(..),
     HasGithubOrgName(..),
+    HasOktaGithubId(..),
     ) where
 
 import Data.List                     (find)
@@ -37,8 +40,10 @@ import Prelude ()
 import qualified Data.HashMap.Strict as HM
 
 import qualified Chat.Flowdock.REST as FD
+import qualified Data.Map           as Map
 import qualified FUM
 import qualified GitHub             as GH
+import qualified Okta               as O
 import qualified Personio           as P
 import qualified PlanMill           as PM
 import qualified PlanMill.Queries   as PMQ
@@ -51,6 +56,9 @@ class HasFlowdockOrgName a where
 
 class HasGithubOrgName a where
     githubOrganisationName :: Lens' a (GH.Name GH.Organization)
+
+class HasOktaGithubId a where
+    oktaGithubId :: a -> Text
 
 -- |
 --
@@ -134,6 +142,15 @@ githubOrganisationMembers = do
     orgName <- view githubOrganisationName
     githubReq $ GH.membersOfR orgName GH.FetchAll
 
+githubUsernamesFromOkta :: (MonadOkta m, HasOktaGithubId ctx) => ctx -> m (Map.Map Text (Maybe (GH.Name GH.User))) -- TODO: Change to have Email datatype
+githubUsernamesFromOkta ctx = do
+    let appId = oktaGithubId ctx
+    oktaUsers <- O.users
+    oktaAppUsers <- O.appUsers appId
+    let appUsersMap = Map.fromList $ map (\u -> (O.appUserId u, O.credUserName $ O.appUserCredentials u)) oktaAppUsers
+    let userMap = Map.fromList $ map (\u -> (O.profileLogin $ O.userProfile u, GH.mkUserName <$> Map.lookup (O.userId u) appUsersMap )) oktaUsers
+    pure userMap
+
 personioPlanmillMap
     :: (MonadPersonio m, MonadPlanMillQuery m)
     => m (HashMap FUM.Login (P.Employee, PM.User))
@@ -189,7 +206,7 @@ planmillEmployee uid = do
 
 planmillEmployeeToPersonio :: (MonadPlanMillQuery m, MonadPersonio m, MonadMemoize m) => PM.UserId -> m (Maybe P.Employee)
 planmillEmployeeToPersonio uid = do
-    u <- PMQ.user uid 
+    u <- PMQ.user uid
     ps <- P.personio P.PersonioEmployees
     let f p = p ^. P.employeeLogin == PM.userLogin u
     pure $ find f ps

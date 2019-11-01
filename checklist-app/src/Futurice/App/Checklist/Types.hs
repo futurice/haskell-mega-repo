@@ -76,6 +76,7 @@ module Futurice.App.Checklist.Types (
     _AnnTaskItemDone, _AnnTaskItemTodo,
     -- ** IntegrationData
     githubData, personioData, planmillData,
+    oktaGithubData,
     -- * World
     World,
     emptyWorld,

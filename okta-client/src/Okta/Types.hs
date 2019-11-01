@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Okta.Types where
 
 import Futurice.EnvConfig
@@ -7,6 +8,8 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 import Data.Aeson.Types (withText)
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
+import Data.Aeson
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -54,6 +57,8 @@ instance ToJSON Status where
     toJSON Staged      = toJSON ("STAGED" :: Text)
     toJSON (Other t)   = toJSON t
 
+instance AnsiPretty Status where ansiPretty = ansiPretty . show
+
 data Profile = Profile
     { profileFirstName   :: !Text
     , profileLastName    :: !Text
@@ -64,6 +69,18 @@ data Profile = Profile
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Profile)
 
+instance AnsiPretty Profile
+
+data GithubProfile = GithubProfile
+    { githubProfileGivenName  :: !Text
+    , githubProfileEmail      :: !Text
+    , githubProfileFamilyName :: !Text
+    , githubProfileEmailType  :: !Text
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+      deriving (ToJSON, FromJSON) via (Sopica GithubProfile)
+
+instance AnsiPretty GithubProfile
+
 data User = User
     { userId      :: !Text
     , userStatus  :: !Status
@@ -73,10 +90,26 @@ data User = User
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica User)
 
+instance AnsiPretty User
+
+data AppUser = AppUser
+    { appUserId          :: !Text
+    , appUserStatus      :: !Status
+    , appUserCreated     :: !UTCTime
+    , appUserActive      :: !(Maybe UTCTime)
+    , appUserProfile     :: !GithubProfile
+    , appUserCredentials :: !AppCredentials
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+      deriving (ToJSON, FromJSON) via (Sopica AppUser)
+
+instance AnsiPretty AppUser
+
 data GroupType = OktaGroup
                | AppGroup
                | BuiltIn
                deriving Show
+
+instance AnsiPretty GroupType where ansiPretty = ansiPretty . show
 
 groupFromText :: Text -> Maybe GroupType
 groupFromText "OKTA_GROUP" = Just OktaGroup
@@ -105,9 +138,53 @@ data GroupProfile = GroupProfile
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving (ToJSON, FromJSON) via (Sopica GroupProfile)
 
+instance AnsiPretty GroupProfile
+
 data Group = Group
     { groupId      :: !Text
     , groupType    :: !GroupType
     , groupProfile :: !GroupProfile
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving (ToJSON, FromJSON) via (Sopica Group)
+
+instance AnsiPretty Group
+
+data Hide = Hide
+    { hideIOS :: !Bool
+    , hideWeb :: !Bool
+    } deriving (Show,GhcGeneric, SopGeneric, HasDatatypeInfo)
+      deriving (FromJSON) via (Sopica Hide)
+
+instance AnsiPretty Hide
+
+data Visibility = Visibility
+    { visAutoSubmitToolbar :: !Bool
+    , visHide              :: !Hide
+    } deriving (Show,GhcGeneric, SopGeneric, HasDatatypeInfo)
+      deriving (FromJSON) via (Sopica Visibility)
+
+instance AnsiPretty Visibility
+
+data AppCredentials = AppCredentials
+    { credUserName :: !Text
+    } deriving (Show,GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+
+instance FromJSON AppCredentials where
+    parseJSON = withObject "Credentials" $ \cred ->
+      AppCredentials <$> (cred .: "userName")
+
+instance ToJSON AppCredentials where
+    toJSON (AppCredentials username) = toJSON username
+
+instance AnsiPretty AppCredentials
+
+data App = App
+    { appId          :: !Text
+    , appName        :: !Text
+    , appLabel       :: !Text
+    , appStatus      :: !Status
+    , appVisibility  :: !Visibility
+    } deriving (Show,GhcGeneric, SopGeneric, HasDatatypeInfo)
+      deriving (FromJSON) via (Sopica App)
+
+instance AnsiPretty App

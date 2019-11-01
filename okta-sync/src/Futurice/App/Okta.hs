@@ -16,10 +16,17 @@ import Futurice.App.Okta.Config
 import Futurice.App.Okta.Ctx
 import Futurice.App.Okta.IndexPage
 
+import qualified Data.Map        as Map
 import qualified Data.Set        as Set
 import qualified FUM.Types.Login as FUM
+import qualified GitHub          as GH
 import qualified Okta            as O
 import qualified Personio        as P
+
+apiServer :: Ctx -> Server OktaSyncAPI
+apiServer ctx = genericServer $ Record
+    { githubUsernames = githubUsernamesImpl ctx
+    }
 
 htmlServer :: Ctx -> Server HtmlAPI
 htmlServer ctx = genericServer $ HtmlRecord
@@ -35,6 +42,17 @@ indexPageImpl ctx login = withAuthUser ctx login $ \_ -> do
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
+    integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
+
+githubUsernamesImpl :: Ctx -> Handler (Map.Map Text (Maybe (GH.Name GH.User)))
+githubUsernamesImpl ctx = do
+    now <- currentTime
+    userMap <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg $ githubUsernamesFromOkta cfg
+    pure userMap
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
     integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
 
 withAuthUser
@@ -67,4 +85,5 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverDescription      .~ "Okta sync server"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverHtmlApp htmlApi  .~ htmlServer
+    & serverApp oktaSyncApi  .~ apiServer
     & serverEnvPfx           .~ "OKTASYNC"

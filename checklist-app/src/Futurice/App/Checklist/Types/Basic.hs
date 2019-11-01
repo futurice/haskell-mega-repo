@@ -28,6 +28,7 @@ import Futurice.App.Checklist.Types.TaskRole
 import Futurice.App.Checklist.Types.TaskTag
 
 import qualified Algebra.Graph.Export.Dot as Dot
+import qualified Data.Map                 as Map
 import qualified Data.Text                as T
 import qualified Data.Text.Lazy           as LT
 import qualified FUM.Types.Login          as FUM
@@ -177,9 +178,10 @@ instance NFData PMUser
 
 -- | Helper structure for carrying data from external sources
 data IntegrationData = IntegrationData
-    { _githubData   :: !(Map (GH.Name GH.User) GH.SimpleUser)
-    , _personioData :: !(Map P.EmployeeId P.Employee)
-    , _planmillData :: !(HashMap FUM.Login (P.Employee, PMUser))
+    { _githubData     :: !(Map (GH.Name GH.User) GH.SimpleUser)
+    , _personioData   :: !(Map P.EmployeeId P.Employee)
+    , _planmillData   :: !(HashMap FUM.Login (P.Employee, PMUser))
+    , _oktaGithubData :: !(Map.Map Text (Maybe (GH.Name GH.User)))
     }
   deriving (Show, Generic)
 
