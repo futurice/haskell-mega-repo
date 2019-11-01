@@ -23,6 +23,7 @@ library
 
   build-depends:
     , aeson
+    , ansi-pretty
     , base
     , base64-bytestring
     , binary
@@ -51,6 +52,7 @@ executable okta-cli
   ghc-options:    -Wall -threaded
   build-depends:
     , aeson
+    , ansi-pretty
     , base
     , env-config
     , futurice-prelude

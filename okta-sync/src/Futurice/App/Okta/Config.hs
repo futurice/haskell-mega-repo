@@ -13,6 +13,7 @@ data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgAccessGroups       :: ![FUM.GroupName]
     , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE ])
+    , cfgGithubAppId        :: !Text
     }
 
 instance Configure Config where
@@ -20,3 +21,7 @@ instance Configure Config where
       <$> optionalAlt (envVar "MOCKUSER")
       <*> envVar "ACCESS_GROUPS"
       <*> configure
+      <*> envVar "GITHUBAPPID"
+
+instance HasOktaGithubId Config where
+    oktaGithubId = cfgGithubAppId

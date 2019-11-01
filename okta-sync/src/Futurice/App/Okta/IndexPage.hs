@@ -10,7 +10,6 @@ import Prelude ()
 import Futurice.App.Okta.Markup
 
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import qualified Okta     as O
 import qualified Personio as P
 
@@ -46,8 +45,8 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
                     td_ $ for_ (e ^. P.employeeEmail >>= \email -> oktaMap ^. at (emailToText email)) $ \u -> do
                         toHtml $ show $ O.userStatus u
   where
-      numberOfEmployees = length employees
-      numberOfOktaUsers = length users
+--      numberOfEmployees = length employees
+--      numberOfOktaUsers = length users
       oktaMap = Map.fromList $ (\u -> (O.profileLogin $ O.userProfile u, u)) <$> users
       personioEmailMap = Map.fromList $ catMaybes $ fmap (\e -> case e ^. P.employeeEmail of
                                                              Just email -> Just (emailToText email, e)

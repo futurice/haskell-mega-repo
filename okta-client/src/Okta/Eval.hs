@@ -23,9 +23,11 @@ getAfterLink response =
 
 evalOktaReq :: (MonadThrow m, MonadIO m, Monad m, MonadReader env m, HasHttpManager env, HasOktaCfg env) => Req a -> m a
 evalOktaReq r = case r of
-    ReqGetAllUsers  -> pagedReq "/api/v1/users"
-    ReqGetAllGroups -> singleReq "/api/v1/groups"
+    ReqGetAllUsers       -> pagedReq "/api/v1/users"
+    ReqGetAllGroups      -> singleReq "/api/v1/groups"
     ReqGetGroupUsers gid -> singleReq $ "/api/v1/groups/" <> T.unpack gid <> "/users"
+    ReqGetAllApps        -> pagedReq "/api/v1/apps"
+    ReqGetAppUsers aid   -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
   where
      go _ _ responses Nothing = pure responses
      go mgr token responses (Just url) = do

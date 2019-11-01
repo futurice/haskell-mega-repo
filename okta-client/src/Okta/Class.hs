@@ -11,3 +11,6 @@ class Monad m => MonadOkta m where
 
 users :: MonadOkta m => m [User]
 users = oktaReq ReqGetAllUsers
+
+appUsers :: MonadOkta m => Text -> m [AppUser]
+appUsers = oktaReq . ReqGetAppUsers
