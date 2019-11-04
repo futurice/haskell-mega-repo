@@ -13,6 +13,7 @@ import Futurice.Aeson
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
+import Data.Time.Calendar (toGregorian)
 
 data ISBNType 
     = ISBN10
@@ -52,7 +53,7 @@ instance FromJSON GoogleBookResponse where
                             <*> vi .: "industryIdentifiers"
                             <*> vi .: "authors"
                             <*> vi .: "publisher"
-                            <*> (getParsedAsIntegral <$> vi .: "publishedDate")
+                            <*> ((\(y,_,_) -> fromIntegral y) . toGregorian <$> vi .: "publishedDate")
                             <*> vi .: "canonicalVolumeLink"
                             <*> il .: "thumbnail"
     parseJSON _ = mzero
