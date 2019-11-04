@@ -41,12 +41,12 @@ import Futurice.App.Library.Reminder
 import Futurice.App.Library.Types
 import Futurice.App.Library.Types.GoogleBookResponse
 
-import qualified Data.ByteString.Lazy   as LBS
-import qualified Data.Map               as Map
-import qualified Data.Set               as Set
-import qualified Data.Text              as T
-import qualified Network.HTTP.Client    as HTTP
-import qualified Personio               as P
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Map             as Map
+import qualified Data.Set             as Set
+import qualified Data.Text            as T
+import qualified Network.HTTP.Client  as HTTP
+import qualified Personio             as P
 
 apiServer :: Ctx -> Server LibraryAPI
 apiServer ctx = genericServer $ Record
@@ -152,7 +152,7 @@ fetchBookInformationFromGoogle ctx isbn = do
     runLogT "fetch-from-google" (ctxLogger ctx) $
         case eitherDecode $ HTTP.responseBody response of
             Left err -> do
-                _ <- error $ "Error parsing Google Books response: " <> show err
+                logAttention_ $ "Error parsing Google Books response: " <> textShow err <> " with isbn " <> isbn
                 pure Nothing
             Right book -> do
                 pure $ Just $ BookInformationByISBNResponse
@@ -195,7 +195,7 @@ _updateAllBookCovers ctx = do
                  Nothing -> pure 0
           pure ()
 
-getBookCoverImpl :: Ctx -> ContentHash -> Handler (Headers '[Header "Cache-Control" Text] (DynamicImage))
+getBookCoverImpl :: Ctx -> ContentHash -> Handler (Headers '[Header "Cache-Control" Text] DynamicImage)
 getBookCoverImpl ctx picture = do
     picData <- fetchCover ctx picture
     case picData of
