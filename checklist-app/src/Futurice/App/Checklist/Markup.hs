@@ -312,7 +312,7 @@ checkGithubUsernames
     -> [HtmlT m ()]
 checkGithubUsernames p githubNick =
     case ((p >>= (^. P.employeeGithub)), githubNick) of
-      (Just g1, Just g2) -> ["Github user in Personio: " <> toHtml g1 <> " but in Okta: " <> toHtml g2]
+      (Just g1, Just g2) | g1 /= g2 -> ["Github user in Personio: " <> toHtml g1 <> " but in Okta: " <> toHtml g2]
       (Nothing, Just g2) -> ["No Github username in Personio, but in Okta: " <> toHtml g2]
       _ -> []
 
