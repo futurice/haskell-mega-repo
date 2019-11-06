@@ -15,6 +15,8 @@ import qualified Personio
 data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxCache           :: !Cache
+    , ctxManager         :: !Manager
+    , ctxConfig          :: !Personio.Cfg
     , ctxPostgres        :: !(Pool Connection)
     , ctxPersonioData    :: !(TVar Personio.PersonioAllData)
     }

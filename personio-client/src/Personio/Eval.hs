@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes        #-}
 module Personio.Eval (
     evalPersonioReq,
+    evalPersonioQuery,
     internSimpleEmployees,
     ) where
 
@@ -13,14 +14,62 @@ import Data.Aeson.Types     (listParser)
 import Futurice.CareerLevel
 import Futurice.Clock
 import Futurice.Prelude
+import Personio.Query
 import Personio.Request
 import Personio.Types
 import Prelude ()
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Map.Strict     as Map
-import qualified Data.Text           as T
-import qualified Network.HTTP.Client as H
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.HashMap.Strict  as HM
+import qualified Data.Map.Strict      as Map
+import qualified Data.Text            as T
+import qualified Network.HTTP.Client  as H
+
+evalPersonioQuery
+    :: ( MonadHttp m, MonadThrow m
+       , MonadLog m, MonadClock m, MonadTime m
+       , MonadReader env m, HasPersonioCfg env
+       )
+    => Query a
+    -> m a
+evalPersonioQuery query = do
+    Cfg (BaseUrl baseUrl) (ClientId clientId) (ClientSecret clientSecret) <-
+        view personioCfg
+
+    -- Get access token
+    let tokenUrl = baseUrl <> "/v1/auth?client_id=" <> clientId <> "&" <> "client_secret=" <> clientSecret
+    tokenReq <- H.parseUrlThrow (tokenUrl ^. unpacked)
+    logTrace_ "personio token request"
+    (tokenDur, tokenRes) <- clocked $ httpLbs tokenReq { H.method = "POST" }
+    logTrace "personio access token" (WrapResponse tokenRes)
+    logTrace "personio access token duration" tokenDur
+    Envelope (AccessToken token) <- decode (H.responseBody tokenRes)
+
+    case query of
+      QueryEmployeePicture (EmployeeId eid) -> do
+          let width = 75 :: Integer
+          let url = (baseUrl <> "/v1/company/employees/" <> textShow eid <> "/profile-picture/" <> textShow width) ^. unpacked
+          LBS.toStrict <$> personioHttpLbs token url
+      QueryEmployee (EmployeeId eid) -> do
+          let url = (baseUrl <> "/v1/company/employees/" <> textShow eid) ^. unpacked
+          personioHttpLbs token url >>= decode
+  where
+    personioHttpLbs token url = do
+        req <- H.parseUrlThrow url
+        logTrace "personio request" url
+        (dur, res) <- clocked $ httpLbs req
+            { H.requestHeaders
+                = ("Authorization", encodeUtf8 $ "Bearer " <> token)
+                : ("accept", "image/png")
+                : H.requestHeaders req
+            -- Note: Personio API seems to be very slow
+            -- Let give it 40sec (default is 30)
+            , H.responseTimeout = H.responseTimeoutMicro $ 40 * 1000000
+            }
+        logTrace "personio response" dur
+--        logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
+        pure (H.responseBody res)
+
 
 evalPersonioReq
     :: ( MonadHttp m, MonadThrow m

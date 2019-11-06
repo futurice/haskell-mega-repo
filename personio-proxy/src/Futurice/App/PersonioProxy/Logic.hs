@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.PersonioProxy.Logic where
 
+import Codec.Picture                    (DynamicImage, decodePng)
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Lens                     ((.=))
 import Control.Monad.State.Strict       (evalState, state)
@@ -75,6 +76,17 @@ getSimpleEmployees ctx = do
 --needed so rarely that we can just fetch stuff on need basis
 rawSimpleEmployees :: Ctx -> Handler (Map Day [P.SimpleEmployee])
 rawSimpleEmployees ctx = liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ getSimpleEmployees ctx
+
+employeePicture :: Ctx -> P.EmployeeId -> Handler DynamicImage
+employeePicture ctx eid = do
+    picture <- liftIO $ P.evalPersonioQueryIO mgr lgr cfg $ P.QueryEmployeePicture eid
+    case decodePng picture of
+      Right pic -> pure pic
+      Left err -> throwError err404 --TODO change to better error message
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
 
 -------------------------------------------------------------------------------
 -- Cached
