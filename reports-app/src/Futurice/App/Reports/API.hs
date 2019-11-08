@@ -32,6 +32,7 @@ import Futurice.App.Reports.MissingHours
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
 import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
+import Futurice.App.Reports.OwnedComputers              (Computer)
 import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
 import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
@@ -45,6 +46,8 @@ import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport)
 import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
 import Futurice.App.Reports.ValueCreation               (ValueCreationReport)
+
+import qualified Personio as P
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -94,6 +97,7 @@ data Record route = Record
     , recPowerAbsences :: route :- "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
     , recPowerAllRevenueReport :: route :- "power" :> "all-revenue" :> QueryParam "month" Month :> Get '[JSON] PowerAllRevenues
     , recPowerUTZ      :: route :- "power" :> "utz" :> QueryParam "month" Month :> Get '[JSON] PowerUTZReport
+    , recComputers     :: route :- "computers" :> Get '[JSON] (Map P.EmployeeId [Text])
 
     -- For Bubbleburster
     , recProjectMembers :: route :- "project" :> "members" :> Get '[JSON] [ProjectMembers]

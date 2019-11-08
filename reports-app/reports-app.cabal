@@ -152,6 +152,7 @@ library
     Futurice.App.Reports.MissingHoursNotifications
     Futurice.App.Reports.OKRCompetencies
     Futurice.App.Reports.OfficeVibeIntegration
+    Futurice.App.Reports.OwnedComputers
     Futurice.App.Reports.PlanMillAccountValidation
     Futurice.App.Reports.PowerAbsences
     Futurice.App.Reports.PowerAllRevenues

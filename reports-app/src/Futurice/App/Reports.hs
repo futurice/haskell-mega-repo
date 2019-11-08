@@ -60,6 +60,7 @@ import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeData (..), officeVibeData)
 import Futurice.App.Reports.OKRCompetencies                   (competencyData)
+import Futurice.App.Reports.OwnedComputers                    (userComputers)
 import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
 import Futurice.App.Reports.PowerAbsences
@@ -350,6 +351,7 @@ server ctx = genericServer $ Record
 
     -- dashdo
     , recDashdo =  ctxDashdo ctx
+    , recComputers = liftIO serveComputerOwned
     }
   where
     lgr = ctxLogger ctx
@@ -364,6 +366,11 @@ server ctx = genericServer $ Record
     serveInventoryChart g = do
         v <- serveInventory
         pure (g v)
+
+    serveComputerOwned = do
+        pp <- createPostgresPool $ cfgPostgresConnInfoInv cfg
+        xs <- runLogT "inventory-data" lgr $ userComputers pp
+        pure xs
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
