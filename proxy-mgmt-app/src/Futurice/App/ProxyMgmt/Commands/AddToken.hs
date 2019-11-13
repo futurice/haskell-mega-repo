@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE InstanceSigs      #-}
-{-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -38,7 +37,7 @@ instance TextEnum TokenUser where
          ]
 
 data AddToken = AddToken
-    { addTokenLogin  :: !Login
+    { addTokenLogin  :: !UserName
     , addTokenPolicy :: !PolicyName
     , addTokenType   :: !TokenUser
     }
@@ -48,7 +47,7 @@ data AddToken = AddToken
 
 instance HasLomake AddToken where
     lomake _ =
-        textFieldWithRegexp "Login" loginKleene :*
+        textField "Login" :*
         dynEnumField "Policy" :*
         enumField "User type" enumToText :*
         Nil

@@ -5,8 +5,8 @@ module Futurice.App.ProxyMgmt.Pages.Tokens (tokensPageHandler) where
 
 import Control.Lens               (auf, coerced)
 import Data.Coerce                (Coercible, coerce)
-import Data.Semigroup             (Max (..), Option (..))
 import Data.List                  (groupBy)
+import Data.Semigroup             (Max (..), Option (..))
 import Database.PostgreSQL.Simple (Only (..))
 import FUM.Types.Login
 import Futurice.Generics          (textualToText)
@@ -20,7 +20,7 @@ import Servant.Links              (fieldLink)
 
 import qualified Data.Map.Strict as Map
 
-import Futurice.App.Proxy.API     (LenientEndpoint)
+import Futurice.App.Proxy.API (LenientEndpoint)
 
 import Futurice.App.ProxyMgmt.API
 import Futurice.App.ProxyMgmt.Commands.AddToken
@@ -52,7 +52,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
     lomakeHtml (Proxy @AddToken) fopts $
         vNothing :*
         vDynamic policies' :*
-        vJust User :*
+        vNothing :*
         Nil
 
     h2_ "Users + Tokens"
@@ -100,7 +100,7 @@ tokensPage currMonth policies tokens aes = page_ "Audit log" (Just NavTokens) $ 
 -------------------------------------------------------------------------------
 
 eqBy :: Eq b => (a -> b) -> a -> a -> Bool
-eqBy f x y = f x == f y 
+eqBy f x y = f x == f y
 
 calaf :: forall f g a b. (Functor f, Functor g, Coercible a b)
       => (a -> b) -> (f b -> g b) -> f a -> g a
