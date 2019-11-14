@@ -56,7 +56,7 @@ import PlanMill.Types
        CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
        Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance, Timereport,
        Timereports, User, UserCapacities, UserId, Users, ValueCreationByMonth,
-       identifier)
+       ViewTemplate (..), identifier, viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -244,11 +244,12 @@ project pid = memo pid $ do
 -- Under the hood, asks for individual projects too.
 --
 projects :: MonadPlanMillQuery m => m Projects
-projects = do
-    ps <- projects'
-    for ps $ \p -> do
-        p' <- project' (p ^. identifier)
-        return $ combineProjects p p'
+projects = fail "endpoint is disabled for now"
+-- projects = do
+--     ps <- projects'
+--     for ps $ \p -> do
+--         p' <- project' (p ^. identifier)
+--         return $ combineProjects p p'
 
 combineProjects :: Project -> Project -> Project
 combineProjects p p' = Project
@@ -291,6 +292,11 @@ project' pid = planmillQuery
 projects' :: MonadPlanMillQuery m => m Projects
 projects' = planmillVectorQuery
     $ QueryPagedGet QueryTagProject mempty
+    $ toUrlParts $ ("projects" :: Text)
+
+projectsWithType :: MonadPlanMillQuery m => ViewTemplate -> m Projects
+projectsWithType viewtemplate = planmillVectorQuery
+    $ QueryPagedGet QueryTagProject (Map.fromList [("viewtemplate", fromString $ show $ viewTemplateToInt viewtemplate)])
     $ toUrlParts $ ("projects" :: Text)
 
 -- | Get a list of tasks.
