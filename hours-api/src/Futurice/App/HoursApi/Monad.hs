@@ -202,7 +202,7 @@ instance MonadHours Hours where
             }
 
     project pid = do
-        p <- withFallback (PMQ.project pid) (PM.project pid)
+        p <- withFallback (PMQ.project' pid) (PM.project pid)
         kind <- TK.projectKind p
         pure Project
             { _projectId     = p ^. PM.identifier
