@@ -234,7 +234,9 @@ account aid = planmillQuery
 project :: MonadPlanMillQuery m => ProjectId -> m Project
 project pid = memo pid $ do
     p <- project' pid
-    ps <- projects'
+    -- For now we just fetch execution projects as all
+    -- project endpoint is too slow
+    ps <- projectsWithType AllExecutionProjects --projects'
     return $ case find (\p' -> p' ^. identifier == pid) ps of
         Nothing -> p
         Just p' -> combineProjects p p'
