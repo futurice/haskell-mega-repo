@@ -15,11 +15,13 @@ import Data.Binary.Tagged
 import Data.Constraint
 import Futurice.Prelude
 import PlanMill.Types.Query
-       (Query (..), SomeQuery (..), SomeResponse (..), queryDict)
+       (Query (..), QueryTag (..), SomeQuery (..), SomeResponse (..),
+       queryDict)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
+import qualified Data.Map                   as Map
 import qualified Database.PostgreSQL.Simple as Postgres
 
 import Futurice.App.PlanMillProxy.Logic.Capacities
@@ -112,6 +114,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         Right . MkSomeResponse q <$> selectCapacities ctx u i
     fetch _cacheResult (SomeQuery q@(QueryTimereports i u)) =
         Right . MkSomeResponse q <$> selectTimereports ctx u i
+    fetch _cacheResult (SomeQuery (QueryPagedGet QueryTagProject ops _)) | Map.toList ops == [] = fail "projects endpoint is disabled for a while"
     fetch cacheResult (SomeQuery q) =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' cacheResult q
