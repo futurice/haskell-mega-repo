@@ -17,6 +17,7 @@ import Futurice.Prelude
 import PlanMill.Types.Query
        (Query (..), QueryTag (..), SomeQuery (..), SomeResponse (..),
        queryDict)
+import PlanMill.Types.UrlPart (toUrlParts)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -114,7 +115,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         Right . MkSomeResponse q <$> selectCapacities ctx u i
     fetch _cacheResult (SomeQuery q@(QueryTimereports i u)) =
         Right . MkSomeResponse q <$> selectTimereports ctx u i
-    fetch _cacheResult (SomeQuery (QueryPagedGet QueryTagProject ops _)) | Map.toList ops == [] = fail "projects endpoint is disabled for a while"
+    fetch _cacheResult (SomeQuery (QueryPagedGet QueryTagProject ops urlParts)) | (Map.toList ops == []) && (urlParts == toUrlParts ("projects" :: Text)) = fail "projects endpoint is disabled for a while"
     fetch cacheResult (SomeQuery q) =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' cacheResult q
