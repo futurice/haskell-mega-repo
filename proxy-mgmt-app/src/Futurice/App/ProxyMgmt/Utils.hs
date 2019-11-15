@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.ProxyMgmt.Utils where
 
+import FUM.Types.Login   (Login)
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant  (cachedIO)
@@ -62,4 +63,8 @@ fetchAccessEntries Ctx {..} =
         safePoolQuery_ ctxPostgresPool
             "SELECT username, updated, endpoint FROM proxyapp.accesslog WHERE current_timestamp - updated < '6 months' :: interval ORDER BY updated DESC;"
 
-
+fetchServiceTokensCreatedBy :: Ctx -> Login -> IO [Token]
+fetchServiceTokensCreatedBy Ctx {..} login =
+    runLogT "fetchServiceTokensCreatedBy" ctxLogger $ do
+        safePoolQuery ctxPostgresPool
+            "SELECT username, passtext is not null, usertype, policyname FROM proxyapp.credentials WHERE usertype = 'service' AND createdby = ? ORDER BY username ASC;" (Only login)
