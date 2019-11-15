@@ -24,24 +24,25 @@ import qualified Database.PostgreSQL.Simple as Postgres
 
 -- ProxyMgmt modules
 import Futurice.App.ProxyMgmt.API
-import Futurice.App.ProxyMgmt.Config          (Config (..))
+import Futurice.App.ProxyMgmt.Commands.AddEndpoint
+import Futurice.App.ProxyMgmt.Commands.AddPolicy
+import Futurice.App.ProxyMgmt.Commands.AddToken
+import Futurice.App.ProxyMgmt.Commands.RegenerateToken
+import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
+import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
+import Futurice.App.ProxyMgmt.Config                   (Config (..))
 import Futurice.App.ProxyMgmt.Ctx
 import Futurice.App.ProxyMgmt.Pages.Audit
 import Futurice.App.ProxyMgmt.Pages.Index
 import Futurice.App.ProxyMgmt.Pages.Policies
-import Futurice.App.ProxyMgmt.Pages.Tokens
 import Futurice.App.ProxyMgmt.Pages.Reports
-import Futurice.App.ProxyMgmt.Commands.RegenerateToken
-import Futurice.App.ProxyMgmt.Commands.AddPolicy
-import Futurice.App.ProxyMgmt.Commands.AddEndpoint
-import Futurice.App.ProxyMgmt.Commands.AddToken
-import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
-import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
+import Futurice.App.ProxyMgmt.Pages.Tokens
 
 server :: Ctx -> Server ProxyMgmtAPI
 server ctx = genericServer $ ProxyMgmtRoutes
     { routeIndexPage          = \mfu -> nt False ctx mfu indexPageHandler
     , routeRegenerateOwnToken = \mfu -> nt False ctx mfu regenerateTokenHandler
+    , routeRegenerateServiceToken = \mfu serviceUser -> nt False ctx mfu (regenerateServiceTokenHandler serviceUser)
     -- admin
     , routeTokensPage         = \mfu -> nt True  ctx mfu tokensPageHandler
     , routePoliciesPage       = \mfu -> nt True  ctx mfu policiesPageHandler

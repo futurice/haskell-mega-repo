@@ -68,7 +68,7 @@ addTokenHandler (LomakeRequest e) = ReaderT $ \(login, Ctx {..}) -> do
 
         -- execute action
         void $ safePoolExecute ctxPostgresPool insertQuery 
-            (addTokenLogin e, base64T, login, addTokenPolicy e, textShow (addTokenType e), addTokenPolicy e)
+            (addTokenLogin e, base64T, login, addTokenPolicy e, enumToText (addTokenType e), addTokenPolicy e)
 
         -- ok: reload
         return CommandResponseReload

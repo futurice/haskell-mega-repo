@@ -32,12 +32,13 @@ import Futurice.App.ProxyMgmt.Utils
 
 tokensPageHandler :: ReaderT (Login, Ctx) IO (HtmlPage "tokens")
 tokensPageHandler = do
-    (_, ctx) <- ask
+    (user, ctx) <- ask
     liftIO $ do
         policies <- fetchPolicies ctx
         tokens <- fetchTokens ctx
         accessEntries <- fetchAccessEntries ctx
         currMonth <- currentMonth
+        createdTokens <- fetchServiceTokensCreatedBy ctx user
         pure $ tokensPage currMonth policies tokens accessEntries
 
 -------------------------------------------------------------------------------

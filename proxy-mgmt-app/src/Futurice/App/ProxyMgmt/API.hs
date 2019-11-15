@@ -2,26 +2,29 @@
 {-# LANGUAGE TypeOperators #-}
 module Futurice.App.ProxyMgmt.API where
 
+import Futurice.Lomake
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
-import Futurice.Lomake
 import Prelude ()
 import Servant
 import Servant.API.Generic
-import Servant.Chart                    (Chart, SVG)
+import Servant.Chart             (Chart, SVG)
 
-import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddEndpoint
+import Futurice.App.ProxyMgmt.Commands.AddPolicy
 import Futurice.App.ProxyMgmt.Commands.AddToken
 import Futurice.App.ProxyMgmt.Commands.RemoveEndpoint
 import Futurice.App.ProxyMgmt.Commands.UpdatePolicy
+import Futurice.App.ProxyMgmt.Types
 
 data ProxyMgmtRoutes route = ProxyMgmtRoutes
     { routeIndexPage :: route :-
         SSOUser :> Get '[HTML] (HtmlPage "index")
     , routeRegenerateOwnToken :: route :-
         SSOUser :> "regenerate-own-token" :> Post '[JSON] Text
+    , routeRegenerateServiceToken :: route :-
+        SSOUser :> "regenerate-service-token" :> ReqBody '[JSON] UserName :> Post '[JSON] Text
     -- Admin
     , routeTokensPage :: route :-
         SSOUser :> "tokens" :> Get '[HTML] (HtmlPage "tokens")
