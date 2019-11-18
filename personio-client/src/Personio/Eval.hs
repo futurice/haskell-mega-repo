@@ -7,7 +7,7 @@ module Personio.Eval (
     ) where
 
 import Control.Monad.Http
-import Control.Monad.State  (State, state, runState)
+import Control.Monad.State  (State, runState, state)
 import Data.Aeson.Compat    (FromJSON (..), decode)
 import Data.Aeson.Types     (listParser)
 import Futurice.CareerLevel
@@ -80,8 +80,8 @@ evalPersonioReq personioReq = do
                 = ("Authorization", encodeUtf8 $ "Bearer " <> token)
                 : H.requestHeaders req
             -- Note: Personio API seems to be very slow
-            -- Let give it 40sec (default is 30)
-            , H.responseTimeout = H.responseTimeoutMicro $ 40 * 1000000
+            -- Let give it 50sec (default is 30)
+            , H.responseTimeout = H.responseTimeoutMicro $ 50 * 1000000
             }
         logTrace "personio response" dur
         -- logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)
@@ -134,7 +134,7 @@ data St = St !Int !(HashMap SimpleEmployee SimpleEmployee)
 -- | @'internSimpleEmployees' = 'id'@, but the result is shared
 -- as much as possible.
 internSimpleEmployees :: Traversal' s SimpleEmployee -> s -> s
-internSimpleEmployees tr s = 
+internSimpleEmployees tr s =
     -- so we can debug...
     let (x, _) = runState (tr intern s) (St 0 HM.empty)
     in x
