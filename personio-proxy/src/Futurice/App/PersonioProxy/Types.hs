@@ -17,7 +17,6 @@ data Ctx = Ctx
     , ctxCache           :: !Cache
     , ctxPostgres        :: !(Pool Connection)
     , ctxPersonioData    :: !(TVar Personio.PersonioAllData)
-    , ctxSimpleEmployees :: !(TVar (Map Day [Personio.SimpleEmployee]))
     }
 
 instance HasPostgresPool Ctx where
