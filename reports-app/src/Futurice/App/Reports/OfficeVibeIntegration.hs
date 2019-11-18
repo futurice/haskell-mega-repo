@@ -347,7 +347,7 @@ officeVibeData = do
               | tr <- toList trs
               , Just i <- [PM.trProject tr]
               ]
-        projects <- (traverse . traverse) PMQ.project projIds
+        projects <- (traverse . traverse) PMQ.project' projIds
         let accIds = Map.fromListWith max
               [ (i, d)
               | (d, pr) <- projects

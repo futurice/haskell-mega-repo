@@ -8,7 +8,16 @@
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
 -- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
-module PlanMill.Types.Project (Project(..), Projects, ProjectId, ProjectMember(..), ProjectMembers, Portfolios, ViewTemplate (..), viewTemplateToInt) where
+module PlanMill.Types.Project (
+    Project(..),
+    Projects,
+    ProjectId,
+    ProjectMember(..),
+    ProjectMembers,
+    Portfolios,
+    ViewTemplate (..),
+    PortfolioId,
+    viewTemplateToInt) where
 
 import PlanMill.Internal.Prelude
 

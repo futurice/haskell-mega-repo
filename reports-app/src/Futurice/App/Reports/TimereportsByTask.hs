@@ -191,7 +191,7 @@ timereportsByTask
     -> m TimereportsByTask
 timereportsByTask midDay1 midDay2 taskId reports = do
     task <- PMQ.task taskId
-    project <- traverse PMQ.project (PM.taskProject task)
+    project <- traverse PMQ.project' (PM.taskProject task)
     account <- traverse PMQ.account (project >>= PM.pAccount)
 
     let mk p q c = TimereportsByTask

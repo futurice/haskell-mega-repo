@@ -53,10 +53,11 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
-       CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
-       Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance, Timereport,
-       Timereports, User, UserCapacities, UserId, Users, ValueCreationByMonth,
-       ViewTemplate (..), identifier, viewTemplateToInt)
+       CapacityCalendars, HasSimpleProject, Me, Project (..), ProjectId,
+       ProjectMembers, Projects, Task, TaskId, Tasks, Team, TeamId,
+       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
+       Users, ValueCreationByMonth, ViewTemplate (..), identifier,
+       viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -234,9 +235,7 @@ account aid = planmillQuery
 project :: MonadPlanMillQuery m => ProjectId -> m Project
 project pid = memo pid $ do
     p <- project' pid
-    -- For now we just fetch execution projects as all
-    -- project endpoint is too slow
-    ps <- projectsWithType AllExecutionProjects --projects'
+    ps <- projects'
     return $ case find (\p' -> p' ^. identifier == pid) ps of
         Nothing -> p
         Just p' -> combineProjects p p'
@@ -246,12 +245,11 @@ project pid = memo pid $ do
 -- Under the hood, asks for individual projects too.
 --
 projects :: MonadPlanMillQuery m => m Projects
-projects = fail "endpoint is disabled for now"
--- projects = do
---     ps <- projects'
---     for ps $ \p -> do
---         p' <- project' (p ^. identifier)
---         return $ combineProjects p p'
+projects = do
+    ps <- projects'
+    for ps $ \p -> do
+        p' <- project' (p ^. identifier)
+        return $ combineProjects p p'
 
 combineProjects :: Project -> Project -> Project
 combineProjects p p' = Project
