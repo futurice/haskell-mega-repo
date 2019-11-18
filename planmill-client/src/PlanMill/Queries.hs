@@ -53,11 +53,10 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
-       CapacityCalendars, HasSimpleProject, Me, Project (..), ProjectId,
-       ProjectMembers, Projects, Task, TaskId, Tasks, Team, TeamId,
-       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
-       Users, ValueCreationByMonth, ViewTemplate (..), identifier,
-       viewTemplateToInt)
+       CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
+       Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance, Timereport,
+       Timereports, User, UserCapacities, UserId, Users, ValueCreationByMonth,
+       ViewTemplate (..), identifier, viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
