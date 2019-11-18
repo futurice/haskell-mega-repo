@@ -88,7 +88,7 @@ tribeLookup
 defaultTribe :: Tribe
 defaultTribe
     = Tribe
-    $ fromMaybe (error "defaultTribe: No default Tribe")
+    $ fromMaybe (error "defaultTribe: No default Tribe.")
     $ V.findIndex tiDefault tribeInfos
 
 -------------------------------------------------------------------------------
