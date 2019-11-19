@@ -191,12 +191,12 @@ timereportsByTask
     -> m TimereportsByTask
 timereportsByTask midDay1 midDay2 taskId reports = do
     task <- PMQ.task taskId
-    project <- traverse PMQ.project' (PM.taskProject task)
-    account <- traverse PMQ.account (project >>= PM.pAccount)
+    project <- traverse PMQ.simpleProject (PM.taskProject task)
+    account <- traverse PMQ.account (project >>= (^. PM.pAccount))
 
     let mk p q c = TimereportsByTask
             { _tbtAccountName    = maybe "<unknown account>" PM.saName account
-            , _tbtProjectName    = maybe "<unknown project>" PM.pName project
+            , _tbtProjectName    = maybe "<unknown project>" (^. PM.pName) project
             , _tbtTaskName       = PM.taskName task
             , _tbtHoursOnebMonth = p
             , _tbtHoursPrevMonth = q

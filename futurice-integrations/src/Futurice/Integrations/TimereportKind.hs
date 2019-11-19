@@ -82,10 +82,10 @@ timereportKind tr = do
         Just pid -> return (Just pid)
         Nothing  -> PM.taskProject <$> PMQ.task (PM.trTask tr)
 
-    mproject <- traverse PMQ.project pid
-    maccount <- traverse PMQ.account (mproject >>= PM.pAccount)
+    mproject <- traverse PMQ.simpleProject pid
+    maccount <- traverse PMQ.account (mproject >>= (^. PM.pAccount))
 
-    mprojectCategory <- traverse (`PMQ.enumerationValue` "C?") (PM.pCategory <$> mproject)
+    mprojectCategory <- traverse (`PMQ.enumerationValue` "C?") ((^. PM.pCategory) <$> mproject)
     maccountType     <- traverse (`PMQ.enumerationValue` "T?") (PM.saType <$> maccount)
 
     return $ kind mprojectCategory maccountType billableStatus dutyType
@@ -105,11 +105,11 @@ timereportKind tr = do
     kind _                _                   _              _                                          = KindBillable
 
 -- | This is not precise: All absences are smashed.
-projectKind :: (MonadPlanMillQuery m, MonadMemoize m) => PM.Project -> m TimereportKind
+projectKind :: (MonadPlanMillQuery m, MonadMemoize m, PM.HasSimpleProject p) => p -> m TimereportKind
 projectKind p = do
-    maccount <- traverse PMQ.account (PM.pAccount p)
+    maccount <- traverse PMQ.account (p ^. PM.pAccount)
 
-    projectCategory  <- PMQ.enumerationValue (PM.pCategory p) "C?"
+    projectCategory  <- PMQ.enumerationValue (p ^. PM.pCategory) "C?"
     maccountType     <- traverse (`PMQ.enumerationValue` "T?") (PM.saType <$> maccount)
 
     return $ kind projectCategory maccountType

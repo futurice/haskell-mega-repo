@@ -68,14 +68,14 @@ projectsData fAccIds = do
     return $ sortOn prjName $ mapMaybe (convert cats) (toList prjs)
   where
     convert cats p = do
-        accId <- PM.pAccount p
+        accId <- p ^. PM.pAccount
         guard (predAccount accId)
         return Project
             { prjProjectId = p ^. PM.identifier
             , prjAccountId = accId
-            , prjName      = PM.pName p
-            , prjCategory  = fromMaybe "-" $ cats ^? ix (PM.pCategory p)
-            , prjOperationalId = PM.pOperationalId p
+            , prjName      = p ^. PM.pName
+            , prjCategory  = fromMaybe "-" $ cats ^? ix (p ^. PM.pCategory)
+            , prjOperationalId = p ^. PM.pOperationalId
 
             , prjStart           = PM.pStart p
             , prjFinish          = PM.pFinish p

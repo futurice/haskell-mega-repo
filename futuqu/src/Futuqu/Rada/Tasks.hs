@@ -56,7 +56,7 @@ tasksData
 tasksData fAccIds fProjIds = do
     prjs  <- PMQ.projects
     let ids :: [(PM.ProjectId, PM.AccountId)]
-        ids = mapMaybe (\p -> (p ^. PM.identifier,) <$> PM.pAccount p) (toList prjs)
+        ids = mapMaybe (\p -> (p ^. PM.identifier,) <$> (p ^. PM.pAccount)) (toList prjs)
     mconcat <$> traverse fetch ids
   where
     fetch (prjId, accId)

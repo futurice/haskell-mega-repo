@@ -9,13 +9,12 @@
 module Futurice.App.HoursApi (defaultMain) where
 
 import Control.Concurrent.STM     (atomically, newTVarIO, readTVarIO, writeTVar)
-import Futurice.Constants         (avatarPublicUrl, avatarPublicUrlStr)
+import Futurice.Constants         (avatarPublicUrl)
 import Futurice.Integrations
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Network.HTTP.Client        (managerConnCount)
 import Prelude ()
 import Servant
 

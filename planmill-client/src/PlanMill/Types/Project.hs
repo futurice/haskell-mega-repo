@@ -86,12 +86,12 @@ instance FromJSON Portfolios where
 
 data Project = Project
     { _pId                        :: !ProjectId
-    , pName                       :: !Text
-    , pAccount                    :: !(Maybe AccountId)
+    , _pName                      :: !Text
+    , _pAccount                   :: !(Maybe AccountId)
     , pAccountName                :: !(Maybe Text)
-    , pCategory                   :: !(EnumValue Project "category")
-    , pOperationalId              :: !(Maybe Int)
-    , pPortfolioId                :: !(Maybe PortfolioId)
+    , _pCategory                  :: !(EnumValue Project "category")
+    , _pOperationalId             :: !(Maybe Int)
+    , _pPortfolioId               :: !(Maybe PortfolioId)
 
     -- these fields are asked for dashboards:
     , pStart                      :: !(Maybe UTCTime)
@@ -148,6 +148,7 @@ instance FromJSON Project where
         <*> obj .: "totalCost"
         <*> obj .:? "actualEffort"    .!= 0
         <*> obj .:? "totalEffort"     .!= 0
+
 
 data ProjectMember = ProjectMember
     { _projectMemberName   :: !Text

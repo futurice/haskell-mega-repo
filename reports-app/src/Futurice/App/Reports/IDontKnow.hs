@@ -113,7 +113,7 @@ iDontKnowData mmonth mtribe = do
     accTypes <- PMQ.allEnumerationValues Proxy Proxy
 
     accs' <- for (toList prjs) $ \prj -> do
-        acc <- for (PM.pAccount prj) $ \accId -> do
+        acc <- for (prj ^. PM.pAccount) $ \accId -> do
             acc <- PMQ.account accId
             if accTypes ^? ix (PM.saType acc) == Just "My Company"
             then return Nothing
@@ -150,7 +150,7 @@ iDontKnowData mmonth mtribe = do
                         , idkName     = p ^. P.employeeFullname
                         , idkTribe    = p ^. P.employeeTribe
                         , idkCategory = CatIDontKnow
-                        , idkProject  = maybe "<project>" PM.pName prj
+                        , idkProject  = maybe "<project>" (^. PM.pName) prj
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
@@ -160,7 +160,7 @@ iDontKnowData mmonth mtribe = do
                         , idkName     = p ^. P.employeeFullname
                         , idkTribe    = p ^. P.employeeTribe
                         , idkCategory = CatICantMark
-                        , idkProject  = maybe "<project>" PM.pName prj
+                        , idkProject  = maybe "<project>" (^. PM.pName) prj
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }
@@ -173,7 +173,7 @@ iDontKnowData mmonth mtribe = do
                         , idkName     = p ^. P.employeeFullname
                         , idkTribe    = p ^. P.employeeTribe
                         , idkCategory = CatInternal $ PM.taskName task
-                        , idkProject  = maybe "<project>" PM.pName prj
+                        , idkProject  = maybe "<project>" (^. PM.pName) prj
                         , idkHours    = ndtConvert' (PM.trAmount tr)
                         , idkDesc     = comment
                         }

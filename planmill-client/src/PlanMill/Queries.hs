@@ -39,6 +39,8 @@ module PlanMill.Queries (
     --- * Raw queries
     project',
     projects',
+    projectsWithType,
+    simpleProject,
     ) where
 
 import PlanMill.Internal.Prelude
@@ -54,9 +56,10 @@ import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
        CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
-       Projects, Task, TaskId, Tasks, Team, TeamId, TimeBalance, Timereport,
-       Timereports, User, UserCapacities, UserId, Users, ValueCreationByMonth,
-       ViewTemplate (..), identifier, viewTemplateToInt)
+       Projects, SimpleProject, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
+       Timereport, Timereports, User, UserCapacities, UserId, Users,
+       ValueCreationByMonth, ViewTemplate (..), identifier, sProject,
+       viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
 import PlanMill.Types.Query       (Query (..), QueryTag (..))
@@ -253,12 +256,12 @@ projects = do
 combineProjects :: Project -> Project -> Project
 combineProjects p p' = Project
     { _pId             = p ^. identifier
-    , pName            = pName p
-    , pAccount         = combineMaybe pAccount p p'
+    , _pName            = _pName p
+    , _pAccount         = combineMaybe _pAccount p p'
     , pAccountName     = combineMaybe pAccountName p p'
-    , pCategory        = pCategory p
-    , pOperationalId   = combineMaybe pOperationalId p p'
-    , pPortfolioId     = combineMaybe pPortfolioId p p'
+    , _pCategory        = _pCategory p
+    , _pOperationalId   = combineMaybe _pOperationalId p p'
+    , _pPortfolioId     = combineMaybe _pPortfolioId p p'
     , pStart           = combineMaybe pStart p p'
     , pFinish          = combineMaybe pFinish p p'
     , pProjectManager  = combineMaybe pProjectManager p p'
@@ -284,6 +287,11 @@ project' :: MonadPlanMillQuery m => ProjectId -> m Project
 project' pid = planmillQuery
     $ QueryGet QueryTagProject mempty
     $ toUrlParts $ ("projects" :: Text) // pid
+
+simpleProject :: MonadPlanMillQuery m => ProjectId -> m SimpleProject
+simpleProject pid = do
+    p <- project' pid
+    pure $ p ^. sProject
 
 -- | Get a list of projects.
 --

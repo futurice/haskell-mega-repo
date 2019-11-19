@@ -23,8 +23,7 @@ import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
 import Futurice.Cache            (Cache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
-import Futurice.Integrations
-       (IntegrationsConfig (..), MonadMemoize, integrationConfigToState)
+import Futurice.Integrations     (MonadMemoize, integrationConfigToState)
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
 import Numeric.Interval.NonEmpty ((...))
@@ -41,7 +40,6 @@ import qualified Futurice.Time                        as Time
 import qualified Haxl.Core                            as Haxl
 import qualified PlanMill                             as PM
 import qualified PlanMill.Queries                     as PMQ
-import qualified PlanMill.Queries.Haxl                as PMQ
 import qualified PlanMill.Types.Query                 as Q
 import qualified PlanMill.Worker                      as PM
 
@@ -206,7 +204,7 @@ instance MonadHours Hours where
         kind <- TK.projectKind p
         pure Project
             { _projectId     = p ^. PM.identifier
-            , _projectName   = p ^. getter PM.pName
+            , _projectName   = p ^. PM.pName
             , _projectClosed = isAbsence kind
               -- TODO: closed if it's absence, but maybe be closed otherwise too.
             , _projectAbsence = isAbsence kind
