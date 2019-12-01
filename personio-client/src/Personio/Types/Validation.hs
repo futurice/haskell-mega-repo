@@ -176,7 +176,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , externalContractValidate
         , fixedEndDateValidate
         , permanentEndDateValidate
-        , flowdockValidate
         , githubValidate
         , homePhoneValidate
         , homeTribeValidate
@@ -338,13 +337,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             hPhone <- lift (parseDynamicAttribute obj "Private phone")
             case match (void phoneRegexp <|> pure ()) hPhone of
                 Nothing -> tell [HomePhoneInvalid hPhone]
-                Just () -> pure ()
-
-        flowdockValidate :: WriterT [ValidationMessage] Parser ()
-        flowdockValidate = do
-            fdockText <- lift (parseDynamicAttribute obj "Flowdock")
-            case match (void flowdockRegexp <|> pure ()) fdockText of
-                Nothing -> tell [FlowdockInvalid]
                 Just () -> pure ()
 
         emailValidate :: WriterT [ValidationMessage] Parser ()

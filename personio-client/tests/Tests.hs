@@ -146,11 +146,6 @@ validations = testGroup "Validations"
             & attributeValue "dynamic_72936" . _String .~ "123a4"
 -}
     , testValidation
-        "flowdock"
-        FlowdockInvalid
-        $ correctEmployeeValue
-            & attributeValue "dynamic_72914" . _String .~ "https://www.flowdock.com/12345" -- flowdock
-    , testValidation
         "first name"
         FirstNameMissing
         $ correctEmployeeValue
