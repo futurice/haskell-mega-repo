@@ -170,7 +170,7 @@ futu.onload(function () {
                         $("button[data-futu-id=clear-add-new-book]").style.display = "block";
                     })
                     .catch(function (error) {
-                        $("div#info-box").innerHTML = '<span class="info">No books found in database with this ISBN</span>';
+                        $("div#info-box").innerHTML = '<span class="info">No books found in database or in Google Books with this ISBN</span>';
                     });
             }
         });
