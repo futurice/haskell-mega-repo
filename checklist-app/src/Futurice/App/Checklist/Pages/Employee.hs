@@ -122,7 +122,7 @@ employeePage world authUser employee integrationData = checklistPage_ (view name
             "Tribe "
             personioCheck' employeeTribe (Just . view P.employeeTribe) toHtml
             select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
-                for_ [ minBound .. maxBound ] $ \tribe ->
+                for_ (sortOn tribeToText [ minBound .. maxBound ]) $ \tribe ->
                     optionSelected_ (tribe == employee ^. employeeTribe)
                         [ value_ $ toQueryParam tribe ]
                         $ toHtml tribe
