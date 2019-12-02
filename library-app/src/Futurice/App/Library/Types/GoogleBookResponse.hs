@@ -53,7 +53,7 @@ instance FromJSON GoogleBookResponse where
                             <*> vi .: "industryIdentifiers"
                             <*> vi .: "authors"
                             <*> vi .: "publisher"
-                            <*> ((\(y,_,_) -> fromIntegral y) . toGregorian <$> vi .: "publishedDate")
+                            <*> (((\(y,_,_) -> fromIntegral y) . toGregorian <$> vi .: "publishedDate") <|> (read <$> vi .: "publishedDate"))
                             <*> vi .: "canonicalVolumeLink"
                             <*> il .: "thumbnail"
     parseJSON _ = mzero
