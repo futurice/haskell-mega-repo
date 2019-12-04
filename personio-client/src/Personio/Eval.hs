@@ -25,17 +25,14 @@ import qualified Data.Map.Strict      as Map
 import qualified Data.Text            as T
 import qualified Network.HTTP.Client  as H
 
-evalPersonioQuery
-    :: ( MonadHttp m, MonadThrow m
-       , MonadLog m, MonadClock m, MonadTime m
-       , MonadReader env m, HasPersonioCfg env
-       )
-    => Query a
-    -> m a
-evalPersonioQuery query = do
+getToken :: ( MonadHttp m, MonadThrow m
+            , MonadLog m, MonadClock m, MonadTime m
+            , MonadReader env m, HasPersonioCfg env
+            )
+         => m Text
+getToken = do
     Cfg (BaseUrl baseUrl) (ClientId clientId) (ClientSecret clientSecret) <-
         view personioCfg
-
     -- Get access token
     let tokenUrl = baseUrl <> "/v1/auth?client_id=" <> clientId <> "&" <> "client_secret=" <> clientSecret
     tokenReq <- H.parseUrlThrow (tokenUrl ^. unpacked)
@@ -44,11 +41,24 @@ evalPersonioQuery query = do
     logTrace "personio access token" (WrapResponse tokenRes)
     logTrace "personio access token duration" tokenDur
     Envelope (AccessToken token) <- decode (H.responseBody tokenRes)
+    pure token
+
+evalPersonioQuery
+    :: ( MonadHttp m, MonadThrow m
+       , MonadLog m, MonadClock m, MonadTime m
+       , MonadReader env m, HasPersonioCfg env
+       )
+    => Query a
+    -> m a
+evalPersonioQuery query = do
+    Cfg (BaseUrl baseUrl) _ _ <-
+        view personioCfg
+
+    token <- getToken
 
     case query of
       QueryEmployeePicture (EmployeeId eid) -> do
-          let width = 75 :: Integer
-          let url = (baseUrl <> "/v1/company/employees/" <> textShow eid <> "/profile-picture/" <> textShow width) ^. unpacked
+          let url = (baseUrl <> "/v1/company/employees/" <> textShow eid <> "/profile-picture/") ^. unpacked
           LBS.toStrict <$> personioHttpLbs token url
       QueryEmployee (EmployeeId eid) -> do
           let url = (baseUrl <> "/v1/company/employees/" <> textShow eid) ^. unpacked
@@ -79,17 +89,10 @@ evalPersonioReq
     => PersonioReq a
     -> m a
 evalPersonioReq personioReq = do
-    Cfg (BaseUrl baseUrl) (ClientId clientId) (ClientSecret clientSecret) <-
+    Cfg (BaseUrl baseUrl) _ _ <-
         view personioCfg
 
-    -- Get access token
-    let tokenUrl = baseUrl <> "/v1/auth?client_id=" <> clientId <> "&" <> "client_secret=" <> clientSecret
-    tokenReq <- H.parseUrlThrow (tokenUrl ^. unpacked)
-    logTrace_ "personio token request"
-    (tokenDur, tokenRes) <- clocked $ httpLbs tokenReq { H.method = "POST" }
-    logTrace "personio access token" (WrapResponse tokenRes)
-    logTrace "personio access token duration" tokenDur
-    Envelope (AccessToken token) <- decode (H.responseBody tokenRes)
+    token <- getToken
 
     -- Perform request
     let url = (baseUrl <> "/v1/company/employees") ^. unpacked

@@ -82,7 +82,7 @@ employeePicture ctx eid = do
     picture <- liftIO $ P.evalPersonioQueryIO mgr lgr cfg $ P.QueryEmployeePicture eid
     case decodePng picture of
       Right pic -> pure pic
-      Left err -> throwError err404 --TODO change to better error message
+      Left _ -> throwError err404 { errBody = "Picture couldn't be decoded."}
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
