@@ -9,7 +9,6 @@ module Futurice.App.Library.Types.GoogleBookResponse where
 
 import Control.Lens
 import Data.Aeson
-import Futurice.Aeson
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -49,11 +48,14 @@ instance FromJSON GoogleBookResponse where
         let book = fromMaybe mempty maybeBook
         vi <- book .: "volumeInfo"
         il <- vi .: "imageLinks"
+        let parseYear = do
+                Just year <- readMaybe <$> vi .: "publishedDate"
+                pure year
         GoogleBookResponse  <$> vi .: "title"
                             <*> vi .: "industryIdentifiers"
                             <*> vi .: "authors"
                             <*> vi .: "publisher"
-                            <*> (((\(y,_,_) -> fromIntegral y) . toGregorian <$> vi .: "publishedDate") <|> (read <$> vi .: "publishedDate"))
+                            <*> (((\(y,_,_) -> fromIntegral y) . toGregorian <$> vi .: "publishedDate") <|> parseYear)
                             <*> vi .: "canonicalVolumeLink"
                             <*> il .: "thumbnail"
     parseJSON _ = mzero
