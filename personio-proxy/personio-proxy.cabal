@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , adjunctions
     , aeson
@@ -49,6 +50,7 @@ library
     , futurice-tribes
     , ghc-compact          >=0.1.0.0
     , github
+    , JuicyPixels
     , lens
     , lens-aeson
     , mtl
@@ -56,6 +58,7 @@ library
     , personio-client
     , servant-cached
     , servant-Chart
+    , servant-JuicyPixels
     , servant-server
     , stm
     , swagger2

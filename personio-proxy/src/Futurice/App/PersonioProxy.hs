@@ -40,6 +40,7 @@ server :: Ctx -> Server PersonioProxyAPI
 server ctx = indexPage'
     :<|> personioRequest ctx
     :<|> rawEmployees ctx
+    :<|> employeePicture ctx
     :<|> scheduleEmployees ctx
     :<|> employeesChart ctx
     :<|> tribeEmployeesChart ctx
@@ -61,11 +62,13 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
 newCtx
     :: Logger
     -> Cache
+    -> Manager
+    -> P.Cfg
     -> Postgres.Pool Postgres.Connection
     -> P.PersonioAllData
     -> IO Ctx
-newCtx lgr cache pool allData = do
-    Ctx lgr cache pool
+newCtx lgr cache mgr cfg pool allData = do
+    Ctx lgr cache mgr cfg pool
         <$> newTVarIO allData
 
 selectLastQuery :: Postgres.Query
@@ -101,7 +104,7 @@ makeCtx (Config cfg pgCfg intervalMin) lgr mgr cache mq = do
 
     -- context
     let emptyData = P.PersonioAllData employees [] mempty mempty
-    ctx <- newCtx lgr cache pool emptyData
+    ctx <- newCtx lgr cache mgr cfg pool emptyData
 
     -- jobs
     let fetchEmployees = P.evalPersonioReqIO mgr lgr cfg P.PersonioAll

@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Futurice.App.PersonioProxy.API where
 
+import Codec.Picture             (DynamicImage)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant          (HTML)
@@ -9,6 +10,7 @@ import Prelude ()
 import Servant
 import Servant.Cached            (CACHED, Cached)
 import Servant.Chart             (Chart, SVG)
+import Servant.JuicyPixels       (PNG)
 
 import qualified Personio
 
@@ -16,6 +18,7 @@ type PersonioProxyAPI =
     Get '[HTML] (HtmlPage "index")
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
     :<|> "employees" :> Get '[JSON] [Personio.Employee]
+    :<|> "employee-picture" :> Capture "employee-id" Personio.EmployeeId :> Get '[PNG] DynamicImage
     :<|> Summary "Tailor made for schedule.app" :> "schedule-info" :> Get '[JSON] [Personio.ScheduleEmployee]
     :<|> "charts" :> "employees.svg" :>          Get '[CACHED SVG] (Cached SVG (Chart "employees"))
     :<|> "charts" :> "tribe-employees.svg" :>    Get '[CACHED SVG] (Cached SVG (Chart "tribe-employees"))

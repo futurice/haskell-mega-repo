@@ -8,6 +8,7 @@ module Personio (
     personioEmployeesR,
     evalPersonioReq,
     evalPersonioReqIO,
+    evalPersonioQueryIO,
     -- * Testing
     testPersonioEmployees,
     testPersonioValidations,
@@ -15,6 +16,7 @@ module Personio (
     module Control.Monad.Personio,
     module Personio.Request,
     module Personio.Types,
+    module Personio.Query,
     -- * Auxiliary
     internSimpleEmployees,
     ) where
@@ -26,6 +28,7 @@ import Prelude ()
 
 import Control.Monad.Personio
 import Personio.Eval
+import Personio.Query
 import Personio.Request
 import Personio.Types
 
@@ -58,6 +61,18 @@ evalPersonioReqIO mgr lgr cfg req
     $ flip runHttpT mgr
     $ flip runReaderT cfg
     $ evalPersonioReq req
+
+evalPersonioQueryIO
+    :: Manager
+    -> Logger
+    -> Cfg
+    -> Query a
+    -> IO a
+evalPersonioQueryIO mgr lgr cfg query
+    = runLogT "personio" lgr
+    $ flip runHttpT mgr
+    $ flip runReaderT cfg
+    $ evalPersonioQuery query
 
 -------------------------------------------------------------------------------
 -- Testing
