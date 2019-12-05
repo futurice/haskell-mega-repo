@@ -35,12 +35,12 @@ data ProjectMembers = ProjectMembers
 projectMemberData :: (MonadPlanMillQuery m) => m [ProjectMembers]
 projectMemberData = do
     prjs <- PMQ.projects
-    traverse toProjectMembers $ filter (\t -> not $ T.isInfixOf "absence" (T.toLower $ PM.pName t)) $ toList prjs
+    traverse toProjectMembers $ filter (\t -> not $ T.isInfixOf "absence" (T.toLower $ PM._pName t)) $ toList prjs
   where
     toProjectMembers project = do
         members <- PMQ.projectMembers (PM._pId project)
         pure $ ProjectMembers
             { prjmProjectId  = PM._pId project
-            , prjmName       = PM.pName project
+            , prjmName       = PM._pName project
             , prjmProjectMembers = fmap (\x -> ProjectMember (PM._projectMemberUserId x) (PM._projectMemberName x)) $ toList members
             }

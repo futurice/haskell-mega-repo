@@ -16,16 +16,16 @@ module Futurice.App.Reports.PowerProjects (
     PowerProject (..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
+import Data.Set.Lens           (setOf)
+import Data.Vector.Lens        (vector)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Prelude
 import Futurice.Report.Columns
-import Data.Vector.Lens (vector)
-import Data.Set.Lens (setOf)
+import Prelude ()
 
-import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
+import qualified PlanMill         as PM
+import qualified PlanMill.Queries as PMQ
 
 -------------------------------------------------------------------------------
 -- Data
@@ -92,8 +92,8 @@ powerProjectsReport = do
     --
     -- "Benefit": we will have only the accounts with projects
     --
-    let aids = toList (setOf (folded . getter PM.pAccount . folded) ps)
-    as <- traverse PMQ.account aids 
+    let aids = toList (setOf (folded . PM.pAccount . folded) ps)
+    as <- traverse PMQ.account aids
     pure PowerProjectsReport
         { powerProjects = toPower <$> ps
         , powerAccounts = toPowerA <$> as ^. vector
@@ -102,8 +102,8 @@ powerProjectsReport = do
     toPower :: PM.Project -> PowerProject
     toPower p = PowerProject
         { _powerProjectId        = p ^. PM.identifier
-        , _powerProjectAccountId = PM.pAccount p
-        , _powerProjectName      = PM.pName p
+        , _powerProjectAccountId = PM._pAccount p
+        , _powerProjectName      = PM._pName p
         }
 
     toPowerA :: PM.Account -> PowerAccount

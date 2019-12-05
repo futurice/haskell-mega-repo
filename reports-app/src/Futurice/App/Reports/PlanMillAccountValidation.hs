@@ -111,7 +111,7 @@ pmAccountValidationData = do
         let accIds = Set.fromList
               [ i
               | (_, pr) <- projects
-              , Just i  <- [PM.pAccount pr]
+              , Just i  <- [PM._pAccount pr]
               ]
         return accIds
 

@@ -8,7 +8,16 @@
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
 -- Maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
-module PlanMill.Types.Project (Project(..), Projects, ProjectId, ProjectMember(..), ProjectMembers, Portfolios) where
+module PlanMill.Types.Project (
+    Project(..),
+    Projects,
+    ProjectId,
+    ProjectMember(..),
+    ProjectMembers,
+    Portfolios,
+    ViewTemplate (..),
+    PortfolioId,
+    viewTemplateToInt) where
 
 import PlanMill.Internal.Prelude
 
@@ -22,6 +31,7 @@ import qualified Data.Aeson.Lens     as L
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
 import qualified Data.Vector         as V
+import qualified Options.SOP         as O
 
 type ProjectId = Identifier Project
 type Projects = Vector Project
@@ -37,6 +47,17 @@ newtype Portfolios = Portfolios (Vector Portfolio)
 data ProjectType = CustomerProject | InternalProject deriving (Show, Generic)
 
 instance AnsiPretty ProjectType where ansiPretty = ansiPretty . show
+
+data ViewTemplate = AllExecutionProjects
+                  | AllClosedProjects
+                  deriving (Show,Read,Generic)
+
+instance O.FromOptions ViewTemplate where
+    optionsParser = O.argument O.auto (O.metavar ":projects-type")
+
+viewTemplateToInt :: ViewTemplate -> Int
+viewTemplateToInt AllExecutionProjects = 53
+viewTemplateToInt AllClosedProjects = 55
 
 data Portfolio = Portfolio
     { _portfolioId          :: !PortfolioId
@@ -65,12 +86,12 @@ instance FromJSON Portfolios where
 
 data Project = Project
     { _pId                        :: !ProjectId
-    , pName                       :: !Text
-    , pAccount                    :: !(Maybe AccountId)
+    , _pName                      :: !Text
+    , _pAccount                   :: !(Maybe AccountId)
     , pAccountName                :: !(Maybe Text)
-    , pCategory                   :: !(EnumValue Project "category")
-    , pOperationalId              :: !(Maybe Int)
-    , pPortfolioId                :: !(Maybe PortfolioId)
+    , _pCategory                  :: !(EnumValue Project "category")
+    , _pOperationalId             :: !(Maybe Int)
+    , _pPortfolioId               :: !(Maybe PortfolioId)
 
     -- these fields are asked for dashboards:
     , pStart                      :: !(Maybe UTCTime)
@@ -127,6 +148,7 @@ instance FromJSON Project where
         <*> obj .: "totalCost"
         <*> obj .:? "actualEffort"    .!= 0
         <*> obj .:? "totalEffort"     .!= 0
+
 
 data ProjectMember = ProjectMember
     { _projectMemberName   :: !Text

@@ -347,11 +347,11 @@ officeVibeData = do
               | tr <- toList trs
               , Just i <- [PM.trProject tr]
               ]
-        projects <- (traverse . traverse) PMQ.project projIds
+        projects <- (traverse . traverse) PMQ.simpleProject projIds
         let accIds = Map.fromListWith max
               [ (i, d)
               | (d, pr) <- projects
-              , Just i  <- [PM.pAccount pr]
+              , Just i  <- [pr ^. PM.pAccount]
               ]
         accounts <- ifor accIds $ \i d -> (,) d <$> PMQ.account i
         return (pmu, accounts)

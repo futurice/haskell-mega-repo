@@ -67,6 +67,7 @@ data Cmd
     | CmdAllRevenuesReport
     | CmdPortfolios
     | CmdValueCreationPerMonth
+    | CmdProjectsWithType PM.ViewTemplate
 
 deriveGeneric ''Cmd
 
@@ -247,6 +248,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         putPretty x
     CmdValueCreationPerMonth -> do
         x <- PM.planmillAction PM.valueCreationByMonthReport
+        putPretty x
+    CmdProjectsWithType viewTemplate -> do
+        x <- PM.planmillAction $ PM.projectsWithType viewTemplate
         putPretty x
 -------------------------------------------------------------------------------
 -- M - monad with custom instances

@@ -139,6 +139,7 @@ library
     PlanMill.Types.Request
     PlanMill.Types.ResultInterval
     PlanMill.Types.ResultOrder
+    PlanMill.Types.SimpleProject
     PlanMill.Types.Task
     PlanMill.Types.TimeBalance
     PlanMill.Types.Timereport

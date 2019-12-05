@@ -15,11 +15,14 @@ import Data.Binary.Tagged
 import Data.Constraint
 import Futurice.Prelude
 import PlanMill.Types.Query
-       (Query (..), SomeQuery (..), SomeResponse (..), queryDict)
+       (Query (..), QueryTag (..), SomeQuery (..), SomeResponse (..),
+       queryDict)
+import PlanMill.Types.UrlPart (toUrlParts)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
+import qualified Data.Map                   as Map
 import qualified Database.PostgreSQL.Simple as Postgres
 
 import Futurice.App.PlanMillProxy.Logic.Capacities

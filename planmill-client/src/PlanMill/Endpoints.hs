@@ -32,6 +32,7 @@ module PlanMill.Endpoints (
     project,
     projectMembers,
     projects,
+    projectsWithType,
     portfolios,
     -- * Tasks
     task,
@@ -129,6 +130,17 @@ me = planMillGet $ t "me"
 -- See <vttps://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects_get>
 projects :: PlanMill Projects
 projects = planMillPagedGet $ t "projects"
+
+-- | Get a list of projects with certain viewtemplate
+--
+-- See <vttps://online.planmill.com/pmtrial/schemas/v1_5/index.html#projects_get>
+projectsWithType :: ViewTemplate -> PlanMill Projects
+projectsWithType vt = planMillPagedGetQs qs' $ t "projects"
+  where
+    qs' :: QueryString
+    qs' = Map.fromList
+        [ ("viewtemplate", fromString $ show $ viewTemplateToInt vt)
+        ]
 
 -- | A single project in PlanMill
 --

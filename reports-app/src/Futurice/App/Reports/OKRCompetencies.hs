@@ -80,7 +80,7 @@ findAssignmentsForProject :: forall m. (MonadPlanMillQuery m) => (Tribe, Project
 findAssignmentsForProject (tribe, project) = do
     let pid = _pId project
     assignments <- PMQ.assignments pid
-    return (tribe, PM.pName project, assignments)
+    return (tribe, project ^. PM.pName, assignments)
 
 findUserForAssignment :: forall m. (MonadPlanMillQuery m) => PM.Users -> (Tribe, Text, PM.Assignments) -> m (Tribe, Text, [PM.User])
 findUserForAssignment planMillUsers (tribe, project, assignments) = do
@@ -163,7 +163,7 @@ renderCompetencyReport (CR report) = page_ "Futurice’s ongoing multidisciplina
         thead_ $ do
             th_ ">3 competences"
             th_ ">4 competences"
-        
+
         tbody_ $ do
             tr_ $ do
                 td_ $ toHtml $ show . length . filter (>2) . map pcNumberOfCompetences . concat $ Map.elems report

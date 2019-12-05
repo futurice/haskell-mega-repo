@@ -96,8 +96,8 @@ timereportsData' interval users sts bss =
                 Just pid -> return (Just pid)
                 Nothing  -> PM.taskProject <$> PMQ.task (PM.trTask tr)
 
-            mproject <- traverse PMQ.project prjId
-            let accId = mproject >>= PM.pAccount
+            mproject <- traverse PMQ.simpleProject prjId
+            let accId = mproject >>= (^. PM.pAccount)
 
             return Timereport
                 { trUserId = uid

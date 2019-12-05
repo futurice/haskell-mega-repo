@@ -42,7 +42,7 @@ accountsData
     => m [Account]
 accountsData = do
     prjs  <- PMQ.projects
-    let accIds = setOf (folded . getter PM.pAccount . _Just) prjs
+    let accIds = setOf (folded . PM.pAccount . _Just) prjs
     accs  <- traverse PMQ.account (toList accIds)
     types <- PMQ.allEnumerationValues Proxy Proxy
     passive <- PMQ.allEnumerationValues Proxy Proxy

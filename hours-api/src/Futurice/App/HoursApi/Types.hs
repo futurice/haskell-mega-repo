@@ -13,8 +13,8 @@
 -- /NOTE:/ Golang backend LatestEntry is Entry with a Date
 module Futurice.App.HoursApi.Types where
 
-import Control.Lens              (foldOf, imap, sumOf, filtered)
-import Data.Aeson                (Value (..), withText)
+import Control.Lens              (filtered, foldOf, imap, sumOf)
+import Data.Aeson                (Value (..))
 import Data.Aeson.Types          (typeMismatch)
 import Data.Fixed                (Centi)
 import Data.Swagger              (NamedSchema (..))

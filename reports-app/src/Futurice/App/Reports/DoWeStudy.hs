@@ -127,7 +127,7 @@ doWeStudyData mskind mmonth mtribe = do
                      , dwsName     = p ^. P.employeeFullname
                      , dwsTribe    = p ^. P.employeeTribe
                      , dwsCategory = Jedi
-                     , dwsProject  = maybe "<project>" PM.pName prj
+                     , dwsProject  = maybe "<project>" PM._pName prj
                      , dwsHours    = ndtConvert' (PM.trAmount tr)
                      , dwsDesc     = comment
                      }
@@ -136,7 +136,7 @@ doWeStudyData mskind mmonth mtribe = do
                      , dwsName     = p ^. P.employeeFullname
                      , dwsTribe    = p ^. P.employeeTribe
                      , dwsCategory = TribeInternalTraining
-                     , dwsProject  = maybe "<project>" PM.pName prj
+                     , dwsProject  = maybe "<project>" PM._pName prj
                      , dwsHours    = ndtConvert' (PM.trAmount tr)
                      , dwsDesc     = comment
                      }
@@ -145,7 +145,7 @@ doWeStudyData mskind mmonth mtribe = do
                      , dwsName     = p ^. P.employeeFullname
                      , dwsTribe    = p ^. P.employeeTribe
                      , dwsCategory = OtherTraining
-                     , dwsProject  = maybe "<project>" PM.pName prj
+                     , dwsProject  = maybe "<project>" PM._pName prj
                      , dwsHours    = ndtConvert' (PM.trAmount tr)
                      , dwsDesc     = comment
                      }

@@ -41,7 +41,7 @@ powerAllRevenuesReport mmonth = do
     month <- maybe currentMonth pure mmonth
     report <- PMQ.allRevenuesReport (monthYear month) (toInteger $ fromEnum $ monthName month)
     projects <- PMQ.projects
-    let operationalMap = M.fromList $ fmap (\p -> (PM.pOperationalId p, p)) $ toList projects
+    let operationalMap = M.fromList $ fmap (\p -> (PM._pOperationalId p, p)) $ toList projects
     let report' = M.toList $ PM.getRevenuesData report
         report'' = fmap (toPowerAllRevenuesRow operationalMap) report'
     pure $ PowerAllRevenues month $ M.fromList report''

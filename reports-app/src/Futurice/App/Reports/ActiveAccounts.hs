@@ -130,7 +130,7 @@ activeAccountsData = do
                       [(i, (PM.trStart tr, ndtConvert' $ PM.trAmount tr)) | tr <- toList trs, Just i <- [PM.trProject tr]]
         projects <- (traverse . traverse) PMQ.project projIds
         let accIds = Map.fromListWith (\(a1,b1) (a2,b2) -> (max a1 a2, b1 + b2))
-                     [(i, (d,h)) | ((d, h), pr) <- projects, Just i <- [PM.pAccount pr]]
+                     [(i, (d,h)) | ((d, h), pr) <- projects, Just i <- [PM._pAccount pr]]
         accounts <- ifor accIds $ \i (d,h) -> (,,) d h <$> PMQ.account i
         return (pmu, accounts)
 
