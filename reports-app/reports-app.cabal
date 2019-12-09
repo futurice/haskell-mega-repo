@@ -144,6 +144,7 @@ library
     Futurice.App.Reports.GithubReposDashdo
     Futurice.App.Reports.IDontKnow
     Futurice.App.Reports.Inventory
+    Futurice.App.Reports.LongAbsence
     Futurice.App.Reports.Markup
     Futurice.App.Reports.MissingHours
     Futurice.App.Reports.MissingHoursChart

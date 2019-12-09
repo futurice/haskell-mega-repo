@@ -47,6 +47,8 @@ import Futurice.App.Reports.Dashdo                            (makeDashdoServer)
 import Futurice.App.Reports.DoWeStudy                         (doWeStudyData)
 import Futurice.App.Reports.IDontKnow                         (iDontKnowData)
 import Futurice.App.Reports.Inventory
+import Futurice.App.Reports.LongAbsence
+       (longAbsencesNotification)
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursSimplifiedReport, mhpTotalHours,
@@ -411,6 +413,7 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             MissingHoursPing       -> void $ missingHoursNotifications ctx
             SubcontractorPing      -> void $ subcontractorNotifications ctx
             SubcontractorHoursPing -> void $ subcontractorHoursNotifications ctx
+            ReturningEmployeePing  -> void $ longAbsencesNotification ctx
             _                      -> pure ()
 
         return (ctx, jobs)
