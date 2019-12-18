@@ -11,6 +11,7 @@
 module Futurice.App.Checklist.Types.Basic where
 
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
+import Futurice.Email     (Email)
 import Futurice.Generics
 import Futurice.Graph     (IsNode (..))
 import Futurice.IdMap     (HasKey (..))
@@ -181,7 +182,7 @@ data IntegrationData = IntegrationData
     { _githubData     :: !(Map (GH.Name GH.User) GH.SimpleUser)
     , _personioData   :: !(Map P.EmployeeId P.Employee)
     , _planmillData   :: !(HashMap FUM.Login (P.Employee, PMUser))
-    , _oktaGithubData :: !(Map.Map Text (Maybe (GH.Name GH.User)))
+    , _oktaGithubData :: !(Map.Map Email (Maybe (GH.Name GH.User)))
     }
   deriving (Show, Generic)
 

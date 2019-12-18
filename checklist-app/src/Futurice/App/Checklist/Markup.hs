@@ -51,7 +51,6 @@ module Futurice.App.Checklist.Markup (
 
 import Control.Lens     (has, re, _Wrapped)
 import FUM.Types.Login  (Login, loginToText)
-import Futurice.Email
 import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
@@ -364,7 +363,7 @@ taskInfo_ task employee idata
         personioHRNumber = personioEmployee >>= (\p -> zeroToNothing (p ^. P.employeeHRNumber))
     githubNickInOkta = do
         pe <- personioEmployee
-        email <- emailToText <$> pe ^. P.employeeEmail
+        email <- pe ^. P.employeeEmail
         join $ idata ^. oktaGithubData . at email
     infos = foldMap info (task ^. taskTags)
     info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee githubNickInOkta

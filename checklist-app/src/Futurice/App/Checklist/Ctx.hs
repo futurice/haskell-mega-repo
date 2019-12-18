@@ -15,6 +15,7 @@ import Data.Pool              (Pool, createPool, withResource)
 import Futurice.CryptoRandom
        (CRandT, CRandom, CryptoGen, CryptoGenError, getCRandom, mkCryptoGen,
        runCRandT)
+import Futurice.Email         (Email)
 import Futurice.Integrations  (IntegrationsConfig)
 import Futurice.Prelude
 import Futurice.Servant       (Cache)
@@ -43,7 +44,7 @@ data Ctx = Ctx
     , ctxMockUser        :: !(Maybe FUM.Login)
     , ctxACL             :: TVar (Map FUM.Login TaskRole)
     , ctxPersonio        :: TVar [Personio.Employee]
-    , ctxOktaGithub      :: TVar (Map Text (Maybe (GH.Name GH.User)))
+    , ctxOktaGithub      :: TVar (Map Email (Maybe (GH.Name GH.User)))
     }
 
 newCtx
