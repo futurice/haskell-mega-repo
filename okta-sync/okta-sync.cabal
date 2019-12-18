@@ -60,6 +60,7 @@ library
     Futurice.App.Okta.Config
     Futurice.App.Okta.Ctx
     Futurice.App.Okta.IndexPage
+    Futurice.App.Okta.Logic
     Futurice.App.Okta.Markup
 
 executable okta-sync-server

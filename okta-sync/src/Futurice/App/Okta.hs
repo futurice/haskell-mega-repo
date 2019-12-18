@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Okta (defaultMain) where
 
+import Futurice.Email            (Email)
 import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
@@ -15,6 +16,7 @@ import Futurice.App.Okta.API
 import Futurice.App.Okta.Config
 import Futurice.App.Okta.Ctx
 import Futurice.App.Okta.IndexPage
+import Futurice.App.Okta.Logic
 
 import qualified Data.Map        as Map
 import qualified Data.Set        as Set
@@ -44,7 +46,7 @@ indexPageImpl ctx login = withAuthUser ctx login $ \_ -> do
     lgr = ctxLogger ctx
     integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
 
-githubUsernamesImpl :: Ctx -> Handler (Map.Map Text (Maybe (GH.Name GH.User)))
+githubUsernamesImpl :: Ctx -> Handler (Map.Map Email (Maybe (GH.Name GH.User)))
 githubUsernamesImpl ctx = do
     now <- currentTime
     userMap <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg $ githubUsernamesFromOkta cfg
@@ -74,10 +76,21 @@ withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of
     lgr = ctxLogger ctx
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx cfg lgr mgr cache _ = do
+makeCtx cfg lgr mgr cache mq = do
     let ctx = Ctx cfg lgr mgr cache
 
+    void $ forEachMessage mq $ \msg -> case msg of
+        PersonioUpdated -> updateJob
+        _ -> pure ()
+
     return (ctx, [])
+  where
+    integrationCfg = cfgIntegrationsCfg cfg
+
+    updateJob = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
+        es' <- P.personioEmployees
+        oktaUsers <- O.users
+        updateUsers es' oktaUsers
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

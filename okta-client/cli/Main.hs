@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+import Data.Aeson                              (object, (.=))
 import Futurice.EnvConfig                      (getConfig)
 import Futurice.Prelude
 import Prelude ()
@@ -50,37 +51,37 @@ optsParser = O.subparser $ mconcat
 strArgument :: IsString a => [O.Mod O.ArgumentFields a] -> O.Parser a
 strArgument = O.strArgument . mconcat
 
-main' :: OktaCfg -> Cmd -> IO ()
-main' token CmdGetAllUsers = do
+main' :: Logger -> OktaCfg -> Cmd -> IO ()
+main' lgr token CmdGetAllUsers = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    users <- evalOktaReqIO token mgr ReqGetAllUsers
+    users <- evalOktaReqIO token mgr lgr ReqGetAllUsers
     putPretty users
     pure ()
-main' token CmdGetAllGroups = do
+main' lgr token CmdGetAllGroups = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    groups <- evalOktaReqIO token mgr ReqGetAllGroups
+    groups <- evalOktaReqIO token mgr lgr ReqGetAllGroups
     putPretty groups
     pure ()
-main' token (CmdGetAllGroupMembers gid) = do
+main' lgr token (CmdGetAllGroupMembers gid) = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    users <- evalOktaReqIO token mgr $ ReqGetGroupUsers gid
+    users <- evalOktaReqIO token mgr lgr $ ReqGetGroupUsers gid
     putPretty users
     pure ()
-main' token CmdGetAllApps = do
+main' lgr token CmdGetAllApps = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    apps <- evalOktaReqIO token mgr $ ReqGetAllApps
+    apps <- evalOktaReqIO token mgr lgr $ ReqGetAllApps
     putPretty apps
     pure ()
-main' token (CmdGetAppUsers aid) = do
+main' lgr token (CmdGetAppUsers aid) = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    users <- evalOktaReqIO token mgr $ ReqGetAppUsers aid
+    users <- evalOktaReqIO token mgr lgr $ ReqGetAppUsers aid
     putPretty users
     pure ()
 
 main :: IO ()
 main = withStderrLogger $ \lgr -> runLogT "okta-cli" lgr $ do
     cfg <- getConfig "OKTACLIENT"
-    liftIO $ (O.execParser opts >>= main' cfg)
+    liftIO $ (O.execParser opts >>= main' lgr cfg)
   where
     opts = O.info (O.helper <*> optsParser) $ mconcat
         [ O.fullDesc

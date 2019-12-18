@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Futurice.App.Okta.API where
 
+import Futurice.Email            (Email)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
@@ -14,7 +15,7 @@ import qualified Data.Map as Map
 import qualified GitHub   as GH
 
 data Record route = Record
-    { githubUsernames :: route :- "github-usernames" :> Get '[JSON] (Map.Map Text (Maybe (GH.Name GH.User)))
+    { githubUsernames :: route :- "github-usernames" :> Get '[JSON] (Map.Map Email (Maybe (GH.Name GH.User)))
     } deriving (Generic)
 
 type OktaSyncAPI = ToServantApi Record

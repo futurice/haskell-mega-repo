@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards   #-}
 module Okta.Types where
 
 import Futurice.EnvConfig
@@ -10,6 +11,7 @@ import Prelude ()
 import Data.Aeson.Types (withText)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 import Data.Aeson
+import Futurice.Email
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -64,8 +66,8 @@ data Profile = Profile
     , profileLastName    :: !Text
     , profileMobilePhone :: !(Maybe Text)
     , profileSecondEmail :: !(Maybe Text)
-    , profileLogin       :: !Text
-    , profileEmail       :: !Text
+    , profileLogin       :: !Email
+    , profileEmail       :: !Email
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Profile)
 
@@ -81,8 +83,13 @@ data GithubProfile = GithubProfile
 
 instance AnsiPretty GithubProfile
 
+newtype OktaId = OktaId Text
+    deriving (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData, AnsiPretty, Hashable)
+    deriving newtype (FromJSON, ToJSON)
+
 data User = User
-    { userId      :: !Text
+    { userId      :: !OktaId
     , userStatus  :: !Status
     , userCreated :: !UTCTime
     , userActive  :: !(Maybe UTCTime)
@@ -90,10 +97,16 @@ data User = User
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica User)
 
+getOktaLogin :: User -> Email
+getOktaLogin (User _ _ _ _ profile) = profileLogin profile
+
+getSecondMail :: User -> Maybe Text
+getSecondMail (User _ _ _ _ profile) = profileSecondEmail profile
+
 instance AnsiPretty User
 
 data AppUser = AppUser
-    { appUserId          :: !Text
+    { appUserId          :: !OktaId
     , appUserStatus      :: !Status
     , appUserCreated     :: !UTCTime
     , appUserActive      :: !(Maybe UTCTime)
@@ -188,3 +201,33 @@ data App = App
       deriving (FromJSON) via (Sopica App)
 
 instance AnsiPretty App
+
+newtype OktaError = OktaDecodeError String deriving Show
+
+instance Exception OktaError
+
+data NewUser = NewUser
+    { nuFirstName      :: !Text
+    , nuLastName       :: !Text
+    , nuLogin          :: !Text
+    , nuEmail          :: !Text
+    , nuSecondEmail    :: !Text
+    , nuPersonioNumber :: !Text
+    , nuGithubUsername :: !Text
+    } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, Hashable)
+
+instance ToJSON NewUser where
+    toJSON NewUser{..} = object
+        [ "firstName"       .= nuFirstName
+        , "lastName"        .= nuLastName
+        , "login"           .= nuLogin
+        , "email"           .= nuEmail
+        , "secondEmail"     .= nuSecondEmail
+        , "employeeNumber"  .= nuPersonioNumber -- this will probably change
+        , "github_username" .= nuGithubUsername
+        ]
+
+data ChangeData = ChangeData
+    { oktaId     :: !OktaId
+    , secondMail :: !Text
+    } deriving Show

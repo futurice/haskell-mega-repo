@@ -18,7 +18,7 @@ instance Hashable (OktaRequest a) where
     hashWithSalt salt (OR req) = hashWithSalt salt req
 
 instance StateKey OktaRequest where
-    data State OktaRequest = OktaState OktaCfg Manager
+    data State OktaRequest = OktaState OktaCfg Logger Manager
 
 instance DataSourceName OktaRequest where
     dataSourceName _ = "OktaDataSource"
@@ -28,22 +28,23 @@ instance DataSource u OktaRequest where
 
 initDataSource
     :: OktaCfg -- ^ Credentials to Okta API
+    -> Logger  -- ^ Logger
     -> Manager -- ^ HTTP Manager
     -> State OktaRequest
 initDataSource = OktaState
 
-doFetch :: OktaCfg -> Manager -> BlockedFetch OktaRequest -> IO ()
-doFetch cfg mgr (BlockedFetch (OR r) v) = do
-    res <- evalOktaReqIO cfg mgr r
+doFetch :: OktaCfg -> Logger -> Manager -> BlockedFetch OktaRequest -> IO ()
+doFetch cfg lgr mgr (BlockedFetch (OR r) v) = do
+    res <- evalOktaReqIO cfg mgr lgr r
     putSuccess v res
 
-batchFetch ::  OktaCfg -> Manager -> [BlockedFetch OktaRequest] -> IO ()
-batchFetch cfg mgr fetches =
+batchFetch ::  OktaCfg -> Logger -> Manager -> [BlockedFetch OktaRequest] -> IO ()
+batchFetch cfg lgr mgr fetches =
     withPool 10 $ \pool ->
-        parallel_ pool (doFetch cfg mgr <$> fetches)
+        parallel_ pool (doFetch cfg lgr mgr <$> fetches)
 
 oktaFetch :: State OktaRequest -> Flags -> u -> PerformFetch OktaRequest
-oktaFetch (OktaState cfg mgr) _f _u = SyncFetch $ batchFetch cfg mgr
+oktaFetch (OktaState cfg lgr mgr) _f _u = SyncFetch $ batchFetch cfg lgr mgr
 
 request :: (Show a, Typeable a) => Req a -> GenHaxl u a
 request = dataFetch . OR

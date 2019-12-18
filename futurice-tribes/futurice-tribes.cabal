@@ -30,9 +30,11 @@ library
     DeriveTraversable
     DerivingStrategies
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
+    , ansi-pretty
     , base
     , cassava
     , containers
@@ -50,6 +52,7 @@ library
     , text
     , trifecta
     , vector
+
   exposed-modules:
     Futurice.CareerLevel
     Futurice.Company
@@ -57,6 +60,7 @@ library
     Futurice.Email
     Futurice.Office
     Futurice.Tribe
+
   other-modules:
     Futurice.CareerLevel.Internal
     Futurice.Company.Internal

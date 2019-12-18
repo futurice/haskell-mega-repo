@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Okta.IndexPage where
 
-import Futurice.Email
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Prelude ()
@@ -42,19 +41,19 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
             tbody_ $ do
                 for_ employees $ \e -> tr_ $ do
                     td_ $ toHtml (e ^. P.employeeFullname)
-                    td_ $ for_ (e ^. P.employeeEmail >>= \email -> oktaMap ^. at (emailToText email)) $ \u -> do
+                    td_ $ for_ (e ^. P.employeeEmail >>= \email -> oktaMap ^. at email) $ \u -> do
                         toHtml $ show $ O.userStatus u
   where
 --      numberOfEmployees = length employees
 --      numberOfOktaUsers = length users
       oktaMap = Map.fromList $ (\u -> (O.profileLogin $ O.userProfile u, u)) <$> users
       personioEmailMap = Map.fromList $ catMaybes $ fmap (\e -> case e ^. P.employeeEmail of
-                                                             Just email -> Just (emailToText email, e)
+                                                             Just email -> Just (email, e)
                                                              Nothing -> Nothing) employees
       activeEmployees = filter (\e -> e ^. P.employeeStatus == P.Active) employees
-      activeEmployeesNotInOkta = filter (\e -> case e ^. P.employeeEmail >>= \email -> oktaMap ^. at (emailToText email) of
+      activeEmployeesNotInOkta = filter (\e -> case e ^. P.employeeEmail >>= \email -> oktaMap ^. at email of
                                             Just _ -> False
                                             Nothing -> True) activeEmployees
-      oktaUsersNotInPersonio = filter (\u -> case personioEmailMap ^. at (O.profileLogin $ O.userProfile u) of
+      oktaUsersNotInPersonio = filter (\u -> case personioEmailMap ^. at (O.getOktaLogin u) of
                                                Just _ -> False
                                                Nothing -> True) users
