@@ -77,8 +77,9 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
 -- TODO: this needs updating. Making it dependent on current day?
 intervals :: NonEmpty (PM.Interval Day)
 intervals =
-    ($(mkDay "2019-01-01") ... $(mkDay "2019-12-31")) :|
-    [ $(mkDay "2018-01-01") ... $(mkDay "2018-12-31")
+    ($(mkDay "2020-01-01") ... $(mkDay "2020-12-31")) :|
+    [ $(mkDay "2019-01-01") ... $(mkDay "2019-12-31")
+    , $(mkDay "2018-01-01") ... $(mkDay "2018-12-31")
     , $(mkDay "2017-01-01") ... $(mkDay "2017-12-31")
     , $(mkDay "2016-01-01") ... $(mkDay "2016-12-31")
     , $(mkDay "2015-01-01") ... $(mkDay "2015-12-31")
