@@ -2,14 +2,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Futurice.App.Reports.UtzChart (utzChartData, utzChartRender) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens                ((.=))
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
 import Futurice.Monoid             (Average (..))
+import Futurice.Prelude
 import Futurice.Time
 import Numeric.Interval.NonEmpty   (Interval, inf, sup, (...))
+import Prelude ()
 import Servant.Chart               (Chart (..))
 
 import qualified Data.Map.Strict               as Map
@@ -20,7 +20,7 @@ import qualified PlanMill.Queries              as PMQ
 utzChartData
     :: forall m. ( MonadTime m, MonadPlanMillQuery m)
     => m (Map (Integer, Int) Double)
-utzChartData = do 
+utzChartData = do
     today <- currentDay
     uids <- view PM.identifier <$$> PMQ.users
     trs' <- bindForM (chopInterval $ interval today) $ \i ->
@@ -34,6 +34,7 @@ utzChartRender :: Map (Integer, Int) Double -> Chart "utz"
 utzChartRender utzs = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
 
+    C.plot $ C.line "2020" [yearData 2020]
     C.plot $ C.line "2019" [yearData 2019]
     C.plot $ C.line "2018" [yearData 2018]
     C.plot $ C.line "2017" [yearData 2017]
