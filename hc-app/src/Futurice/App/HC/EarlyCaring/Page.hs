@@ -6,6 +6,7 @@ import Data.Either               (isRight)
 import Data.Fixed                (Deci)
 import Data.Time                 (addDays, diffDays)
 import FUM.Types.Login           (Login)
+import Futurice.Company          (countryFinland)
 import Futurice.Integrations     (Employee (..))
 import Futurice.Prelude
 import Futurice.Time
@@ -153,14 +154,15 @@ calculateBalances today personioEmployees0 planmillData absences0 absenceTypes =
 
 earlyCaringCSV
     :: Either Login ByteString
+    -> Bool
     -> Day
     -> [P.Employee]
     -> [EarlyCaringPlanMill]
     -> PM.Absences
     -> Map (PM.EnumValue PM.Absence "absenceType") Text
     -> [BalanceCSV]
-earlyCaringCSV esecret today personioEmployees0 planmillData absences0 absenceTypes =
-    maybe [] (map balanceToBalanceCSV . NE.toList) $ listToMaybe $ filter (\bs -> isSelfOrSecret $ balanceSupervisor (NE.head bs)) balances
+earlyCaringCSV esecret isPeopleManagerFinland today personioEmployees0 planmillData absences0 absenceTypes =
+    map balanceToBalanceCSV $ filter filterByCountry $ concat $ fmap NE.toList $ filter isPeopleManager balances
   where
     balanceToBalanceCSV balance = BalanceCSV
         { bcsvName       = (balanceEmployee balance) ^. P.employeeFullname
@@ -177,6 +179,19 @@ earlyCaringCSV esecret today personioEmployees0 planmillData absences0 absenceTy
         Left login -> Just login == p ^? _Just . P.employeeLogin . _Just
 
     isSelfOrSecret p = isSelf p || hasSecret
+
+    filterByCountry b =
+        if isPeopleManagerFinland then
+          balanceEmployee b ^. P.employeeCountry == Just countryFinland
+        else
+          True
+
+    -- people manager filtering is by person so it is done in later stage
+    isPeopleManager (b NE.:| _) =
+        if isPeopleManagerFinland then
+          True
+        else
+          isSelfOrSecret $ balanceSupervisor b
 
 earlyCaringPage
     :: Either Login ByteString

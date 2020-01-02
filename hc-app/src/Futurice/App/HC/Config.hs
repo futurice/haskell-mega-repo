@@ -19,6 +19,7 @@ data Config = Config
     , cfgAccessGroups          :: ![FUM.GroupName]
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgEarlyCaringCC         :: !(Maybe Email)
+    , cfgPeopleManager         :: !FUM.Login
     }
 
 instance Configure Config where
@@ -28,4 +29,4 @@ instance Configure Config where
         <*> envVar "ACCESS_GROUPS"
         <*> envVar "EMAILPROXY_BASEURL"
         <*> optionalAlt (envVar "EARLYCARING_CC")
-
+        <*> envVar "PEOPLE_MANAGER"
