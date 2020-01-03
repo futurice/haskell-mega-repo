@@ -140,30 +140,39 @@ addNewCover ctx cover = do
     url <- parseBaseUrl $ T.unpack $ cfgSisosotaUrl $ ctxConfig ctx
     sisosotaPut (ctxManager ctx) url cover
 
-makeGoogleAddress :: Text -> IO String
-makeGoogleAddress isbn = do
-    pure $ "https://www.googleapis.com/books/v1/volumes?q=isbn:" <> T.unpack isbn
+makeGoogleAddress :: Text -> String
+makeGoogleAddress isbn = "https://www.googleapis.com/books/v1/volumes?q=isbn:" <> T.unpack isbn
 
 fetchBookInformationFromGoogle :: Ctx -> Text -> IO (Maybe BookInformationByISBNResponse)
-fetchBookInformationFromGoogle ctx isbn = do
-    address <- makeGoogleAddress isbn
-    request <- HTTP.parseRequest address
-    response <- HTTP.httpLbs request (ctxManager ctx)
-    runLogT "fetch-from-google" (ctxLogger ctx) $
-        case eitherDecode $ HTTP.responseBody response of
-            Left err -> do
-                logAttention_ $ "Error parsing Google Books response: " <> textShow err <> " with isbn " <> isbn
-                pure Nothing
-            Right book -> do
-                pure $ Just $ BookInformationByISBNResponse
-                                (book ^. gbrTitle)
-                                isbn
-                                (T.intercalate ", " $ book ^. gbrAuthors)
-                                (book ^. gbrPublisher)
-                                (book ^. gbrPublished)
-                                (book ^. gbrBooksLink)
-                                Map.empty
-                                (DSGoogle $ book ^. gbrCoverLink)
+fetchBookInformationFromGoogle ctx isbn = runLogT "fetch-from-google" (ctxLogger ctx) $ do
+    res <- liftIO $ fetchFromGoogle
+    case res of
+      Left err -> do
+          logAttention_ $ "Error parsing Google Books response: " <> textShow err <> " with isbn " <> isbn
+          pure Nothing
+      Right book -> pure book
+  where
+    fetchFromGoogle :: IO (Either String (Maybe BookInformationByISBNResponse))
+    fetchFromGoogle = runExceptT $ do
+        let address = makeGoogleAddress isbn
+        request <- liftIO $ HTTP.parseRequest address
+        response <- liftIO $ HTTP.httpLbs request (ctxManager ctx)
+        book <- ExceptT $ pure $ eitherDecode $ HTTP.responseBody response
+        request' <- liftIO $ HTTP.parseRequest (T.unpack $ book ^. gbrSelfLink)
+        response' <- liftIO $ HTTP.httpLbs request' (ctxManager ctx)
+        idBook <- ExceptT $ pure $ eitherDecode $ HTTP.responseBody response'
+        case book ^. gbrPublisher <|> idBook ^. gibrPublisher of
+          Nothing -> ExceptT $ pure $ Left "No publisher found for book"
+          Just p ->
+              pure $ Just $ BookInformationByISBNResponse
+              (book ^. gbrTitle)
+              isbn
+              (T.intercalate ", " $ book ^. gbrAuthors)
+              p
+              (book ^. gbrPublished)
+              (book ^. gbrBooksLink)
+              Map.empty
+              (DSGoogle $ book ^. gbrCoverLink)
 
 fetchImageFromUrl :: Ctx -> Text -> IO LBS.ByteString
 fetchImageFromUrl ctx url = do

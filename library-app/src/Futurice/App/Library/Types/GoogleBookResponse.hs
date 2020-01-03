@@ -34,16 +34,17 @@ data GoogleBookResponse = GoogleBookResponse
     { _gbrTitle     :: !Text
     , _gbrISBNs     :: ![ISBN]
     , _gbrAuthors   :: ![Text]
-    , _gbrPublisher :: !Text
+    , _gbrPublisher :: !(Maybe Text)
     , _gbrPublished :: !Int
     , _gbrBooksLink :: !Text
     , _gbrCoverLink :: !Text
+    , _gbrSelfLink  :: !Text
     }
 
 makeLenses ''GoogleBookResponse
 
 instance FromJSON GoogleBookResponse where
-    parseJSON (Object o) = do
+    parseJSON = withObject "google-book-response" $ \o -> do
         maybeBook <- listToMaybe <$> o .: "items"
         let book = fromMaybe mempty maybeBook
         vi <- book .: "volumeInfo"
@@ -54,8 +55,22 @@ instance FromJSON GoogleBookResponse where
         GoogleBookResponse  <$> vi .: "title"
                             <*> vi .: "industryIdentifiers"
                             <*> vi .: "authors"
-                            <*> vi .: "publisher"
+                            <*> vi .:? "publisher"
                             <*> (((\(y,_,_) -> fromIntegral y) . toGregorian <$> vi .: "publishedDate") <|> parseYear)
                             <*> vi .: "canonicalVolumeLink"
                             <*> il .: "thumbnail"
-    parseJSON _ = mzero
+                            <*> book .: "selfLink"
+
+data GoogleIdBookResponse = GoogleIdBookResponse
+    { _gibrId        :: !Text
+    , _gibrPublisher :: !(Maybe Text)
+    }
+
+makeLenses ''GoogleIdBookResponse
+
+instance FromJSON GoogleIdBookResponse where
+    parseJSON = withObject "google-id-book-response" $ \book -> do
+        vi <- book .: "volumeInfo"
+        GoogleIdBookResponse
+            <$> book .: "id"
+            <*> vi .:? "publisher"
