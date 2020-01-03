@@ -197,13 +197,16 @@ earlyCaringActionCSV ctx mfu super = impl ctx mfu
     impl = withAuthUser'' [] $ \fu authed -> do
         today <- currentDay
         let interval = beginningOfPrev2Month today ... today
-        earlyCaringCSV (if authed && not super then Right secret else Left fu) today
+        earlyCaringCSV (if authed && not super then Right secret else Left fu) (isPeopleManager fu) today
             <$> personio P.PersonioEmployees
             <*> pmData interval
             <*> PMQ.absences
             <*> PMQ.allEnumerationValues Proxy Proxy
 
     secret = ctxSecret ctx
+
+    -- Will be replaced with more flexible auth
+    isPeopleManager login = login == cfgPeopleManager (ctxConfig ctx)
 
     pmData interval = do
         -- todo: make personio + planmill map function.
