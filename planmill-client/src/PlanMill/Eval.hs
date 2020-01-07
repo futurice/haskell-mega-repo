@@ -98,6 +98,7 @@ evalPlanMill pm = do
                             || BS8.isSuffixOf "tasks/28530" (path req) -- HACK: 2019-11-07, -;;-
                             || BS8.isSuffixOf "absences" (path req)
                             || BS8.isSuffixOf "projects" (path req)
+                            || BS8.isSuffixOf "reports" (path req)
                           then responseTimeoutMicro $ 120 * 1000000
                           else responseTimeout req' -- otherwise do nothing
                       }

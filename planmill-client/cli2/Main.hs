@@ -41,33 +41,33 @@ import GHC.TypeLits    (KnownSymbol)
 -------------------------------------------------------------------------------
 
 data Cmd
-    = CmdMe
-    | CmdHooks
-    | CmdHookDelete PM.HookId
+    = CmdAbsencesInterval (PM.Interval Day)
+    | CmdAccount PM.AccountId
+    | CmdAccounts
+    | CmdAllRevenuesReport
+    | CmdAssignments PM.ProjectId
+    | CmdBalance PM.UserId
+    | CmdCapacity PM.UserId (PM.Interval Day)
+    | CmdEnumeration Text
     | CmdHookAdd PM.HookType Text
-    | CmdUsers
+    | CmdHookDelete PM.HookId
+    | CmdHooks
+    | CmdMe
+    | CmdMeta Text
+    | CmdPortfolios
+    | CmdProject PM.ProjectId
+    | CmdProjects
+    | CmdProjectsWithType PM.ViewTemplate
+    | CmdReportableAssignments PM.UserId
+    | CmdReports
+    | CmdTask PM.TaskId
     | CmdTeams
+    | CmdTimereport PM.TimereportId
+    | CmdTimereports PM.UserId (PM.Interval Day)
     | CmdUser PM.UserId
     | CmdUserMany PM.UserId Int
-    | CmdTimereports PM.UserId (PM.Interval Day)
-    | CmdCapacity PM.UserId (PM.Interval Day)
-    | CmdTimereport PM.TimereportId
-    | CmdAssignments PM.ProjectId
-    | CmdReportableAssignments PM.UserId
-    | CmdBalance PM.UserId
-    | CmdTask PM.TaskId
-    | CmdMeta Text
-    | CmdEnumeration Text
-    | CmdProjects
-    | CmdProject PM.ProjectId
-    | CmdAccounts
-    | CmdAccount PM.AccountId
-    | CmdAbsencesInterval (PM.Interval Day)
-    | CmdReports
-    | CmdAllRevenuesReport
-    | CmdPortfolios
-    | CmdValueCreationPerMonth
-    | CmdProjectsWithType PM.ViewTemplate
+    | CmdUsers
+    | CmdValueCreationPerMonth Int
 
 deriveGeneric ''Cmd
 
@@ -246,8 +246,8 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdPortfolios -> do
         x <- PM.planmillAction PM.portfolios
         putPretty x
-    CmdValueCreationPerMonth -> do
-        x <- PM.planmillAction PM.valueCreationByMonthReport
+    CmdValueCreationPerMonth year -> do
+        x <- PM.planmillAction $ PM.valueCreationByMonthReport year
         putPretty x
     CmdProjectsWithType viewTemplate -> do
         x <- PM.planmillAction $ PM.projectsWithType viewTemplate
