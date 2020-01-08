@@ -15,15 +15,13 @@ import qualified Personio           as P
 import qualified PlanMill.Queries as PMQ
 import qualified Data.Text           as T
 
-import qualified Personio.Types.Status as PS
-
 -- Create a mapping for matching PlanMill names to PersonioID's
 planmillNameToPersonioIdMap
     :: (MonadPersonio m)
     => m (HashMap (Text, Text) P.Employee)
 planmillNameToPersonioIdMap = do
   us <- P.personio P.PersonioEmployees
-  let usActive = filter (\p -> p ^. P.employeeStatus == PS.Active) us
+  let usActive = filter (\p -> p ^. P.employeeStatus == P.Active) us
   let us' = map (\p -> ((p ^. P.employeeFirst, p ^.  P.employeeLast), p)) usActive
   pure $ HM.fromList us'
 
@@ -62,12 +60,12 @@ valueCreationReport myear = do
     pure $ ValueCreationReport year $ fmap (\x -> toRow nameMap x) $ toList $ PM.getValueCreationData report
   where
     nameSplit v = case (T.splitOn "," $ PM._pvcPerson v) of
-                    (f:l:_) -> (f,l)
-                    _       -> ("", "")
+                    (f:l:_) -> Just (f,l)
+                    _       -> Nothing
     toRow nm v = ValueCreationRow
         { valueRowTeam      = PM._pvcTeam v
         , valueRowPerson    = PM._pvcPerson v
-        , valueRowPersonioId = case HM.lookup (nameSplit v) nm of
+        , valueRowPersonioId = case nameSplit v >>= flip HM.lookup nm of
                                     Just p -> Just $ p ^. P.employeeId
                                     _      -> Nothing
         , valueRowJanuary   = PM._pvcJanuaryValue v
