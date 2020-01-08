@@ -21,9 +21,9 @@ planmillNameToPersonioIdMap
     => m (HashMap (Text, Text) P.Employee)
 planmillNameToPersonioIdMap = do
   us <- P.personio P.PersonioEmployees
-  let usActive = filter (\p -> p ^. P.employeeStatus == P.Active) us
-  let us' = map (\p -> ((p ^. P.employeeFirst, p ^.  P.employeeLast), p)) usActive
-  pure $ HM.fromList us'
+  pure $ HM.fromList
+       $ map (\p -> ((p ^. P.employeeFirst, p ^.  P.employeeLast), p))
+       $ filter (\p -> p ^. P.employeeStatus == P.Active) us
 
 data ValueCreationReport = ValueCreationReport
     { valueReportYear :: !Integer
