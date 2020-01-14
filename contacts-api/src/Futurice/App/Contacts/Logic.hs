@@ -45,10 +45,10 @@ noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 -- | Get contacts data
 contacts
-    :: ( MonadFlowdock m, MonadGitHub m, Personio.MonadPersonio m
+    :: ( MonadGitHub m, Personio.MonadPersonio m
        , Power.MonadPower m
        , MonadTime m, MonadReader env m
-       , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
+       , HasGithubOrgName env, HasFUMEmployeeListName env
        )
     => m [Contact Text]
 contacts = contacts'

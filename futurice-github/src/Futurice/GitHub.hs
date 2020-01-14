@@ -84,7 +84,7 @@ mkReqTag = TT (review inj Refl)
 
 -- | Existential request.
 data SomeRequest where
-    MkSomeRequest :: ReqTag a -> Request 'RA a -> SomeRequest
+    MkSomeRequest :: (FromJSON a) => ReqTag a -> Request 'RA a -> SomeRequest
 
 instance Eq SomeRequest where
     MkSomeRequest t r == MkSomeRequest t' r' = fromMaybe False $ do
@@ -127,16 +127,12 @@ instance ToSchema SomeRequest where
     declareNamedSchema _ = pure $ NamedSchema (Just "Some github request") mempty
 
 requestToJSON :: Request 'RA a -> [Pair]
-requestToJSON (SimpleQuery q) = simpleRequestToJSON q
-requestToJSON _               = []
-
-simpleRequestToJSON :: SimpleRequest 'RA a -> [Pair]
-simpleRequestToJSON (Query ps qs) =
+requestToJSON (Query ps qs) =
     [ "type"  .= ("query" :: Text)
     , "paths" .= ps
     , "query" .= queryStringToText qs
     ]
-simpleRequestToJSON (PagedQuery ps qs fc) =
+requestToJSON (PagedQuery ps qs fc) =
     [ "type"  .= ("pagedquery" :: Text)
     , "paths" .= ps
     , "query" .= queryStringToText qs
@@ -151,29 +147,29 @@ instance FromJSON SomeRequest where
             Dict -> case typ of
                 "query" -> do
                     req <- queryParseJSON obj
-                    pure $ MkSomeRequest tag (SimpleQuery req)
+                    pure $ MkSomeRequest tag req
                 "pagedquery" -> case ghtypeIsVector tag of
                     Nothing -> fail $ "Tag is not of vector type for paged req"
                     Just MkIsVector -> do
                         req <- pagedQueryParseJSON obj
-                        pure $ MkSomeRequest tag (SimpleQuery req)
+                        pure $ MkSomeRequest tag req
                 _ -> fail $ "Unknown query type: " ++ show typ
 
-queryParseJSON :: Object -> Parser (SimpleRequest 'RA a)
+queryParseJSON :: Object -> Parser (Request 'RA a)
 queryParseJSON obj = mkQuery
     <$> obj .: "paths"
     <*> obj .: "query"
   where
-    mkQuery :: [Text] -> [(Text, Text)] -> SimpleRequest 'RA a
+    mkQuery :: [Text] -> [(Text, Text)] -> Request 'RA a
     mkQuery ps qs = Query ps (textToQueryString qs)
 
-pagedQueryParseJSON :: Object -> Parser (SimpleRequest 'RA (Vector a))
+pagedQueryParseJSON :: Object -> Parser (Request 'RA (Vector a))
 pagedQueryParseJSON obj = mkPagedQuery
     <$> obj .: "paths"
     <*> obj .: "query"
     <*> obj .: "count"
   where
-    mkPagedQuery :: [Text] -> [(Text, Text)] -> Maybe Word -> SimpleRequest 'RA (Vector a)
+    mkPagedQuery :: [Text] -> [(Text, Text)] -> Maybe Word -> Request 'RA (Vector a)
     mkPagedQuery ps qs fc = PagedQuery ps (textToQueryString qs) (fetchCountParseJSON fc)
 
 -------------------------------------------------------------------------------

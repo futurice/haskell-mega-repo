@@ -49,7 +49,6 @@ library
     , exceptions
     , file-embed
     , filepath
-    , flowdock-rest
     , fum-types
     , futurice-constants
     , futurice-integrations

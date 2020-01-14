@@ -73,6 +73,7 @@ library
     , wai
     , wai-extra               >=3.0.19
     , warp
+
   exposed-modules:
     Futurice.App.Proxy
     Futurice.App.Proxy.Config
@@ -99,6 +100,7 @@ test-suite proxy-app-tests
     , base
     , base16-bytestring
     , binary-tagged
+    , bytestring
     , futurice-github
     , futurice-prelude
     , planmill-client

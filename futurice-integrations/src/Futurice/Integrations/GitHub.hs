@@ -4,12 +4,14 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE GADTs                 #-}
 -- | Interface to @github-proxy@.
 module Futurice.Integrations.GitHub where
 
 import Control.Concurrent.Async  (async, waitCatch)
 import Data.GADT.Compare         (geq)
 import Data.Type.Equality        ((:~:) (..))
+import Futurice.Generics
 import Futurice.Prelude
 import Numeric.Interval.NonEmpty (clamp, (...))
 import Prelude ()
@@ -26,7 +28,7 @@ initDataSource :: Logger -> Manager -> HTTP.Request -> H.State GHR
 initDataSource = GHState
 
 -- | Haxl github request.
-data GHR a = GHR !(GH.ReqTag a) !(GH.Request 'GH.RA a)
+data GHR a = (FromJSON a) => GHR !(GH.ReqTag a) !(GH.Request 'GH.RA a)
 
 instance Eq (GHR a) where
     GHR t r == GHR t' r' = GH.MkSomeRequest t r == GH.MkSomeRequest t' r'

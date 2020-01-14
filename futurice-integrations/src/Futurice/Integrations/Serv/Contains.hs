@@ -55,8 +55,8 @@ deriving instance Show (ContainsProof s ss)
 
 -- |
 --
--- >>> withServSetC (Proxy :: Proxy '[ ServFD, ServGH ]) (Const []) (\c s (Const ss) -> Const (show (c, s) : ss))
--- Const ["(Here SServFD,SServFD)","(There LTZ (Here SServGH),SServGH)"]
+-- >>> withServSetC (Proxy :: Proxy '[ ServFUM, ServGH ]) (Const []) (\c s (Const ss) -> Const (show (c, s) : ss))
+-- Const ["(Here SServFUM,SServFUM)","(There LTZ (Here SServGH),SServGH)"]
 --
 withServSetC
     :: forall ss f. ServSet ss
@@ -76,11 +76,11 @@ transLT lt (There lt' _) = lessThanTrans lt lt'
 
 -- |
 --
--- >>> :kind! IfContains ServGH '[ServFD, ServGH] Int ()
+-- >>> :kind! IfContains ServGH '[ServFUM, ServGH] Int ()
 -- ...
 -- = Int
 --
--- >>> :kind! IfContains ServFUM '[ServFD, ServGH] Int ()
+-- >>> :kind! IfContains ServFUM '[ServFUM, ServGH] Int ()
 -- ...
 -- = ()
 --
@@ -124,7 +124,6 @@ trustMe :: forall x y. x :~: y
 trustMe = unsafeCoerce (Refl :: () :~: ())
 
 cmpReflServ :: SServ s -> CMP (ServNat s) (ServNat s) :~: 'EQ
-cmpReflServ SServFD   = Refl
 cmpReflServ SServFUM  = Refl
 cmpReflServ SServFUM6 = Refl
 cmpReflServ SServGH   = Refl

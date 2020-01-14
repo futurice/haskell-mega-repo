@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.GitHubSync.RemoveUsers where
 
@@ -28,7 +29,8 @@ removeUsers ctx login us = runLogT "remove-users" lgr $ do
         -- action
         vs <- for us $ \u -> do
             -- https://developer.github.com/v3/orgs/members/#remove-organization-membership
-            let req = GH.command GH.Delete
+            let req :: GH.Request 'GH.RW ()
+                req = GH.command GH.Delete
                     [ "orgs", GH.toPathPart $ cfgOrganisationName $ ctxConfig ctx, "memberships", GH.toPathPart u]
                     mempty
             logTrace "executing" (show req)

@@ -118,7 +118,7 @@ integration _debug cfg = withStderrLogger $ \logger ->
 -- Haxl example
 -------------------------------------------------------------------------------
 
-newtype H a = H { unH :: H.GenHaxl () a }
+newtype H a = H { unH :: H.GenHaxl () () a }
 
 instance Functor H where
     fmap f (H x) = H (fmap f x)

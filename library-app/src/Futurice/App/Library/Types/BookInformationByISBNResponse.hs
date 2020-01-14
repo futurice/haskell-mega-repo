@@ -24,9 +24,8 @@ data DataSource = DSDatabase BookInformationId ContentHash
 instance ToSchema DataSource where
     declareNamedSchema _ = do
         return $ NamedSchema (Just "Datasource") $ mempty
-            & type_ .~ SwaggerObject
+            & type_ .~ Just SwaggerObject
             & required .~ [ ]
-            & type_ .~ SwaggerObject
 
 instance ToJSON DataSource where
     toJSON (DSDatabase binfoId contentHash) = object ["source" .= ("Database" :: Text), "bookinformationid" .= binfoId, "coverhash" .= contentHash]

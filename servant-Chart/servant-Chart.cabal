@@ -10,7 +10,7 @@ author:             Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
 license:            BSD-3-Clause
 license-file:       LICENSE
-tested-with:        ghc ==7.8.4 ghc ==7.10.3 ghc ==8.0.2
+tested-with:        ghc ==7.8.4 ghc ==7.10.3 ghc ==8.0.2 ghc ==8.6.5
 build-type:         Simple
 extra-source-files: README.md
 
@@ -22,7 +22,7 @@ library
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
-    , base             >=4.7 && <4.13
+    , base
     , Chart
     , Chart-diagrams
     , deepseq

@@ -28,7 +28,7 @@ instance Hashable (PersonioRequest a) where
 
 instance Haxl.Core.ShowP PersonioRequest where showp = show
 
-request :: (Show a, Typeable a) => P.PersonioReq a -> GenHaxl u a
+request :: (Show a, Typeable a) => P.PersonioReq a -> GenHaxl u w a
 request = dataFetch . PR
 
 instance StateKey PersonioRequest where
@@ -59,7 +59,7 @@ instance DataSource u PersonioRequest where
                 (P.PersonioValidations,     P.PersonioValidations)     -> putSuccess v pRes
                 _ -> putFailure v $ PersonioBatchError $ "non matching req and res: " <>
                     textShow (r, pReq)
-                    
+
           where
             req = baseReq
                { HTTP.requestHeaders

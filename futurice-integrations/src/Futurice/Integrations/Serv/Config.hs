@@ -20,7 +20,6 @@ import Generics.SOP        (All, SList (..), sList)
 import Network.HTTP.Client (Request, responseTimeout, responseTimeoutMicro)
 import Prelude ()
 
-import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified Google.Types
 import qualified Okta.Types
@@ -30,11 +29,6 @@ import Futurice.Integrations.Serv
 data IntegrationsConfig :: [Serv] -> Type where
     IntCfgEmpty
         :: IntegrationsConfig '[]
-
-    IntCfgFlowdock
-        :: FD.AuthToken
-        -> IntegrationsConfig ss
-        -> IntegrationsConfig (ServFD ': ss)
 
     IntCfgFUM
         :: FUM.AuthToken
@@ -87,8 +81,6 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
             SCons -> cons sserv <*> go
 
         cons :: SServ s -> ConfigParser (IntegrationsConfig ss' -> IntegrationsConfig (s : ss'))
-        cons SServFD = IntCfgFlowdock
-            <$> envVar "FD_AUTH_TOKEN"
         cons SServFUM = IntCfgFUM
             <$> envVar "FUM_TOKEN"
             <*> envVar "FUM_BASEURL"

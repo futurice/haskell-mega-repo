@@ -11,7 +11,7 @@ import Control.Applicative       (liftA3)
 import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
-import Futurice.Postgres         (safePoolQuery_, createPostgresPool)
+import Futurice.Postgres         (createPostgresPool, safePoolQuery_)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()

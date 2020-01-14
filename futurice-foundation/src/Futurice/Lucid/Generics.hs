@@ -17,7 +17,7 @@ import Futurice.Prelude          hiding (from)
 import Futurice.Tribe            (Tribe)
 import Generics.SOP
        (All, FieldInfo (..), HasDatatypeInfo, IsProductType, from)
-import Generics.SOP.Lens         (unSingletonS, unsop)
+import Generics.SOP.Lens         (nsSingleton, sop)
 import Prelude ()
 
 sopToHtml
@@ -26,7 +26,7 @@ sopToHtml
     => a -> HtmlT m ()
 sopToHtml x = table_
     $ sopToHtml' (longestFieldPrefix p) (fieldInfos p)
-    $ from x ^. unsop . unSingletonS
+    $ from x ^. sop . nsSingleton
   where
     p = Proxy :: Proxy a
 

@@ -252,7 +252,7 @@ createMessageQueue lgr (Just env) awsGroup service =
                 case r1 ^. AWS.cqrsQueueURL of
                     Nothing -> do
                         logAttention "Queue creation failed" (show r1)
-                        fail "Queue creation failed"
+                        mzero --TODO should this be some other failure type?
                     Just n  -> return n
 
     makeSubscribe :: Text -> IO (STM.STM Subscription)

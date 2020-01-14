@@ -16,7 +16,7 @@ import Servant.Client             (BaseUrl)
 
 import qualified Futurice.Integrations.Serv.Config as C
 
-type ReportIntegrations = '[ ServFD, ServFUM, ServGH, ServPE, ServPM, ServPO ]
+type ReportIntegrations = '[ ServFUM, ServGH, ServPE, ServPM, ServPO ]
 
 data Config = Config
     { cfgIntegrationsCfg       :: !(IntegrationsConfig ReportIntegrations)
@@ -40,6 +40,5 @@ toFutuquCfg
     :: C.IntegrationsConfig ReportIntegrations
     -> C.IntegrationsConfig FutuquIntegrations
 toFutuquCfg
-    (C.IntCfgFlowdock _
     (C.IntCfgFUM _ _
-    (C.IntCfgGitHub _ c))) = c
+    (C.IntCfgGitHub _ c)) = c

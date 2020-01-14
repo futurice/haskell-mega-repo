@@ -23,7 +23,7 @@ instance Hashable (PowerRequest a) where
 
 instance Haxl.Core.ShowP PowerRequest where showp = show
 
-request :: Power.Req a -> GenHaxl u a
+request :: Power.Req a -> GenHaxl u w a
 request Power.ReqPeople = dataFetch (PR Power.ReqPeople)
 
 instance StateKey PowerRequest where

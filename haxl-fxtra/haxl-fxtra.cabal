@@ -36,7 +36,6 @@ library
     , bifunctors
     , bytestring
     , exceptions
-    , flowdock-rest        >=0.2.0.0
     , fum-client
     , futurice-prelude
     , github
@@ -56,7 +55,6 @@ library
 
   exposed-modules:
     FUM.Haxl
-    Flowdock.Haxl
     Github.Haxl
     Google.Haxl
     Okta.Haxl

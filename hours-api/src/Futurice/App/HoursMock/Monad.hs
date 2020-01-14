@@ -88,10 +88,10 @@ instance MonadHours Hours where
             (_, _, md) = toGregorian d
             (_, _, wd) = toWeekDate d
 
-    task tid = maybe (fail $ "invalid task id " ++ show tid) pure $
+    task tid = maybe (error $ "invalid task id " ++ show tid) pure $
         find ((tid ==) . view taskId) allTasks
 
-    project pid = maybe (fail $ "invalid project id " ++ show pid) pure $
+    project pid = maybe (error $ "invalid project id " ++ show pid) pure $
         find ((pid ==) . view projectId) allProjects
 
     reportableAssignments = pure

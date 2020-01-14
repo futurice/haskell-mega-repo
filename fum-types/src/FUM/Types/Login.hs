@@ -138,7 +138,7 @@ instance ToHtml Login where
 
 instance ToParamSchema Login where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
 
 instance ToSchema Login where
@@ -174,7 +174,7 @@ instance Postgres.ToField Login where
 instance Postgres.FromField Login where
     fromField f mdata = do
         t <- Postgres.fromField f mdata
-        either fail pure (parseLogin' t)
+        either (const empty) pure (parseLogin' t) --TODO: use fail?
 
 instance FromEnvVar Login where
     fromEnvVar = fromEnvVar >=> parseLogin

@@ -22,9 +22,9 @@ library
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
-    , base           >=4.7 && <4.13
+    , base    
     , binary
-    , binary-tagged  ^>=0.1
+    , binary-tagged  ^>=0.2
     , bytestring     ^>=0.10.4.0
     , http-media     >=0.6.2
     , servant        >=0.4.4.5 && <0.17

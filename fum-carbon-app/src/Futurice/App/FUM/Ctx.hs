@@ -74,7 +74,7 @@ newCtx lgr mgr cfg es = do
     applyCommands :: [(Login, UTCTime, Text, Value)] -> StricterT World (Either String) ()
     applyCommands [] = pure ()
     applyCommands ((login, now, tag, payload) : rest) = do
-        scmd <- either fail pure $ decodeSomeCommand tag payload
+        scmd <- either throwError pure $ decodeSomeCommand tag payload
         withSomeCommand scmd $ \_ cmd -> do
             _ <- applyCommand now login cmd
             validateWorld

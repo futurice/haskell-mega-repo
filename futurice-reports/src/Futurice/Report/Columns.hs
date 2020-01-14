@@ -54,9 +54,8 @@ import qualified Generics.SOP      as SOP
 import qualified PlanMill          as PM
 
 -- instances
-import qualified Chat.Flowdock.REST as FD
-import qualified FUM.Types.Login    as FUM
-import qualified GitHub             as GH
+import qualified FUM.Types.Login as FUM
+import qualified GitHub          as GH
 import qualified Personio
 
 -------------------------------------------------------------------------------
@@ -612,11 +611,6 @@ instance ReportValue FUM.Login where
     reportValueType _ = CTFumUser
     type ReportValueC FUM.Login = Unit1
     reportValueHtml = toHtml
-
-instance ReportValue a => ReportValue (FD.Identifier a res) where
-    type ReportValueC (FD.Identifier a res) = ReportValueC a
-    reportValueHtml   = reportValueHtml . FD.getIdentifier
-    reportValueType _ = reportValueType (Proxy :: Proxy a)
 
 instance ReportValue Personio.EmployeeId where
     reportValueType _ = CTText

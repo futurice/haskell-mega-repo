@@ -6,7 +6,7 @@ category:       Web
 homepage:       https://github.com/futurice/haskell-monad-http#readme
 bug-reports:    https://github.com/futurice/haskell-monad-http/issues
 author:         Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Toni Okuogume <toni.okuogume@futurice.com>
 license:        BSD3
 license-file:   LICENSE
 tested-with:    GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.2
@@ -26,11 +26,11 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base                >=4.8      && <4.13
-    , base-compat         >=0.6.0    && <0.11
+      base                >=4.8      && <4.14
+    , base-compat         >=0.6.0    && <0.12
     , bytestring          >=0.10.0.4 && <0.12
     , exceptions          >=0.10.0   && <0.11
-    , http-client         >=0.4.18.1 && <0.6
+    , http-client         >=0.4.18.1 && <0.7
     , http-client-tls     >=0.2.2    && <0.4
     , http-types          >=0.8.6    && <0.13
     , log-base            >=0.7      && <0.8

@@ -44,7 +44,7 @@ script0 = githubReq $ GH.publicOrganizationR "futurice"
 -- H(axl) Monad
 -------------------------------------------------------------------------------
 
-newtype H a = H { unH :: H.GenHaxl () a }
+newtype H a = H { unH :: H.GenHaxl () () a }
 
 instance Functor H where
     fmap f (H x) = H (fmap f x)

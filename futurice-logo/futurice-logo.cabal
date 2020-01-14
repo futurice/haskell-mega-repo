@@ -7,7 +7,7 @@ category:           Web
 homepage:           https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
 build-type:         Simple
@@ -22,21 +22,21 @@ library
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
-    , base                 >=4.7 && <4.13
-    , base-compat          >=0.6 && <0.11
+    , base              
+    , base-compat          >=0.6 && <0.12
     , bytestring           ^>=0.10.4.0
     , clay
     , colour
     , deepseq              >=1.3.0.2 && <1.5
     , file-embed           >=0.0.8.2 && <0.0.12
     , futurice-prelude
-    , hashable             ^>=1.2.3.3
-    , http-media           >=0.6.2 && <0.8
+    , hashable            
+    , http-media           >=0.6.2 && <0.9
     , JuicyPixels          >=3.2.7 && <3.4
     , servant              >=0.4.4.5 && <0.17
     , servant-JuicyPixels  ^>=0.3.0.0
     , servant-server       >=0.4.4.5 && <0.17
-    , swagger2             >=2.0 && <2.4
+    , swagger2             >=2.0 && <2.6
     , tagged               >=0.7.3 && <0.9
     , text
   exposed-modules:

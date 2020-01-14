@@ -30,6 +30,7 @@ library
     DerivingStrategies
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
+
   build-depends:
     , adjunctions
     , aeson
@@ -72,6 +73,7 @@ library
     , personio-client
     , planmill-client
     , postgresql-simple
+    , prettyprinter
     , QuickCheck
     , recursion-schemes         >=5.0.1
     , reflection
@@ -90,6 +92,7 @@ library
     , time
     , trifecta
     , uuid
+
   exposed-modules:
     Futurice.App.Checklist
     Futurice.App.Checklist.API

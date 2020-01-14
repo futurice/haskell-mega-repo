@@ -14,7 +14,7 @@ import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
-import Data.These                  (_That, _These, _This)
+import Data.These.Lens             (_That, _These, _This)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Company
        (companyToText, countryCompany, countryFinland)

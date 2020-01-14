@@ -31,6 +31,7 @@ library
     GeneralizedNewtypeDeriving
     InstanceSigs
     ScopedTypeVariables
+
   build-depends:
     , adjunctions
     , aeson
@@ -92,6 +93,7 @@ library
     , swagger2
     , text
     , these
+    , these-lens
     , time
     , trifecta
     , unordered-containers
@@ -99,6 +101,7 @@ library
     , uuid-types
     , vector
     , writer-cps-mtl
+
   exposed-modules:
     Futurice.App.FUM
     Futurice.App.FUM.ACL

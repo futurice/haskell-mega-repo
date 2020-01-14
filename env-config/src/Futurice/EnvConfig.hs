@@ -37,7 +37,6 @@ import Servant.Client                 (BaseUrl, parseBaseUrl)
 import System.Environment             (getEnvironment)
 import System.Exit                    (exitFailure)
 
-import qualified Chat.Flowdock.REST     as FD
 import qualified Crypto.Sign.Ed25519    as Ed
 import qualified Data.ByteString        as BS
 import qualified Data.ByteString.Base16 as Base16
@@ -284,16 +283,6 @@ instance FromEnvVar GH.Auth where
 
 instance FromEnvVar (GH.Name a) where
     fromEnvVar = fmap (GH.mkName Proxy) . fromEnvVar
-
--------------------------------------------------------------------------------
--- Flowdock
--------------------------------------------------------------------------------
-
-instance FromEnvVar FD.AuthToken where
-    fromEnvVar = fmap FD.AuthToken . fromEnvVar
-
-instance FromEnvVar (FD.ParamName a) where
-    fromEnvVar = fmap FD.mkParamName . fromEnvVar
 
 -------------------------------------------------------------------------------
 -- UUID
