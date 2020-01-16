@@ -59,8 +59,8 @@ valueCreationReport myear = do
     nameMap <- planmillNameToPersonioIdMap
     pure $ ValueCreationReport year $ fmap (\x -> toRow nameMap x) $ toList $ PM.getValueCreationData report
   where
-    nameSplit v = case (T.splitOn "," $ PM._pvcPerson v) of
-                    (f:l:_) -> Just (f,l)
+    nameSplit v = case (T.splitOn ", " $ PM._pvcPerson v) of
+                    (l:f:_) -> Just (f,l)
                     _       -> Nothing
     toRow nm v = ValueCreationRow
         { valueRowTeam      = PM._pvcTeam v
