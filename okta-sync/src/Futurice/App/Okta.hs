@@ -28,6 +28,7 @@ import qualified Personio        as P
 apiServer :: Ctx -> Server OktaSyncAPI
 apiServer ctx = genericServer $ Record
     { githubUsernames = githubUsernamesImpl ctx
+    , addOktaUsers    = oktaAddUsersImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -57,6 +58,9 @@ githubUsernamesImpl ctx = do
     cfg = ctxConfig ctx
     integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
 
+oktaAddUsersImpl :: Ctx -> Maybe FUM.Login -> [P.Employee] -> Handler (CommandResponse ())
+oktaAddUsersImpl = undefined
+
 withAuthUser
     :: Ctx
     -> Maybe FUM.Login
@@ -82,6 +86,8 @@ makeCtx cfg lgr mgr cache mq = do
     void $ forEachMessage mq $ \msg -> case msg of
         PersonioUpdated -> updateJob
         _ -> pure ()
+
+    updateJob
 
     return (ctx, [])
   where

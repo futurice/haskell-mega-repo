@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Okta.Markup(
     module Futurice.Lucid.Foundation,
     Nav (..),
     page_) where
 
 import Futurice.Lucid.Foundation hiding (page_)
-import Futurice.Lucid.Navigation (Navigation (..), futuriceCss, page_)
+import Futurice.Lucid.Navigation
+       (Navigation (..), futuriceCss, pageParamsWithJS, page_)
 import Futurice.Prelude
 import Prelude ()
 
@@ -18,4 +20,5 @@ instance Navigation Nav where
 
     navLink NavHome = (recordHref_ indexPageGet, "Okta sync home")
 
-    pageParams _ = defPageParams & pageCss .~ [ futuriceCss]
+    pageParams = pageParamsWithJS
+        $(makeRelativeToProject "okta-sync.js" >>= embedJS)
