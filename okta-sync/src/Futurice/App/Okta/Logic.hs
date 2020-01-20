@@ -5,6 +5,7 @@ import Data.Aeson        (object, (.=))
 import Futurice.Email    (emailToText)
 import Futurice.Generics
 import Futurice.Prelude
+import GitHub            (untagName)
 import Prelude ()
 
 import qualified Data.Map  as Map
@@ -67,5 +68,5 @@ createUser pemp = O.createUser newUser
         , O.nuEmail = fromMaybe "" $ emailToText <$> pemp ^. P.employeeEmail
         , O.nuSecondEmail = fromMaybe "" $ pemp ^. P.employeeHomeEmail
         , O.nuPersonioNumber = pemp ^. P.employeeId
-        , O.nuGithubUsername = fromMaybe "" $ textShow <$> pemp ^. P.employeeGithub
+        , O.nuGithubUsername = fromMaybe "" $ untagName <$> pemp ^. P.employeeGithub
         }
