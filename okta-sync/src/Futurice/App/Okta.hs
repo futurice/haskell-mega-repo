@@ -98,8 +98,6 @@ makeCtx cfg lgr mgr cache mq = do
         PersonioUpdated -> updateJob
         _ -> pure ()
 
-    updateJob
-
     return (ctx, [])
   where
     integrationCfg = cfgIntegrationsCfg cfg

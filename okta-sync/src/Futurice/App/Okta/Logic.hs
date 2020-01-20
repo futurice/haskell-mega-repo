@@ -31,10 +31,10 @@ updateUsers employees users = do
     let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> Map.lookup email singles' >>= changeData ouser) $ Map.toList loginMap
 
     -- update user information
-    --void $ traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
+    void $ traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
 
     -- create new users
-    traceShow notInactiveEmployeesNotInOkta $ pure ()
+    -- traceShow notInactiveEmployeesNotInOkta $ pure ()
     --traceShow peopleToUpdate $ pure ()
   where
     loginMap = Map.fromList $ (\u -> (O.getOktaLogin u, u)) <$> users
