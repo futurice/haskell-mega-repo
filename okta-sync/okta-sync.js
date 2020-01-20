@@ -19,18 +19,18 @@ futu.onload(function () {
         var checkboxes = $$("input[data-okta-add-user]");
         console.log(checkboxes);
         checkboxes.forEach(function (chk) {
-            var ghLogin = chk.dataset.oktaAddUser;
+            var userId = parseInt(chk.dataset.oktaAddUser);
             chk.addEventListener("change", function () {
                 if (chk.checked) {
                     menrva.transaction([
                         addUsersSrc$, function (xs) {
-                            return xs.concat([ghLogin]);
+                            return xs.concat([userId]);
                         }]).commit();
                 } else {
                     menrva.transaction([
                         addUsersSrc$, function (xs) {
                             return xs.filter(function (x) {
-                                return x !== ghLogin;
+                                return x !== userId;
                             });
                         }]).commit();
                 }
@@ -47,7 +47,7 @@ futu.onload(function () {
 
             var addUsers = addUsers$.value();
             console.log("Adding users", addUsers);
-            futu.commandFetchJSON("/command/remove-users", addUsers)
+            futu.commandFetchJSON("/command/okta-add-users", addUsers)
                 .then(function (res) {
                     addUsersButton.className = "button success";
                 })

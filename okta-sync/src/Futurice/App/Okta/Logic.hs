@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Okta.Logic where
 
-import Data.Aeson       (object, (.=))
-import Futurice.Email   (emailToText)
+import Data.Aeson        (object, (.=))
+import Futurice.Email    (emailToText)
+import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
@@ -11,6 +12,18 @@ import qualified Data.Text as T
 import qualified Okta      as O
 import qualified Personio  as P
 
+data UpdateInformation = UpdateInformation
+    { uiOktaId         :: !O.OktaId
+    , uiSecondEmail    :: !Text
+    , uiEmployeeNumber :: !P.EmployeeId
+    } deriving Show
+
+instance ToJSON UpdateInformation where
+    toJSON i = object
+        [ "secondEmail"    .= uiSecondEmail i
+        , "employeeNumber" .= uiEmployeeNumber i
+        ]
+
 updateUsers :: (O.MonadOkta m) => [P.Employee] -> [O.User] -> m ()
 updateUsers employees users = do
     let (_duplicates, singles) = Map.partition (\a -> length a > 1) personioMap
@@ -18,10 +31,11 @@ updateUsers employees users = do
     let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> Map.lookup email singles' >>= changeData ouser) $ Map.toList loginMap
 
     -- update user information
-    --void $ traverse (\c -> O.updateUser (O.oktaId c) (object ["secondEmail" .= T.strip (O.secondMail c)])) peopleToUpdate
+    --void $ traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
 
     -- create new users
     traceShow notInactiveEmployeesNotInOkta $ pure ()
+    --traceShow peopleToUpdate $ pure ()
   where
     loginMap = Map.fromList $ (\u -> (O.getOktaLogin u, u)) <$> users
 
@@ -29,7 +43,7 @@ updateUsers employees users = do
 
     changeData ouser pemp = pemp ^. P.employeeHomeEmail >>= \email ->
       if not (T.null email) && Just email /= O.getSecondMail ouser then
-        Just $ O.ChangeData (O.userId ouser) email
+        Just $ UpdateInformation (O.userId ouser) (T.strip email) (pemp ^. P.employeeId)
       else
         Nothing
 
@@ -42,3 +56,16 @@ updateUsers employees users = do
           Nothing -> True
     emailNotEmpty e = e ^. P.employeeEmail /= Nothing && (e ^. P.employeeEmail >>= Just . emailToText) /= Just ""
     notInactiveEmployeesNotInOkta = filter notFoundInOkta $ filter notMachineUser $ filter emailNotEmpty notInactiveEmployees
+
+createUser :: (O.MonadOkta m) => P.Employee -> m O.User
+createUser pemp = O.createUser newUser
+  where
+    newUser = O.NewUser
+        { O.nuFirstName = pemp ^. P.employeeFirst
+        , O.nuLastName = pemp ^. P.employeeLast
+        , O.nuLogin = fromMaybe "" $ emailToText <$> pemp ^. P.employeeEmail
+        , O.nuEmail = fromMaybe "" $ emailToText <$> pemp ^. P.employeeEmail
+        , O.nuSecondEmail = fromMaybe "" $ pemp ^. P.employeeHomeEmail
+        , O.nuPersonioNumber = pemp ^. P.employeeId
+        , O.nuGithubUsername = fromMaybe "" $ textShow <$> pemp ^. P.employeeGithub
+        }

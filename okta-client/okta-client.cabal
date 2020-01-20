@@ -35,6 +35,7 @@ library
     , futurice-tribes
     , http-client
     , http-types
+    , personio-client
     , servant
     , servant-client
     , servant-client-core

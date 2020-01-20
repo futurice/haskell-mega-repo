@@ -17,3 +17,6 @@ appUsers = oktaReq . ReqGetAppUsers
 
 updateUser :: MonadOkta m => OktaId -> Value -> m User
 updateUser oktaid value = oktaReq $ ReqUpdateUser oktaid value
+
+createUser :: MonadOkta m => NewUser -> m User
+createUser = oktaReq . ReqCreateUser

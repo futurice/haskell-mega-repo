@@ -13,6 +13,8 @@ import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 import Data.Aeson
 import Futurice.Email
 
+import qualified Personio as P
+
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
     , oktaBaseUrl :: !Text
@@ -212,7 +214,7 @@ data NewUser = NewUser
     , nuLogin          :: !Text
     , nuEmail          :: !Text
     , nuSecondEmail    :: !Text
-    , nuPersonioNumber :: !Text
+    , nuPersonioNumber :: !P.EmployeeId
     , nuGithubUsername :: !Text
     } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, Hashable)
 
@@ -226,8 +228,3 @@ instance ToJSON NewUser where
         , "employeeNumber"  .= nuPersonioNumber -- this will probably change
         , "github_username" .= nuGithubUsername
         ]
-
-data ChangeData = ChangeData
-    { oktaId     :: !OktaId
-    , secondMail :: !Text
-    } deriving Show

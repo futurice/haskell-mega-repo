@@ -58,8 +58,19 @@ githubUsernamesImpl ctx = do
     cfg = ctxConfig ctx
     integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
 
-oktaAddUsersImpl :: Ctx -> Maybe FUM.Login -> [P.Employee] -> Handler (CommandResponse ())
-oktaAddUsersImpl = undefined
+oktaAddUsersImpl :: Ctx -> Maybe FUM.Login -> [P.EmployeeId] -> Handler (CommandResponse ())
+oktaAddUsersImpl ctx login eids = withAuthUser ctx login $ \_ -> do
+    now <- currentTime
+    es' <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    let pmap = Map.fromList $ (\p -> (p ^. P.employeeId, p)) <$> es'
+    let employees = catMaybes $ fmap (flip Map.lookup pmap) eids
+    _ <- liftIO $ traverse (runIntegrations mgr lgr now integrationCfg . createUser) employees
+    pure $ CommandResponseReload
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
+    integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
 
 withAuthUser
     :: Ctx

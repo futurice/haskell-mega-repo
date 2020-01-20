@@ -17,7 +17,7 @@ import qualified Personio as P
 
 data Record route = Record
     { githubUsernames :: route :- "github-usernames" :> Get '[JSON] (Map.Map Email (Maybe (GH.Name GH.User)))
-    , addOktaUsers    :: route :- SSOUser :> "okta-add-users" :> ReqBody '[JSON] [P.EmployeeId] :> Post '[JSON] (CommandResponse ())
+    , addOktaUsers    :: route :- SSOUser :> "command" :> "okta-add-users" :> ReqBody '[JSON] [P.EmployeeId] :> Post '[JSON] (CommandResponse ())
     } deriving (Generic)
 
 type OktaSyncAPI = ToServantApi Record

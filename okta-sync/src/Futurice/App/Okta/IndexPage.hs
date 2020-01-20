@@ -21,11 +21,13 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
         sortableTable_ $ do
             thead_ $ do
                 th_ mempty
+                th_ "#"
                 th_ "Name"
                 th_ "Employment"
             tbody_ $ do
                 for_ notInactiveEmployeesNotInOkta $ \e -> tr_ $ do
                     td_ $ checkbox_ False [ data_ "okta-add-user" $ employeeNumber $ e ^. P.employeeId]
+                    td_ $ toHtml (e ^. P.employeeId)
                     td_ $ toHtml (e ^. P.employeeFullname)
                     td_ $ toHtml $ maybe "" show (e ^. P.employeeEmploymentType)
         div_ [ class_ "button-group" ] $
