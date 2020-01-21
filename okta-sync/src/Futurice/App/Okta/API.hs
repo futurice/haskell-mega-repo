@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Futurice.App.Okta.API where
 
+import Futurice.Email            (Email)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant
@@ -12,9 +13,11 @@ import Servant.HTML.Lucid        (HTML)
 
 import qualified Data.Map as Map
 import qualified GitHub   as GH
+import qualified Personio as P
 
 data Record route = Record
-    { githubUsernames :: route :- "github-usernames" :> Get '[JSON] (Map.Map Text (Maybe (GH.Name GH.User)))
+    { githubUsernames :: route :- "github-usernames" :> Get '[JSON] (Map.Map Email (Maybe (GH.Name GH.User)))
+    , addOktaUsers    :: route :- SSOUser :> "command" :> "okta-add-users" :> ReqBody '[JSON] [P.EmployeeId] :> Post '[JSON] (CommandResponse ())
     } deriving (Generic)
 
 type OktaSyncAPI = ToServantApi Record

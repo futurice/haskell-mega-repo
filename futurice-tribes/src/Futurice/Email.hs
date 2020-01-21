@@ -12,14 +12,16 @@ module Futurice.Email (
 import Data.Aeson
        (FromJSON (..), FromJSONKey (..), FromJSONKeyFunction (..), ToJSON (..),
        ToJSONKey (..), withText)
-import Futurice.EnvConfig          (FromEnvVar (..))
+import Futurice.EnvConfig                      (FromEnvVar (..))
 import Futurice.Prelude
-import Language.Haskell.TH         (ExpQ)
-import Lucid                       (ToHtml (..), a_, href_)
+import Language.Haskell.TH                     (ExpQ)
+import Lucid                                   (ToHtml (..), a_, href_)
 import Prelude ()
-import Test.QuickCheck             (Arbitrary (..))
-import Text.Regex.Applicative.Text (RE', match)
-import Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
+import Test.QuickCheck                         (Arbitrary (..))
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
+import Text.Regex.Applicative.Text             (RE', match)
+import Web.HttpApiData
+       (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Csv       as Csv
 import qualified Data.Swagger   as S
@@ -28,7 +30,7 @@ import qualified Kleene.Functor as K
 
 -- | Futurice email. i.e. @someone@@futurice.com@.
 newtype Email = Email Text
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
 
 deriveLift ''Email
 
@@ -57,6 +59,8 @@ mkEmail n
 -------------------------------------------------------------------------------
 -- instances
 -------------------------------------------------------------------------------
+
+instance AnsiPretty Email where ansiPretty = ansiPretty . emailToText
 
 instance Arbitrary Email where
     arbitrary = pure (Email "arbitrary")

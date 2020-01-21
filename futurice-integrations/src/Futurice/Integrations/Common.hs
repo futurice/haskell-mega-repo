@@ -31,6 +31,7 @@ import Data.List                     (find)
 import Data.Time
        (addDays, addGregorianMonthsClip, fromGregorian, toGregorian)
 import Data.Time.Calendar.WeekDate   (toWeekDate)
+import Futurice.Email                (Email)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
 import Futurice.Prelude
@@ -142,13 +143,13 @@ githubOrganisationMembers = do
     orgName <- view githubOrganisationName
     githubReq $ GH.membersOfR orgName GH.FetchAll
 
-githubUsernamesFromOkta :: (MonadOkta m, HasOktaGithubId ctx) => ctx -> m (Map.Map Text (Maybe (GH.Name GH.User))) -- TODO: Change to have Email datatype
+githubUsernamesFromOkta :: (MonadOkta m, HasOktaGithubId ctx) => ctx -> m (Map.Map Email (Maybe (GH.Name GH.User)))
 githubUsernamesFromOkta ctx = do
     let appId = oktaGithubId ctx
     oktaUsers <- O.users
     oktaAppUsers <- O.appUsers appId
     let appUsersMap = Map.fromList $ map (\u -> (O.appUserId u, O.credUserName $ O.appUserCredentials u)) oktaAppUsers
-    let userMap = Map.fromList $ map (\u -> (O.profileLogin $ O.userProfile u, GH.mkUserName <$> Map.lookup (O.userId u) appUsersMap )) oktaUsers
+    let userMap = Map.fromList $ map (\u -> (u ^. O.userProfile . O.profileLogin, GH.mkUserName <$> Map.lookup (u ^. O.userId) appUsersMap )) oktaUsers
     pure userMap
 
 personioPlanmillMap

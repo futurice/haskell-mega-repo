@@ -32,8 +32,10 @@ library
     , env-config
     , free
     , futurice-prelude
+    , futurice-tribes
     , http-client
     , http-types
+    , personio-client
     , servant
     , servant-client
     , servant-client-core

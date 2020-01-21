@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Okta.Eval where
 
-import Data.Aeson       (eitherDecode)
+import Data.Aeson       (eitherDecode, encode, object, (.=))
 import Futurice.Prelude
 import Prelude ()
 
@@ -21,17 +21,19 @@ getAfterLink response =
           _ -> Nothing
     in T.drop 1 . T.dropEnd 1 <$> listToMaybe (catMaybes $ map checkIfNextLink links)
 
-evalOktaReq :: (MonadThrow m, MonadIO m, Monad m, MonadReader env m, HasHttpManager env, HasOktaCfg env) => Req a -> m a
+evalOktaReq :: (MonadThrow m, MonadIO m, MonadLog m, Monad m, MonadReader env m, HasHttpManager env, HasOktaCfg env) => Req a -> m a
 evalOktaReq r = case r of
-    ReqGetAllUsers       -> pagedReq "/api/v1/users"
-    ReqGetAllGroups      -> singleReq "/api/v1/groups"
-    ReqGetGroupUsers gid -> singleReq $ "/api/v1/groups/" <> T.unpack gid <> "/users"
-    ReqGetAllApps        -> pagedReq "/api/v1/apps"
-    ReqGetAppUsers aid   -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
+    ReqGetAllUsers        -> pagedReq "/api/v1/users"
+    ReqGetAllGroups       -> singleReq "/api/v1/groups"
+    ReqGetGroupUsers gid  -> singleReq $ "/api/v1/groups/" <> T.unpack gid <> "/users"
+    ReqGetAllApps         -> pagedReq "/api/v1/apps"
+    ReqGetAppUsers aid    -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
+    ReqCreateUser newUser -> postReq "/api/v1/users" $ encode $ object [ "profile" .= newUser]
+    ReqUpdateUser (OktaId uid) userData -> postReq ("/api/v1/users/" <> T.unpack uid) $ encode $ object [ "profile" .= userData]
   where
      go _ _ responses Nothing = pure responses
      go mgr token responses (Just url) = do
-         request <- HTTP.parseRequest url
+         request <- HTTP.parseUrlThrow url
          let req = request { HTTP.requestHeaders =
                              ("Authorization",  encodeUtf8 $ "SSWS " <> token)
                              : ("Accept", "application/json")
@@ -40,10 +42,9 @@ evalOktaReq r = case r of
                            }
          response <- liftIO $ HTTP.httpLbs req mgr
          let res = eitherDecode $ HTTP.responseBody response
-         case res of --TODO: throw exception
+         case res of
            Left err -> do
-               void $ liftIO $ print err
-               pure []
+               throwM $ OktaDecodeError err
            Right rs -> do
                let afterLink = getAfterLink response
                go mgr token (responses <> rs) (T.unpack <$> afterLink)
@@ -54,7 +55,7 @@ evalOktaReq r = case r of
      singleReq endpoint = do
        mgr <- view httpManager
        (OktaCfg token baseUrl) <- view oktaCfg
-       request <- HTTP.parseRequest $ T.unpack baseUrl <> endpoint
+       request <- HTTP.parseUrlThrow $ T.unpack baseUrl <> endpoint
        let req = request { HTTP.requestHeaders =
                        ("Authorization",  encodeUtf8 $ "SSWS " <> token)
                        : ("Accept", "application/json")
@@ -62,12 +63,29 @@ evalOktaReq r = case r of
                        : HTTP.requestHeaders request}
        response <- liftIO $ HTTP.httpLbs req mgr
        let res = eitherDecode $ HTTP.responseBody response
-       case res of --TODO: throw exception
+       case res of
          Left err -> do
-             void $ liftIO $ print err
-             pure []
+             throwM $ OktaDecodeError err
+         Right rs -> do
+             pure rs
+     postReq endpoint body = do
+       mgr <- view httpManager
+       (OktaCfg token baseUrl) <- view oktaCfg
+       request <- HTTP.parseUrlThrow $ T.unpack baseUrl <> endpoint
+       let req = request { HTTP.requestHeaders =
+                           ("Authorization",  encodeUtf8 $ "SSWS " <> token)
+                           : ("Accept", "application/json")
+                           : ("Content-Type", "application/json")
+                           : HTTP.requestHeaders request
+                         , HTTP.method = "POST"
+                         , HTTP.requestBody = HTTP.RequestBodyLBS body }
+       response <- liftIO $ HTTP.httpLbs req mgr
+       let res = eitherDecode $ HTTP.responseBody response
+       case res of
+         Left err -> do
+             throwM $ OktaDecodeError err
          Right rs -> do
              pure rs
 
-evalOktaReqIO :: OktaCfg -> Manager -> Req a -> IO a
-evalOktaReqIO cfg mgr req = flip runReaderT (Cfg cfg mgr) $ evalOktaReq req
+evalOktaReqIO :: OktaCfg -> Manager -> Logger -> Req a -> IO a
+evalOktaReqIO cfg mgr lgr req = runLogT "okta-request" lgr $ flip runReaderT (Cfg cfg mgr) $ evalOktaReq req

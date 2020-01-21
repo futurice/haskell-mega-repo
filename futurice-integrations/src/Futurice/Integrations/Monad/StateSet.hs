@@ -109,5 +109,5 @@ stateSetOkta
     -> Okta.Types.OktaCfg
     -> Tagged ss H.StateStore
     -> Tagged (ServOK ': ss) H.StateStore
-stateSetOkta _lgr mgr cfg (Tagged store) = Tagged $
-    H.stateSet (Okta.Haxl.initDataSource cfg mgr) store
+stateSetOkta lgr mgr cfg (Tagged store) = Tagged $
+    H.stateSet (Okta.Haxl.initDataSource cfg lgr mgr) store

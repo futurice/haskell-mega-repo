@@ -1,6 +1,8 @@
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Okta.Types where
 
 import Futurice.EnvConfig
@@ -10,6 +12,9 @@ import Prelude ()
 import Data.Aeson.Types (withText)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 import Data.Aeson
+import Futurice.Email
+
+import qualified Personio as P
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -60,14 +65,20 @@ instance ToJSON Status where
 instance AnsiPretty Status where ansiPretty = ansiPretty . show
 
 data Profile = Profile
-    { profileFirstName   :: !Text
-    , profileLastName    :: !Text
-    , profileMobilePhone :: !(Maybe Text)
-    , profileSecondEmail :: !(Maybe Text)
-    , profileLogin       :: !Text
-    , profileEmail       :: !Text
+    { _profileFirstName      :: !Text
+    , _profileLastName       :: !Text
+    , _profileMobilePhone    :: !(Maybe Text)
+    , _profileSecondEmail    :: !(Maybe Text)
+    , _profileLogin          :: !Email
+    , _profileEmail          :: !Email
+    , _profileEmployeeNumber :: !(Maybe String)
+    , _profileTribe          :: !(Maybe Text)
+    , _profileOffice         :: !(Maybe Text)
+    , _profileEmploymentType :: !(Maybe Text)
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Profile)
+
+makeLenses ''Profile
 
 instance AnsiPretty Profile
 
@@ -81,19 +92,26 @@ data GithubProfile = GithubProfile
 
 instance AnsiPretty GithubProfile
 
+newtype OktaId = OktaId Text
+    deriving (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData, AnsiPretty, Hashable)
+    deriving newtype (FromJSON, ToJSON)
+
 data User = User
-    { userId      :: !Text
-    , userStatus  :: !Status
-    , userCreated :: !UTCTime
-    , userActive  :: !(Maybe UTCTime)
-    , userProfile :: !Profile
+    { _userId      :: !OktaId
+    , _userStatus  :: !Status
+    , _userCreated :: !UTCTime
+    , _userActive  :: !(Maybe UTCTime)
+    , _userProfile :: !Profile
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica User)
+
+makeLenses ''User
 
 instance AnsiPretty User
 
 data AppUser = AppUser
-    { appUserId          :: !Text
+    { appUserId          :: !OktaId
     , appUserStatus      :: !Status
     , appUserCreated     :: !UTCTime
     , appUserActive      :: !(Maybe UTCTime)
@@ -107,7 +125,7 @@ instance AnsiPretty AppUser
 data GroupType = OktaGroup
                | AppGroup
                | BuiltIn
-               deriving Show
+               deriving (Eq, Show, Generic, NFData)
 
 instance AnsiPretty GroupType where ansiPretty = ansiPretty . show
 
@@ -135,7 +153,7 @@ instance ToJSON GroupType where
 data GroupProfile = GroupProfile
     { profileName        :: !Text
     , profileDescription :: !(Maybe Text)
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica GroupProfile)
 
 instance AnsiPretty GroupProfile
@@ -144,7 +162,7 @@ data Group = Group
     { groupId      :: !Text
     , groupType    :: !GroupType
     , groupProfile :: !GroupProfile
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Group)
 
 instance AnsiPretty Group
@@ -188,3 +206,28 @@ data App = App
       deriving (FromJSON) via (Sopica App)
 
 instance AnsiPretty App
+
+newtype OktaError = OktaDecodeError String deriving Show
+
+instance Exception OktaError
+
+data NewUser = NewUser
+    { nuFirstName      :: !Text
+    , nuLastName       :: !Text
+    , nuLogin          :: !Text
+    , nuEmail          :: !Text
+    , nuSecondEmail    :: !Text
+    , nuPersonioNumber :: !P.EmployeeId
+    , nuGithubUsername :: !Text
+    } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, Hashable)
+
+instance ToJSON NewUser where
+    toJSON NewUser{..} = object
+        [ "firstName"       .= nuFirstName
+        , "lastName"        .= nuLastName
+        , "login"           .= nuLogin
+        , "email"           .= nuEmail
+        , "secondEmail"     .= nuSecondEmail
+        , "employeeNumber"  .= nuPersonioNumber -- this will probably change
+        , "github_username" .= nuGithubUsername
+        ]
