@@ -39,8 +39,8 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
                 th_ "Login"
             tbody_ $ do
                 for_ oktaUsersNotInPersonio $ \u -> tr_ $ do
-                    td_ $ toHtml $ (O.profileFirstName $ O.userProfile u) <> " " <> O.profileLastName (O.userProfile u)
-                    td_ $ toHtml $ O.profileLogin $ O.userProfile u
+                    td_ $ toHtml $ (u ^. O.userProfile . O.profileFirstName) <> " " <> (u ^. O.userProfile . O.profileLastName)
+                    td_ $ toHtml $ u ^. O.userProfile . O.profileLogin
         h2_ "All employees in Personio"
         sortableTable_ $ do
             thead_ $ do
@@ -50,10 +50,10 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
                 for_ employees $ \e -> tr_ $ do
                     td_ $ toHtml (e ^. P.employeeFullname)
                     td_ $ for_ (e ^. P.employeeEmail >>= \email -> loginMap ^. at email) $ \u -> do
-                        toHtml $ show $ O.userStatus u
+                        toHtml $ show $ u ^. O.userStatus
   where
     employeeNumber (P.EmployeeId n) = textShow n
-    loginMap = Map.fromList $ (\u -> (O.getOktaLogin u, u)) <$> users
+    loginMap = Map.fromList $ (\u -> (u ^. O.userProfile . O.profileLogin, u)) <$> users
     personioMap = Map.fromListWith (<>) $ catMaybes $ (\e -> e ^. P.employeeEmail >>= \email -> Just (email, [e])) <$> employees
 
     machineUsers = P.EmployeeId <$> [1436090, 982480]
@@ -66,6 +66,6 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
     emailNotEmpty e = e ^. P.employeeEmail /= Nothing && (e ^. P.employeeEmail >>= Just . emailToText) /= Just ""
     notInactiveEmployeesNotInOkta = filter notFoundInOkta $ filter notMachineUser $ filter emailNotEmpty notInactiveEmployees
 
-    oktaUsersNotInPersonio = filter (\u -> case personioMap ^. at (O.getOktaLogin u) of
+    oktaUsersNotInPersonio = filter (\u -> case personioMap ^. at (u ^. O.userProfile . O.profileLogin) of
                                              Just _ -> False
                                              Nothing -> True) users

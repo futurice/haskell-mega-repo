@@ -20,3 +20,6 @@ updateUser oktaid value = oktaReq $ ReqUpdateUser oktaid value
 
 createUser :: MonadOkta m => NewUser -> m User
 createUser = oktaReq . ReqCreateUser
+
+groups :: MonadOkta m => m [Group]
+groups = oktaReq ReqGetAllGroups

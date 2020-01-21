@@ -12,10 +12,12 @@ import Okta.Eval
 import Okta.Request
 import Okta.Types
 
+import qualified Data.Text           as T
 import qualified Options.Applicative as O
 
 data Cmd = CmdGetAllUsers
          | CmdGetAllGroups
+         | CmdGetAllGroupsWithType GroupType
          | CmdGetAllGroupMembers Text
          | CmdGetAllApps
          | CmdGetAppUsers Text
@@ -25,6 +27,9 @@ getAllUsersOptions = pure CmdGetAllUsers
 
 getAllGroupsOptions :: O.Parser Cmd
 getAllGroupsOptions = pure CmdGetAllGroups
+
+getAllGroupsWithTypeOptions :: O.Parser Cmd
+getAllGroupsWithTypeOptions = CmdGetAllGroupsWithType <$> argument (O.maybeReader (groupFromText . T.pack)) [ O.metavar ":group-type", O.help "Group type"]
 
 getAllGroupMembersOptions :: O.Parser Cmd
 getAllGroupMembersOptions = CmdGetAllGroupMembers <$> strArgument [ O.metavar ":group-id", O.help "Group id"]
@@ -39,6 +44,7 @@ optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "get-all-users"  getAllUsersOptions "Get all users"
     , cmdParser "get-all-groups" getAllGroupsOptions "Get all groups"
+    , cmdParser "get-all-groups-with-type" getAllGroupsWithTypeOptions "Get all groups filtered with type"
     , cmdParser "get-group-members" getAllGroupMembersOptions "Get all members of spesific group"
     , cmdParser "get-all-apps" getAllAppsOptions "Get all apps"
     , cmdParser "get-app-users" getAppUsersOptions "Get all users assigned to app"
@@ -51,6 +57,9 @@ optsParser = O.subparser $ mconcat
 strArgument :: IsString a => [O.Mod O.ArgumentFields a] -> O.Parser a
 strArgument = O.strArgument . mconcat
 
+argument :: O.ReadM a -> [O.Mod O.ArgumentFields a] -> O.Parser a
+argument x y = O.argument x $ mconcat y
+
 main' :: Logger -> OktaCfg -> Cmd -> IO ()
 main' lgr token CmdGetAllUsers = do
     mgr <- liftIO $ newManager tlsManagerSettings
@@ -61,6 +70,12 @@ main' lgr token CmdGetAllGroups = do
     mgr <- liftIO $ newManager tlsManagerSettings
     groups <- evalOktaReqIO token mgr lgr ReqGetAllGroups
     putPretty groups
+    pure ()
+main' lgr token (CmdGetAllGroupsWithType groupFilter) = do
+    mgr <- liftIO $ newManager tlsManagerSettings
+    groups <- evalOktaReqIO token mgr lgr ReqGetAllGroups
+    let groups' = filter (\g -> (groupType g) == groupFilter) groups
+    putPretty groups'
     pure ()
 main' lgr token (CmdGetAllGroupMembers gid) = do
     mgr <- liftIO $ newManager tlsManagerSettings

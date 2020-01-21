@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Okta.Types where
 
 import Futurice.EnvConfig
@@ -64,14 +65,20 @@ instance ToJSON Status where
 instance AnsiPretty Status where ansiPretty = ansiPretty . show
 
 data Profile = Profile
-    { profileFirstName   :: !Text
-    , profileLastName    :: !Text
-    , profileMobilePhone :: !(Maybe Text)
-    , profileSecondEmail :: !(Maybe Text)
-    , profileLogin       :: !Email
-    , profileEmail       :: !Email
+    { _profileFirstName      :: !Text
+    , _profileLastName       :: !Text
+    , _profileMobilePhone    :: !(Maybe Text)
+    , _profileSecondEmail    :: !(Maybe Text)
+    , _profileLogin          :: !Email
+    , _profileEmail          :: !Email
+    , _profileEmployeeNumber :: !(Maybe String)
+    , _profileTribe          :: !(Maybe Text)
+    , _profileOffice         :: !(Maybe Text)
+    , _profileEmploymentType :: !(Maybe Text)
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Profile)
+
+makeLenses ''Profile
 
 instance AnsiPretty Profile
 
@@ -91,19 +98,15 @@ newtype OktaId = OktaId Text
     deriving newtype (FromJSON, ToJSON)
 
 data User = User
-    { userId      :: !OktaId
-    , userStatus  :: !Status
-    , userCreated :: !UTCTime
-    , userActive  :: !(Maybe UTCTime)
-    , userProfile :: !Profile
+    { _userId      :: !OktaId
+    , _userStatus  :: !Status
+    , _userCreated :: !UTCTime
+    , _userActive  :: !(Maybe UTCTime)
+    , _userProfile :: !Profile
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica User)
 
-getOktaLogin :: User -> Email
-getOktaLogin (User _ _ _ _ profile) = profileLogin profile
-
-getSecondMail :: User -> Maybe Text
-getSecondMail (User _ _ _ _ profile) = profileSecondEmail profile
+makeLenses ''User
 
 instance AnsiPretty User
 
@@ -122,7 +125,7 @@ instance AnsiPretty AppUser
 data GroupType = OktaGroup
                | AppGroup
                | BuiltIn
-               deriving Show
+               deriving (Eq, Show, Generic, NFData)
 
 instance AnsiPretty GroupType where ansiPretty = ansiPretty . show
 
@@ -150,7 +153,7 @@ instance ToJSON GroupType where
 data GroupProfile = GroupProfile
     { profileName        :: !Text
     , profileDescription :: !(Maybe Text)
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica GroupProfile)
 
 instance AnsiPretty GroupProfile
@@ -159,7 +162,7 @@ data Group = Group
     { groupId      :: !Text
     , groupType    :: !GroupType
     , groupProfile :: !GroupProfile
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica Group)
 
 instance AnsiPretty Group

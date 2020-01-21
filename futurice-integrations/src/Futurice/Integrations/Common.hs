@@ -149,7 +149,7 @@ githubUsernamesFromOkta ctx = do
     oktaUsers <- O.users
     oktaAppUsers <- O.appUsers appId
     let appUsersMap = Map.fromList $ map (\u -> (O.appUserId u, O.credUserName $ O.appUserCredentials u)) oktaAppUsers
-    let userMap = Map.fromList $ map (\u -> (O.getOktaLogin u, GH.mkUserName <$> Map.lookup (O.userId u) appUsersMap )) oktaUsers
+    let userMap = Map.fromList $ map (\u -> (u ^. O.userProfile . O.profileLogin, GH.mkUserName <$> Map.lookup (u ^. O.userId) appUsersMap )) oktaUsers
     pure userMap
 
 personioPlanmillMap

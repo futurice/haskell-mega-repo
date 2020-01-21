@@ -60,16 +60,20 @@ githubUsernamesImpl ctx = do
 
 oktaAddUsersImpl :: Ctx -> Maybe FUM.Login -> [P.EmployeeId] -> Handler (CommandResponse ())
 oktaAddUsersImpl ctx login eids = withAuthUser ctx login $ \_ -> do
-    now <- currentTime
-    es' <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
-    let pmap = Map.fromList $ (\p -> (p ^. P.employeeId, p)) <$> es'
-    let employees = catMaybes $ fmap (flip Map.lookup pmap) eids
-    _ <- liftIO $ traverse (runIntegrations mgr lgr now integrationCfg . createUser) employees
+    -- now <- currentTime
+    -- es' <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    -- let pmap = Map.fromList $ (\p -> (p ^. P.employeeId, p)) <$> es'
+    -- let employees = catMaybes $ fmap (flip Map.lookup pmap) eids
+
+    -- groups <- liftIO $ cachedIO lgr cache 180 () $ runIntegrations mgr lgr now integrationCfg O.groups
+
+    -- _ <- liftIO $ traverse (runIntegrations mgr lgr now integrationCfg . createUser) employees
     pure $ CommandResponseReload
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
     cfg = ctxConfig ctx
+    cache = ctxCache ctx
     integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
 
 withAuthUser
@@ -95,7 +99,9 @@ makeCtx cfg lgr mgr cache mq = do
     let ctx = Ctx cfg lgr mgr cache
 
     void $ forEachMessage mq $ \msg -> case msg of
-        PersonioUpdated -> updateJob
+        PersonioUpdated -> do
+            users <- updateJob
+            runLogT "okta-sync" lgr $ logInfo_ $ "Updated " <> textShow (length users) <> " employees"
         _ -> pure ()
 
     return (ctx, [])
