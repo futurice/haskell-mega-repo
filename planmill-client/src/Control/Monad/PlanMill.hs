@@ -69,6 +69,7 @@ class
     , ForallFSymbol (MonadPlanMillC m) EnumDesc
     , MonadPlanMillC m AllRevenues2
     , MonadPlanMillC m ValueCreationByMonth
+    , MonadPlanMillC m PersonValueCreation
     )
   => MonadPlanMillConstraint m where
 

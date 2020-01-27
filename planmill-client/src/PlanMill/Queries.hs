@@ -345,8 +345,8 @@ allRevenuesReport year month = planmillQuery
 --
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
 valueCreationByMonthReport :: (MonadPlanMillQuery m) => Integer -> m ValueCreationByMonth
-valueCreationByMonthReport year = planmillQuery
-    $ QueryGet QueryTagValueCreation (Map.fromList [("param1",textShow year)])
+valueCreationByMonthReport year = planmillVectorQuery
+    $ QueryPagedGet QueryTagValueCreation (Map.fromList [("param1",textShow year)])
     $ toUrlParts ("reports" :: Text) // ("Value creation per month by employee" :: Text)
 
 -- | Get a list of tasks.

@@ -358,7 +358,7 @@ allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
 --
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
 valueCreationByMonthReport :: Int -> PlanMill ValueCreationByMonth
-valueCreationByMonthReport year = planMillGetQs (Map.fromList [("param1", textShow year)]) $ t "reports" // t "Value creation per month by employee"
+valueCreationByMonthReport year = planMillPagedGetQs (Map.fromList [("param1", textShow year)]) $ t "reports" // t "Value creation per month by employee"
 
 -- | Get a list of project's members
 --
