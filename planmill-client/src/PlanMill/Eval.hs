@@ -96,6 +96,7 @@ evalPlanMill pm = do
                           if BS8.isSuffixOf "tasks/28532" (path req)
                             || BS8.isSuffixOf "tasks/28531" (path req) -- HACK: 2019-09-19, we are yet again sad
                             || BS8.isSuffixOf "tasks/28530" (path req) -- HACK: 2019-11-07, -;;-
+                            || BS8.isSuffixOf "tasks/187532" (path req) -- HACK: 2020-01-23 the sadness continues
                             || BS8.isSuffixOf "absences" (path req)
                             || BS8.isSuffixOf "projects" (path req)
                             || BS8.isSuffixOf "Value%20creation%20per%20month%20by%20employee" (path req)
