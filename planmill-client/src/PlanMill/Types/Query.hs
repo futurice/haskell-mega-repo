@@ -267,7 +267,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
         (12, Just Refl) -> pure $ SomeQueryTag QueryTagAllRevenue
         (13, _)         -> pure $ SomeQueryTag QueryTagProjectMember
         (14, _)         -> pure $ SomeQueryTag QueryTagAssignment
-        (15, _) -> pure $ SomeQueryTag QueryTagValueCreation
+        (15, _)         -> pure $ SomeQueryTag QueryTagValueCreation
 
         _ -> fail $ "Invalid tag " ++ show n
 

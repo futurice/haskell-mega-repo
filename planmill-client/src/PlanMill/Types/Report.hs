@@ -8,8 +8,7 @@ module PlanMill.Types.Report (
     ReportsCategories,
     ValueCreationByMonth,
     PersonValueCreation (..),
-    getRevenuesData)
-    where
+    getRevenuesData) where
 
 import Data.Aeson
 import Data.Aeson.Types  (Parser)
