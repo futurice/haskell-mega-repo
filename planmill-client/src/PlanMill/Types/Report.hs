@@ -6,7 +6,7 @@ module PlanMill.Types.Report (
     Report,
     Reports,
     ReportsCategories,
-    ValueCreationByMonth,
+    PersonValueCreations,
     PersonValueCreation (..),
     getRevenuesData) where
 
@@ -145,7 +145,7 @@ data PersonValueCreation = PersonValueCreation
     , _pvcNovemberValue  :: !Double
     , _pvcDecemberValue  :: !Double
     }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasSemanticVersion, HasDatatypeInfo)
-type ValueCreationByMonth = Vector PersonValueCreation
+type PersonValueCreations = Vector PersonValueCreation
 
 instance AnsiPretty PersonValueCreation
 instance HasStructuralInfo PersonValueCreation where structuralInfo = sopStructuralInfo

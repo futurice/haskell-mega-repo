@@ -57,7 +57,7 @@ import PlanMill.Types.Me               (Me)
 import PlanMill.Types.Meta             (Meta)
 import PlanMill.Types.Project
        (Project, ProjectMember, ProjectMembers, Projects)
-import PlanMill.Types.Report           (AllRevenues2, ValueCreationByMonth, PersonValueCreation)
+import PlanMill.Types.Report           (AllRevenues2, PersonValueCreations, PersonValueCreation)
 import PlanMill.Types.Request
        (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
 import PlanMill.Types.ResultInterval
@@ -466,7 +466,7 @@ type QueryTypes = '[ Timereports, UserCapacities
     , Account, Accounts
     , Assignment, Assignments
     , CapacityCalendar, CapacityCalendars
-    , AllRevenues2, ValueCreationByMonth, PersonValueCreation
+    , AllRevenues2, PersonValueCreations, PersonValueCreation
     ]
 
 -- | A bit fancier than ':~:'
