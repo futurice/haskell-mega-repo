@@ -58,7 +58,7 @@ import PlanMill.Types
        CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
        Projects, SimpleProject, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
        Timereport, Timereports, User, UserCapacities, UserId, Users,
-       ValueCreationByMonth, ViewTemplate (..), identifier, sProject,
+       PersonValueCreations, ViewTemplate (..), identifier, sProject,
        viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
@@ -344,9 +344,9 @@ allRevenuesReport year month = planmillQuery
 -- | Get Value creation by month per employee Report
 --
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
-valueCreationByMonthReport :: (MonadPlanMillQuery m) => Integer -> m ValueCreationByMonth
-valueCreationByMonthReport year = planmillQuery
-    $ QueryGet QueryTagValueCreation (Map.fromList [("param1",textShow year)])
+valueCreationByMonthReport :: (MonadPlanMillQuery m) => Integer -> m PersonValueCreations
+valueCreationByMonthReport year = planmillVectorQuery
+    $ QueryPagedGet QueryTagValueCreation (Map.fromList [("param1",textShow year)])
     $ toUrlParts ("reports" :: Text) // ("Value creation per month by employee" :: Text)
 
 -- | Get a list of tasks.

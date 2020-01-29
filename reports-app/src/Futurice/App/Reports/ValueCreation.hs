@@ -57,7 +57,7 @@ valueCreationReport myear = do
     year <- maybe (monthYear <$> currentMonth) pure myear
     report <- PMQ.valueCreationByMonthReport year
     nameMap <- planmillNameToPersonioIdMap
-    pure $ ValueCreationReport year $ fmap (\x -> toRow nameMap x) $ toList $ PM.getValueCreationData report
+    pure $ ValueCreationReport year $ fmap (\x -> toRow nameMap x) $ toList report
   where
     nameSplit v = case (T.splitOn ", " $ PM._pvcPerson v) of
                     (l:f:_) -> Just (f,l)

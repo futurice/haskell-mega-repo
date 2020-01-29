@@ -75,7 +75,7 @@ instance MonadPlanMillC m User                 => CachingTC m User
 instance MonadPlanMillC m UserCapacity         => CachingTC m UserCapacity
 instance MonadPlanMillC m (EnumDesc s)         => CachingTC m (EnumDesc s)
 instance MonadPlanMillC m AllRevenues2         => CachingTC m AllRevenues2
-instance MonadPlanMillC m ValueCreationByMonth => CachingTC m ValueCreationByMonth
+instance MonadPlanMillC m PersonValueCreation  => CachingTC m PersonValueCreation
 
 instance (MonadPlanMillC m (Vector a), CachingTC m a) => CachingTC m (Vector a)
 

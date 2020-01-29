@@ -57,7 +57,7 @@ import PlanMill.Types.Me               (Me)
 import PlanMill.Types.Meta             (Meta)
 import PlanMill.Types.Project
        (Project, ProjectMember, ProjectMembers, Projects)
-import PlanMill.Types.Report           (AllRevenues2, ValueCreationByMonth)
+import PlanMill.Types.Report           (AllRevenues2, PersonValueCreations, PersonValueCreation)
 import PlanMill.Types.Request
        (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
 import PlanMill.Types.ResultInterval
@@ -91,7 +91,7 @@ data QueryTag f a where
     QueryTagEnumDesc       :: KnownSymbol enum => !(Proxy enum) -> QueryTag I (EnumDesc enum)
     QueryTagAllRevenue     :: QueryTag I AllRevenues2
     QueryTagAssignment     :: QueryTag f Assignment
-    QueryTagValueCreation  :: QueryTag I ValueCreationByMonth
+    QueryTagValueCreation  :: QueryTag f PersonValueCreation
 
 -- | Planmill query (i.e. read-only operation).
 --
@@ -267,7 +267,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
         (12, Just Refl) -> pure $ SomeQueryTag QueryTagAllRevenue
         (13, _)         -> pure $ SomeQueryTag QueryTagProjectMember
         (14, _)         -> pure $ SomeQueryTag QueryTagAssignment
-        (15, Just Refl) -> pure $ SomeQueryTag QueryTagValueCreation
+        (15, _)         -> pure $ SomeQueryTag QueryTagValueCreation
 
         _ -> fail $ "Invalid tag " ++ show n
 
@@ -308,7 +308,7 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
         ("allrevenue", Just Refl)    -> pure $ SomeQueryTag QueryTagAllRevenue
         ("projectmember", _)         -> pure $ SomeQueryTag QueryTagProjectMember
         ("assignment", _)            -> pure $ SomeQueryTag QueryTagAssignment
-        ("valuecreation", Just Refl) -> pure $ SomeQueryTag QueryTagValueCreation
+        ("valuecreation", _)         -> pure $ SomeQueryTag QueryTagValueCreation
         (_, Just Refl) | T.isPrefixOf pfx t
             -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
           where
@@ -466,7 +466,7 @@ type QueryTypes = '[ Timereports, UserCapacities
     , Account, Accounts
     , Assignment, Assignments
     , CapacityCalendar, CapacityCalendars
-    , AllRevenues2, ValueCreationByMonth
+    , AllRevenues2, PersonValueCreations, PersonValueCreation
     ]
 
 -- | A bit fancier than ':~:'
@@ -505,6 +505,7 @@ queryTagVectorType QueryTagAbsence       = insertNS Refl
 queryTagVectorType QueryTagAccount       = insertNS Refl
 queryTagVectorType QueryTagCalendar      = insertNS Refl
 queryTagVectorType QueryTagAssignment    = insertNS Refl
+queryTagVectorType QueryTagValueCreation = insertNS Refl
 
 -- | Reflect the type of 'Query'.
 queryType

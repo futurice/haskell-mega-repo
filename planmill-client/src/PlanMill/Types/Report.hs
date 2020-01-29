@@ -6,10 +6,9 @@ module PlanMill.Types.Report (
     Report,
     Reports,
     ReportsCategories,
-    ValueCreationByMonth,
+    PersonValueCreations,
     PersonValueCreation (..),
-    getRevenuesData,
-    getValueCreationData) where
+    getRevenuesData) where
 
 import Data.Aeson
 import Data.Aeson.Types  (Parser)
@@ -130,14 +129,6 @@ instance FromJSON AllRevenuesPortfolio where
           Just a -> pure a
           Nothing -> mempty
 
-newtype ValueCreationByMonth = ValueCreationByMonth { getValueCreationData :: Vector PersonValueCreation }
-    deriving (Eq, Show, Generic)
-    deriving anyclass (Binary, ToSchema, NFData, HasSemanticVersion)
-    deriving newtype (ToJSON, FromJSON)
-
-instance AnsiPretty ValueCreationByMonth
-instance HasStructuralInfo ValueCreationByMonth
-
 data PersonValueCreation = PersonValueCreation
     { _pvcTeam           :: !Text
     , _pvcPerson         :: !Text
@@ -154,6 +145,7 @@ data PersonValueCreation = PersonValueCreation
     , _pvcNovemberValue  :: !Double
     , _pvcDecemberValue  :: !Double
     }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasSemanticVersion, HasDatatypeInfo)
+type PersonValueCreations = Vector PersonValueCreation
 
 instance AnsiPretty PersonValueCreation
 instance HasStructuralInfo PersonValueCreation where structuralInfo = sopStructuralInfo
