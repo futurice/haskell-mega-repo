@@ -39,8 +39,8 @@ htmlServer ctx = genericServer $ HtmlRecord
 indexPageImpl :: Ctx -> Maybe FUM.Login -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx login = withAuthUser ctx login $ \_ -> do
     now <- currentTime
-    es' <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
-    oktaUsers <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg O.users
+    es' <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    oktaUsers <- liftIO $ runIntegrations mgr lgr now integrationCfg O.users
     pure $ indexPage es' oktaUsers
   where
     mgr = ctxManager ctx
@@ -60,21 +60,17 @@ githubUsernamesImpl ctx = do
 
 oktaAddUsersImpl :: Ctx -> Maybe FUM.Login -> [P.EmployeeId] -> Handler (CommandResponse ())
 oktaAddUsersImpl ctx login eids = withAuthUser ctx login $ \_ -> do
-    -- now <- currentTime
-    -- es' <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
-    -- let pmap = Map.fromList $ (\p -> (p ^. P.employeeId, p)) <$> es'
-    -- let employees = catMaybes $ fmap (flip Map.lookup pmap) eids
+    now <- currentTime
+    es' <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
+    let pmap = Map.fromList $ (\p -> (p ^. P.employeeId, p)) <$> es'
+    let employees = catMaybes $ fmap (flip Map.lookup pmap) eids
 
-    -- groups <- liftIO $ cachedIO lgr cache 180 () $ runIntegrations mgr lgr now integrationCfg O.groups
-
-    -- _ <- liftIO $ traverse (runIntegrations mgr lgr now integrationCfg . createUser) employees
+    void $ liftIO $ traverse (runIntegrations mgr lgr now integrationCfg . createUser) employees
     pure $ CommandResponseReload
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
-    cfg = ctxConfig ctx
-    cache = ctxCache ctx
-    integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
+    integrationCfg = cfgIntegrationsCfg (ctxConfig ctx)
 
 withAuthUser
     :: Ctx

@@ -36,7 +36,7 @@ import qualified Test.QuickCheck                      as QC
 
 -- | Login name. @[a-z]{4,5}|itteam@.
 newtype Login = Login Text
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
 
 deriveLift ''Login
 
@@ -45,6 +45,8 @@ instance Show Login where
         = showString "$(mkLogin "
         . showsPrec 11 l
         . showString ")"
+
+instance AnsiPretty Login
 
 -------------------------------------------------------------------------------
 -- Magic

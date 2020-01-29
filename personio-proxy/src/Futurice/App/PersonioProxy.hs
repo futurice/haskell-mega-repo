@@ -9,13 +9,15 @@ import Control.Concurrent.Async (async)
 import Control.Concurrent.STM
        (atomically, newTVarIO, readTVar, readTVarIO, writeTVar)
 import Data.Aeson.Types         (object, parseEither, parseJSON, toJSON, (.=))
+import FUM.Types.Login
 import Futurice.IdMap           (IdMap, keysSet)
+import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
 import Futurice.Time
 import Prelude ()
-import Servant                  ((:<|>) (..), Server)
+import Servant
 
 import Futurice.App.PersonioProxy.API
 import Futurice.App.PersonioProxy.Config
@@ -39,9 +41,10 @@ import Control.DeepSeq (force)
 server :: Ctx -> Server PersonioProxyAPI
 server ctx = indexPage'
     :<|> personioRequest ctx
-    :<|> rawEmployees ctx
+--    :<|> rawEmployees ctx
     :<|> employeePicture ctx
     :<|> scheduleEmployees ctx
+    :<|> inventoryEmployees ctx
     :<|> employeesChart ctx
     :<|> tribeEmployeesChart ctx
     :<|> careerLevelsChart ctx

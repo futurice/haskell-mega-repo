@@ -8,6 +8,7 @@ module Okta.Types where
 import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.Prelude
+import Futurice.Company  (Country)
 import Prelude ()
 import Data.Aeson.Types (withText)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
@@ -15,6 +16,7 @@ import Data.Aeson
 import Futurice.Email
 
 import qualified Personio as P
+import qualified FUM
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -65,20 +67,52 @@ instance ToJSON Status where
 instance AnsiPretty Status where ansiPretty = ansiPretty . show
 
 data Profile = Profile
-    { _profileFirstName      :: !Text
-    , _profileLastName       :: !Text
-    , _profileMobilePhone    :: !(Maybe Text)
-    , _profileSecondEmail    :: !(Maybe Text)
-    , _profileLogin          :: !Email
-    , _profileEmail          :: !Email
-    , _profileEmployeeNumber :: !(Maybe String)
-    , _profileTribe          :: !(Maybe Text)
-    , _profileOffice         :: !(Maybe Text)
-    , _profileEmploymentType :: !(Maybe Text)
+    { _profileFirstName        :: !Text
+    , _profileLastName         :: !Text
+    , _profileMobilePhone      :: !(Maybe Text)
+    , _profileSecondEmail      :: !(Maybe Text)
+    , _profileLogin            :: !Email
+    , _profileEmail            :: !Email
+    , _profileEmployeeNumber   :: !(Maybe String)
+    , _profileTribe            :: !(Maybe Text)
+    , _profileOffice           :: !(Maybe Text)
+    , _profileEmploymentType   :: !(Maybe Text)
+    , _profileGender           :: !(Maybe Text)
+    , _profileCountry          :: !(Maybe Country)
+    , _profileRole             :: !(Maybe Text)
+    , _profileStartDate        :: !(Maybe Day)
+    , _profileManager          :: !(Maybe Email)
+    , _profileFumUsername      :: !(Maybe FUM.Login)
+    , _profileTerminationDate  :: !(Maybe Day)
+    , _profileSeparationReason :: !(Maybe Text)
+    , _profileBirthday         :: !(Maybe Day)
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
-      deriving (ToJSON, FromJSON) via (Sopica Profile)
+      deriving (ToJSON) via (Sopica Profile)
 
 makeLenses ''Profile
+
+instance FromJSON Profile where
+    parseJSON = withObject "Profile" $ \o ->
+      Profile
+      <$> o .: "firstName"
+      <*> o .: "lastName"
+      <*> o .: "mobilePhone"
+      <*> o .: "secondEmail"
+      <*> o .: "login"
+      <*> o .: "email"
+      <*> o .:? "employeeNumber"
+      <*> o .:? "tribe"
+      <*> o .:? "office"
+      <*> o .:? "employmentType"
+      <*> o .:? "gender"
+      <*> o .:? "country"
+      <*> o .:? "role"
+      <*> o .:? "start_date"
+      <*> o .:? "manager"
+      <*> (o .:? "fum_username" <|> pure Nothing)
+      <*> o .:? "terminationDate"
+      <*> o .:? "separation_reason"
+      <*> o .:? "birthday"
 
 instance AnsiPretty Profile
 
@@ -212,6 +246,12 @@ newtype OktaError = OktaDecodeError String deriving Show
 instance Exception OktaError
 
 data NewUser = NewUser
+    { newUserProfile  :: !NewUserProfile
+    , newUserGroupIds :: ![Text]
+    } deriving (Eq, Show, Hashable, GhcGeneric, SopGeneric, HasDatatypeInfo)
+      deriving ToJSON via Sopica NewUser
+
+data NewUserProfile = NewUserProfile
     { nuFirstName      :: !Text
     , nuLastName       :: !Text
     , nuLogin          :: !Text
@@ -221,8 +261,8 @@ data NewUser = NewUser
     , nuGithubUsername :: !Text
     } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, Hashable)
 
-instance ToJSON NewUser where
-    toJSON NewUser{..} = object
+instance ToJSON NewUserProfile where
+    toJSON NewUserProfile{..} = object
         [ "firstName"       .= nuFirstName
         , "lastName"        .= nuLastName
         , "login"           .= nuLogin

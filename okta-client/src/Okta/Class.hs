@@ -23,3 +23,6 @@ createUser = oktaReq . ReqCreateUser
 
 groups :: MonadOkta m => m [Group]
 groups = oktaReq ReqGetAllGroups
+
+groupMembers :: MonadOkta m => Text -> m [User]
+groupMembers = oktaReq . ReqGetGroupUsers
