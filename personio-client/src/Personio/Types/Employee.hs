@@ -185,7 +185,7 @@ parseEmployeeObject obj' = Employee
     <*> optional (parseDynamicAttribute obj "Futubuddy's email")
     <*> parseAttribute obj "termination_type"
     <*> parseAttribute obj "gender"
-    <*> parseDynamicAttribute obj "Competence home"
+    <*> optional (parseDynamicAttribute obj "Competence home")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif
