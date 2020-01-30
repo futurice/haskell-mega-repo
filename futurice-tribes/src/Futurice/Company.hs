@@ -49,7 +49,7 @@ import qualified Test.QuickCheck     as QC
 
 -- | Company.
 newtype Company = Company Int
-  deriving (Eq, Ord, Lift)
+  deriving (Eq, Ord, Lift, Generic)
 
 instance Show Company where
     showsPrec d t = showsPrec d (companyToText t)
@@ -161,6 +161,8 @@ companyFromTextE k =
 _Company :: Prism' Text Company
 _Company = prism' companyToText companyFromText
 
+instance AnsiPretty Company
+
 instance NFData Company where
     rnf (Company i) = rnf i
 
@@ -217,6 +219,8 @@ instance C.PlotValue Country where
     toValue   = C.enumToValue
     fromValue = C.enumFromValue
     autoAxis  = C.enumAutoAxis $ T.takeWhile (/= '/') . countryToText
+
+instance AnsiPretty Country
 
 countryToText :: Country -> Text
 countryToText (Country c) = (fromMaybe "No country" $ cCountry ci) <> " / " <> cName ci where

@@ -59,6 +59,11 @@ scheduleEmployees ctx = do
     -- no filtering, all employees
     pure $ P.fromPersonio $ toList es
 
+inventoryEmployees :: Ctx -> Handler [P.InventoryEmployee]
+inventoryEmployees ctx = do
+    es <- P.paEmployees <$> (liftIO $ readTVarIO $ ctxPersonioData ctx)
+    pure $ P.inventoryEmployeeFromPersonio $ toList es
+
 getSimpleEmployees :: Ctx -> LogT IO (Map Day [P.SimpleEmployee])
 getSimpleEmployees ctx = do
     res <- Postgres.safePoolQuery_ ctx "SELECT DISTINCT ON (timestamp :: date) timestamp, contents FROM \"personio-proxy\".log;"

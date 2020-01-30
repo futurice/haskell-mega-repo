@@ -6,6 +6,7 @@ module Personio.Types (
     module Personio.Types.EmploymentType,
     module Personio.Types.Envelope,
     module Personio.Types.PersonalIdValidations,
+    module Personio.Types.InventoryEmployee,
     module Personio.Types.SalaryType,
     module Personio.Types.ScheduleEmployee,
     module Personio.Types.SimpleEmployee,
@@ -21,6 +22,7 @@ import Personio.Types.Employee              hiding
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
 import Personio.Types.Envelope
+import Personio.Types.InventoryEmployee
 import Personio.Types.PersonalIdValidations
 import Personio.Types.SalaryType
 import Personio.Types.ScheduleEmployee

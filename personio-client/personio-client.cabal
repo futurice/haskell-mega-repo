@@ -73,6 +73,7 @@ library
     Personio.Types.EmployeeId
     Personio.Types.EmploymentType
     Personio.Types.Envelope
+    Personio.Types.InventoryEmployee
     Personio.Types.PersonalIdValidations
     Personio.Types.SalaryType
     Personio.Types.ScheduleEmployee

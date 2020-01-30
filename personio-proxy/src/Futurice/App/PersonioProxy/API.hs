@@ -17,9 +17,10 @@ import qualified Personio
 type PersonioProxyAPI =
     Get '[HTML] (HtmlPage "index")
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
-    :<|> "employees" :> Get '[JSON] [Personio.Employee]
+--    :<|> "employees" :> Get '[JSON] [Personio.Employee]
     :<|> "employee-picture" :> Capture "employee-id" Personio.EmployeeId :> Get '[PNG] DynamicImage
     :<|> Summary "Tailor made for schedule.app" :> "schedule-info" :> Get '[JSON] [Personio.ScheduleEmployee]
+    :<|> Summary "Tailor made for inventory.app" :> "inventory" :> Get '[JSON] [Personio.InventoryEmployee]
     :<|> "charts" :> "employees.svg" :>          Get '[CACHED SVG] (Cached SVG (Chart "employees"))
     :<|> "charts" :> "tribe-employees.svg" :>    Get '[CACHED SVG] (Cached SVG (Chart "tribe-employees"))
     :<|> "charts" :> "career-levels.svg" :>      Get '[CACHED SVG] (Cached SVG (Chart "career-levels"))

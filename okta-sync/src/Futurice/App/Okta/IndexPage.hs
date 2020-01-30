@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Okta.IndexPage where
 
-import Data.Aeson                (toJSON)
 import Futurice.Email            (emailToText)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
@@ -45,10 +44,12 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
         sortableTable_ $ do
             thead_ $ do
                 th_ "Name"
+                th_ "Employment"
                 th_ "Okta status"
             tbody_ $ do
                 for_ employees $ \e -> tr_ $ do
                     td_ $ toHtml (e ^. P.employeeFullname)
+                    td_ $ toHtml $ maybe "" show (e ^. P.employeeEmploymentType)
                     td_ $ for_ (e ^. P.employeeEmail >>= \email -> loginMap ^. at email) $ \u -> do
                         toHtml $ show $ u ^. O.userStatus
   where

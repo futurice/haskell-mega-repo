@@ -46,38 +46,41 @@ import Personio.Types.Internal
 
 -- | Employee structure. Doesn't contain sensitive information.
 data Employee = Employee
-    { _employeeId               :: !EmployeeId
-    , _employeeFirst            :: !Text
-    , _employeeLast             :: !Text
-    , _employeeHireDate         :: !(Maybe Day)
-    , _employeeEndDate          :: !(Maybe Day)
-    , _employeeRole             :: !Text
-    , _employeeEmail            :: !(Maybe Email)
-    , _employeeWorkPhone        :: !(Maybe Text)
-    , _employeeSupervisorId     :: !(Maybe EmployeeId)
-    , _employeeLogin            :: !(Maybe Login)
-    , _employeeTribe            :: !Tribe  -- ^ defaults to 'defaultTribe'
-    , _employeeOffice           :: !Office  -- ^ defaults to 'OffOther'
-    , _employeeEmployer         :: !Company -- ^ default so Futurice Oy, 'companyFuturiceOy'
-    , _employeeCountry          :: !(Maybe Country)
-    , _employeeCostCenter       :: !(Maybe CostCenter)
-    , _employeeGithub           :: !(Maybe (GH.Name GH.User))
-    , _employeeStatus           :: !Status
-    , _employeeHRNumber         :: !(Maybe Int)
-    , _employeeEmploymentType   :: !(Maybe EmploymentType)
-    , _employeeContractType     :: !(Maybe ContractType)
-    , _employeeSalaryType       :: !(Maybe SalaryType)
-    , _employeeHomePhone        :: !(Maybe Text)
-    , _employeeHomeEmail        :: !(Maybe Text)
-    , _employeePosition         :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
-    , _employeeWeeklyHours      :: !(NDT 'Hours Centi)
-    , _employeeExpat            :: !Bool
-    , _employeeBirthday         :: !(Maybe Day)
-    , _employeeJobOfferAccepted :: !(Maybe Day)
-    , _employeeSummary          :: !(Maybe Text)
-    , _employeeFutubuddy        :: !(Maybe Email)
+    { _employeeId                :: !EmployeeId
+    , _employeeFirst             :: !Text
+    , _employeeLast              :: !Text
+    , _employeeHireDate          :: !(Maybe Day)
+    , _employeeEndDate           :: !(Maybe Day)
+    , _employeeRole              :: !Text
+    , _employeeEmail             :: !(Maybe Email)
+    , _employeeWorkPhone         :: !(Maybe Text)
+    , _employeeSupervisorId      :: !(Maybe EmployeeId)
+    , _employeeLogin             :: !(Maybe Login)
+    , _employeeTribe             :: !Tribe  -- ^ defaults to 'defaultTribe'
+    , _employeeOffice            :: !Office  -- ^ defaults to 'OffOther'
+    , _employeeEmployer          :: !Company -- ^ default so Futurice Oy, 'companyFuturiceOy'
+    , _employeeCountry           :: !(Maybe Country)
+    , _employeeCostCenter        :: !(Maybe CostCenter)
+    , _employeeGithub            :: !(Maybe (GH.Name GH.User))
+    , _employeeStatus            :: !Status
+    , _employeeHRNumber          :: !(Maybe Int)
+    , _employeeEmploymentType    :: !(Maybe EmploymentType)
+    , _employeeContractType      :: !(Maybe ContractType)
+    , _employeeSalaryType        :: !(Maybe SalaryType)
+    , _employeeHomePhone         :: !(Maybe Text)
+    , _employeeHomeEmail         :: !(Maybe Text)
+    , _employeePosition          :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
+    , _employeeWeeklyHours       :: !(NDT 'Hours Centi)
+    , _employeeExpat             :: !Bool
+    , _employeeBirthday          :: !(Maybe Day)
+    , _employeeJobOfferAccepted  :: !(Maybe Day)
+    , _employeeSummary           :: !(Maybe Text)
+    , _employeeFutubuddy         :: !(Maybe Email)
+    , _employeeTerminationType   :: !(Maybe Text)
+    , _employeeGender            :: !(Maybe Text)
+    , _employeeCompetenceHome    :: !(Maybe Text)
 #ifdef PERSONIO_DEBUG
-    , _employeeRest             :: !(HashMap Text Attribute)
+    , _employeeRest              :: !(HashMap Text Attribute)
 #endif
     }
   deriving (Eq, Show, Generic)
@@ -180,6 +183,9 @@ parseEmployeeObject obj' = Employee
     <*> fmap2 zonedDay (parseDynamicAttribute obj "Job offer accepted")
     <*> pure Nothing --optional (parseDynamicAttribute obj "Summary text")
     <*> optional (parseDynamicAttribute obj "Futubuddy's email")
+    <*> parseAttribute obj "termination_type"
+    <*> parseAttribute obj "gender"
+    <*> optional (parseDynamicAttribute obj "Competence home")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif

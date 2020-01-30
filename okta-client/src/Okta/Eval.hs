@@ -28,7 +28,7 @@ evalOktaReq r = case r of
     ReqGetGroupUsers gid  -> singleReq $ "/api/v1/groups/" <> T.unpack gid <> "/users"
     ReqGetAllApps         -> pagedReq "/api/v1/apps"
     ReqGetAppUsers aid    -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
-    ReqCreateUser newUser -> postReq "/api/v1/users" $ encode $ object [ "profile" .= newUser]
+    ReqCreateUser newUser -> postReq "/api/v1/users?activate=false" $ encode $ newUser
     ReqUpdateUser (OktaId uid) userData -> postReq ("/api/v1/users/" <> T.unpack uid) $ encode $ object [ "profile" .= userData]
   where
      go _ _ responses Nothing = pure responses

@@ -31,6 +31,7 @@ library
     , constraints
     , env-config
     , free
+    , fum-client
     , futurice-prelude
     , futurice-tribes
     , http-client
