@@ -13,6 +13,7 @@ import Prelude ()
 import Futurice.App.Okta.Types
 
 import qualified Data.Map  as Map
+import qualified Data.Set  as S
 import qualified Data.Text as T
 import qualified Okta      as O
 import qualified Personio  as P
@@ -26,23 +27,55 @@ groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
 internalGroupName :: Text
 internalGroupName = ojInternalGroup groupInfo
 
+internalGroup :: Text
+internalGroup = maybe (error "No internal group found") giId $ Map.lookup internalGroupName groupMap
+
 externalGroupName :: Text
 externalGroupName = ojExternalGroup groupInfo
+
+peakonGroup :: Text
+peakonGroup = maybe (error "No App-Peakon group found") giId $ Map.lookup "App-Peakon" groupMap
 
 allGroupFuturiceEmployees :: (O.MonadOkta m) => m [O.User]
 allGroupFuturiceEmployees = let g = fromMaybe (error "Error while finding group") $ Map.lookup internalGroupName groupMap
                             in fmap (filter (\u -> u ^. O.userProfile . O.profileEmploymentType == Just "external" )) $ O.groupMembers $ giId g
 
-updateUsers :: (O.MonadOkta m) => [P.Employee] -> [O.User] -> m [O.User]
+data OktaUpdateStats = OktaUpdateStats
+    { updatedUsers :: ![O.User]
+    , removedUsers :: !Int
+    , addedUsers   :: !Int
+    }
+
+updateUsers :: (O.MonadOkta m) => [P.Employee] -> [O.User] -> m OktaUpdateStats
 updateUsers employees users = do
     let (_duplicates, singles) = Map.partition (\a -> length a > 1) personioMap
     let singles' = Map.mapMaybe listToMaybe singles
     let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> Map.lookup email singles' >>= changeData ouser) $ Map.toList loginMap
 
     -- update user information
-    traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
+    updated <- traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
 
+    -- remove people from group
+    members <- O.groupMembers peakonGroup
+    let members' = S.fromList $ map (^. O.userId) members
+    let membersNotActiveAnymore = filter (\u -> not $ u `S.member` (S.fromList activeInternalEmployees)) $ S.toList members'
+
+    removed <- traverse (\u -> O.deleteUserFromGroup peakonGroup u) $ membersNotActiveAnymore
+
+    -- add people to group
+    let employeeNotInGroup = filter (\u -> not $ u `S.member` members') activeInternalEmployees
+
+    added <- traverse (\u -> O.addUserToGroup peakonGroup u) $ employeeNotInGroup
+
+    pure $ OktaUpdateStats updated (length removed) (length added)
   where
+    activeInternalEmployees =  catMaybes $ map toOktaId $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees
+
+    toOktaId emp =
+        case emp ^. P.employeeEmail >>= \email -> Map.lookup email loginMap of
+            Just ouser -> Just $ ouser ^. O.userId
+            Nothing -> Nothing
+
     loginMap = Map.fromList $ (\u -> (u ^. O.userProfile . O.profileLogin, u)) <$> users
 
     personioMap = Map.fromListWith (<>) $ catMaybes $ (\e -> e ^. P.employeeEmail >>= \email -> Just (email, [e])) <$> employees

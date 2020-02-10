@@ -26,3 +26,9 @@ groups = oktaReq ReqGetAllGroups
 
 groupMembers :: MonadOkta m => Text -> m [User]
 groupMembers = oktaReq . ReqGetGroupUsers
+
+addUserToGroup :: MonadOkta m => Text -> OktaId -> m ()
+addUserToGroup gid uid = oktaReq $ ReqAddUserToGroup gid uid
+
+deleteUserFromGroup :: MonadOkta m => Text -> OktaId -> m ()
+deleteUserFromGroup gid uid = oktaReq $ ReqRemoveUserFromGroup gid uid

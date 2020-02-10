@@ -13,8 +13,8 @@ import qualified Data.Map as Map
 import qualified Okta     as O
 import qualified Personio as P
 
-indexPage :: [P.Employee] -> [O.User] -> HtmlPage "indexpage"
-indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
+indexPage :: [P.Employee] -> [O.User] -> [O.User] -> HtmlPage "indexpage"
+indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) $ do
     fullRow_ $ do
         h2_ "Not inactive people in Personio that are not in Okta"
         sortableTable_ $ do
@@ -40,6 +40,13 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
                 for_ oktaUsersNotInPersonio $ \u -> tr_ $ do
                     td_ $ toHtml $ (u ^. O.userProfile . O.profileFirstName) <> " " <> (u ^. O.userProfile . O.profileLastName)
                     td_ $ toHtml $ u ^. O.userProfile . O.profileLogin
+        h2_ "People in Futurice group that are not active internal employees in Personio"
+        sortableTable_ $ do
+            thead_ $ do
+                th_ "Name"
+            tbody_ $ do
+                for_ oktaFuturiceMember $ \u -> tr_ $ do
+                    td_ $ toHtml $ u ^. O.userProfile . O.profileFirstName <> " " <> u ^. O.userProfile . O.profileLastName
         h2_ "All employees in Personio"
         sortableTable_ $ do
             thead_ $ do
@@ -70,3 +77,8 @@ indexPage employees users = page_ "Okta sync" (Just NavHome) $ do
     oktaUsersNotInPersonio = filter (\u -> case personioMap ^. at (u ^. O.userProfile . O.profileLogin) of
                                              Just _ -> False
                                              Nothing -> True) users
+
+    oktaFuturiceMember = filter (\u -> case personioMap ^. at (u ^. O.userProfile . O.profileLogin) of
+                                    Just (e:_) | u `elem` internalGroupUsers -> not (e ^. P.employeeStatus == P.Active && e ^. P.employeeEmploymentType == Just P.Internal)
+                                               | otherwise -> False
+                                    _ -> True) users

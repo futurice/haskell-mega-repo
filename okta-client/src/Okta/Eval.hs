@@ -9,8 +9,9 @@ import Prelude ()
 import Okta.Request
 import Okta.Types
 
-import qualified Data.Text           as T
-import qualified Network.HTTP.Client as HTTP
+import qualified Data.Text                 as T
+import qualified Network.HTTP.Client       as HTTP
+import qualified Network.HTTP.Types.Status as HTTP
 
 getAfterLink :: HTTP.Response a -> Maybe Text
 getAfterLink response =
@@ -30,6 +31,8 @@ evalOktaReq r = case r of
     ReqGetAppUsers aid    -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
     ReqCreateUser newUser -> postReq "/api/v1/users?activate=false" $ encode $ newUser
     ReqUpdateUser (OktaId uid) userData -> postReq ("/api/v1/users/" <> T.unpack uid) $ encode $ object [ "profile" .= userData]
+    ReqAddUserToGroup gid (OktaId uid) -> putReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
+    ReqRemoveUserFromGroup gid (OktaId uid) -> deleteReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
   where
      go _ _ responses Nothing = pure responses
      go mgr token responses (Just url) = do
@@ -44,7 +47,7 @@ evalOktaReq r = case r of
          let res = eitherDecode $ HTTP.responseBody response
          case res of
            Left err -> do
-               throwM $ OktaDecodeError err
+               throwM $ OktaError $ "Error while decoding response: " <> err
            Right rs -> do
                let afterLink = getAfterLink response
                go mgr token (responses <> rs) (T.unpack <$> afterLink)
@@ -65,7 +68,7 @@ evalOktaReq r = case r of
        let res = eitherDecode $ HTTP.responseBody response
        case res of
          Left err -> do
-             throwM $ OktaDecodeError err
+             throwM $ OktaError $ "Error while decoding response: " <> err
          Right rs -> do
              pure rs
      postReq endpoint body = do
@@ -83,9 +86,39 @@ evalOktaReq r = case r of
        let res = eitherDecode $ HTTP.responseBody response
        case res of
          Left err -> do
-             throwM $ OktaDecodeError err
+             throwM $ OktaError $ "Error while decoding response: " <> err
          Right rs -> do
              pure rs
+     putReq endpoint = do
+       mgr <- view httpManager
+       (OktaCfg token baseUrl) <- view oktaCfg
+       request <- HTTP.parseUrlThrow $ T.unpack baseUrl <> endpoint
+       let req = request { HTTP.requestHeaders =
+                           ("Authorization",  encodeUtf8 $ "SSWS " <> token)
+                           : ("Accept", "application/json")
+                           : ("Content-Type", "application/json")
+                           : HTTP.requestHeaders request
+                         , HTTP.method = "PUT" }
+       response <- liftIO $ HTTP.httpLbs req mgr
+       if HTTP.responseStatus response >= HTTP.status200 && HTTP.responseStatus response < HTTP.status300 then
+           pure ()
+       else
+           throwM $ OktaError $ "Error adding user to group. Got status: " <> show (HTTP.responseStatus response)
+     deleteReq endpoint = do
+       mgr <- view httpManager
+       (OktaCfg token baseUrl) <- view oktaCfg
+       request <- HTTP.parseUrlThrow $ T.unpack baseUrl <> endpoint
+       let req = request { HTTP.requestHeaders =
+                           ("Authorization",  encodeUtf8 $ "SSWS " <> token)
+                           : ("Accept", "application/json")
+                           : ("Content-Type", "application/json")
+                           : HTTP.requestHeaders request
+                         , HTTP.method = "DELETE" }
+       response <- liftIO $ HTTP.httpLbs req mgr
+       if HTTP.responseStatus response >= HTTP.status200 && HTTP.responseStatus response < HTTP.status300 then
+           pure ()
+       else
+           throwM $ OktaError $ "Error adding user to group. Got status: " <> show (HTTP.responseStatus response)
 
 evalOktaReqIO :: OktaCfg -> Manager -> Logger -> Req a -> IO a
 evalOktaReqIO cfg mgr lgr req = runLogT "okta-request" lgr $ flip runReaderT (Cfg cfg mgr) $ evalOktaReq req

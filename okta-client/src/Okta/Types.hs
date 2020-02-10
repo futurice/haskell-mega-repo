@@ -49,7 +49,7 @@ data Status = Active
             | Provisioned
             | Staged
             | Other Text
-            deriving (Show, Generic, NFData)
+            deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON Status where
     parseJSON = let go "ACTIVE"      = pure Active
@@ -86,7 +86,7 @@ data Profile = Profile
     , _profileTerminationDate  :: !(Maybe Day)
     , _profileSeparationReason :: !(Maybe Text)
     , _profileBirthday         :: !(Maybe Day)
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+    } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON) via (Sopica Profile)
 
 makeLenses ''Profile
@@ -137,7 +137,7 @@ data User = User
     , _userCreated :: !UTCTime
     , _userActive  :: !(Maybe UTCTime)
     , _userProfile :: !Profile
-    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+    } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica User)
 
 makeLenses ''User
@@ -241,7 +241,7 @@ data App = App
 
 instance AnsiPretty App
 
-newtype OktaError = OktaDecodeError String deriving Show
+newtype OktaError = OktaError String deriving Show
 
 instance Exception OktaError
 

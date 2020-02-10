@@ -41,7 +41,8 @@ indexPageImpl ctx login = withAuthUser ctx login $ \_ -> do
     now <- currentTime
     es' <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
     oktaUsers <- liftIO $ runIntegrations mgr lgr now integrationCfg O.users
-    pure $ indexPage es' oktaUsers
+    groupUsers <- liftIO $ runIntegrations mgr lgr now integrationCfg $ O.groupMembers internalGroup
+    pure $ indexPage es' oktaUsers groupUsers
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
@@ -96,8 +97,10 @@ makeCtx cfg lgr mgr cache mq = do
 
     void $ forEachMessage mq $ \msg -> case msg of
         PersonioUpdated -> do
-            users <- updateJob
-            runLogT "okta-sync" lgr $ logInfo_ $ "Updated " <> textShow (length users) <> " employees"
+            (OktaUpdateStats updated removed added) <- updateJob
+            runLogT "okta-sync" lgr $ logInfo_ $ "Updated " <> textShow (length updated) <> " employees"
+            runLogT "okta-sync" lgr $ logInfo_ $ "Removed " <> textShow removed <> " employees from Peakon group"
+            runLogT "okta-sync" lgr $ logInfo_ $ "Added " <> textShow added <> " employees to Peakon group"
         _ -> pure ()
 
     return (ctx, [])

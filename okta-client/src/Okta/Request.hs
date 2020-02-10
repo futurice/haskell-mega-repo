@@ -9,25 +9,29 @@ import Prelude ()
 import Okta.Types
 
 data Req a where
-    ReqGetAllUsers   :: Req [User]
-    ReqGetAllGroups  :: Req [Group]
-    ReqGetGroupUsers :: Text -> Req [User]
-    ReqGetAllApps    :: Req [App]
-    ReqGetAppUsers   :: Text -> Req [AppUser]
-    ReqCreateUser    :: NewUser -> Req User
-    ReqUpdateUser    :: OktaId -> Value -> Req User
+    ReqGetAllUsers         :: Req [User]
+    ReqGetAllGroups        :: Req [Group]
+    ReqGetGroupUsers       :: Text -> Req [User]
+    ReqGetAllApps          :: Req [App]
+    ReqGetAppUsers         :: Text -> Req [AppUser]
+    ReqCreateUser          :: NewUser -> Req User
+    ReqUpdateUser          :: OktaId -> Value -> Req User
+    ReqAddUserToGroup      :: Text -> OktaId -> Req ()
+    ReqRemoveUserFromGroup :: Text -> OktaId -> Req ()
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
 
 instance Hashable (Req a) where
-    hashWithSalt salt ReqGetAllUsers         = hashWithSalt salt (0 :: Int)
-    hashWithSalt salt ReqGetAllGroups        = hashWithSalt salt (1 :: Int)
-    hashWithSalt salt (ReqGetGroupUsers t)   = hashWithSalt salt (2 :: Int, t)
-    hashWithSalt salt ReqGetAllApps          = hashWithSalt salt (3 :: Int)
-    hashWithSalt salt (ReqGetAppUsers t)     = hashWithSalt salt (4 :: Int, t)
-    hashWithSalt salt (ReqCreateUser t)      = hashWithSalt salt (5 :: Int, t)
-    hashWithSalt salt (ReqUpdateUser u t)    = hashWithSalt salt (6 :: Int, u, t)
+    hashWithSalt salt ReqGetAllUsers               = hashWithSalt salt (0 :: Int)
+    hashWithSalt salt ReqGetAllGroups              = hashWithSalt salt (1 :: Int)
+    hashWithSalt salt (ReqGetGroupUsers t)         = hashWithSalt salt (2 :: Int, t)
+    hashWithSalt salt ReqGetAllApps                = hashWithSalt salt (3 :: Int)
+    hashWithSalt salt (ReqGetAppUsers t)           = hashWithSalt salt (4 :: Int, t)
+    hashWithSalt salt (ReqCreateUser t)            = hashWithSalt salt (5 :: Int, t)
+    hashWithSalt salt (ReqUpdateUser u t)          = hashWithSalt salt (6 :: Int, u, t)
+    hashWithSalt salt (ReqAddUserToGroup u g)      = hashWithSalt salt (7 :: Int, u, g)
+    hashWithSalt salt (ReqRemoveUserFromGroup u g) = hashWithSalt salt (8 :: Int, u, g)
 
 requestDict
     :: ( c [User]
@@ -35,7 +39,8 @@ requestDict
        , c [User]
        , c [App]
        , c [AppUser]
-       , c User)
+       , c User
+       , c ())
     => Proxy c
     -> Req a
     -> Dict (c a)
@@ -46,3 +51,5 @@ requestDict _ ReqGetAllApps = Dict
 requestDict _ (ReqGetAppUsers _) = Dict
 requestDict _ (ReqCreateUser _) = Dict
 requestDict _ (ReqUpdateUser _ _) = Dict
+requestDict _ (ReqAddUserToGroup _ _) = Dict
+requestDict _ (ReqRemoveUserFromGroup _ _) = Dict
