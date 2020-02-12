@@ -50,6 +50,7 @@ data PowerUser = PowerUser
     , _powerUserImpactRoles        :: ![Text]
     , _powerUserHomeSupervisorName :: !(Maybe Text)
     , _powerUserInvoiceableFTE     :: !(Maybe Double)
+    , _powerUserCompetenceHome     :: !(Maybe Text)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -104,6 +105,7 @@ powerUser today es e = do
         , _powerUserImpactRoles    = e ^. P.employeeImpactRoles
         , _powerUserHomeSupervisorName  = e ^. P.employeeHomeSupervisor
         , _powerUserInvoiceableFTE = e ^. P.employeeInvoiceableFTE
+        , _powerUserCompetenceHome = e ^. P.employeeCompetenceHome
         }
   where
     s = do
