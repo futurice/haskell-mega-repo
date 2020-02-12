@@ -18,10 +18,10 @@ module Futurice.App.Reports.PowerUser (
 import Control.Lens            ((<&>))
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Office         (officeToText)
 import Futurice.Prelude
 import Futurice.Report.Columns
-import Futurice.Tribe          (tribeToText, tribeToText)
-import Futurice.Office          (officeToText)
+import Futurice.Tribe          (tribeToText)
 import Prelude ()
 
 import qualified Data.Map.Strict as Map
@@ -35,18 +35,21 @@ import qualified PlanMill        as PM
 -------------------------------------------------------------------------------
 
 data PowerUser = PowerUser
-    { _powerUserUsername       :: !FUM.Login
-    , _powerUserPersonioId     :: !P.EmployeeId
-    , _powerUserFirst          :: !Text
-    , _powerUserLast           :: !Text
-    , _powerUserTeam           :: !Text
-    , _powerUserCompetence     :: !Text
-    , _powerUserSupervisor     :: !(Maybe FUM.Login)
-    , _powerUserSupervisorName :: !(Maybe Text)
-    , _powerUserStart          :: !(Maybe Day)
-    , _powerUserEnd            :: !(Maybe Day)
-    , _powerUserActive         :: !Text
-    , _powerUserInternal       :: !Bool
+    { _powerUserUsername           :: !FUM.Login
+    , _powerUserPersonioId         :: !P.EmployeeId
+    , _powerUserFirst              :: !Text
+    , _powerUserLast               :: !Text
+    , _powerUserTeam               :: !Text
+    , _powerUserCompetence         :: !Text
+    , _powerUserSupervisor         :: !(Maybe FUM.Login)
+    , _powerUserSupervisorName     :: !(Maybe Text)
+    , _powerUserStart              :: !(Maybe Day)
+    , _powerUserEnd                :: !(Maybe Day)
+    , _powerUserActive             :: !Text
+    , _powerUserInternal           :: !Bool
+    , _powerUserImpactRoles        :: ![Text]
+    , _powerUserHomeSupervisorName :: !(Maybe Text)
+    , _powerUserInvoiceableFTE     :: !(Maybe Double)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -98,6 +101,9 @@ powerUser today es e = do
         , _powerUserSupervisor     = s >>= view P.employeeLogin
         , _powerUserSupervisorName = s <&> view P.employeeFullname
         , _powerUserInternal       = e ^. P.employeeEmploymentType == Just P.Internal
+        , _powerUserImpactRoles    = e ^. P.employeeImpactRoles
+        , _powerUserHomeSupervisorName  = e ^. P.employeeHomeSupervisor
+        , _powerUserInvoiceableFTE = e ^. P.employeeInvoiceableFTE
         }
   where
     s = do

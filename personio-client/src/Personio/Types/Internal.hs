@@ -93,3 +93,12 @@ instance FromJSON CostCenter' where
             CostCenter'
                 <$> attrs .: "name"
                 <*> attrs .: "percentage"
+
+newtype ImpactRoles = ImpactRoles { getImpactRoles :: [Text] }
+
+instance FromJSON ImpactRoles where
+    parseJSON (String t) =
+        case T.splitOn "," t of
+            [""] -> pure $ ImpactRoles []
+            s -> pure $ ImpactRoles s
+    parseJSON _ = pure $ ImpactRoles $ [] --lenient
