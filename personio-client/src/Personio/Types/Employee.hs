@@ -189,7 +189,7 @@ parseEmployeeObject obj' = Employee
     <*> parseAttribute obj "termination_type"
     <*> parseAttribute obj "gender"
     <*> optional (parseDynamicAttribute obj "Competence home")
-    <*> fmap getImpactRoles (parseDynamicAttribute obj "Impact roles")
+    <*> fmap (maybe [] getImpactRoles) (parseDynamicAttribute obj "Impact roles")
     <*> fmap (>>= notEmpty) (parseDynamicAttribute obj "Home supervisor")
     <*> optional (parseDynamicAttribute obj "Invoiceable FTE (0-1)")
 #ifdef PERSONIO_DEBUG
