@@ -45,6 +45,7 @@ data UpdateInformation = UpdateInformation
     , uiTerminationDate  :: !(Maybe Day)
     , uiSeparationReason :: !(Maybe Text)
     , uiBirthday         :: !(Maybe Day)
+    , uiCompetenceHome   :: !(Maybe Text)
     } deriving (Eq, Show)
 
 instance ToJSON UpdateInformation where
@@ -63,4 +64,5 @@ instance ToJSON UpdateInformation where
         , "terminationDate"   .= uiTerminationDate i
         , "separation_reason" .= uiSeparationReason i
         , "birthday"          .= uiBirthday i
+        , "competenceHome"    .= uiCompetenceHome i
         ]

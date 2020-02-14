@@ -188,7 +188,7 @@ parseEmployeeObject obj' = Employee
     <*> optional (parseDynamicAttribute obj "Futubuddy's email")
     <*> parseAttribute obj "termination_type"
     <*> parseAttribute obj "gender"
-    <*> optional (parseDynamicAttribute obj "Competence home")
+    <*> fmap (>>= notEmpty) (optional (parseDynamicAttribute obj "Competence home"))
     <*> fmap (maybe [] getImpactRoles) (optional (parseDynamicAttribute obj "Impact roles"))
     <*> optional (parseDynamicAttribute obj "(FI) Matrix supervisor's email")
     <*> optional (parseDynamicAttribute obj "Invoiceable FTE (0-1)")
