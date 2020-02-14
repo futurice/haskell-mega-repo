@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
@@ -16,12 +17,13 @@ module Futurice.App.Reports.PowerUser (
     ) where
 
 import Control.Lens            ((<&>))
+import Futurice.Email          (Email)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Office         (officeToText)
 import Futurice.Prelude
 import Futurice.Report.Columns
-import Futurice.Tribe          (tribeToText, tribeToText)
-import Futurice.Office          (officeToText)
+import Futurice.Tribe          (tribeToText)
 import Prelude ()
 
 import qualified Data.Map.Strict as Map
@@ -35,18 +37,22 @@ import qualified PlanMill        as PM
 -------------------------------------------------------------------------------
 
 data PowerUser = PowerUser
-    { _powerUserUsername       :: !FUM.Login
-    , _powerUserPersonioId     :: !P.EmployeeId
-    , _powerUserFirst          :: !Text
-    , _powerUserLast           :: !Text
-    , _powerUserTeam           :: !Text
-    , _powerUserCompetence     :: !Text
-    , _powerUserSupervisor     :: !(Maybe FUM.Login)
-    , _powerUserSupervisorName :: !(Maybe Text)
-    , _powerUserStart          :: !(Maybe Day)
-    , _powerUserEnd            :: !(Maybe Day)
-    , _powerUserActive         :: !Text
-    , _powerUserInternal       :: !Bool
+    { _powerUserUsername           :: !FUM.Login
+    , _powerUserPersonioId         :: !P.EmployeeId
+    , _powerUserFirst              :: !Text
+    , _powerUserLast               :: !Text
+    , _powerUserTeam               :: !Text
+    , _powerUserCompetence         :: !Text
+    , _powerUserSupervisor         :: !(Maybe FUM.Login)
+    , _powerUserSupervisorName     :: !(Maybe Text)
+    , _powerUserStart              :: !(Maybe Day)
+    , _powerUserEnd                :: !(Maybe Day)
+    , _powerUserActive             :: !Text
+    , _powerUserInternal           :: !Bool
+    , _powerUserImpactRoles        :: ![Text]
+    , _powerUserMatrixSupervisorName :: !(Maybe Text)
+    , _powerUserInvoiceableFTE     :: !(Maybe Double)
+    , _powerUserCompetenceHome     :: !(Maybe Text)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -71,16 +77,20 @@ type PowerUserReport = Vector PowerUser
 -------------------------------------------------------------------------------
 
 type EmployeeMap = Map P.EmployeeId P.Employee
+type EmailMap = Map Email P.Employee
 
 powerUserReport :: (PM.MonadTime m, MonadPersonio m) => m PowerUserReport
 powerUserReport = do
     today <- currentDay
     es <- personio P.PersonioEmployees
     let es' = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) es
-    return $ V.fromList $ mapMaybe (powerUser today es') es
+    let emailMap = Map.fromList
+                   $ catMaybes
+                   $ map (\e -> (, e) <$> (e ^. P.employeeEmail)) es
+    return $ V.fromList $ mapMaybe (powerUser today es' emailMap) es
 
-powerUser :: Day -> EmployeeMap -> P.Employee -> Maybe PowerUser
-powerUser today es e = do
+powerUser :: Day -> EmployeeMap -> EmailMap -> P.Employee -> Maybe PowerUser
+powerUser today es emailMap e = do
     login <- e ^. P.employeeLogin
     pure PowerUser
         { _powerUserUsername       = login
@@ -98,6 +108,12 @@ powerUser today es e = do
         , _powerUserSupervisor     = s >>= view P.employeeLogin
         , _powerUserSupervisorName = s <&> view P.employeeFullname
         , _powerUserInternal       = e ^. P.employeeEmploymentType == Just P.Internal
+        , _powerUserImpactRoles    = e ^. P.employeeImpactRoles
+        , _powerUserMatrixSupervisorName  = e ^. P.employeeMatrixSupervisorEmail
+                                            >>= flip Map.lookup emailMap
+                                            >>= \su -> Just $ su ^. P.employeeFullname
+        , _powerUserInvoiceableFTE = e ^. P.employeeInvoiceableFTE
+        , _powerUserCompetenceHome = e ^. P.employeeCompetenceHome
         }
   where
     s = do

@@ -79,6 +79,9 @@ data Employee = Employee
     , _employeeTerminationType   :: !(Maybe Text)
     , _employeeGender            :: !(Maybe Text)
     , _employeeCompetenceHome    :: !(Maybe Text)
+    , _employeeImpactRoles       :: ![Text]
+    , _employeeMatrixSupervisorEmail :: !(Maybe Email)
+    , _employeeInvoiceableFTE    :: !(Maybe Double)
 #ifdef PERSONIO_DEBUG
     , _employeeRest              :: !(HashMap Text Attribute)
 #endif
@@ -186,6 +189,9 @@ parseEmployeeObject obj' = Employee
     <*> parseAttribute obj "termination_type"
     <*> parseAttribute obj "gender"
     <*> optional (parseDynamicAttribute obj "Competence home")
+    <*> fmap (maybe [] getImpactRoles) (optional (parseDynamicAttribute obj "Impact roles"))
+    <*> optional (parseDynamicAttribute obj "(FI) Matrix supervisor's email")
+    <*> optional (parseDynamicAttribute obj "Invoiceable FTE (0-1)")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif
