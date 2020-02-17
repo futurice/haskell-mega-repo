@@ -132,6 +132,10 @@ data Routes = Routes
         ("uiapi" :> "tribe/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "tribes" :> Get '[JSON] Value)
 
+    , routePowerV3TribesMonthlyForecast :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "tribe" :> "monthly_forecast/" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "tribes" :> "monthly" :> "forecast" :> Get '[JSON] Value)
+
     , routePowerV3Allocations :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "allocation" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "allocations" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
