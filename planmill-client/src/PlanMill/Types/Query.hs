@@ -58,8 +58,8 @@ import PlanMill.Types.Meta             (Meta)
 import PlanMill.Types.Project
        (Project, ProjectMember, ProjectMembers, Projects)
 import PlanMill.Types.Report
-       (AllRevenues2, PersonValueCreation, PersonValueCreations,
-       TeamsHoursByCategory, TeamsHoursByCategoryRow)
+       (AllRevenues2, EarnedVacations, EarnedVacationsRow, PersonValueCreation,
+       PersonValueCreations, TeamsHoursByCategory, TeamsHoursByCategoryRow)
 import PlanMill.Types.Request
        (PlanMill (..), QueryString, planMillGetQs, planMillPagedGetQs)
 import PlanMill.Types.ResultInterval
@@ -95,6 +95,7 @@ data QueryTag f a where
     QueryTagAssignment     :: QueryTag f Assignment
     QueryTagValueCreation  :: QueryTag f PersonValueCreation
     QueryTagTeamsHours     :: QueryTag f TeamsHoursByCategoryRow
+    QueryTagEarnedVacation :: QueryTag f EarnedVacationsRow
 
 -- | Planmill query (i.e. read-only operation).
 --
@@ -177,6 +178,7 @@ instance GEq (QueryTag f) where
     geq QueryTagAssignment QueryTagAssignment       = Just Refl
     geq QueryTagValueCreation QueryTagValueCreation = Just Refl
     geq QueryTagTeamsHours QueryTagTeamsHours       = Just Refl
+    geq QueryTagEarnedVacation QueryTagEarnedVacation = Just Refl
     geq _ _                                   = Nothing
 
 instance Eq (SomeQueryTag f) where
@@ -203,6 +205,7 @@ instance Show (QueryTag f a) where
         QueryTagAssignment    -> showString "QueryTagAssignment"
         QueryTagValueCreation -> showString "QueryTagValueCreation"
         QueryTagTeamsHours    -> showString "QueryTagTeamsHours"
+        QueryTagEarnedVacation -> showString "QueryTagEarnedVacation"
 
 instance Hashable (QueryTag f a) where
     hashWithSalt salt QueryTagMe           = salt `hashWithSalt` (0 :: Int)
@@ -224,6 +227,7 @@ instance Hashable (QueryTag f a) where
     hashWithSalt salt QueryTagAssignment    = salt `hashWithSalt` (13 :: Int)
     hashWithSalt salt QueryTagValueCreation = salt `hashWithSalt` (14 :: Int)
     hashWithSalt salt QueryTagTeamsHours    = salt `hashWithSalt` (15 :: Int)
+    hashWithSalt salt QueryTagEarnedVacation = salt `hashWithSalt` (16 :: Int)
 
 instance NFData (QueryTag f a) where
     rnf x = x `seq` ()
@@ -254,6 +258,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
     put (SomeQueryTag QueryTagAssignment)    = put (14 :: Word8)
     put (SomeQueryTag QueryTagValueCreation) = put (15 :: Word8)
     put (SomeQueryTag QueryTagTeamsHours)    = put (16 :: Word8)
+    put (SomeQueryTag QueryTagEarnedVacation) = put (17 :: Word8)
 
     get = get >>= \n -> case (n :: Word8, sboolEqRefl :: Maybe (f :~: I)) of
         (0, Just Refl) -> do
@@ -276,6 +281,7 @@ instance SBoolI (f == I) => Binary (SomeQueryTag f) where
         (14, _)         -> pure $ SomeQueryTag QueryTagAssignment
         (15, _)         -> pure $ SomeQueryTag QueryTagValueCreation
         (16, _)         -> pure $ SomeQueryTag QueryTagTeamsHours
+        (17, _)         -> pure $ SomeQueryTag QueryTagEarnedVacation
 
         _ -> fail $ "Invalid tag " ++ show n
 
@@ -297,6 +303,7 @@ instance ToJSON (QueryTag f a) where
     toJSON QueryTagAssignment    = String "assignment"
     toJSON QueryTagValueCreation = String "valuecreation"
     toJSON QueryTagTeamsHours    = String "teamshours"
+    toJSON QueryTagEarnedVacation = String "earnedvacation"
 
 instance ToJSON (SomeQueryTag f) where
     toJSON (SomeQueryTag t) = toJSON t
@@ -319,6 +326,7 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
         ("assignment", _)            -> pure $ SomeQueryTag QueryTagAssignment
         ("valuecreation", _)         -> pure $ SomeQueryTag QueryTagValueCreation
         ("teamshours", _)            -> pure $ SomeQueryTag QueryTagTeamsHours
+        ("earnedvacation", _)        -> pure $ SomeQueryTag QueryTagEarnedVacation
         (_, Just Refl) | T.isPrefixOf pfx t
             -> pure $ reifySymbol (T.drop (T.length pfx) t ^. unpacked) mk
           where
@@ -345,6 +353,7 @@ instance HasStructuralInfo (QueryTag f a) where
         ,  NominalType "QueryTagAssignment"
         ,  NominalType "QueryTagValueCreation"
         ,  NominalType "QueryTagTeamsHours"
+        ,  NominalType "QueryTagEarnedVacation"
         ]]
 
 -------------------------------------------------------------------------------
@@ -479,6 +488,7 @@ type QueryTypes = '[ Timereports, UserCapacities
     , CapacityCalendar, CapacityCalendars
     , AllRevenues2, PersonValueCreations, PersonValueCreation
     , TeamsHoursByCategory, TeamsHoursByCategoryRow
+    , EarnedVacations, EarnedVacationsRow
     ]
 
 -- | A bit fancier than ':~:'
@@ -505,6 +515,7 @@ queryTagType QueryTagAllRevenue    = Right $ insertNS Refl
 queryTagType QueryTagAssignment    = Right $ insertNS Refl
 queryTagType QueryTagValueCreation = Right $ insertNS Refl
 queryTagType QueryTagTeamsHours    = Right $ insertNS Refl
+queryTagType QueryTagEarnedVacation = Right $ insertNS Refl
 
 queryTagVectorType
     :: QueryTag Vector a
@@ -520,6 +531,7 @@ queryTagVectorType QueryTagCalendar      = insertNS Refl
 queryTagVectorType QueryTagAssignment    = insertNS Refl
 queryTagVectorType QueryTagValueCreation = insertNS Refl
 queryTagVectorType QueryTagTeamsHours    = insertNS Refl
+queryTagVectorType QueryTagEarnedVacation = insertNS Refl
 
 -- | Reflect the type of 'Query'.
 queryType

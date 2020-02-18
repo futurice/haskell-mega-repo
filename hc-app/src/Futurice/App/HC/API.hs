@@ -14,6 +14,8 @@ import Futurice.App.HC.Achoo.Types       (AchooChart)
 import Futurice.App.HC.EarlyCaring.Types
        (BalanceCSV, EarlyCaringEmail, SignedBlob)
 
+import qualified Personio as P
+
 data Record route = Record
     { recIndex               :: route :- SSOUser
         :> Get '[HTML] (HtmlPage "index-page")
@@ -55,6 +57,13 @@ data Record route = Record
         :> QueryParam' '[ Required ] "type" Day
         :> QueryParam' '[ Required ] "whole" Bool
         :> Get '[SVG] (Chart "achoo-chart")
+    , recVacationReport :: route :- SSOUser
+        :> "vacation-report"
+        :> Get '[HTML] (HtmlPage "vacation-report")
+    , recVacationReportEmail :: route :- SSOUser
+        :> "vacation-report"
+        :> Capture "employeeId" P.EmployeeId
+        :> Get '[HTML] (HtmlPage "vacation-report-single")
     }
   deriving Generic
 

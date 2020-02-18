@@ -91,6 +91,7 @@ library
     Futurice.App.HC.Markup
     Futurice.App.HC.PersonioValidation
     Futurice.App.HC.PrivateContacts
+    Futurice.App.HC.VacationReport
 
 executable hc-app-server
   default-language: Haskell2010

@@ -48,6 +48,7 @@ data Cmd
     | CmdAssignments PM.ProjectId
     | CmdBalance PM.UserId
     | CmdCapacity PM.UserId (PM.Interval Day)
+    | CmdEarnedVacations Int
     | CmdEnumeration Text
     | CmdHookAdd PM.HookType Text
     | CmdHookDelete PM.HookId
@@ -255,6 +256,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         putPretty x
     CmdTeamsHoursByCategory interval -> do
         x <- PM.planmillAction $ PM.teamsHoursByCategoryReport interval
+        putPretty x
+    CmdEarnedVacations organization -> do
+        x <- PM.planmillAction $ PM.earnedVacationsReport organization
         putPretty x
 -------------------------------------------------------------------------------
 -- M - monad with custom instances

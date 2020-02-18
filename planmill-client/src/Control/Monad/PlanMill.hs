@@ -70,6 +70,7 @@ class
     , MonadPlanMillC m AllRevenues2
     , MonadPlanMillC m PersonValueCreation
     , MonadPlanMillC m TeamsHoursByCategoryRow
+    , MonadPlanMillC m EarnedVacationsRow
     )
   => MonadPlanMillConstraint m where
 

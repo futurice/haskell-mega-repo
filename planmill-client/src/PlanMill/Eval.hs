@@ -100,6 +100,7 @@ evalPlanMill pm = do
                             || BS8.isSuffixOf "absences" (path req)
                             || BS8.isSuffixOf "projects" (path req)
                             || BS8.isSuffixOf "Value%20creation%20per%20month%20by%20employee" (path req)
+                            || BS8.isSuffixOf "Earned%20Vacations" (path req)
                           then responseTimeoutMicro $ 120 * 1000000
                           else responseTimeout req' -- otherwise do nothing
                       }

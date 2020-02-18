@@ -11,7 +11,7 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.HC.Main (defaultMain) where
 
-import Data.Time                      (addDays)
+import Data.Time                      (addDays, toGregorian)
 import Futurice.App.EmailProxy.Client (sendEmail)
 import Futurice.App.EmailProxy.Types
        (emptyReq, fromEmail, reqBody, reqCc, reqSubject)
@@ -49,6 +49,7 @@ import Futurice.App.HC.HRNumbers
 import Futurice.App.HC.IndexPage
 import Futurice.App.HC.PersonioValidation
 import Futurice.App.HC.PrivateContacts
+import Futurice.App.HC.VacationReport
 
 server :: Ctx -> Server HCAPI
 server ctx = genericServer $ Record
@@ -62,6 +63,8 @@ server ctx = genericServer $ Record
     , recEarlyCaringSubmit   = earlyCaringSubmitAction ctx
     , recAchooReport         = achooReportAction ctx
     , recAchooChart          = achooChartAction ctx
+    , recVacationReport      = vacationReportAction ctx
+    , recVacationReportEmail = vacationReportEmailAction ctx
     }
 
 -------------------------------------------------------------------------------
@@ -276,6 +279,22 @@ earlyCaringSubmitAction ctx mfu sb = do
                     & reqBody    .~ body ^. strict
                     & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
 
+
+vacationReportAction :: Ctx -> Maybe FUM.Login -> Handler (HtmlPage "vacation-report")
+vacationReportAction = withAuthUser $ \_ -> do
+    d <- PMQ.earnedVacationsReport 3426
+    employees <- personio P.PersonioEmployees
+    pure $ renderReport d employees
+
+vacationReportEmailAction :: Ctx -> Maybe FUM.Login -> P.EmployeeId -> Handler (HtmlPage "vacation-report-single")
+vacationReportEmailAction ctx mfum eid = withAuthUser (\_ -> do
+    d <- PMQ.earnedVacationsReport 3426
+    employees <- personio P.PersonioEmployees
+    now <- currentDay
+    pure $ renderReportSingle eid (currentYear now) d employees) ctx mfum
+  where
+    currentYear n = case toGregorian n of
+      (year, _, _) -> year
 
 page404 :: HtmlPage a
 page404 = page_ "HC - Unauthorised" $
