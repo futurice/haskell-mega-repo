@@ -100,6 +100,7 @@ updateUsers employees users = do
         , uiSeparationReason = pemp ^. P.employeeTerminationType
         , uiBirthday = pemp ^. P.employeeBirthday
         , uiCompetenceHome = pemp ^. P.employeeCompetenceHome
+        , uiMatrixSupervisor = pemp ^. P.employeeMatrixSupervisorEmail
         }
 
     oktaUserToUpdate ouser =
@@ -120,6 +121,7 @@ updateUsers employees users = do
         , uiSeparationReason = ouser ^. O.userProfile . O.profileSeparationReason
         , uiBirthday = ouser ^. O.userProfile . O.profileBirthday
         , uiCompetenceHome = ouser ^. O.userProfile . O.profileCompetenceHome
+        , uiMatrixSupervisor = ouser ^. O.userProfile . O.profileMatrixSupervisor
         }
 
     changeData ouser pemp =
