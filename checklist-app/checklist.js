@@ -43,6 +43,7 @@ futu.onload(function () {
   $$("button[data-futu-id=task-remove]").forEach(taskRemoveBtn);
   $$("button[data-futu-id=employee-remove]").forEach(employeeRemoveBtn);
   $$("button[data-futu-id=employee-archive]").forEach(employeeArchiveBtn);
+  $$("button[data-futu-id=delete-task]").forEach(deleteTaskBtn);
   $$("input[data-futu-id=task-done-checkbox]").forEach(taskToggleCheckbox);
   $$("input[data-futu-id=task-comment-editbox]").forEach(taskCommentEditInput);
   $$("button[data-futu-link-button]").forEach(linkButton);
@@ -284,6 +285,20 @@ futu.onload(function () {
     });
   }
 
+  function deleteTaskBtn(btn) {
+      buttonOnClick(btn, function () {
+          btn.disabled = true;
+
+          var taskId = btn.dataset.futuTaskId;
+
+          if (taskId && confirm("Delete task from the system?")) {
+              cmdDeleteTask(taskId);
+          } else {
+              btn.disabled = false;
+          }
+      });
+  }
+
   function taskToggleCheckbox(chk) {
     var employeeId = chk.dataset.futuEmployee;
     var taskId = chk.dataset.futuTask;
@@ -432,6 +447,14 @@ futu.onload(function () {
       tid: taskId,
       comment: comment,
     });
+  }
+
+  function cmdDeleteTask(taskId) {
+      traceCall(cmdDeleteTask, arguments);
+      return command({
+          cmd: "delete-task",
+          tid: taskId
+      });
   }
 
   function command(cmd, reload) {
