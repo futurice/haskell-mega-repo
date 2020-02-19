@@ -39,7 +39,7 @@ taskPage world today authUser task integrationData = checklistPage_ (view nameTe
                   Nothing Nothing (task ^? identifier) defaultShowAll False
             ]
             "Goto employees listing"
-
+        button_ [ class_ "button alert float-right", futuId_ "delete-task", data_ "futu-task-id" $ task ^. identifierText ] $ "Delete task"
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "task-edit", data_ "futu-task-id" $ task ^. identifierText ] $ do
         row_ $ large_ 12 $

@@ -290,6 +290,7 @@ data Command f
     | CmdTaskItemToggle (Identifier Employee) (Identifier Task) TaskItem
     | CmdArchiveEmployee (Identifier Employee) ArchiveOrRemove
     | CmdTaskEditComment (Identifier Employee) (Identifier Task) TaskComment
+    | CmdDeleteTask (Identifier Task)
 
 data ArchiveOrRemove = Archive | Remove deriving (Eq, Show)
 
@@ -333,6 +334,8 @@ traverseCommand _ (CmdArchiveEmployee cid b) =
     pure $ CmdArchiveEmployee cid b
 traverseCommand _ (CmdTaskEditComment eid tid c) =
     pure $ CmdTaskEditComment eid tid c
+traverseCommand _ (CmdDeleteTask tid) =
+    pure $ CmdDeleteTask tid
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -468,6 +471,8 @@ instance (FromJSONField1 f) => FromJSON (Command f)
             "archive-employee" -> CmdArchiveEmployee
                 <$> obj .: "eid"
                 <*> obj .: "delete"
+            "delete-task" -> CmdDeleteTask
+                <$> obj .: "tid"
 
             _ -> fail $ "Invalid Command tag " ++ cmd ^. unpacked
 

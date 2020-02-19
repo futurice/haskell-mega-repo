@@ -49,7 +49,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
 
     -- Tasks
     subheader_ "Tasks"
-    p_ $ toHtml $ "There are " <> textShow (length tasks) <> " tasks"
+    row_ $ large_ 12 $ p_ $ toHtml $ "There are " <> textShow (length tasks) <> " tasks"
 
     -- TODO: move to Markup: tasksList
     row_ $ large_ 12 $ table_ $ do

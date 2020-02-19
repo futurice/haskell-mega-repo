@@ -5,7 +5,7 @@ module Futurice.App.Checklist.Logic (
     transactCommand,
     ) where
 
-import Control.Lens               (forOf_, non, use, contains, preuse)
+import Control.Lens               (contains, forOf_, non, preuse, use)
 import Control.Monad.State.Strict (State, execState)
 import Futurice.Prelude
 import Prelude ()
@@ -81,6 +81,12 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
 
         worldTaskItems . at eid Lens..= Nothing
         worldEmployees . at eid Lens..= Nothing
+
+    CmdDeleteTask tid -> do
+        worldTasks . at tid Lens..= Nothing
+        worldTaskItems . traverse . at tid Lens..= Nothing
+        worldLists . traverse . checklistTasks . at tid Lens..= Nothing
+        -- worldTasksOrder . at tid Lens..= Nothing
 
   where
     -- tasks are added with both explicit CmdAddTask and during CmdCreateTask
