@@ -84,6 +84,8 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
 
     CmdDeleteTask tid -> do
         worldTasks . at tid Lens..= Nothing
+        for_ (world ^.. worldTasks . folded) $ \task ->
+          worldTasks . ix (task ^. identifier) . taskPrereqs . at tid Lens..= Nothing
         worldTaskItems . traverse . at tid Lens..= Nothing
         worldLists . traverse . checklistTasks . at tid Lens..= Nothing
         -- worldTasksOrder . at tid Lens..= Nothing

@@ -171,7 +171,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , when isInternal $ dynamicAttributeMissing "Primary role" RoleMissing
         , dynamicAttributeMissing "Work phone" WorkPhoneMissing
         , emailValidate
-        , expatBonusAndAllowanceCurrencyValidate
+--        , expatBonusAndAllowanceCurrencyValidate
         , expatValidate
         , externalContractValidate
         , fixedEndDateValidate
@@ -441,15 +441,15 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 Just _  -> pure ()
                 Nothing -> tell [HomeTribeInvalid hTribe]
 
-        expatBonusAndAllowanceCurrencyValidate :: WriterT [ValidationMessage] Parser ()
-        expatBonusAndAllowanceCurrencyValidate = do
-            eBonus <- lift (parseDynamicAttribute obj "Expat monthly bonus 100%")
-            eAllow <- lift (parseDynamicAttribute obj "Expat housing allowance")
-            case (isSomeText eBonus, isSomeText eAllow) of
-                (Nothing, Nothing) -> pure ()
-                _                  -> dynamicAttributeMissing
-                                          "Expat bonus and allowance currency"
-                                          ExpatBonusAndAllowanceCurrencyMissing
+        -- expatBonusAndAllowanceCurrencyValidate :: WriterT [ValidationMessage] Parser ()
+        -- expatBonusAndAllowanceCurrencyValidate = do
+        --     eBonus <- lift (parseDynamicAttribute obj "Expat monthly bonus 100%")
+        --     eAllow <- lift (parseDynamicAttribute obj "Expat housing allowance")
+        --     case (isSomeText eBonus, isSomeText eAllow) of
+        --         (Nothing, Nothing) -> pure ()
+        --         _                  -> dynamicAttributeMissing
+        --                                   "Expat bonus and allowance currency"
+        --                                   ExpatBonusAndAllowanceCurrencyMissing
 
         salaryValidate :: WriterT [ValidationMessage] Parser ()
         salaryValidate = do
