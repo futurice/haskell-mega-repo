@@ -444,7 +444,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         expatBonusAndAllowanceCurrencyValidate :: WriterT [ValidationMessage] Parser ()
         expatBonusAndAllowanceCurrencyValidate = do
             eBonus <- lift (parseDynamicAttribute obj "Expat monthly bonus 100%")
-            eAllow <- lift (parseDynamicAttribute obj "Expat housing allowance")
+            eAllow <- lift (parseDynamicAttribute obj "(OLD) Expat housing allowance")
             case (isSomeText eBonus, isSomeText eAllow) of
                 (Nothing, Nothing) -> pure ()
                 _                  -> dynamicAttributeMissing
