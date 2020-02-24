@@ -33,14 +33,14 @@ reservationsGetImpl ctx day = do
     lgr = ctxLogger ctx
     googleCfg = cfgGoogleConfig $ ctxConfig ctx
 
-indexPageGetImpl :: Ctx -> Maybe Day -> Handler (HtmlPage "indexpage")
-indexPageGetImpl ctx time = do
+indexPageGetImpl :: Ctx -> Maybe Day -> Maybe Text -> Handler (HtmlPage "indexpage")
+indexPageGetImpl ctx time mfloor = do
     reservationDay <- case time of
           Just t -> pure t
           Nothing -> currentDay
     now <- currentTime
     meetingRoomEvents <- liftIO $ runIntegrations mgr lgr now googleCfg $ fetchMeetingRoomEvents reservationDay
-    pure $ indexPage reservationDay $ meetingRoomEvents
+    pure $ indexPage reservationDay meetingRoomEvents (if mfloor == Just "show-all" then Nothing else mfloor)
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx

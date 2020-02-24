@@ -29,7 +29,7 @@ futuroomApi = genericApi (Proxy :: Proxy Record)
 ----------------------------
 
 data HtmlRecord route = HtmlRecord
-    { indexPageGet :: route :- QueryParam "date" Day :> Get '[HTML] (HtmlPage "indexpage")
+    { indexPageGet :: route :- QueryParam "date" Day :> QueryParam "floor" Text :> Get '[HTML] (HtmlPage "indexpage")
     } deriving Generic
 
 type HtmlAPI = ToServantApi HtmlRecord
