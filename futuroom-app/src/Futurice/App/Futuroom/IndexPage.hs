@@ -3,8 +3,9 @@
 module Futurice.App.Futuroom.IndexPage where
 
 import Data.Time
-import Futurice.Lucid.Foundation hiding (page_)
-import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithCSS, page_)
+import Data.Time.Calendar.WeekDate (toWeekDate)
+import Futurice.Lucid.Foundation   hiding (page_)
+import Futurice.Lucid.Navigation   (Navigation (..), pageParamsWithCSS, page_)
 import Futurice.Prelude
 import Prelude ()
 
@@ -40,7 +41,7 @@ meetingRoomCss = C.body C.? do
     ".row" C.? do
         C.maxWidth C.none
     ".schedule" C.? do
-        C.width (C.px 2050.0)
+        C.width (C.px 2550.0)
     ".timelabel" C.? do
         C.position C.absolute
         C.left (C.px 5.0)
@@ -48,20 +49,30 @@ meetingRoomCss = C.body C.? do
 instance Navigation Nav where
     serviceTitle _ = "Futuroom"
 
-    navLink NavHome    = (recordHref_ indexPageGet Nothing, "Futuroom Home")
+    navLink NavHome    = (recordHref_ indexPageGet Nothing Nothing, "Futuroom Home")
 
     pageParams = pageParamsWithCSS meetingRoomCss
 
-indexPage :: Day -> Map MeetingRoom [Reservation] -> HtmlPage "indexpage"
-indexPage day reservations = page_ "Futuroom" (Nothing :: Maybe Nav) $ do
+indexPage :: Day -> Map MeetingRoom [Reservation] -> Maybe Text -> HtmlPage "indexpage"
+indexPage day reservations mfloor = page_ "Futuroom" (Nothing :: Maybe Nav) $ do
     row_ $ do
-        form_ [recordAction_ indexPageGet Nothing] $ do
-            div_ [style_ "width: 200px; float: left; margin-right: 10px; padding-efl"] $ input_ [type_ "date", name_ "date", placeholder_ "Pick a date"]
-            div_ [style_ "width: 200px; float: left;"] $ button_ [class_ "button", type_ "submit"] "Get events for day"
+        form_ [recordAction_ indexPageGet Nothing Nothing] $ do
+            div_ [style_ "width: 200px; float: left; margin-right: 10px; padding-efl"] $ label_ $ do
+                "Date"
+                input_ [type_ "date", name_ "date", placeholder_ "Pick a date", value_ (textShow day)]
+            div_ [style_ "width: 200px; float: left; margin-right: 10px; padding-efl"] $ label_ $ do
+                "Floor"
+                select_ [name_ "floor"] $ do
+                    for_ (nub $ sort $ catMaybes $ fmap mrFloor $ M.keys reservations) $ \f ->
+                      optionSelected_ (Just f == mfloor) [ value_ f] $ toHtml f
+                    optionSelected_ (mfloor == Nothing) [ value_ "show-all"] $ toHtml ("Show all" :: Text)
+            div_ [style_ "width: 200px; float: left;"] $ do
+                br_ []
+                button_ [class_ "button", type_ "submit"] "Get events for day"
     div_ [class_ "schedule"] $ do
         div_ $ do
             h4_ $ toHtml $ formatTime defaultTimeLocale "%e %b %Y" day
-            void $ flip M.traverseWithKey reservations $ \meetingroom mreservations -> do
+            void $ flip M.traverseWithKey (filterFloor $ filterSaunaIfFriday reservations) $ \meetingroom mreservations -> do
                 div_ [class_ "meeting-room"] $ do
                     div_ [class_ "meeting-room-names"] $ span_ $ toHtml $ (mrName meetingroom <> " " <> maybe "" textShow (mrCapasity meetingroom))
                     for_ mreservations $ \res -> do
@@ -90,10 +101,13 @@ indexPage day reservations = page_ "Futuroom" (Nothing :: Maybe Nav) $ do
       minimumTime res currentMinimum = minimum [minimum $ utctDayTime <$> catMaybes (resStartTime <$> res), currentMinimum]
       startingHour :: DiffTime
       startingHour = foldr minimumTime 21600 reservations
-      cardStartPos = 234 :: Int -- Start of schedule area
+      cardStartPos = 254 :: Int -- Start of schedule area
       pixelsPerHalfHour = 120
       cardStyle startTime endTime = T.pack ("top: " <> (show . eventStart $ startTime) <> "px;" <> " height: " <> (show $ eventWidth startTime endTime) <> "px;")
       eventStart startTime = cardStartPos + round (((utctDayTime startTime - startingHour) / (30 * 60)) * pixelsPerHalfHour)
       eventWidth startTime endTime = eventStart endTime - eventStart startTime
       toTime :: UTCTime -> String
       toTime t = formatTime defaultTimeLocale "%R" $ utcToHelsinkiTime t
+      isFriday = let (_,_,wd) = toWeekDate day in wd == 5
+      filterSaunaIfFriday res = if not isFriday then M.filterWithKey (\meetingroom _ -> not $ "Sauna" `T.isPrefixOf` mrName meetingroom) res else res
+      filterFloor res = maybe res (\f -> M.filterWithKey (\meetingroom _ -> Just f == mrFloor meetingroom) res) mfloor
