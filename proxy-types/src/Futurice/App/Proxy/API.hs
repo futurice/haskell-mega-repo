@@ -140,6 +140,10 @@ data Routes = Routes
         ("uiapi" :> "allocation" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "allocations" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
 
+    , routePowerV3AllocationsHistory :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "allocation" :> "history/" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "allocations" :> "history" :> Get '[JSON] Value)
+
     , routePowerV3Projects :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "project" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "projects" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
