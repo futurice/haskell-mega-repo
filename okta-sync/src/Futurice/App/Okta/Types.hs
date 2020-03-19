@@ -47,6 +47,7 @@ data UpdateInformation = UpdateInformation
     , uiBirthday         :: !(Maybe Day)
     , uiCompetenceHome   :: !(Maybe Text)
     , uiMatrixSupervisor :: !(Maybe Email)
+    , uiMobilePhone      :: !(Maybe Text)
     } deriving (Eq, Show)
 
 instance ToJSON UpdateInformation where
@@ -67,4 +68,5 @@ instance ToJSON UpdateInformation where
         , "birthday"          .= uiBirthday i
         , "competenceHome"    .= uiCompetenceHome i
         , "matrixSupervisor"  .= uiMatrixSupervisor i
+        , "mobilePhone"       .= uiMobilePhone i
         ]

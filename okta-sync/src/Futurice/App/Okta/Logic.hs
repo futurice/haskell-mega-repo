@@ -101,6 +101,7 @@ updateUsers employees users = do
         , uiBirthday = pemp ^. P.employeeBirthday
         , uiCompetenceHome = pemp ^. P.employeeCompetenceHome
         , uiMatrixSupervisor = pemp ^. P.employeeMatrixSupervisorEmail
+        , uiMobilePhone = pemp ^. P.employeeWorkPhone
         }
 
     oktaUserToUpdate ouser =
@@ -122,6 +123,7 @@ updateUsers employees users = do
         , uiBirthday = ouser ^. O.userProfile . O.profileBirthday
         , uiCompetenceHome = ouser ^. O.userProfile . O.profileCompetenceHome
         , uiMatrixSupervisor = ouser ^. O.userProfile . O.profileMatrixSupervisor
+        , uiMobilePhone = ouser ^. O.userProfile . O.profileMobilePhone
         }
 
     changeData ouser pemp =
