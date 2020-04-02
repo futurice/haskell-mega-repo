@@ -106,7 +106,7 @@ data Record route = Record
     , recValueCreation :: route :- "report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport
 
     -- missing hours notification
-    , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
+--    , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
 
     -- futuqu
     , recFutuqu :: route :- "futuqu" :> FutuquAPI

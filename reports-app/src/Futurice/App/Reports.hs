@@ -344,7 +344,7 @@ server ctx = genericServer $ Record
     , recValueCreation = liftIO . serveValueCreationReport ctx
 
     -- missing hours notification
-    , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
+--    , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
 
     -- futuqu
     , recFutuqu = futuquServer lgr (ctxManager ctx) (ctxCache ctx) (toFutuquCfg (cfgIntegrationsCfg cfg))
