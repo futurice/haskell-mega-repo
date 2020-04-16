@@ -109,15 +109,15 @@ data Routes = Routes
 
     -- Power v3
     , routePowerV3PersonCompetences :: ProxiedEndpoint 'PowerService
-        ("uiapi" :> "timeline" :> "personcompetence/" :> Get '[JSON] Value)
+        ("uiapi" :> "timeline" :> "personskill/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "person_competences" :> Get '[JSON] Value)
 
     , routePowerV3ProjectCompetences :: ProxiedEndpoint 'PowerService
-        ("uiapi" :> "timeline" :> "projectcompetence/" :> Get '[JSON] Value)
+        ("uiapi" :> "timeline" :> "projectskill/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "project_competences" :> Get '[JSON] Value)
 
     , routePowerV3Competences :: ProxiedEndpoint 'PowerService
-        ("uiapi" :> "competence/" :> Get '[JSON] Value)
+        ("uiapi" :> "skill/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "competences" :> Get '[JSON] Value)
 
     , routePowerV3People :: ProxiedEndpoint 'PowerService
