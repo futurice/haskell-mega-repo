@@ -206,7 +206,8 @@ data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
     , _thcTotal             :: !Double
     , _thcPrimaryTeam       :: !(Maybe Text)
     , _thcPrimaryCompetence :: !(Maybe Text)
-    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasSemanticVersion, HasDatatypeInfo)
+    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, NFData, HasSemanticVersion, HasDatatypeInfo)
+       deriving ToJSON via (Sopica TeamsHoursByCategoryRow)
 type TeamsHoursByCategory = Vector TeamsHoursByCategoryRow
 
 instance AnsiPretty TeamsHoursByCategoryRow
@@ -239,14 +240,14 @@ instance FromJSON TeamsHoursByCategoryRow where
         primaryTeamCompetence <- traverse parseJSON (array !? 10)
         let res = TeamsHoursByCategoryRow
                 <$> name
-                <*> customerWork
-                <*> sales
-                <*> futuriceInternal
-                <*> teamInternalWork
-                <*> absences
+                <*> (fmap (/ 60) customerWork)
+                <*> (fmap (/ 60) sales)
+                <*> (fmap (/ 60) futuriceInternal)
+                <*> (fmap (/ 60) teamInternalWork)
+                <*> (fmap (/ 60) absences)
                 <*> utz
                 <*> valueCreation
-                <*> total
+                <*> (fmap (/ 60) total)
                 <*> primaryTeam
                 <*> primaryTeamCompetence
         maybe mempty pure res
