@@ -32,6 +32,7 @@ module PlanMill.Queries (
     capacitycalendars,
     allRevenuesReport,
     valueCreationByMonthReport,
+    teamsHoursByCategoryReport,
     -- * Queries
     usersQuery,
     absencesQuery,
@@ -55,15 +56,17 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
-       CapacityCalendars, Me, Project (..), ProjectId, ProjectMembers,
-       Projects, SimpleProject, Task, TaskId, Tasks, Team, TeamId, TimeBalance,
-       Timereport, Timereports, User, UserCapacities, UserId, Users,
-       PersonValueCreations, ViewTemplate (..), identifier, sProject,
-       viewTemplateToInt)
+       CapacityCalendars, Me, PersonValueCreations, Project (..), ProjectId,
+       ProjectMembers, Projects, SimpleProject, Task, TaskId, Tasks, Team,
+       TeamId, TeamsHoursByCategory, TimeBalance, Timereport, Timereports,
+       User, UserCapacities, UserId, Users, ViewTemplate (..), identifier,
+       sProject, viewTemplateToInt)
 import PlanMill.Types.Enumeration
-import PlanMill.Types.Meta        (Meta, lookupFieldEnum)
-import PlanMill.Types.Query       (Query (..), QueryTag (..))
-import PlanMill.Types.UrlPart     (UrlParts, toUrlParts, (//))
+import PlanMill.Types.Meta           (Meta, lookupFieldEnum)
+import PlanMill.Types.Query          (Query (..), QueryTag (..))
+import PlanMill.Types.ResultInterval (elimInterval)
+import PlanMill.Types.UOffset        (showPlanmillUTCTime)
+import PlanMill.Types.UrlPart        (UrlParts, toUrlParts, (//))
 
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map           as Map
@@ -348,6 +351,15 @@ valueCreationByMonthReport :: (MonadPlanMillQuery m) => Integer -> m PersonValue
 valueCreationByMonthReport year = planmillVectorQuery
     $ QueryPagedGet QueryTagValueCreation (Map.fromList [("param1",textShow year)])
     $ toUrlParts ("reports" :: Text) // ("Value creation per month by employee" :: Text)
+
+-- | Get the "Teams hours by category" report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+teamsHoursByCategoryReport :: (MonadPlanMillQuery m) => Interval Day -> m TeamsHoursByCategory
+teamsHoursByCategoryReport interval = planmillVectorQuery $ QueryPagedGet QueryTagTeamsHours qs $ toUrlParts ( "reports" :: Text) // ("Teams hours by category" :: Text)
+  where
+    qs = flip elimInterval interval $ \a b -> Map.fromList [("param4", fromString . showPlanmillUTCTime $ UTCTime a 0)
+                                                           ,("param5", fromString . showPlanmillUTCTime $ UTCTime b 0)]
 
 -- | Get a list of tasks.
 --

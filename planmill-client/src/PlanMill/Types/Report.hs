@@ -8,11 +8,14 @@ module PlanMill.Types.Report (
     ReportsCategories,
     PersonValueCreations,
     PersonValueCreation (..),
+    TeamsHoursByCategoryRow,
+    TeamsHoursByCategory,
     getRevenuesData) where
 
 import Data.Aeson
 import Data.Aeson.Types  (Parser)
 import Data.Map          (fromListWith)
+import Data.Fixed                  (Centi)
 import Data.Vector
 import Futurice.Generics
 import Futurice.Prelude
@@ -190,3 +193,60 @@ instance FromJSON PersonValueCreation where
         case res of
           Just r -> pure r
           Nothing -> mempty
+
+data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
+    { _thcName              :: !Text
+    , _thcCustomerWork      :: !Double
+    , _thcSales             :: !Double
+    , _thcFuturiceInternal  :: !Double
+    , _thcTeamInternalWork  :: !Double
+    , _thcAbsences          :: !Double
+    , _thcUTZ               :: !Double
+    , _thcValueCreation     :: !(Maybe Centi)
+    , _thcTotal             :: !Double
+    , _thcPrimaryTeam       :: !(Maybe Text)
+    , _thcPrimaryCompetence :: !(Maybe Text)
+    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasSemanticVersion, HasDatatypeInfo)
+type TeamsHoursByCategory = Vector TeamsHoursByCategoryRow
+
+instance AnsiPretty TeamsHoursByCategoryRow
+instance HasStructuralInfo TeamsHoursByCategoryRow where structuralInfo = sopStructuralInfo
+
+instance FromJSON TeamsHoursByCategoryRow where
+    parseJSON = withArray "Teams hours by category" $ \array -> do
+        let parseNum :: Value -> Parser Double
+            parseNum s = do
+                s' <- parseJSON s :: Parser String
+                case readMaybe s' of
+                  Just s'' -> pure s''
+                  Nothing -> mempty
+        let parseFixed :: Value -> Parser (Maybe Centi)
+            parseFixed s = do
+                s' <- parseJSON s :: Parser (Maybe String)
+                case s' >>= readMaybe of
+                  Just s'' -> pure $ Just s''
+                  Nothing -> pure Nothing
+        name <- traverse parseJSON (array !? 0)
+        customerWork <- traverse parseNum (array !? 1)
+        sales <- traverse parseNum (array !? 2)
+        futuriceInternal <- traverse parseNum (array !? 3)
+        teamInternalWork <- traverse parseNum (array !? 4)
+        absences <- traverse parseNum (array !? 5)
+        utz <- traverse parseNum (array !? 6)
+        valueCreation <- traverse parseFixed (array !? 7)
+        total <- traverse parseNum (array !? 8)
+        primaryTeam <- traverse parseJSON (array !? 9)
+        primaryTeamCompetence <- traverse parseJSON (array !? 10)
+        let res = TeamsHoursByCategoryRow
+                <$> name
+                <*> customerWork
+                <*> sales
+                <*> futuriceInternal
+                <*> teamInternalWork
+                <*> absences
+                <*> utz
+                <*> valueCreation
+                <*> total
+                <*> primaryTeam
+                <*> primaryTeamCompetence
+        maybe mempty pure res

@@ -21,7 +21,7 @@ import Futurice.Prelude
 import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
-import Futurice.Time.Month            (Month (..), dayToMonth)
+import Futurice.Time.Month            (Month (..), dayToMonth, monthInterval)
 import Futurice.Tribe
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
@@ -34,6 +34,8 @@ import Servant.Server.Generic         (genericServer)
 
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
+import qualified PlanMill               as PM
+import qualified PlanMill.Queries       as PMQ
 
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractorsByHours
@@ -284,6 +286,12 @@ serveValueCreationReport :: Ctx -> Maybe Integer -> IO ValueCreationReport
 serveValueCreationReport ctx myear =
     cachedIO' ctx myear $ runIntegrations' ctx $ valueCreationReport myear
 
+serveTeamsHoursByCategoryReport :: Ctx -> IO PM.TeamsHoursByCategory
+serveTeamsHoursByCategoryReport ctx = do
+    today <- currentMonth
+    runIntegrations' ctx $ PMQ.teamsHoursByCategoryReport $ monthInterval today
+
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -342,6 +350,8 @@ server ctx = genericServer $ Record
 
     -- For Data lake
     , recValueCreation = liftIO . serveValueCreationReport ctx
+
+    , recTeamsHoursByCategory = liftIO $ serveTeamsHoursByCategoryReport ctx
 
     -- missing hours notification
 --    , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx

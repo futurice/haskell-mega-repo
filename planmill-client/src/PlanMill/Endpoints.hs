@@ -64,7 +64,8 @@ module PlanMill.Endpoints (
     -- * Reports
     reports,
     allRevenuesReport,
-    valueCreationByMonthReport
+    valueCreationByMonthReport,
+    teamsHoursByCategoryReport
     ) where
 
 import PlanMill.Internal.Prelude
@@ -359,6 +360,15 @@ allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
 valueCreationByMonthReport :: Int -> PlanMill PersonValueCreations
 valueCreationByMonthReport year = planMillPagedGetQs (Map.fromList [("param1", textShow year)]) $ t "reports" // t "Value creation per month by employee"
+
+-- | Get the "Teams hours by category" report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+teamsHoursByCategoryReport :: Interval Day -> PlanMill TeamsHoursByCategory
+teamsHoursByCategoryReport interval = planMillPagedGetQs qs $ t "reports" // t "Teams hours by category"
+  where
+    qs = flip elimInterval interval $ \a b -> Map.fromList [("param4", fromString . showPlanmillUTCTime $ UTCTime a 0)
+                                                           ,("param5", fromString . showPlanmillUTCTime $ UTCTime b 0)]
 
 -- | Get a list of project's members
 --
