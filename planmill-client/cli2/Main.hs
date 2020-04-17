@@ -62,6 +62,7 @@ data Cmd
     | CmdReports
     | CmdTask PM.TaskId
     | CmdTeams
+    | CmdTeamsHoursByCategory (PM.Interval Day)
     | CmdTimereport PM.TimereportId
     | CmdTimereports PM.UserId (PM.Interval Day)
     | CmdUser PM.UserId
@@ -251,6 +252,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         putPretty x
     CmdProjectsWithType viewTemplate -> do
         x <- PM.planmillAction $ PM.projectsWithType viewTemplate
+        putPretty x
+    CmdTeamsHoursByCategory interval -> do
+        x <- PM.planmillAction $ PM.teamsHoursByCategoryReport interval
         putPretty x
 -------------------------------------------------------------------------------
 -- M - monad with custom instances

@@ -48,6 +48,7 @@ import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
 import Futurice.App.Reports.ValueCreation               (ValueCreationReport)
 
 import qualified Personio as P
+import qualified PlanMill as PM
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -104,6 +105,8 @@ data Record route = Record
 
     -- For Data lake
     , recValueCreation :: route :- "report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport
+
+    , recTeamsHoursByCategory :: route :- "report" :> "teams-hours-by-category" :> Get '[JSON] PM.TeamsHoursByCategory
 
     -- missing hours notification
 --    , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
