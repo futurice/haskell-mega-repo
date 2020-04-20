@@ -25,14 +25,14 @@ data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
     , _thcPrimaryTeam       :: !(Maybe Text)
     , _thcPrimaryCompetence :: !(Maybe Text)
     } deriving (ToSchema, GhcGeneric, SopGeneric, HasDatatypeInfo)
-      deriving (ToJSON) via (Sopica TeamsHoursByCategoryRow)
+      deriving (FromJSON, ToJSON) via (Sopica TeamsHoursByCategoryRow)
 
 data TeamsHoursByCategoryReport = TeamsHoursByCategoryReport
     { thrStartDay :: !Day
     , thrEndDay   :: !Day
     , thrData     :: ![TeamsHoursByCategoryRow]
     } deriving (ToSchema, GhcGeneric, SopGeneric, HasDatatypeInfo)
-      deriving (ToJSON) via (Sopica TeamsHoursByCategoryReport)
+      deriving (FromJSON, ToJSON) via (Sopica TeamsHoursByCategoryReport)
 
 teamsHoursByCategoryReport :: (MonadPlanMillQuery m) => Month -> m TeamsHoursByCategoryReport
 teamsHoursByCategoryReport month = do
