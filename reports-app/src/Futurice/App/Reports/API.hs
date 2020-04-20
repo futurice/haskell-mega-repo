@@ -32,7 +32,6 @@ import Futurice.App.Reports.MissingHours
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
 import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
-import Futurice.App.Reports.OwnedComputers              (Computer)
 import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
 import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
@@ -42,13 +41,14 @@ import Futurice.App.Reports.PowerUTZ                    (PowerUTZReport)
 import Futurice.App.Reports.ProjectHours                (ProjectHoursData)
 import Futurice.App.Reports.ProjectMembers              (ProjectMembers)
 import Futurice.App.Reports.SupervisorsGraph            (Emp)
+import Futurice.App.Reports.TeamsHoursByCategoryReport
+       (TeamsHoursByCategoryReport)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport)
 import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
 import Futurice.App.Reports.ValueCreation               (ValueCreationReport)
 
 import qualified Personio as P
-import qualified PlanMill as PM
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -106,7 +106,7 @@ data Record route = Record
     -- For Data lake
     , recValueCreation :: route :- "report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport
 
-    , recTeamsHoursByCategory :: route :- "report" :> "teams-hours-by-category" :> Get '[JSON] PM.TeamsHoursByCategory
+    , recTeamsHoursByCategory :: route :- "report" :> "teams-hours-by-category" :> Get '[JSON] TeamsHoursByCategoryReport
 
     -- missing hours notification
 --    , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text

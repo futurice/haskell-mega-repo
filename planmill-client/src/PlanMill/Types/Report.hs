@@ -8,7 +8,7 @@ module PlanMill.Types.Report (
     ReportsCategories,
     PersonValueCreations,
     PersonValueCreation (..),
-    TeamsHoursByCategoryRow,
+    TeamsHoursByCategoryRow (..),
     TeamsHoursByCategory,
     getRevenuesData) where
 
@@ -207,7 +207,6 @@ data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
     , _thcPrimaryTeam       :: !(Maybe Text)
     , _thcPrimaryCompetence :: !(Maybe Text)
     }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, NFData, HasSemanticVersion, HasDatatypeInfo)
-       deriving ToJSON via (Sopica TeamsHoursByCategoryRow)
 type TeamsHoursByCategory = Vector TeamsHoursByCategoryRow
 
 instance AnsiPretty TeamsHoursByCategoryRow

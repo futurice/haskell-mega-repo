@@ -164,6 +164,7 @@ library
     Futurice.App.Reports.SubcontractorBillingNotifications
     Futurice.App.Reports.SubcontractorHoursNotifications
     Futurice.App.Reports.SupervisorsGraph
+    Futurice.App.Reports.TeamsHoursByCategoryReport
     Futurice.App.Reports.Templates
     Futurice.App.Reports.TimereportsByTask
     Futurice.App.Reports.TimereportsDump
