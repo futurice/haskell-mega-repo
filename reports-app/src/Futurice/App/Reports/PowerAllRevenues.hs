@@ -48,7 +48,7 @@ powerAllRevenuesReport mmonth = do
   where
     toPowerAllRevenuesRow operationalMap (portfolioName, portfolios) =
         let tribe = keyName $ T.splitOn "-" portfolioName
-            keyName [_costcenter, name] = T.intercalate " " $ take 2 $ T.splitOn " " $ T.strip name
+            keyName [_costcenter, name] = let n = T.strip name in if "pass through invoicing" `T.isSuffixOf` n then T.dropEnd 23 n else n
             keyName xs = fold xs
             row p = PowerAllRevenuesRow
                 { powerAllRevenuesRowCustomer          = PM._arpCustomer p
