@@ -25,17 +25,19 @@ import Servant.Cached              (CACHED, Cached)
 import Servant.CSV.Cassava         (CSV)
 
 -- Integrations
-import FUM.Types.GroupName                    (GroupName)
-import FUM.Types.Login                        (Login)
-import Futurice.App.Avatar.API                (AvatarFumEndpoint)
-import Futurice.App.Reports.ActiveAccounts    (ActiveAccounts)
-import Futurice.App.Reports.MissingHours      (MissingHoursReport)
-import Futurice.App.Reports.PowerAllRevenues  (PowerAllRevenues)
-import Futurice.App.Reports.ProjectMembers    (ProjectMembers)
-import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
-import Futurice.App.Reports.ValueCreation     (ValueCreationReport)
-import Futurice.Signed                        (Signed)
-import Servant.Binary.Tagged                  (BINARYTAGGED)
+import FUM.Types.GroupName                             (GroupName)
+import FUM.Types.Login                                 (Login)
+import Futurice.App.Avatar.API                         (AvatarFumEndpoint)
+import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
+import Futurice.App.Reports.MissingHours               (MissingHoursReport)
+import Futurice.App.Reports.PowerAllRevenues           (PowerAllRevenues)
+import Futurice.App.Reports.ProjectMembers             (ProjectMembers)
+import Futurice.App.Reports.TeamsHoursByCategoryReport
+       (TeamsHoursByCategoryReport)
+import Futurice.App.Reports.TimereportsByTask          (TimereportsByTaskReport)
+import Futurice.App.Reports.ValueCreation              (ValueCreationReport)
+import Futurice.Signed                                 (Signed)
+import Servant.Binary.Tagged                           (BINARYTAGGED)
 
 import qualified Data.Set                             as Set
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
@@ -88,8 +90,8 @@ data Routes = Routes
         ("report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport)
         ("reports" :> "value-creation" :>  QueryParam "year" Integer :> Get '[JSON] ValueCreationReport)
     , routeTeamsHours :: ProxiedEndpoint 'ReportsService
-        ("report" :> "teams-hours-by-category" :> Get '[JSON] PM.TeamsHoursByCategory)
-        ("reports" :> "teams-hours-by-category" :> Get '[JSON] PM.TeamsHoursByCategory)
+        ("report" :> "teams-hours-by-category" :> Get '[JSON] TeamsHoursByCategoryReport)
+        ("reports" :> "teams-hours-by-category" :> Get '[JSON] TeamsHoursByCategoryReport)
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))

@@ -21,7 +21,7 @@ import Futurice.Prelude
 import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
-import Futurice.Time.Month            (Month (..), dayToMonth, monthInterval)
+import Futurice.Time.Month            (Month (..), dayToMonth)
 import Futurice.Tribe
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
@@ -34,8 +34,6 @@ import Servant.Server.Generic         (genericServer)
 
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
-import qualified PlanMill               as PM
-import qualified PlanMill.Queries       as PMQ
 
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractorsByHours
@@ -82,6 +80,8 @@ import Futurice.App.Reports.SubcontractorBillingNotifications
 import Futurice.App.Reports.SubcontractorHoursNotifications
        (subcontractorHoursNotifications)
 import Futurice.App.Reports.SupervisorsGraph                  (supervisorsGraph)
+import Futurice.App.Reports.TeamsHoursByCategoryReport
+       (TeamsHoursByCategoryReport, teamsHoursByCategoryReport)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
 import Futurice.App.Reports.TimereportsDump                   (timereportsDump)
@@ -286,10 +286,10 @@ serveValueCreationReport :: Ctx -> Maybe Integer -> IO ValueCreationReport
 serveValueCreationReport ctx myear =
     cachedIO' ctx myear $ runIntegrations' ctx $ valueCreationReport myear
 
-serveTeamsHoursByCategoryReport :: Ctx -> IO PM.TeamsHoursByCategory
+serveTeamsHoursByCategoryReport :: Ctx -> IO TeamsHoursByCategoryReport
 serveTeamsHoursByCategoryReport ctx = do
     today <- currentMonth
-    runIntegrations' ctx $ PMQ.teamsHoursByCategoryReport $ monthInterval today
+    runIntegrations' ctx $ teamsHoursByCategoryReport today
 
 
 -- | API server
