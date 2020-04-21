@@ -88,6 +88,7 @@ data Profile = Profile
     , _profileBirthday         :: !(Maybe Day)
     , _profileCompetenceHome   :: !(Maybe Text)
     , _profileMatrixSupervisor :: !(Maybe Email)
+    , _profileClientAccount    :: !(Maybe Text)
     } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON) via (Sopica Profile)
 
@@ -117,6 +118,7 @@ instance FromJSON Profile where
       <*> o .:? "birthday"
       <*> o .:? "competenceHome"
       <*> o .:? "matrixSupervisor"
+      <*> o .:? "clientAccount"
 
 instance AnsiPretty Profile
 

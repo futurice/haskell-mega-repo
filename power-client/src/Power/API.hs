@@ -11,12 +11,14 @@ import Prelude ()
 import Servant.API
 import Servant.API.Generic
 
-import Power.Types
 import Power.PyJSON
+import Power.Types
 
 data PowerRoutes route = PowerRoutes
-    { routePeople :: route :- "person" :> "" :> Get '[PYJSON] [Person]
-    -- TODO: add more routes
+    { routePeople     :: route :- "person" :> "" :> Get '[PYJSON] [Person]
+    , routeAllocation :: route :- "allocation" :> "" :> Get '[PYJSON] [Allocation]
+    , routeCustomer   :: route :- "customer" :> "" :> Get '[PYJSON] [Customer]
+    , routeProject    :: route :- "project" :> "" :> Get '[PYJSON] [Project]
     }
   deriving stock (Generic)
 

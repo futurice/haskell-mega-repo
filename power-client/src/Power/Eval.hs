@@ -27,6 +27,9 @@ routes = genericClient
 evalIO :: BaseUrl -> Manager -> Req a -> IO (Either ClientError a)
 evalIO burl mgr req = case req of
     ReqPeople -> runClientM (routePeople routes) env
+    ReqAllocation -> runClientM (routeAllocation routes) env
+    ReqCustomer -> runClientM (routeCustomer routes) env
+    ReqProject -> runClientM (routeProject routes) env
   where
     env = mkClientEnv mgr burl
 
@@ -36,7 +39,10 @@ freeRoutes = genericClient
 -- | We essentially implement own servant-client library.
 evalIOReq :: HTTP.Request -> Manager -> Req a -> IO (Either ClientError a)
 evalIOReq baseReq mgr req = runExceptT $ case req of
-    ReqPeople -> foldFree act (routePeople freeRoutes)
+    ReqPeople     -> foldFree act (routePeople freeRoutes)
+    ReqAllocation -> foldFree act (routeAllocation freeRoutes)
+    ReqCustomer   -> foldFree act (routeCustomer freeRoutes)
+    ReqProject    -> foldFree act (routeProject freeRoutes)
   where
     act :: ClientF x -> ExceptT ClientError IO x
     act (Throw err)             = throwError err

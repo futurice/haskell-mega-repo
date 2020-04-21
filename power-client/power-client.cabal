@@ -20,6 +20,7 @@ library
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
     StandaloneDeriving
+
   build-depends:
     , aeson
     , base
@@ -31,6 +32,8 @@ library
     , servant
     , servant-client
     , servant-client-core
+    , time
+
   exposed-modules:
     Power
     Power.API

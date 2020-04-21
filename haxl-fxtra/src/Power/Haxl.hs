@@ -24,7 +24,10 @@ instance Hashable (PowerRequest a) where
 instance Haxl.Core.ShowP PowerRequest where showp = show
 
 request :: Power.Req a -> GenHaxl u a
-request Power.ReqPeople = dataFetch (PR Power.ReqPeople)
+request Power.ReqPeople     = dataFetch (PR Power.ReqPeople)
+request Power.ReqAllocation = dataFetch (PR Power.ReqAllocation)
+request Power.ReqCustomer   = dataFetch (PR Power.ReqCustomer)
+request Power.ReqProject    = dataFetch (PR Power.ReqProject)
 
 instance StateKey PowerRequest where
     data State PowerRequest = PowerState Logger Manager HTTP.Request

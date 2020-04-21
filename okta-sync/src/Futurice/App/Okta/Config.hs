@@ -12,7 +12,7 @@ import qualified FUM.Types.Login     as FUM
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgAccessGroups       :: ![FUM.GroupName]
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE ])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE, ServPO ])
     , cfgGithubAppId        :: !Text
     }
 
