@@ -53,21 +53,41 @@ data OktaUpdateStats = OktaUpdateStats
     , addedUsers   :: !Int
     }
 
-fetchClientInformation :: (Power.MonadPower m) => UTCTime -> [P.Employee] -> m (Map.Map P.EmployeeId (Maybe Text))
+data ClientStatus = MainClient Text
+                  | NoClient
+                  | Other
+
+fetchClientInformation :: (Power.MonadPower m) => UTCTime -> [P.Employee] -> m (Map.Map P.EmployeeId ClientStatus)
 fetchClientInformation now emps = do
     persons <- Power.powerPeople
     let personsMap = Map.fromList $ (\p -> (Power.personLogin p, p)) <$> persons
 
-    customers' <- Power.powerCustomers
-    let customers = filter (\c -> elem (Power.customerName c) customersToFollow) customers'
+    customers <- filter (\c -> elem (Power.customerName c) customersToFollow) <$> Power.powerCustomers
     projects <- Power.powerProjects
     allocations <- Power.powerAllocations
 
     let employeeAllocations emp = filter (\a -> (Power.allocationPersonId a) == Just (Power.personId emp)) allocations
-    let employeeProjects as = filter (\p -> elem (Power.projectId p) (Power.allocationProjectId <$> filter (\a -> Power.allocationTotalAllocation a > 0.5 && Power.allocationStartDate a <= now && now <= Power.allocationEndDate a && Power.allocationProposed a == False) as)) projects
+    let filterCurrentAllocations = filter (\a -> Power.allocationStartDate a <= now && now <= Power.allocationEndDate a && Power.allocationProposed a == False)
+    let filterMainAllocations = filter (\a -> Power.allocationTotalAllocation a > 0.5)
+    let getRelevantAllocations as = filterMainAllocations $ filterCurrentAllocations as
+
+    let isOnProject as p = (Power.projectId p) `elem` (Power.allocationProjectId <$> getRelevantAllocations as)
+    let employeeProjects as = filter (isOnProject as) projects
     let employeeCustomers ps = filter (\c -> elem (Power.customerId c) (Power.projectCustomerId <$> ps)) customers
 
-    pure $ Map.fromList $ (\emp -> (emp ^. P.employeeId, (\e -> listToMaybe $ Power.customerName <$> (employeeCustomers $ employeeProjects $ employeeAllocations e)) =<< (emp ^. P.employeeLogin >>= \x -> personsMap ^.at x ))) <$> emps
+    let employeeMainProject emp =
+            let employeeCustomer e = listToMaybe $ Power.customerName <$> (employeeCustomers $ employeeProjects $ employeeAllocations e)
+                clientStatus =
+                    case emp ^. P.employeeLogin >>= \x -> personsMap ^.at x of
+                      Just e | Power.personUtzTarget e > 0 ->
+                                   let allocs = filterCurrentAllocations $ employeeAllocations e
+                                   in if length allocs > 0 then
+                                        maybe Other MainClient $ employeeCustomer e
+                                      else
+                                        NoClient
+                      _ -> Other
+            in (emp ^. P.employeeId, clientStatus)
+    pure $ Map.fromList $ employeeMainProject <$> emps
 
 updateUsers :: (O.MonadOkta m, Power.MonadPower m) => UTCTime -> [P.Employee] -> [O.User] -> m OktaUpdateStats
 updateUsers now employees users = do
@@ -128,7 +148,12 @@ updateUsers now employees users = do
         , uiCompetenceHome = pemp ^. P.employeeCompetenceHome
         , uiMatrixSupervisor = pemp ^. P.employeeMatrixSupervisorEmail
         , uiMobilePhone = pemp ^. P.employeeWorkPhone
-        , uiClientAccount = Just $ fromMaybe "Other" $ join $ clientInformation ^.at (pemp ^. P.employeeId)
+        , uiClientAccount = clientInformation ^.at (pemp ^. P.employeeId)
+          <&> \info ->
+                case info of
+                    MainClient client -> client
+                    NoClient -> "No client"
+                    Other -> "Other"
         }
 
     oktaUserToUpdate ouser =
