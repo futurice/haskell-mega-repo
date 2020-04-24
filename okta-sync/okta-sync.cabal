@@ -49,6 +49,7 @@ library
     , lens
     , okta-client
     , personio-client
+    , power-client
     , servant
     , servant-lucid
     , servant-server

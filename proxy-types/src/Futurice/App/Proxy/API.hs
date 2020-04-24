@@ -157,6 +157,23 @@ data Routes = Routes
         ("uiapi" :> "customer" :> "" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "customers" :> Get '[JSON] Value)
 
+    -- Power dev endpoints
+    , routeDevPowerPeople :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "person" :> "" :>  QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("dev" :> "power" :> "uiapi" :> "person" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+
+    , routeDevPowerAllocations :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "allocation" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("dev" :> "power" :> "uiapi" :> "allocation" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+
+    , routeDevPowerCustomers :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "customer" :> "" :> Get '[JSON] Value)
+        ("dev" :> "power" :> "uiapi" :> "customer" :> Get '[JSON] Value)
+
+    , routeDevPowerProjects :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "project" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+        ("dev" :> "power" :> "uiapi" :> "project" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
+
     -- FUM
     , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
           FUM6.GroupMembersEndpoint

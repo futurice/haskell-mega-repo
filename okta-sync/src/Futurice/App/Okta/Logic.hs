@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Okta.Logic where
@@ -12,14 +13,20 @@ import Prelude ()
 
 import Futurice.App.Okta.Types
 
-import qualified Data.Map  as Map
-import qualified Data.Set  as S
-import qualified Data.Text as T
-import qualified Okta      as O
-import qualified Personio  as P
+import qualified Data.Map    as Map
+import qualified Data.Set    as S
+import qualified Data.Text   as T
+import qualified Data.Vector as V
+import qualified Okta        as O
+import qualified Personio    as P
+import qualified Power
 
 groupInfo :: OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
+
+customersToFollow :: Vector Text
+customersToFollow = V.fromList
+    $ $(makeRelativeToProject "customers.json" >>= embedFromJSON (Proxy :: Proxy [Text]))
 
 groupMap :: Map Text GroupInfo
 groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
@@ -46,11 +53,50 @@ data OktaUpdateStats = OktaUpdateStats
     , addedUsers   :: !Int
     }
 
-updateUsers :: (O.MonadOkta m) => [P.Employee] -> [O.User] -> m OktaUpdateStats
-updateUsers employees users = do
+data ClientStatus = MainClient Text
+                  | NoClient
+                  | Other
+
+fetchClientInformation :: (Power.MonadPower m) => UTCTime -> [P.Employee] -> m (Map.Map P.EmployeeId ClientStatus)
+fetchClientInformation now emps = do
+    persons <- Power.powerPeople
+    let personsMap = Map.fromList $ (\p -> (Power.personLogin p, p)) <$> persons
+
+    customers <- filter (\c -> elem (Power.customerName c) customersToFollow) <$> Power.powerCustomers
+    projects <- Power.powerProjects
+    allocations <- Power.powerAllocations
+
+    let employeeAllocations emp = filter (\a -> (Power.allocationPersonId a) == Just (Power.personId emp)) allocations
+    let filterCurrentAllocations = filter (\a -> Power.allocationStartDate a <= now && now <= Power.allocationEndDate a && Power.allocationProposed a == False)
+    let filterMainAllocations = filter (\a -> Power.allocationTotalAllocation a > 0.5)
+    let getRelevantAllocations as = filterMainAllocations $ filterCurrentAllocations as
+
+    let isOnProject as p = (Power.projectId p) `elem` (Power.allocationProjectId <$> getRelevantAllocations as)
+    let employeeProjects as = filter (isOnProject as) projects
+    let employeeCustomers ps = filter (\c -> elem (Power.customerId c) (Power.projectCustomerId <$> ps)) customers
+
+    let employeeMainProject emp =
+            let employeeCustomer e = listToMaybe $ Power.customerName <$> (employeeCustomers $ employeeProjects $ employeeAllocations e)
+                clientStatus =
+                    case emp ^. P.employeeLogin >>= \x -> personsMap ^.at x of
+                      Just e | Power.personUtzTarget e > 0 ->
+                                   let allocs = filterCurrentAllocations $ employeeAllocations e
+                                   in if length allocs > 0 then
+                                        maybe Other MainClient $ employeeCustomer e
+                                      else
+                                        NoClient
+                      _ -> Other
+            in (emp ^. P.employeeId, clientStatus)
+    pure $ Map.fromList $ employeeMainProject <$> emps
+
+updateUsers :: (O.MonadOkta m, Power.MonadPower m) => UTCTime -> [P.Employee] -> [O.User] -> m OktaUpdateStats
+updateUsers now employees users = do
     let (_duplicates, singles) = Map.partition (\a -> length a > 1) personioMap
     let singles' = Map.mapMaybe listToMaybe singles
-    let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> Map.lookup email singles' >>= changeData ouser) $ Map.toList loginMap
+
+    clientInformation <- fetchClientInformation now employees
+
+    let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> Map.lookup email singles' >>= changeData clientInformation ouser) $ Map.toList loginMap
 
     -- update user information
     updated <- traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
@@ -69,7 +115,7 @@ updateUsers employees users = do
 
     pure $ OktaUpdateStats updated (length removed) (length added)
   where
-    activeInternalEmployees =  catMaybes $ map toOktaId $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees
+    activeInternalEmployees = catMaybes $ map toOktaId $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees
 
     toOktaId emp =
         case emp ^. P.employeeEmail >>= \email -> Map.lookup email loginMap of
@@ -82,7 +128,7 @@ updateUsers employees users = do
 
     personioIdMap = Map.fromList $ (\e -> (e ^. P.employeeId, e)) <$> employees
 
-    personioEmployeeToUpdate oktaId pemp =
+    personioEmployeeToUpdate clientInformation oktaId pemp =
         UpdateInformation
         { uiOktaId = oktaId
         , uiSecondEmail = maybe "" T.strip (pemp ^. P.employeeHomeEmail)
@@ -102,6 +148,12 @@ updateUsers employees users = do
         , uiCompetenceHome = pemp ^. P.employeeCompetenceHome
         , uiMatrixSupervisor = pemp ^. P.employeeMatrixSupervisorEmail
         , uiMobilePhone = pemp ^. P.employeeWorkPhone
+        , uiClientAccount = clientInformation ^.at (pemp ^. P.employeeId)
+          <&> \info ->
+                case info of
+                    MainClient client -> client
+                    NoClient -> "No client"
+                    Other -> "Other"
         }
 
     oktaUserToUpdate ouser =
@@ -124,10 +176,11 @@ updateUsers employees users = do
         , uiCompetenceHome = ouser ^. O.userProfile . O.profileCompetenceHome
         , uiMatrixSupervisor = ouser ^. O.userProfile . O.profileMatrixSupervisor
         , uiMobilePhone = ouser ^. O.userProfile . O.profileMobilePhone
+        , uiClientAccount = ouser ^. O.userProfile . O.profileClientAccount
         }
 
-    changeData ouser pemp =
-        let currentInfo = personioEmployeeToUpdate (ouser ^. O.userId) pemp
+    changeData clientInformation ouser pemp =
+        let currentInfo = personioEmployeeToUpdate clientInformation (ouser ^. O.userId) pemp
             oldInformation = oktaUserToUpdate ouser
         in if oldInformation /= currentInfo then
              Just currentInfo
