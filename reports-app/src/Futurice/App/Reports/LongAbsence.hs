@@ -1,28 +1,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TupleSections     #-}
 module Futurice.App.Reports.LongAbsence (longAbsencesNotification) where
 
+import Data.Aeson                (object, (.=))
 import Data.Time.Calendar        (addDays)
 import Futurice.Integrations
 import Futurice.Prelude
 import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
 
+import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
+import Futurice.App.Reports.Templates
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Map            as Map
-import qualified Data.Set            as S
-import qualified Data.Vector         as V
-import qualified Personio            as P
-import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
+import qualified Data.HashMap.Strict            as HM
+import qualified Data.Map                       as Map
+import qualified Data.Set                       as S
+import qualified Data.Vector                    as V
+import qualified Futurice.App.EmailProxy.Client as E
+import qualified Futurice.App.EmailProxy.Types  as E
+import qualified Futurice.IdMap                 as IdMap
+import qualified Personio                       as P
+import qualified PlanMill                       as PM
+import qualified PlanMill.Queries               as PMQ
 
 -- Check all employees that have been on absence for extended period
-longAbsences :: (MonadPlanMillQuery m, MonadTime m, MonadPersonio m) => Integer -> m [P.Employee]
-longAbsences dayLookup = do
+returningEmployees :: (MonadPlanMillQuery m, MonadTime m, MonadPersonio m) => Integer -> m (Day, [P.Employee])
+returningEmployees dayLookup = do
     now <- currentDay
---    let now = $(mkDay "2020-01-25")
+--    let now = $(mkDay "2020-12-31")
     let startDay = addDays (-(180-dayLookup-1)) now
     let endDay = addDays (dayLookup - 1) now
     let checkInterval = startDay ... endDay
@@ -47,11 +54,9 @@ longAbsences dayLookup = do
     let setDifference key val = maybe val (S.difference val) (Map.lookup key absences)
     let capacitiesNotCoveredByAbsences = filter (\(_, set) -> length set == 0) $ Map.toList $ Map.mapWithKey setDifference capacitiesPerUserMap
     let personsOnLongAbsence = map fst capacitiesNotCoveredByAbsences
-    catMaybes <$> traverse (isReturning planmillUserIdToPersonioEmployee absences) personsOnLongAbsence
+    (addDays dayLookup now,) . catMaybes <$> traverse (isReturning now planmillUserIdToPersonioEmployee absences) personsOnLongAbsence
   where
-    isReturning pmap absences uid = do
-        now <- currentDay
---        let now = $(mkDay "2020-01-25")
+    isReturning now pmap absences uid = do
         capacities <- PMQ.capacities (addDays dayLookup now ... addDays dayLookup now) uid
         let workday = S.fromList $ map (\(PM.UserCapacity date _ _) -> date) $ V.toList $ V.filter (\(PM.UserCapacity _ amount _) -> amount > 0) capacities
         let workdayInWork =
@@ -65,7 +70,33 @@ longAbsences dayLookup = do
 
 longAbsencesNotification :: Ctx -> IO ()
 longAbsencesNotification ctx = do
+    employees <- runIntegrations' ctx $ P.personio P.PersonioEmployees
+    let empMap = IdMap.fromFoldable employees
     let dayLookups = [7,14,30]
-    returners <- liftIO $ traverse (runIntegrations' ctx . longAbsences) dayLookups
-    print returners
+    returners <- liftIO $ traverse (runIntegrations' ctx . returningEmployees) dayLookups
+--    print returners
+    for_ returners $ \(day, rs) -> for_ rs $ \emp -> do
+        case emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s of
+          Just supervisor -> case supervisor ^. P.employeeEmail of
+            Just supervisorEmail ->  do
+                let params = object
+                        [ "supervisorName" .= (supervisor ^. P.employeeFirst)
+                        , "name"           .= (emp ^. P.employeeFullname)
+                        , "returnDate"     .= day
+                        ]
+                x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail supervisorEmail)
+                    & E.reqCc      .~ fmap (pure . E.fromEmail) (cfgHcEmailCC cfg)
+                    & E.reqSubject .~ "Returning employee"
+                    & E.reqBody    .~ renderMustache returningEmployeeEmailTemplate params ^. strict
+                case x of
+                  Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
+                  Right () -> pure ()
+            Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No email for supervisor " (show $ supervisor ^. P.employeeFullname)
+          Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No supervisor for employee " (show $ emp ^. P.employeeFullname)
     pure ()
+  where
+    mgr = ctxManager ctx
+    cfg = ctxConfig ctx
+    lgr = ctxLogger ctx
+
+    emailProxyBurl  = cfgEmailProxyBaseurl cfg
