@@ -31,6 +31,15 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
                     td_ $ toHtml $ maybe "" show (e ^. P.employeeEmploymentType)
         div_ [ class_ "button-group" ] $
             button_ [ id_ "add-users", class_ "button alert", disabled_ "disabled" ] "Add to Okta"
+        h2_ "People in Okta that are inactive in Personio"
+        sortableTable_ $ do
+            thead_ $ do
+                th_ "#"
+                th_ "Name"
+            tbody_ $ do
+                for_ inactiveInPersonio $ \e -> tr_ $ do
+                    td_ $ toHtml (e ^. P.employeeId)
+                    td_ $ toHtml (e ^. P.employeeFullname)
         h2_ "People in Okta that are not in Personio"
         sortableTable_ $ do
             thead_ $ do
@@ -82,3 +91,4 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
                                     Just (e:_) | u `elem` internalGroupUsers -> not (e ^. P.employeeStatus == P.Active && e ^. P.employeeEmploymentType == Just P.Internal)
                                                | otherwise -> False
                                     _ -> True) users
+    inactiveInPersonio = filter (not . notFoundInOkta) $ filter (\e -> e ^. P.employeeStatus == P.Inactive) employees
