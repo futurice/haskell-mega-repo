@@ -6,8 +6,7 @@ module Futurice.App.Okta.Markup(
     page_) where
 
 import Futurice.Lucid.Foundation hiding (page_)
-import Futurice.Lucid.Navigation
-       (Navigation (..), futuriceCss, pageParamsWithJS, page_)
+import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
 import Futurice.Prelude
 import Prelude ()
 

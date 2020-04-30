@@ -48,14 +48,16 @@ instance PyJSON Person where
 -------------------------------------------------------------------------------
 
 data Customer = Customer
-    { customerId   :: !CustomerId
-    , customerName :: !Text
+    { customerId               :: !CustomerId
+    , customerName             :: !Text
+    , customerInternalCustomer :: !Bool
     } deriving Show
 
 instance PyJSON Customer where
     parsePyJSON = withObject "Customer" $ \obj -> Customer
         <$> obj .: "id"
         <*> obj .: "name"
+        <*> obj .: "internal_customer"
 
 -------------------------------------------------------------------------------
 -- /project
