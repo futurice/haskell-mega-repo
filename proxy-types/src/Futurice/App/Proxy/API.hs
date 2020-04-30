@@ -90,8 +90,8 @@ data Routes = Routes
         ("report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport)
         ("reports" :> "value-creation" :>  QueryParam "year" Integer :> Get '[JSON] ValueCreationReport)
     , routeTeamsHours :: ProxiedEndpoint 'ReportsService
-        ("report" :> "teams-hours-by-category" :> Get '[JSON] TeamsHoursByCategoryReport)
-        ("reports" :> "teams-hours-by-category" :> Get '[JSON] TeamsHoursByCategoryReport)
+        ("report" :> "teams-hours-by-category" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] TeamsHoursByCategoryReport)
+        ("reports" :> "teams-hours-by-category" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] TeamsHoursByCategoryReport)
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
