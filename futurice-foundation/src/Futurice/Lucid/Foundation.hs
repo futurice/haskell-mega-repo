@@ -289,7 +289,7 @@ pageImpl t p b = HtmlPage $ doctypehtml_ $ do
         link_ [ rel_ "stylesheet", href_ "/vendor/jquery-ui.min.css" ]
         link_ [ rel_ "stylesheet", href_ "/vendor/select2.min.css" ]
         -- JS
-        script_ [ src_ "/vendor/jquery-3.1.1.min.js" ] tempty
+        script_ [ src_ "/vendor/jquery-3.5.0.min.js" ] tempty
         script_ [ src_ "/vendor/jquery-ui.min.js" ] tempty
         script_ [ src_ "/vendor/select2.min.js" ] tempty
         script_ [ src_ "/vendor/foundation.min.js"] tempty
