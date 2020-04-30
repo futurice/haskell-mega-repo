@@ -21,7 +21,7 @@ import Futurice.Prelude
 import Futurice.Report.Columns        (reportParams)
 import Futurice.Servant
 import Futurice.Time                  (unNDT)
-import Futurice.Time.Month            (Month (..), dayToMonth)
+import Futurice.Time.Month            (Month (..), dayToMonth, monthInterval)
 import Futurice.Tribe
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
@@ -286,10 +286,12 @@ serveValueCreationReport :: Ctx -> Maybe Integer -> IO ValueCreationReport
 serveValueCreationReport ctx myear =
     cachedIO' ctx myear $ runIntegrations' ctx $ valueCreationReport myear
 
-serveTeamsHoursByCategoryReport :: Ctx -> IO TeamsHoursByCategoryReport
-serveTeamsHoursByCategoryReport ctx = do
-    today <- currentMonth
-    runIntegrations' ctx $ teamsHoursByCategoryReport today
+serveTeamsHoursByCategoryReport :: Ctx -> Maybe Day -> Maybe Day -> IO TeamsHoursByCategoryReport
+serveTeamsHoursByCategoryReport ctx startDay endDay = do
+    monthDays <- monthInterval <$> currentMonth
+    let startDay' = fromMaybe (minimum monthDays) startDay
+    let endDay'   = fromMaybe (maximum monthDays) endDay
+    runIntegrations' ctx $ teamsHoursByCategoryReport (startDay' ... endDay')
 
 
 -- | API server
@@ -351,7 +353,7 @@ server ctx = genericServer $ Record
     -- For Data lake
     , recValueCreation = liftIO . serveValueCreationReport ctx
 
-    , recTeamsHoursByCategory = liftIO $ serveTeamsHoursByCategoryReport ctx
+    , recTeamsHoursByCategory = \start end -> liftIO $ serveTeamsHoursByCategoryReport ctx start end
 
     -- missing hours notification
 --    , recCommandMissingHoursNotification = liftIO $ missingHoursNotifications ctx
