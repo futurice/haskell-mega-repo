@@ -111,6 +111,7 @@ updateUsers now employees users = do
 
     pure $ OktaUpdateStats updated (length removed) (length added)
   where
+    -- follow all clients with at least 4 internal employees
     customersToFollow cmap = Map.keys
         $ Map.filter (\emps -> length emps > 3)
         $ Map.map (filter (\eid ->
