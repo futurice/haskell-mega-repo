@@ -110,7 +110,7 @@ makeCtx cfg lgr mgr cache mq = do
     updateJob = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
         es' <- P.personioEmployees
         oktaUsers <- O.users
-        updateUsers now es' oktaUsers
+        updateUsers (utctDay now) es' oktaUsers
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

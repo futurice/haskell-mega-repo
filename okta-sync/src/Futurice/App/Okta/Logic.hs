@@ -13,20 +13,15 @@ import Prelude ()
 
 import Futurice.App.Okta.Types
 
-import qualified Data.Map    as Map
-import qualified Data.Set    as S
-import qualified Data.Text   as T
-import qualified Data.Vector as V
-import qualified Okta        as O
-import qualified Personio    as P
+import qualified Data.Map  as Map
+import qualified Data.Set  as S
+import qualified Data.Text as T
+import qualified Okta      as O
+import qualified Personio  as P
 import qualified Power
 
 groupInfo :: OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
-
-customersToFollow :: Vector Text
-customersToFollow = V.fromList
-    $ $(makeRelativeToProject "customers.json" >>= embedFromJSON (Proxy :: Proxy [Text]))
 
 groupMap :: Map Text GroupInfo
 groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
@@ -56,22 +51,23 @@ data OktaUpdateStats = OktaUpdateStats
 data ClientStatus = MainClient Text
                   | NoClient
                   | Other
+                  deriving (Ord, Eq, Show)
 
-fetchClientInformation :: (Power.MonadPower m) => UTCTime -> [P.Employee] -> m (Map.Map P.EmployeeId ClientStatus)
+fetchClientInformation :: (Power.MonadPower m) => Day -> [P.Employee] -> m (Map.Map P.EmployeeId ClientStatus)
 fetchClientInformation now emps = do
     persons <- Power.powerPeople
     let personsMap = Map.fromList $ (\p -> (Power.personLogin p, p)) <$> persons
 
-    customers <- filter (\c -> elem (Power.customerName c) customersToFollow) <$> Power.powerCustomers
+    customers <- filter (\c -> Power.customerInternalCustomer c == False) <$> Power.powerCustomers
     projects <- Power.powerProjects
     allocations <- Power.powerAllocations
 
-    let employeeAllocations emp = filter (\a -> (Power.allocationPersonId a) == Just (Power.personId emp)) allocations
-    let filterCurrentAllocations = filter (\a -> Power.allocationStartDate a <= now && now <= Power.allocationEndDate a && Power.allocationProposed a == False)
+    let employeeAllocations emp = filter (\a -> Power.allocationPersonId a == Just (Power.personId emp)) allocations
+    let filterCurrentAllocations = filter (\a -> utctDay (Power.allocationStartDate a) <= now && now <= utctDay (Power.allocationEndDate a) && Power.allocationProposed a == False)
     let filterMainAllocations = filter (\a -> Power.allocationTotalAllocation a > 0.5)
     let getRelevantAllocations as = filterMainAllocations $ filterCurrentAllocations as
 
-    let isOnProject as p = (Power.projectId p) `elem` (Power.allocationProjectId <$> getRelevantAllocations as)
+    let isOnProject as p = Power.projectId p `elem` (Power.allocationProjectId <$> getRelevantAllocations as)
     let employeeProjects as = filter (isOnProject as) projects
     let employeeCustomers ps = filter (\c -> elem (Power.customerId c) (Power.projectCustomerId <$> ps)) customers
 
@@ -89,7 +85,7 @@ fetchClientInformation now emps = do
             in (emp ^. P.employeeId, clientStatus)
     pure $ Map.fromList $ employeeMainProject <$> emps
 
-updateUsers :: (O.MonadOkta m, Power.MonadPower m) => UTCTime -> [P.Employee] -> [O.User] -> m OktaUpdateStats
+updateUsers :: (O.MonadOkta m, Power.MonadPower m) => Day -> [P.Employee] -> [O.User] -> m OktaUpdateStats
 updateUsers now employees users = do
     let (_duplicates, singles) = Map.partition (\a -> length a > 1) personioMap
     let singles' = Map.mapMaybe listToMaybe singles
@@ -115,6 +111,14 @@ updateUsers now employees users = do
 
     pure $ OktaUpdateStats updated (length removed) (length added)
   where
+    customersToFollow cmap = Map.keys
+        $ Map.filter (\emps -> length emps > 3)
+        $ Map.map (filter (\eid ->
+              case personioIdMap ^.at eid of
+                Just emp | emp ^. P.employeeEmploymentType == Just P.Internal -> True
+                _ -> False))
+        $ Map.fromListWith (<>) $ map (\(a,b) -> (b,[a])) $ Map.toList cmap
+
     activeInternalEmployees = catMaybes $ map toOktaId $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees
 
     toOktaId emp =
@@ -151,9 +155,9 @@ updateUsers now employees users = do
         , uiClientAccount = clientInformation ^.at (pemp ^. P.employeeId)
           <&> \info ->
                 case info of
-                    MainClient client -> client
+                    MainClient client | info `elem` customersToFollow clientInformation -> client
                     NoClient -> "No client"
-                    Other -> "Other"
+                    _ -> "Other"
         }
 
     oktaUserToUpdate ouser =
