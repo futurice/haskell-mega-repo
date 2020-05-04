@@ -5,7 +5,6 @@ import Data.Fixed            (Centi)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Prelude
-import Futurice.Time.Month   (monthInterval)
 import Prelude ()
 
 import qualified Data.Vector      as V
@@ -34,10 +33,9 @@ data TeamsHoursByCategoryReport = TeamsHoursByCategoryReport
     } deriving (ToSchema, GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving (FromJSON, ToJSON) via (Sopica TeamsHoursByCategoryReport)
 
-teamsHoursByCategoryReport :: (MonadPlanMillQuery m) => Month -> m TeamsHoursByCategoryReport
-teamsHoursByCategoryReport month = do
-    let interval = monthInterval month
-    report <- PMQ.teamsHoursByCategoryReport $ monthInterval month
+teamsHoursByCategoryReport :: (MonadPlanMillQuery m) => PM.Interval Day -> m TeamsHoursByCategoryReport
+teamsHoursByCategoryReport interval = do
+    report <- PMQ.teamsHoursByCategoryReport interval
     pure $ TeamsHoursByCategoryReport
         { thrStartDay = minimum interval
         , thrEndDay   = maximum interval

@@ -106,7 +106,7 @@ data Record route = Record
     -- For Data lake
     , recValueCreation :: route :- "report" :> "value-creation" :> QueryParam "year" Integer :> Get '[JSON] ValueCreationReport
 
-    , recTeamsHoursByCategory :: route :- "report" :> "teams-hours-by-category" :> Get '[JSON] TeamsHoursByCategoryReport
+    , recTeamsHoursByCategory :: route :- "report" :> "teams-hours-by-category" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] TeamsHoursByCategoryReport
 
     -- missing hours notification
 --    , recCommandMissingHoursNotification :: route :- "command" :> "send-missing-hours-notification" :> Post '[JSON] Text
