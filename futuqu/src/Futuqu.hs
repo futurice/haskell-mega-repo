@@ -42,12 +42,13 @@ futuquServer
     -> IntegrationsConfig FutuquIntegrations
     -> Server FutuquAPI
 futuquServer lgr mgr cache cfg = genericServer FutuquRoutes
-    { futuquRoutePeople      = runIntegrations0 peopleData
-    , futuquRouteProjects    = runIntegrations1 projectsData
-    , futuquRouteAccounts    = runIntegrations0 accountsData
-    , futuquRouteTasks       = runIntegrations2 tasksData
-    , futuquRouteCapacities  = runIntegrations1 capacitiesData
-    , futuquRouteTimereports = runIntegrations1 timereportsData
+    { futuquRoutePeople       = runIntegrations0 peopleData
+    , futuquRoutePeopleSimple = runIntegrations0 peopleDataSimple
+    , futuquRouteProjects     = runIntegrations1 projectsData
+    , futuquRouteAccounts     = runIntegrations0 accountsData
+    , futuquRouteTasks        = runIntegrations2 tasksData
+    , futuquRouteCapacities   = runIntegrations1 capacitiesData
+    , futuquRouteTimereports  = runIntegrations1 timereportsData
     -- strm
     , futuquRouteTimereportsStream = \arg1 -> liftIO $ do
           run <- runIntegrationsCached
