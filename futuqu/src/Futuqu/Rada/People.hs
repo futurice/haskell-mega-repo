@@ -70,6 +70,13 @@ deriveVia [t| ToNamedRecord Person  `Via` Sopica Person |]
 
 instance ToSchema Person where declareNamedSchema = sopDeclareNamedSchema
 
+data SimplePerson = SimplePerson
+    { spFirst :: !Text
+    , spLast  :: !Text
+    , spRole  :: !Text
+    } deriving (Eq, Ord, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData, ToSchema)
+      deriving (ToJSON, DefaultOrdered, ToNamedRecord) via (Sopica SimplePerson)
+
 -------------------------------------------------------------------------------
 -- Endpoint
 -------------------------------------------------------------------------------
@@ -139,3 +146,15 @@ peopleData = do
             , pExpat          = pe ^. P.employeeExpat
             , pUtzTarget  = mlogin >>= \login  -> posMap ^? ix login . getter Power.personUtzTarget
             }
+
+--subset of people data
+peopleDataSimple
+    :: (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m)
+    => m [SimplePerson]
+peopleDataSimple = (fmap . fmap) simplify peopleData
+  where
+   simplify emp = SimplePerson
+       { spFirst = pFirst emp
+       , spLast  = pLast emp
+       , spRole  = pRole emp
+       }

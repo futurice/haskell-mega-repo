@@ -34,6 +34,10 @@ data FutuquRoutes route = FutuquRoutes
         :- "rada" :> "people"
         :> Summary "List of all people"
         :> FutuquGet [Person]
+    , futuquRoutePeopleSimple :: route
+        :- "rada" :> "people" :> "simple"
+        :> Summary "List of all people with reduced data"
+        :> FutuquGet [SimplePerson]
     , futuquRouteAccounts :: route
         :- "rada" :> "accounts"
         :> Summary "List of all accounts"

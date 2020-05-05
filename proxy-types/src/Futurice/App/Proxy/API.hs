@@ -95,6 +95,7 @@ data Routes = Routes
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
+    , routeFutuquPeopleSimple :: Futuqu ("rada" :> "people" :> "simple"                     :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquAccount      :: Futuqu ("rada" :> "accounts"                               :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquProjects     :: Futuqu ("rada" :> "projects"
         :> QueryParams "account" PM.AccountId
