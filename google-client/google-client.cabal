@@ -60,4 +60,6 @@ executable google-cli
     , futurice-prelude
     , google-client
     , optparse-applicative
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , text

@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import Data.Aeson         (eitherDecodeStrict)
-import Futurice.EnvConfig (getConfig)
+import Data.Aeson                                (eitherDecodeStrict)
+import Data.Text.Prettyprint.Doc                 (Doc, vcat, viaShow)
+import Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle, putDoc)
+import Futurice.EnvConfig                        (getConfig)
 import Futurice.Prelude
 import Prelude ()
-import Text.Read          (readEither)
+import Text.Read                                 (readEither)
 
 import Google
 
@@ -87,8 +89,8 @@ main' cfg CmdGetResources = do
     pure ()
 main' cfg (CmdGetEvents startDay endDay email) = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    events <- evalGoogleReqIO cfg mgr $ ReqEvents AlsoWriteAccess startDay endDay email
-    print events
+    events <- evalGoogleReqIO cfg mgr $ ReqEvents ReadOnly startDay endDay email
+    putDoc $ toPretty events
     pure ()
 main' cfg (CmdPatchEvent eventId eventData) = do
     mgr <- liftIO $ newManager tlsManagerSettings
@@ -106,3 +108,6 @@ main = withStderrLogger $ \lgr -> runLogT "google-cli" lgr $ do
         , O.progDesc "Cli for google-client"
         , O.header "google-cli"
         ]
+
+toPretty :: [Event] -> Doc AnsiStyle
+toPretty events = vcat $ viaShow <$> events
