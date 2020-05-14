@@ -74,6 +74,7 @@ data Message
     | SubcontractorPing
     | SubcontractorHoursPing
     | AbsenceUpdatePing
+    | ReturningEmployeePing
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message
@@ -91,6 +92,7 @@ data Topic
     | TopicSubcontractorPing
     | TopicSubcontractorHoursPing
     | TopicAbsenceUpdatePing
+    | TopicReturningEmployeePing
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 data PerTopic a = PerTopic
@@ -101,6 +103,7 @@ data PerTopic a = PerTopic
     , perSubcontractorPing      :: a
     , perSubcontractorHoursPing :: a
     , perAbsenceUpdatePing      :: a
+    , perReturningEmployeePing  :: a
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -118,6 +121,7 @@ instance Representable PerTopic where
     index p TopicSubcontractorPing      = perSubcontractorPing p
     index p TopicSubcontractorHoursPing = perSubcontractorHoursPing p
     index p TopicAbsenceUpdatePing      = perAbsenceUpdatePing p
+    index p TopicReturningEmployeePing  = perReturningEmployeePing p
 
     tabulate f = PerTopic
         { perServiceStarting        = f TopicServiceStarting
@@ -127,6 +131,7 @@ instance Representable PerTopic where
         , perSubcontractorPing      = f TopicSubcontractorPing
         , perSubcontractorHoursPing = f TopicSubcontractorHoursPing
         , perAbsenceUpdatePing      = f TopicAbsenceUpdatePing
+        , perReturningEmployeePing  = f TopicReturningEmployeePing
         }
 
 messageTopic :: Message -> Topic
@@ -137,6 +142,7 @@ messageTopic LibraryReminderPing {}    = TopicLibraryReminderPing
 messageTopic SubcontractorPing {}      = TopicSubcontractorPing
 messageTopic SubcontractorHoursPing {} = TopicSubcontractorHoursPing
 messageTopic AbsenceUpdatePing {}      = TopicAbsenceUpdatePing
+messageTopic ReturningEmployeePing {}  = TopicReturningEmployeePing
 
 -- | A subject of email
 messageSubject :: Message -> Text
@@ -152,6 +158,7 @@ topicName awsGroup TopicLibraryReminderPing    = awsGroup <> "-library-reminder-
 topicName awsGroup TopicSubcontractorPing      = awsGroup <> "-subcontractor-ping"
 topicName awsGroup TopicSubcontractorHoursPing = awsGroup <> "-subcontractor-hours-ping"
 topicName awsGroup TopicAbsenceUpdatePing      = awsGroup <> "-absence-update-ping"
+topicName awsGroup TopicReturningEmployeePing  = awsGroup <> "-returning-employee-ping"
 
 -------------------------------------------------------------------------------
 -- Functions

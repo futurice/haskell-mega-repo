@@ -8,6 +8,7 @@ module Futurice.App.Reports.Config (
 
 import Database.PostgreSQL.Simple (ConnectInfo)
 import Futuqu                     (FutuquIntegrations)
+import Futurice.Email             (Email)
 import Futurice.EnvConfig
 import Futurice.Integrations
 import Futurice.Prelude
@@ -25,6 +26,7 @@ data Config = Config
     , cfgPreferencesAppBaseurl :: !BaseUrl
     , cfgPostgresConnInfo      :: !ConnectInfo
     , cfgPostgresConnInfoInv   :: !ConnectInfo
+    , cfgHcEmailCC             :: !(Maybe Email)
     }
 
 instance Configure Config where
@@ -35,6 +37,7 @@ instance Configure Config where
         <*> envVar "PREFERENCES_BASEURL"
         <*> envConnectInfo
         <*> envConnectInfo' "INVENTORY_"
+        <*> optionalAlt (envVar "HCEMAIL_CC")
 
 toFutuquCfg
     :: C.IntegrationsConfig ReportIntegrations
