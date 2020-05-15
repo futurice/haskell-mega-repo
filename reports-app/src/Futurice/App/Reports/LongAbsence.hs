@@ -90,7 +90,7 @@ longAbsencesNotification ctx = do
                     & E.reqBody    .~ renderMustache returningEmployeeEmailTemplate params ^. strict
                 case x of
                   Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
-                  Right () -> pure ()
+                  Right () -> runLogT "returning-employee-notification" lgr $ logInfo "Returning employee email send with params " params
             Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No email for supervisor " (show $ supervisor ^. P.employeeFullname)
           Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No supervisor for employee " (show $ emp ^. P.employeeFullname)
     pure ()
