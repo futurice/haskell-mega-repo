@@ -47,4 +47,4 @@ toFutuquCfg
     (C.IntCfgFUM _ _
     (C.IntCfgGitHub _
     (C.IntCfgPersonio a
-    (C.IntCfgPeakon _ c))))) = (C.IntCfgPersonio a c) --c
+    (C.IntCfgPeakon _ c))))) = (C.IntCfgPersonio a c)
