@@ -25,6 +25,8 @@ import Futurice.Time.Month            (Month (..), dayToMonth, monthInterval)
 import Futurice.Tribe
 import Futurice.Wai.ContentMiddleware
 import Numeric.Interval.NonEmpty      ((...))
+import Peakon
+       (engagementDrivers, engagementOverview, segments)
 import Prelude ()
 import Servant
 import Servant.Cached                 (mkCached)
@@ -295,6 +297,14 @@ serveTeamsHoursByCategoryReport ctx startDay endDay = do
     let endDay'   = fromMaybe (maximum monthDays) endDay
     runIntegrations' ctx $ teamsHoursByCategoryReport (startDay' ... endDay')
 
+servePeakonEngagementOverviewData :: Ctx -> IO Value
+servePeakonEngagementOverviewData ctx = runIntegrations' ctx $ engagementOverview
+
+servePeakonEngagementDrivers :: Ctx -> IO Value
+servePeakonEngagementDrivers ctx = runIntegrations' ctx $ engagementDrivers
+
+servePeakonSegments :: Ctx -> IO Value
+servePeakonSegments ctx = runIntegrations' ctx $ segments
 
 -- | API server
 server :: Ctx -> Server ReportsAPI
@@ -366,6 +376,11 @@ server ctx = genericServer $ Record
     -- dashdo
     , recDashdo =  ctxDashdo ctx
     , recComputers = liftIO serveComputerOwned
+
+    -- peakon
+    , recPeakonEngagementOverview = liftIO $ servePeakonEngagementOverviewData ctx
+    , recPeakonEngagementDrivers = liftIO $ servePeakonEngagementDrivers ctx
+    , recPeakonSegments         = liftIO $ servePeakonSegments ctx
     }
   where
     lgr = ctxLogger ctx

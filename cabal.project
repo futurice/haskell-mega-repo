@@ -108,6 +108,7 @@ packages:
   okta-client/
   okta-sync/
   optparse-sop/
+  peakon-client/
   periocron/
   personio-client/
   personio-proxy/

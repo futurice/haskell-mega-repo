@@ -1,0 +1,53 @@
+cabal-version: 2.2
+name:          peakon-client
+version:       0
+synopsis:      Peakon management client
+category:      Integration
+description:   Simplified bindings to Peakon Rest API
+
+library
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+    StandaloneDeriving
+
+  build-depends:
+    , aeson
+    , base
+    , constraints
+    , env-config
+    , futurice-prelude
+    , http-client
+    , http-types
+    , lens-aeson
+    , text
+
+  exposed-modules:
+    Peakon
+    Peakon.Class
+    Peakon.Eval
+    Peakon.Request
+    Peakon.Types
+
+executable peakon-cli
+  main-is:        Main.hs
+  hs-source-dirs: cli
+  ghc-options:    -Wall -threaded
+  build-depends:
+    , aeson
+    , base
+    , env-config
+    , futurice-prelude
+    , optparse-applicative
+    , peakon-client
+    , text

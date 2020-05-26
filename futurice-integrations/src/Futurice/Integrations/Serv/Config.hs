@@ -24,6 +24,7 @@ import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified Google.Types
 import qualified Okta.Types
+import qualified Peakon.Types
 
 import Futurice.Integrations.Serv
 
@@ -67,6 +68,11 @@ data IntegrationsConfig :: [Serv] -> Type where
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServPE ': ss)
 
+    IntCfgPeakon
+        :: Peakon.Types.PeakonCfg
+        -> IntegrationsConfig ss
+        -> IntegrationsConfig (ServPK ': ss)
+
     IntCfgPlanMill
         :: Request
         -> IntegrationsConfig ss
@@ -102,6 +108,8 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
             <$> configure
         cons SServPE = IntCfgPersonio
             <$> (f <$> envVar "PERSONIOPROXY_REQUESTURL")
+        cons SServPK = IntCfgPeakon
+            <$> configure
         cons SServPM = IntCfgPlanMill
             <$> (f <$> envVar "PLANMILLPROXY_HAXLURL")
         cons SServPO = IntCfgPower
