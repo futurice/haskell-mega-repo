@@ -94,6 +94,7 @@ library
     , microstache
     , mtl
     , optparse-applicative
+    , peakon-client
     , periocron
     , personio-client
     , planmill-client

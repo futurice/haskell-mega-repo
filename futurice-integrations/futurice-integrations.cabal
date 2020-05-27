@@ -68,6 +68,7 @@ library
     , monad-memoize
     , monad-time
     , okta-client
+    , peakon-client
     , personio-client
     , planmill-client
     , power-client

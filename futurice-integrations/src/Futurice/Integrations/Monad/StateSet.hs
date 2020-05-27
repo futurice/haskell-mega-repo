@@ -13,6 +13,7 @@ module Futurice.Integrations.Monad.StateSet (
     stateSetGitHub,
     stateSetGoogle,
     stateSetOkta,
+    stateSetPeakon,
     stateSetPersonio,
     stateSetPlanMill,
     stateSetPower,
@@ -34,6 +35,8 @@ import qualified Google.Types
 import qualified Haxl.Core                    as H
 import qualified Okta.Haxl
 import qualified Okta.Types
+import qualified Peakon.Haxl
+import qualified Peakon.Types
 import qualified Personio.Haxl
 import qualified Power.Haxl
 
@@ -111,3 +114,11 @@ stateSetOkta
     -> Tagged (ServOK ': ss) H.StateStore
 stateSetOkta lgr mgr cfg (Tagged store) = Tagged $
     H.stateSet (Okta.Haxl.initDataSource cfg lgr mgr) store
+
+stateSetPeakon
+    :: Logger -> Manager
+    -> Peakon.Types.PeakonCfg
+    -> Tagged ss H.StateStore
+    -> Tagged (ServPK ': ss) H.StateStore
+stateSetPeakon lgr mgr cfg (Tagged store) = Tagged $
+    H.stateSet (Peakon.Haxl.initDataSource cfg lgr mgr) store

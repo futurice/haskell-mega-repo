@@ -116,6 +116,11 @@ data Record route = Record
 
     -- dashdo
     , recDashdo :: route :- "dashdo" :> DashdoAPI
+
+    -- Peakon
+    , recPeakonEngagementOverview :: route :- "peakon" :> "engagement" :> "overview" :> Get '[JSON] Value
+    , recPeakonEngagementDrivers  :: route :- "peakon" :> "engagement" :> "drivers"  :> Get '[JSON] Value
+    , recPeakonSegments           :: route :- "peakon" :> "segments" :> Get '[JSON] Value
     }
   deriving Generic
 

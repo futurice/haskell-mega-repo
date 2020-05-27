@@ -53,6 +53,8 @@ import qualified Log.Data                     as L
 import qualified Log.Logger                   as L
 import qualified Okta.Haxl
 import qualified Okta.Request
+import qualified Peakon.Haxl
+import qualified Peakon.Request
 import qualified Personio
 import qualified Personio.Haxl
 import qualified PlanMill.Types.Query         as Q
@@ -212,6 +214,7 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
         IntCfgGoogle cred cfg2    -> stateSetGoogle lgr mgr cred (f cfg2)
         IntCfgOkta cfg cfg2       -> stateSetOkta lgr mgr cfg (f cfg2)
         IntCfgPersonio req cfg2   -> stateSetPersonio lgr mgr req (f cfg2)
+        IntCfgPeakon cfg cfg2     -> stateSetPeakon lgr mgr cfg (f cfg2)
         IntCfgPlanMill req cfg2   -> stateSetPlanMill lgr mgr req (f cfg2)
         IntCfgPower req cfg2      -> stateSetPower lgr mgr req (f cfg2)
   where
@@ -342,6 +345,17 @@ instance Contains ServOK ss => MonadOkta (Integrations ss) where
       where
         showDict     = Okta.Request.requestDict (Proxy :: Proxy Show) r
         typeableDict = Okta.Request.requestDict (Proxy :: Proxy Typeable) r
+
+-------------------------------------------------------------------------------
+-- MonadPeakon
+-------------------------------------------------------------------------------
+
+instance Contains ServPK ss => MonadPeakon (Integrations ss) where
+    peakonReq r =  case (showDict, typeableDict) of
+        (Dict, Dict) -> liftHaxl . Peakon.Haxl.request $ r
+      where
+        showDict     = Peakon.Request.requestDict (Proxy :: Proxy Show) r
+        typeableDict = Peakon.Request.requestDict (Proxy :: Proxy Typeable) r
 
 -------------------------------------------------------------------------------
 -- MonadPersonio

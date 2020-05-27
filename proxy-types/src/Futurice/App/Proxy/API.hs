@@ -220,6 +220,17 @@ data Routes = Routes
     , routeLibraryReturnPost :: ProxiedEndpoint 'LibraryService
         ("return" :> Capture "id" Library.LoanId :> Post '[JSON] Bool)
         (Summary "Return a loan" :> "library" :> "return" :> Capture "id" Library.LoanId :> Post '[JSON] Bool)
+
+    -- Peakon endpoints
+    , routePeakonEngagementOverview :: ProxiedEndpoint 'ReportsService
+        ("peakon" :> "engagement" :> "overview" :> Get '[JSON] Value)
+        ("peakon" :> "engagement" :> "overview" :> Get '[JSON] Value)
+    , routePeakonEngagementDrivers :: ProxiedEndpoint 'ReportsService
+        ("peakon" :> "engagement" :> "drivers"  :> Get '[JSON] Value)
+        ("peakon" :> "engagement" :> "drivers"  :> Get '[JSON] Value)
+    , routePeakonSegments :: ProxiedEndpoint 'ReportsService
+        ("peakon" :> "segments" :> Get '[JSON] Value)
+        ("peakon" :> "segments" :> Get '[JSON] Value)
     }
   deriving (Generic)
 

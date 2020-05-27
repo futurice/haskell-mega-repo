@@ -47,6 +47,7 @@ library
     , http-client-tls
     , okta-client
     , parallel-io
+    , peakon-client
     , personio-client
     , power-client
     , servant-client-core
@@ -60,5 +61,6 @@ library
     Github.Haxl
     Google.Haxl
     Okta.Haxl
+    Peakon.Haxl
     Personio.Haxl
     Power.Haxl

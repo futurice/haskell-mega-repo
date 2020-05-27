@@ -15,7 +15,7 @@ module Futurice.Integrations.Serv (
     Serv (..),
     AllServs,
     ServNat,
-    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO,
+    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -113,11 +113,12 @@ data Serv
     | ServGO    -- ^ google
     | ServOK    -- ^ okta
     | ServPE    -- ^ personio
+    | ServPK    -- ^ peakon
     | ServPM    -- ^ planmill
     | ServPO    -- ^ power
   deriving (Show)
 
-type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO ]
+type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO ]
 
 type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
@@ -126,6 +127,7 @@ type ServGH   = 'ServGH
 type ServGO   = 'ServGO
 type ServOK   = 'ServOK
 type ServPE   = 'ServPE
+type ServPK   = 'ServPK
 type ServPM   = 'ServPM
 type ServPO   = 'ServPO
 
@@ -143,8 +145,9 @@ type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
     ServNat 'ServGO   = N.Nat4
     ServNat 'ServOK   = N.Nat5
     ServNat 'ServPE   = N.Nat6
-    ServNat 'ServPM   = N.Nat7
-    ServNat 'ServPO   = N.Nat8
+    ServNat 'ServPK   = N.Nat7
+    ServNat 'ServPM   = N.Nat8
+    ServNat 'ServPO   = N.Nat9
 
 -------------------------------------------------------------------------------
 -- Services Singleton
@@ -158,6 +161,7 @@ data SServ :: Serv -> Type where
     SServGO   :: SServ 'ServGO
     SServOK   :: SServ 'ServOK
     SServPE   :: SServ 'ServPE
+    SServPK   :: SServ 'ServPK
     SServPM   :: SServ 'ServPM
     SServPO   :: SServ 'ServPO
 
@@ -176,6 +180,7 @@ instance ServI 'ServGH     where sserv = SServGH
 instance ServI 'ServGO     where sserv = SServGO
 instance ServI 'ServOK     where sserv = SServOK
 instance ServI 'ServPE     where sserv = SServPE
+instance ServI 'ServPK     where sserv = SServPK
 instance ServI 'ServPM     where sserv = SServPM
 instance ServI 'ServPO     where sserv = SServPO
 
