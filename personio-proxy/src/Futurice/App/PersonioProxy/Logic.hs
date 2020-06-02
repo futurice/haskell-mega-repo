@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.PersonioProxy.Logic where
 
@@ -9,7 +10,7 @@ import Codec.Picture                    (DynamicImage, decodePng)
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Lens                     ((.=))
 import Control.Monad.State.Strict       (evalState, state)
-import Data.Aeson.Types                 (parseEither, parseJSON)
+import Data.Aeson.Types                 (object, parseEither, parseJSON)
 import Data.Distributive                (Distributive (..))
 import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
@@ -20,12 +21,14 @@ import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
 import Futurice.Daily
 import Futurice.Prelude
+import Futurice.Time.Month              (dayToMonth)
 import Futurice.Tribe
 import Prelude ()
 import Servant
 import Servant.Cached                   (Cached, mkCached)
 import Servant.Chart                    (Chart (..), SVG)
 
+import qualified Data.Aeson.Types              as Aeson
 import qualified Data.Map.Strict               as Map
 import qualified Futurice.Chart.Stacked        as C
 import qualified Futurice.Colour               as FC
@@ -349,6 +352,50 @@ rolesDistributionChart ctx = mkCached' ctx $ runLogT "chart-roles-distribution" 
             , let m' = Map.union m keys'
             , let s = fromIntegral (sum m')
             ]
+
+-------------------------------------------------------------------------------
+-- Attrition rate
+-------------------------------------------------------------------------------
+
+-- Attrition rate = selected leavers in period / Average HC in period X (12 / M in period) x 100%
+attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler Value
+attritionRate ctx startDay endDay = do
+    now <- currentDay
+    let startDay' = fromMaybe now startDay
+    let endDay' = fromMaybe now endDay
+    (leavers, activeList) <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
+    pure $ object
+        ["attritionRate" Aeson..= ((fromIntegral leavers) / (averageHC activeList) * (12.0 / 3) * 100.0)
+        , "leavers"      Aeson..= leavers
+        , "months"       Aeson..= (Map.fromList activeList)
+        ]
+  where
+    averageHC :: [(Month, Int)] -> Double
+    averageHC x = (fromIntegral $ sum $ fmap snd x) / (fromIntegral $ length x)
+    averageHCFunc :: Day -> Day -> LogT IO (Int, [(Month, Int)])
+    averageHCFunc start end = do
+        let days = [start .. end]
+        let months' = Map.fromListWith (<>) $ (\d -> (dayToMonth d, [d])) <$> days
+        let monthList = Map.toList months' <> [((dayToMonth $ last days, [last days]))]
+        res <- for monthList $ \(m,days') -> do
+            --TODO: remove partial
+            (m,) <$> Postgres.safePoolQuery ctx "SELECT contents FROM \"personio-proxy\".log WHERE timestamp > ? ORDER BY timestamp ASC LIMIT 1;" (Only $ head $ sort days')
+        let emp' :: [(Month, [P.Employee])] =
+                [ (m',ids)
+                | (m', days') <- res
+                , v <- concat days'
+                , let ids = case parseEither parseJSON v of
+                        Left _   -> mempty
+                        Right es -> (es :: [P.Employee])
+                , length ids > 0
+                ]
+        let emps' :: [(Month, Int)]
+            emps' = map (\(m, employees) -> (m, length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees)) emp'
+        let leavers = filter (\e -> e ^. P.employeeTerminationType == Just "employee-quit")
+                      $ filter (\e -> e ^. P.employeeEndDate < Just end && e ^. P.employeeEndDate > Just start)
+                      $ filter (\e -> e ^. P.employeeContractType /= Just P.FixedTerm)
+                      $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ snd $ last emp'
+        pure $ (length leavers, emps')
 
 
 -------------------------------------------------------------------------------

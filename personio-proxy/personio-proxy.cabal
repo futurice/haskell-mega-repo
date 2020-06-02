@@ -73,6 +73,8 @@ library
     Futurice.App.PersonioProxy.Config
     Futurice.App.PersonioProxy.IndexPage
     Futurice.App.PersonioProxy.Logic
+    Futurice.App.PersonioProxy.Markup
+    Futurice.App.PersonioProxy.StatsPage
     Futurice.App.PersonioProxy.Types
 
 executable personio-proxy-server

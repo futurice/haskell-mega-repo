@@ -16,6 +16,8 @@ import qualified Personio
 
 type PersonioProxyAPI =
     Get '[HTML] (HtmlPage "index")
+    :<|> "stats" :> Get '[HTML] (HtmlPage "stats")
+    :<|> "stats" :> "attrition-rate" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] Value
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
 --    :<|> "employees" :> Get '[JSON] [Personio.Employee]
     :<|> "employee-picture" :> Capture "employee-id" Personio.EmployeeId :> Get '[PNG] DynamicImage

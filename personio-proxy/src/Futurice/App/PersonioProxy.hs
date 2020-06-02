@@ -23,6 +23,7 @@ import Futurice.App.PersonioProxy.API
 import Futurice.App.PersonioProxy.Config
 import Futurice.App.PersonioProxy.IndexPage
 import Futurice.App.PersonioProxy.Logic
+import Futurice.App.PersonioProxy.StatsPage
 import Futurice.App.PersonioProxy.Types
 
 import qualified Data.Map.Strict   as Map
@@ -40,6 +41,8 @@ import Control.DeepSeq (force)
 
 server :: Ctx -> Server PersonioProxyAPI
 server ctx = indexPage'
+    :<|> statsPage'
+    :<|> attritionRate ctx
     :<|> personioRequest ctx
 --    :<|> rawEmployees ctx
     :<|> employeePicture ctx
@@ -53,6 +56,9 @@ server ctx = indexPage'
     indexPage' = liftIO $ do
         ps <- readTVarIO (ctxPersonioData ctx)
         return (indexPage $ IdMap.fromFoldable $ P.paEmployees ps)
+    statsPage' = liftIO $ do
+        ps <- readTVarIO (ctxPersonioData ctx)
+        return (statsPage $ P.paEmployees ps)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

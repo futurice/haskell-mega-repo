@@ -8,27 +8,19 @@ import FUM.Types.Login
 import Futurice.Company          (companyToText)
 import Futurice.IdMap            (IdMap)
 import Futurice.Lucid.Foundation hiding (page_)
-import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
+import Futurice.Lucid.Navigation (page_)
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
+
+import Futurice.App.PersonioProxy.Markup
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Set   as Set
 import qualified Data.Text  as T
 import qualified GitHub     as GH
 import qualified Personio   as P
-
-data Nav = NavHome deriving (Eq, Ord, Enum, Bounded)
-
-instance Navigation Nav where
-    serviceTitle _ = "Personio Proxy"
-
-    navLink NavHome = (href_ "/", "Personio Proxy")
-
-    pageParams = pageParamsWithJS
-        $(makeRelativeToProject "personio-proxy.js" >>= embedJS)
 
 indexPage :: IdMap P.Employee -> HtmlPage "index"
 indexPage ps = page_ "Personio Proxy" (Just NavHome) $ do
