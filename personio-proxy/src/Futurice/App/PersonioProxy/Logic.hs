@@ -358,21 +358,13 @@ rolesDistributionChart ctx = mkCached' ctx $ runLogT "chart-roles-distribution" 
 -------------------------------------------------------------------------------
 
 leavers :: Ctx -> Day -> Day -> Handler Int
-leavers ctx start end = liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ do
-    res <- Postgres.safePoolQuery_ ctx "SELECT contents FROM \"personio-proxy\".log ORDER BY timestamp DESC LIMIT 1;"
-    let r =
-            case res of
-              [] -> []
-              ((Only r') : _) ->
-                  case parseEither parseJSON r' of
-                    Right (es : _) -> (es :: [P.Employee])
-                    _ -> []
-    guard $ length r > 0
+leavers ctx start end = do
+    employees <- rawEmployees ctx
     pure $ length
         $ filter (\e -> e ^. P.employeeTerminationType == Just "employee-quit")
         $ filter (\e -> e ^. P.employeeEndDate < Just end && e ^. P.employeeEndDate > Just start)
         $ filter (\e -> e ^. P.employeeContractType /= Just P.FixedTerm)
-        $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ r
+        $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
 
 -- Attrition rate = selected leavers in period / Average HC in period X (12 / M in period) x 100%
 attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler Value
