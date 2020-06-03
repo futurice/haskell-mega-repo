@@ -357,22 +357,40 @@ rolesDistributionChart ctx = mkCached' ctx $ runLogT "chart-roles-distribution" 
 -- Attrition rate
 -------------------------------------------------------------------------------
 
+leavers :: Ctx -> Day -> Day -> Handler Int
+leavers ctx start end = liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ do
+    res <- Postgres.safePoolQuery_ ctx "SELECT contents FROM \"personio-proxy\".log ORDER BY timestamp DESC LIMIT 1;"
+    let r =
+            case res of
+              [] -> []
+              ((Only r') : _) ->
+                  case parseEither parseJSON r' of
+                    Right (es : _) -> (es :: [P.Employee])
+                    _ -> []
+    guard $ length r > 0
+    pure $ length
+        $ filter (\e -> e ^. P.employeeTerminationType == Just "employee-quit")
+        $ filter (\e -> e ^. P.employeeEndDate < Just end && e ^. P.employeeEndDate > Just start)
+        $ filter (\e -> e ^. P.employeeContractType /= Just P.FixedTerm)
+        $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ r
+
 -- Attrition rate = selected leavers in period / Average HC in period X (12 / M in period) x 100%
 attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler Value
 attritionRate ctx startDay endDay = do
     now <- currentDay
     let startDay' = fromMaybe now startDay
     let endDay' = fromMaybe now endDay
-    (leavers, activeList) <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
+    leavers' <- leavers ctx startDay' endDay'
+    activeList <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
     pure $ object
-        ["attritionRate" Aeson..= ((fromIntegral leavers) / (averageHC activeList) * (12.0 / 3) * 100.0)
-        , "leavers"      Aeson..= leavers
+        ["attritionRate" Aeson..= ((fromIntegral leavers') / (averageHC activeList) * (12.0 / 3) * 100.0)
+        , "leavers"      Aeson..= leavers'
         , "months"       Aeson..= (Map.fromList activeList)
         ]
   where
     averageHC :: [(Month, Int)] -> Double
     averageHC x = (fromIntegral $ sum $ fmap snd x) / (fromIntegral $ length x)
-    averageHCFunc :: Day -> Day -> LogT IO (Int, [(Month, Int)])
+    averageHCFunc :: Day -> Day -> LogT IO [(Month, Int)]
     averageHCFunc start end = do
         let days = [start .. end]
         let months' = Map.fromListWith (<>) $ (\d -> (dayToMonth d, [d])) <$> days
@@ -391,11 +409,7 @@ attritionRate ctx startDay endDay = do
                 ]
         let emps' :: [(Month, Int)]
             emps' = map (\(m, employees) -> (m, length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees)) emp'
-        let leavers = filter (\e -> e ^. P.employeeTerminationType == Just "employee-quit")
-                      $ filter (\e -> e ^. P.employeeEndDate < Just end && e ^. P.employeeEndDate > Just start)
-                      $ filter (\e -> e ^. P.employeeContractType /= Just P.FixedTerm)
-                      $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ snd $ last emp'
-        pure $ (length leavers, emps')
+        pure $ emps'
 
 
 -------------------------------------------------------------------------------
