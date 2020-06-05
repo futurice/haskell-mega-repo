@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.PersonioProxy.Logic where
 
@@ -20,6 +21,7 @@ import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
 import Futurice.Daily
 import Futurice.Prelude
+import Futurice.Time.Month              (dayToMonth, monthInterval)
 import Futurice.Tribe
 import Prelude ()
 import Servant
@@ -32,6 +34,7 @@ import qualified Futurice.Colour               as FC
 import qualified Futurice.IdMap                as IdMap
 import qualified Futurice.Postgres             as Postgres
 import qualified Graphics.Rendering.Chart.Easy as C
+import qualified Numeric.Interval.NonEmpty     as NE
 import qualified Personio                      as P
 
 personioRequest :: Ctx -> P.SomePersonioReq -> Handler P.SomePersonioRes
@@ -350,6 +353,58 @@ rolesDistributionChart ctx = mkCached' ctx $ runLogT "chart-roles-distribution" 
             , let s = fromIntegral (sum m')
             ]
 
+-------------------------------------------------------------------------------
+-- Attrition rate
+-------------------------------------------------------------------------------
+
+leavers :: Ctx -> Day -> Day -> Handler Int
+leavers ctx start end = do
+    employees <- rawEmployees ctx
+    pure $ length
+        $ filter (\e -> e ^. P.employeeTerminationType == Just "employee-quit")
+        $ filter (\e -> e ^. P.employeeEndDate <= Just end && e ^. P.employeeEndDate >= Just start)
+        $ filter (\e -> e ^. P.employeeContractType /= Just P.FixedTerm)
+        $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+
+-- Attrition rate = selected leavers in period / Average HC in period X (12 / M in period) x 100%
+attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler AttritionRate
+attritionRate ctx startDay endDay = do
+    now <- currentDay
+    let startDay' = fromMaybe now startDay
+    let endDay' = fromMaybe now endDay
+    leavers' <- leavers ctx startDay' endDay'
+    activeList <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
+    pure $ AttritionRate
+        { _attrAttritionRate = ((fromIntegral leavers') / (averageHC activeList) * (12.0 / 3) * 100.0)
+        , _attrLeavers = leavers'
+        , _attrMonths = (Map.fromList activeList)
+        }
+  where
+    averageHC :: [(Month, Int)] -> Double
+    averageHC x = (fromIntegral $ sum $ fmap snd x) / (fromIntegral $ length x)
+    averageHCFunc :: Day -> Day -> LogT IO [(Month, Int)]
+    averageHCFunc start end = do
+        let days = [start .. end]
+        let months' = Map.fromListWith (<>) $ (\d -> (dayToMonth d, [d])) <$> days
+        let monthList = Map.toList months' <> [((dayToMonth $ last days, [last days]))]
+        res <- for monthList $ \(m,days') -> do
+            --TODO: remove partial
+            (m,) <$> Postgres.safePoolQuery ctx "SELECT contents FROM \"personio-proxy\".log WHERE timestamp < ? ORDER BY timestamp DESC LIMIT 1;" (Only $ addDays 1 $ last $ sort days')
+        let emp' :: [(Month, [P.Employee])] =
+                [ (m',ids)
+                | (m', days') <- res
+                , v <- concat days'
+                , let ids = case parseEither parseJSON v of
+                        Left _   -> mempty
+                        Right es -> (es :: [P.Employee])
+                , length ids > 0
+                ]
+        let emps' :: [(Month, Int)]
+            emps' = map (\(m, employees) -> (m, length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal)
+                                                $ filter (\e -> e ^. P.employeeStatus == P.Active
+                                                           || (e ^. P.employeeStatus == P.Onboarding && maybe False (withinMonth m) (e ^. P.employeeHireDate))) employees)) emp'
+        pure $ emps'
+    withinMonth month day = day `NE.member` monthInterval month
 
 -------------------------------------------------------------------------------
 -- Per Enum/Bounded

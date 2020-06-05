@@ -28,6 +28,7 @@ import Servant.CSV.Cassava         (CSV)
 import FUM.Types.GroupName                             (GroupName)
 import FUM.Types.Login                                 (Login)
 import Futurice.App.Avatar.API                         (AvatarFumEndpoint)
+import Futurice.App.PersonioProxy.Types                (AttritionRate)
 import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
 import Futurice.App.Reports.MissingHours               (MissingHoursReport)
 import Futurice.App.Reports.PowerAllRevenues           (PowerAllRevenues)
@@ -231,6 +232,11 @@ data Routes = Routes
     , routePeakonSegments :: ProxiedEndpoint 'ReportsService
         ("peakon" :> "segments" :> Get '[JSON] Value)
         ("peakon" :> "segments" :> Get '[JSON] Value)
+
+    -- Personio endpoints
+    , routeAttritionRate :: ProxiedEndpoint 'PersonioProxyService
+        ("stats" :> "attrition-rate" :> Get '[JSON] AttritionRate)
+        ("personio" :> "attrition-rate" :> Get '[JSON] AttritionRate)
     }
   deriving (Generic)
 
