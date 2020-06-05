@@ -1,22 +1,22 @@
 {-# LANGUAGE DerivingVia       #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module Okta.Types where
 
+import Data.Aeson
+import Data.Aeson.Types                        (withText)
+import Futurice.Company                        (Country)
+import Futurice.Email
 import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.Prelude
-import Futurice.Company  (Country)
 import Prelude ()
-import Data.Aeson.Types (withText)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
-import Data.Aeson
-import Futurice.Email
 
-import qualified Personio as P
 import qualified FUM
+import qualified Personio as P
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -89,6 +89,7 @@ data Profile = Profile
     , _profileCompetenceHome   :: !(Maybe Text)
     , _profileMatrixSupervisor :: !(Maybe Email)
     , _profileClientAccount    :: !(Maybe Text)
+    , _profileCareerLevel      :: !(Maybe Int)
     } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON) via (Sopica Profile)
 
@@ -119,6 +120,7 @@ instance FromJSON Profile where
       <*> o .:? "competenceHome"
       <*> o .:? "matrixSupervisor"
       <*> o .:? "clientAccount"
+      <*> o .:? "careerLevel"
 
 instance AnsiPretty Profile
 

@@ -3,12 +3,13 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Okta.Logic where
 
-import Futurice.Email    (emailToText)
+import Futurice.CareerLevel (careerLevelToText)
+import Futurice.Email       (emailToText)
 import Futurice.Generics
-import Futurice.Office   (officeFromText, officeToText)
+import Futurice.Office      (officeFromText, officeToText)
 import Futurice.Prelude
-import Futurice.Tribe    (tribeFromText, tribeToText)
-import GitHub            (untagName)
+import Futurice.Tribe       (tribeFromText, tribeToText)
+import GitHub               (untagName)
 import Prelude ()
 
 import Futurice.App.Okta.Types
@@ -159,6 +160,9 @@ updateUsers now employees users = do
                     MainClient client | info `elem` customersToFollow clientInformation -> client
                     NoClient -> "No client"
                     _ -> "Other"
+        , uiCareerLevel = let levelToText (n : _) = readMaybe [n]
+                              levelToText _ = Nothing
+                          in pemp ^. P.employeeCareerLevel >>= levelToText . T.unpack . careerLevelToText
         }
 
     oktaUserToUpdate ouser =
@@ -182,6 +186,7 @@ updateUsers now employees users = do
         , uiMatrixSupervisor = ouser ^. O.userProfile . O.profileMatrixSupervisor
         , uiMobilePhone = ouser ^. O.userProfile . O.profileMobilePhone
         , uiClientAccount = ouser ^. O.userProfile . O.profileClientAccount
+        , uiCareerLevel = ouser ^. O.userProfile . O.profileCareerLevel
         }
 
     changeData clientInformation ouser pemp =
