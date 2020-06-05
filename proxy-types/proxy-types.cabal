@@ -59,6 +59,7 @@ library
     , futurice-github
     , library-app
     , personio-client
+    , personio-proxy
     , planmill-client
     , reports-app
     , servant-binary-tagged

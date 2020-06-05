@@ -32,4 +32,4 @@ data AttritionRate = AttritionRate
     , _attrLeavers       :: !Int
     , _attrMonths        :: !(Map Month Int)
     } deriving (Generic, ToSchema, SopGeneric, HasDatatypeInfo)
-      deriving (ToJSON) via (Sopica AttritionRate)
+      deriving (FromJSON, ToJSON) via (Sopica AttritionRate)

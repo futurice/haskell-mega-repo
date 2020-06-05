@@ -362,7 +362,7 @@ leavers ctx start end = do
     employees <- rawEmployees ctx
     pure $ length
         $ filter (\e -> e ^. P.employeeTerminationType == Just "employee-quit")
-        $ filter (\e -> e ^. P.employeeEndDate < Just end && e ^. P.employeeEndDate > Just start)
+        $ filter (\e -> e ^. P.employeeEndDate <= Just end && e ^. P.employeeEndDate >= Just start)
         $ filter (\e -> e ^. P.employeeContractType /= Just P.FixedTerm)
         $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
 
