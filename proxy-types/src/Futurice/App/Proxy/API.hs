@@ -231,6 +231,11 @@ data Routes = Routes
     , routePeakonSegments :: ProxiedEndpoint 'ReportsService
         ("peakon" :> "segments" :> Get '[JSON] Value)
         ("peakon" :> "segments" :> Get '[JSON] Value)
+
+    -- Personio endpoints
+    , routeAttritionRate :: ProxiedEndpoint 'PersonioProxyService
+        ("stats" :> "attrition-rate" :> Get '[JSON] AttritionRate)
+        ("personio" :> "attrition-rate" :> Get '[JSON] AttritionRate)
     }
   deriving (Generic)
 

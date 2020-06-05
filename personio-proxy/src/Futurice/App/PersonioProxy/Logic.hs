@@ -10,7 +10,7 @@ import Codec.Picture                    (DynamicImage, decodePng)
 import Control.Concurrent.STM           (readTVarIO)
 import Control.Lens                     ((.=))
 import Control.Monad.State.Strict       (evalState, state)
-import Data.Aeson.Types                 (object, parseEither, parseJSON)
+import Data.Aeson.Types                 (parseEither, parseJSON)
 import Data.Distributive                (Distributive (..))
 import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
@@ -21,20 +21,20 @@ import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
 import Futurice.Daily
 import Futurice.Prelude
-import Futurice.Time.Month              (dayToMonth)
+import Futurice.Time.Month              (dayToMonth, monthInterval)
 import Futurice.Tribe
 import Prelude ()
 import Servant
 import Servant.Cached                   (Cached, mkCached)
 import Servant.Chart                    (Chart (..), SVG)
 
-import qualified Data.Aeson.Types              as Aeson
 import qualified Data.Map.Strict               as Map
 import qualified Futurice.Chart.Stacked        as C
 import qualified Futurice.Colour               as FC
 import qualified Futurice.IdMap                as IdMap
 import qualified Futurice.Postgres             as Postgres
 import qualified Graphics.Rendering.Chart.Easy as C
+import qualified Numeric.Interval.NonEmpty     as NE
 import qualified Personio                      as P
 
 personioRequest :: Ctx -> P.SomePersonioReq -> Handler P.SomePersonioRes
@@ -367,18 +367,18 @@ leavers ctx start end = do
         $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
 
 -- Attrition rate = selected leavers in period / Average HC in period X (12 / M in period) x 100%
-attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler Value
+attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler AttritionRate
 attritionRate ctx startDay endDay = do
     now <- currentDay
     let startDay' = fromMaybe now startDay
     let endDay' = fromMaybe now endDay
     leavers' <- leavers ctx startDay' endDay'
     activeList <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
-    pure $ object
-        ["attritionRate" Aeson..= ((fromIntegral leavers') / (averageHC activeList) * (12.0 / 3) * 100.0)
-        , "leavers"      Aeson..= leavers'
-        , "months"       Aeson..= (Map.fromList activeList)
-        ]
+    pure $ AttritionRate
+        { _attrAttritionRate = ((fromIntegral leavers') / (averageHC activeList) * (12.0 / 3) * 100.0)
+        , _attrLeavers = leavers'
+        , _attrMonths = (Map.fromList activeList)
+        }
   where
     averageHC :: [(Month, Int)] -> Double
     averageHC x = (fromIntegral $ sum $ fmap snd x) / (fromIntegral $ length x)
@@ -389,7 +389,7 @@ attritionRate ctx startDay endDay = do
         let monthList = Map.toList months' <> [((dayToMonth $ last days, [last days]))]
         res <- for monthList $ \(m,days') -> do
             --TODO: remove partial
-            (m,) <$> Postgres.safePoolQuery ctx "SELECT contents FROM \"personio-proxy\".log WHERE timestamp > ? ORDER BY timestamp ASC LIMIT 1;" (Only $ head $ sort days')
+            (m,) <$> Postgres.safePoolQuery ctx "SELECT contents FROM \"personio-proxy\".log WHERE timestamp < ? ORDER BY timestamp DESC LIMIT 1;" (Only $ addDays 1 $ last $ sort days')
         let emp' :: [(Month, [P.Employee])] =
                 [ (m',ids)
                 | (m', days') <- res
@@ -400,9 +400,11 @@ attritionRate ctx startDay endDay = do
                 , length ids > 0
                 ]
         let emps' :: [(Month, Int)]
-            emps' = map (\(m, employees) -> (m, length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees)) emp'
+            emps' = map (\(m, employees) -> (m, length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal)
+                                                $ filter (\e -> e ^. P.employeeStatus == P.Active
+                                                           || (e ^. P.employeeStatus == P.Onboarding && maybe False (withinMonth m) (e ^. P.employeeHireDate))) employees)) emp'
         pure $ emps'
-
+    withinMonth month day = day `NE.member` monthInterval month
 
 -------------------------------------------------------------------------------
 -- Per Enum/Bounded

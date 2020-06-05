@@ -1,7 +1,10 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingVia    #-}
 module Futurice.App.PersonioProxy.Types where
 
 import Control.Concurrent.STM (TVar)
 import Futurice.Cache         (Cache)
+import Futurice.Generics
 import Futurice.Postgres      (Connection, HasPostgresPool (..), Pool)
 import Futurice.Prelude
 import Prelude ()
@@ -23,3 +26,10 @@ data Ctx = Ctx
 
 instance HasPostgresPool Ctx where
     postgresPool = ctxPostgres
+
+data AttritionRate = AttritionRate
+    { _attrAttritionRate :: !Double
+    , _attrLeavers       :: !Int
+    , _attrMonths        :: !(Map Month Int)
+    } deriving (Generic, ToSchema, SopGeneric, HasDatatypeInfo)
+      deriving (ToJSON) via (Sopica AttritionRate)
