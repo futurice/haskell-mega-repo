@@ -1,20 +1,20 @@
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DeriveLift  #-}
+{-# LANGUAGE DeriveLift        #-}
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Okta.Types where
 
 import Data.Aeson        (object, (.=))
-import Futurice.Generics
-import Futurice.Prelude
-import Prelude ()
 import Futurice.Company  (Country, countryToText')
-import Futurice.Office   (Office, officeToText)
-import Futurice.Tribe    (Tribe, tribeToText)
 import Futurice.Email
+import Futurice.Generics
+import Futurice.Office   (Office, officeToText)
+import Futurice.Prelude
+import Futurice.Tribe    (Tribe, tribeToText)
+import Prelude ()
 
-import qualified Okta        as O
-import qualified Personio    as P
 import qualified FUM
+import qualified Okta     as O
+import qualified Personio as P
 
 data OktaJSON = OktaJSON
     { ojExternalGroup :: !Text,
@@ -49,6 +49,7 @@ data UpdateInformation = UpdateInformation
     , uiMatrixSupervisor :: !(Maybe Email)
     , uiMobilePhone      :: !(Maybe Text)
     , uiClientAccount    :: !(Maybe Text)
+    , uiCareerLevel      :: !(Maybe Int)
     } deriving (Eq, Show)
 
 instance ToJSON UpdateInformation where
@@ -71,4 +72,5 @@ instance ToJSON UpdateInformation where
         , "matrixSupervisor"  .= uiMatrixSupervisor i
         , "mobilePhone"       .= uiMobilePhone i
         , "clientAccount"     .= uiClientAccount i
+        , "careerLevel"       .= uiCareerLevel i
         ]
