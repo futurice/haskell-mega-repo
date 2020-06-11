@@ -163,6 +163,7 @@ updateUsers now employees users = do
         , uiCareerLevel = let levelToText (n : _) = readMaybe [n]
                               levelToText _ = Nothing
                           in pemp ^. P.employeeCareerLevel >>= levelToText . T.unpack . careerLevelToText
+        , uiDisplayName = Just $ pemp ^. P.employeeFullname
         }
 
     oktaUserToUpdate ouser =
@@ -187,6 +188,7 @@ updateUsers now employees users = do
         , uiMobilePhone = ouser ^. O.userProfile . O.profileMobilePhone
         , uiClientAccount = ouser ^. O.userProfile . O.profileClientAccount
         , uiCareerLevel = ouser ^. O.userProfile . O.profileCareerLevel
+        , uiDisplayName = ouser ^. O.userProfile . O.profileDisplayName
         }
 
     changeData clientInformation ouser pemp =

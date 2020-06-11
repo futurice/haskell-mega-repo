@@ -50,6 +50,7 @@ data UpdateInformation = UpdateInformation
     , uiMobilePhone      :: !(Maybe Text)
     , uiClientAccount    :: !(Maybe Text)
     , uiCareerLevel      :: !(Maybe Int)
+    , uiDisplayName      :: !(Maybe Text)
     } deriving (Eq, Show)
 
 instance ToJSON UpdateInformation where
@@ -73,4 +74,5 @@ instance ToJSON UpdateInformation where
         , "mobilePhone"       .= uiMobilePhone i
         , "clientAccount"     .= uiClientAccount i
         , "careerLevel"       .= uiCareerLevel i
+        , "displayName"       .= uiDisplayName i
         ]
