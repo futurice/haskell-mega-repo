@@ -69,6 +69,7 @@ library
     Personio.Types
     Personio.Types.Cfg
     Personio.Types.ContractType
+    Personio.Types.Currency
     Personio.Types.Employee
     Personio.Types.EmployeeId
     Personio.Types.EmploymentType

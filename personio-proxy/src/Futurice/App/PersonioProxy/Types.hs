@@ -33,3 +33,9 @@ data AttritionRate = AttritionRate
     , _attrMonths        :: !(Map Month Int)
     } deriving (Generic, ToSchema, SopGeneric, HasDatatypeInfo)
       deriving (FromJSON, ToJSON) via (Sopica AttritionRate)
+
+data MonthlyCompensation = MonthlyCompensation
+    { _mcTotal     :: !Double
+    , _mcPerOffice :: !(Map Text Double)
+    } deriving (Generic, ToSchema, SopGeneric, HasDatatypeInfo)
+      deriving (FromJSON, ToJSON) via (Sopica MonthlyCompensation)
