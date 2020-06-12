@@ -423,7 +423,7 @@ averageTargetMonthlyCompensation ctx = do
         tmc e = e ^. P.employeeSalaryCurrency <&>
               (\c ->
                   let withDefault' = withDefault currencyMap c
-                  in (withDefault'  $ e ^. P.employeeHourlySalary) * 158.0
+                  in (withDefault' $ e ^. P.employeeHourlySalary) * 158.0
                      + (withDefault' $ e ^. P.employeeMonthlyFixedSalary)
                      - (withDefault' $ e ^. P.employeeMonthlyFixedVariableSalary)
                      + ((withDefault' $ e ^. P.employeeMonthlyFixedVariableSalary) / 0.66)
