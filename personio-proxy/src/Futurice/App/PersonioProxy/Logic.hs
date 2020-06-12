@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
+{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TupleSections     #-}
@@ -15,7 +16,7 @@ import Data.Distributive                (Distributive (..))
 import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
 import Data.List                        (foldl', partition)
-import Data.Time                        (addDays)
+import Data.Time                        (addDays, fromGregorian, toGregorian)
 import Futurice.App.PersonioProxy.Types
 import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
@@ -376,8 +377,12 @@ leavers ctx start end = do
 attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler AttritionRate
 attritionRate ctx startDay endDay = do
     now <- currentDay
-    let startDay' = fromMaybe now startDay
-    let endDay' = fromMaybe now endDay
+    let (startDay', endDay') =
+            case (startDay, endDay) of
+              (Nothing, Nothing) -> currentQuarter now
+              (Just day, Nothing) -> (day, addDays 90 day)
+              (Nothing, Just day) -> (addDays (-90) day, day)
+              (Just day1, Just day2) -> (day1, day2)
     leavers' <- leavers ctx startDay' endDay'
     activeList <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
     pure $ AttritionRate
@@ -411,6 +416,13 @@ attritionRate ctx startDay endDay = do
                                                            || (e ^. P.employeeStatus == P.Onboarding && maybe False (withinMonth m) (e ^. P.employeeHireDate))) employees)) emp'
         pure $ emps'
     withinMonth month day = day `NE.member` monthInterval month
+
+    currentQuarter d =
+        let (year, month, _) = toGregorian d
+        in if | month <= 3 -> ((fromGregorian year 1 1),(fromGregorian year 3 31))
+              | month <= 6 -> ((fromGregorian year 4 1),(fromGregorian year 6 30))
+              | month <= 9 -> ((fromGregorian year 7 1),(fromGregorian year 9 30))
+              | otherwise -> ((fromGregorian year 10 1),(fromGregorian year 12 31))
 
 averageTargetMonthlyCompensation :: Ctx -> Handler MonthlyCompensation
 averageTargetMonthlyCompensation ctx = do

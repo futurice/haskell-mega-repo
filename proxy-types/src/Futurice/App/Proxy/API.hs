@@ -236,8 +236,8 @@ data Routes = Routes
 
     -- Personio endpoints
     , routeAttritionRate :: ProxiedEndpoint 'PersonioProxyService
-        ("stats" :> "attrition-rate" :> Get '[JSON] AttritionRate)
-        ("personio" :> "attrition-rate" :> Get '[JSON] AttritionRate)
+        ("stats" :> "attrition-rate" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] AttritionRate)
+        ("personio" :> "attrition-rate" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] AttritionRate)
     , routeAverageTargetMonthlyCompensation :: ProxiedEndpoint 'PersonioProxyService
         ("stats" :> "average-target-monthly-compensation" :> Get '[JSON] MonthlyCompensation)
         ("personio" :> "average-target-monthly-compensation" :> Get '[JSON] MonthlyCompensation)
