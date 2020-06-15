@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE GADTs             #-}
+{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TupleSections     #-}
@@ -15,11 +16,13 @@ import Data.Distributive                (Distributive (..))
 import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
 import Data.List                        (foldl', partition)
-import Data.Time                        (addDays)
+import Data.Time                        (addDays, fromGregorian, toGregorian)
 import Futurice.App.PersonioProxy.Types
 import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
 import Futurice.Daily
+import Futurice.Monoid                  (Average (..), mkAverage)
+import Futurice.Office                  (officeToText)
 import Futurice.Prelude
 import Futurice.Time.Month              (dayToMonth, monthInterval)
 import Futurice.Tribe
@@ -28,14 +31,18 @@ import Servant
 import Servant.Cached                   (Cached, mkCached)
 import Servant.Chart                    (Chart (..), SVG)
 
+import qualified Data.ByteString.Lazy          as LBS
 import qualified Data.Map.Strict               as Map
+import qualified Data.Text                     as T
 import qualified Futurice.Chart.Stacked        as C
 import qualified Futurice.Colour               as FC
 import qualified Futurice.IdMap                as IdMap
 import qualified Futurice.Postgres             as Postgres
 import qualified Graphics.Rendering.Chart.Easy as C
+import qualified Network.HTTP.Client           as HTTP
 import qualified Numeric.Interval.NonEmpty     as NE
 import qualified Personio                      as P
+import qualified Xeno.DOM                      as Xeno
 
 personioRequest :: Ctx -> P.SomePersonioReq -> Handler P.SomePersonioRes
 personioRequest ctx (P.SomePersonioReq res) = case res of
@@ -370,8 +377,12 @@ leavers ctx start end = do
 attritionRate :: Ctx -> Maybe Day -> Maybe Day -> Handler AttritionRate
 attritionRate ctx startDay endDay = do
     now <- currentDay
-    let startDay' = fromMaybe now startDay
-    let endDay' = fromMaybe now endDay
+    let (startDay', endDay') =
+            case (startDay, endDay) of
+              (Nothing, Nothing) -> currentQuarter now
+              (Just day, Nothing) -> (day, addDays 90 day)
+              (Nothing, Just day) -> (addDays (-90) day, day)
+              (Just day1, Just day2) -> (day1, day2)
     leavers' <- leavers ctx startDay' endDay'
     activeList <- liftIO $ runLogT "personio-proxy" (ctxLogger ctx) $ averageHCFunc startDay' endDay'
     pure $ AttritionRate
@@ -406,6 +417,66 @@ attritionRate ctx startDay endDay = do
         pure $ emps'
     withinMonth month day = day `NE.member` monthInterval month
 
+    currentQuarter d =
+        let (year, month, _) = toGregorian d
+        in if | month <= 3 -> ((fromGregorian year 1 1),(fromGregorian year 3 31))
+              | month <= 6 -> ((fromGregorian year 4 1),(fromGregorian year 6 30))
+              | month <= 9 -> ((fromGregorian year 7 1),(fromGregorian year 9 30))
+              | otherwise -> ((fromGregorian year 10 1),(fromGregorian year 12 31))
+
+averageTargetMonthlyCompensation :: Ctx -> Handler MonthlyCompensation
+averageTargetMonthlyCompensation ctx = do
+    employees <- rawEmployees ctx
+    currencyMap <- liftIO $ fetchCurrencyRates ctx
+    let employees' = filter (\e -> e ^. P.employeeStatus == P.Active || e ^. P.employeeStatus == P.Leave) $
+                     filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $
+                     filter (\e -> e ^. P.employeeContractType == Just P.PermanentAllIn || e ^. P.employeeContractType == Just P.Permanent) employees
+    let tmc :: P.Employee -> Maybe Double
+        tmc e = e ^. P.employeeSalaryCurrency <&>
+              (\c ->
+                  let withDefault' = withDefault currencyMap c
+                  in (withDefault' $ e ^. P.employeeHourlySalary) * 158.0
+                     + (withDefault' $ e ^. P.employeeMonthlyFixedSalary)
+                     - (withDefault' $ e ^. P.employeeMonthlyFixedVariableSalary)
+                     + ((withDefault' $ e ^. P.employeeMonthlyFixedVariableSalary) / 0.66)
+                     + (withDefault' $ e ^. P.employeeMonthlyVariableSalary))
+    let averageTmc xs = getAverage $ foldMap mkAverage $ catMaybes $ map tmc xs
+    let offices = [minBound .. maxBound]
+    let tmcForOffice office =
+            let officeEmployees = filter (\e -> e ^. P.employeeOffice == office) employees'
+            in if length officeEmployees > 20 then
+                 Just (officeToText office, averageTmc officeEmployees)
+               else
+                 Nothing
+    pure $ MonthlyCompensation
+        { _mcTotal = averageTmc employees'
+        , _mcPerOffice = Map.fromList $ catMaybes $ tmcForOffice <$> offices
+        }
+  where
+    withDefault currencyMap cur = conversion currencyMap cur . realToFrac . fromMaybe 0
+    conversion :: (Map Text Double) -> P.Currency -> Double -> Double
+    conversion currencyMap cur val = maybe val (\rate -> val / rate) (currencyMap ^.at (P.currencyToText cur))
+
+-- Give the currency rates against euro averaging over 30 days
+fetchCurrencyRates :: Ctx -> IO (Map Text Double)
+fetchCurrencyRates ctx = do
+    now <- currentDay
+    let interval = [(addDays (-30) now) .. now]
+    let address = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml"
+    request <- liftIO $ HTTP.parseRequest address
+    response <- liftIO $ HTTP.httpLbs request (ctxManager ctx)
+    let parsedResponse :: Map Day (Map Text (Average Double))
+        parsedResponse = toMap $ Xeno.parse $ LBS.toStrict $ HTTP.responseBody response
+    let dataForDays = Map.unionsWith (<>) $ catMaybes $ map (\d -> parsedResponse ^.at d) interval
+    pure $ Map.map getAverage dataForDays
+  where
+    toMap (Right node) = Map.fromList $ catMaybes $ map processDay $ Xeno.children $ head $ drop 2 $ Xeno.children node
+    toMap _ = error "Problem parsing currency rate data"
+
+    processDay node = (,) <$> (readMaybe =<< T.unpack . decodeUtf8Lenient . snd <$> listToMaybe (Xeno.attributes node)) <*> (Just $ Map.fromList $ catMaybes $ map processCurrency $ Xeno.children node)
+
+    processCurrency node = let m = Map.fromList $ Xeno.attributes node
+                           in (,) <$> (decodeUtf8Lenient <$> m ^.at "currency") <*> ((T.unpack . decodeUtf8Lenient <$> m ^.at "rate") >>= readMaybe >>= Just . mkAverage)
 -------------------------------------------------------------------------------
 -- Per Enum/Bounded
 -------------------------------------------------------------------------------

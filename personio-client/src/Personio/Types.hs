@@ -1,6 +1,7 @@
 module Personio.Types (
     module Personio.Types.Cfg,
     module Personio.Types.ContractType,
+    module Personio.Types.Currency,
     module Personio.Types.Employee,
     module Personio.Types.EmployeeId,
     module Personio.Types.EmploymentType,
@@ -16,6 +17,7 @@ module Personio.Types (
 
 import Personio.Types.Cfg
 import Personio.Types.ContractType
+import Personio.Types.Currency
 import Personio.Types.Employee              hiding
        (employeeEndDate, employeeHireDate, employeeId, employeeStatus,
        employeeTribe)

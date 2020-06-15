@@ -33,6 +33,7 @@ import Prelude ()
 
 import Personio.Internal.Attribute
 import Personio.Types.ContractType
+import Personio.Types.Currency
 import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
 import Personio.Types.SalaryType
@@ -83,6 +84,11 @@ data Employee = Employee
     , _employeeMatrixSupervisorEmail :: !(Maybe Email)
     , _employeeInvoiceableFTE    :: !(Maybe Double)
     , _employeeCareerLevel       :: !(Maybe CareerLevel)
+    , _employeeHourlySalary               :: !(Maybe Int)
+    , _employeeMonthlyFixedSalary         :: !(Maybe Int)
+    , _employeeMonthlyFixedVariableSalary :: !(Maybe Int)
+    , _employeeMonthlyVariableSalary      :: !(Maybe Int)
+    , _employeeSalaryCurrency             :: !(Maybe Currency)
 #ifdef PERSONIO_DEBUG
     , _employeeRest              :: !(HashMap Text Attribute)
 #endif
@@ -194,6 +200,11 @@ parseEmployeeObject obj' = Employee
     <*> optional (parseDynamicAttribute obj "(FI) Matrix supervisor's email")
     <*> optional (parseDynamicAttribute obj "Invoiceable FTE (0-1)")
     <*> optional (parseDynamicAttribute obj "Career level")
+    <*> optional (parseDynamicAttribute obj "Hourly salary")
+    <*> optional (parseDynamicAttribute obj "Monthly fixed salary 100%")
+    <*> optional (parseDynamicAttribute obj "Monthly Fixed Variable Salary (66%)")
+    <*> optional (parseDynamicAttribute obj "Monthly variable salary 100%")
+    <*> fmap (\x -> x >>= notEmpty >>= currencyFromText) (parseDynamicAttribute obj "Salary currency")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif

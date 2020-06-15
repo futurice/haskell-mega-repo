@@ -28,7 +28,8 @@ import Servant.CSV.Cassava         (CSV)
 import FUM.Types.GroupName                             (GroupName)
 import FUM.Types.Login                                 (Login)
 import Futurice.App.Avatar.API                         (AvatarFumEndpoint)
-import Futurice.App.PersonioProxy.Types                (AttritionRate)
+import Futurice.App.PersonioProxy.Types
+       (AttritionRate, MonthlyCompensation)
 import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
 import Futurice.App.Reports.MissingHours               (MissingHoursReport)
 import Futurice.App.Reports.PowerAllRevenues           (PowerAllRevenues)
@@ -235,8 +236,11 @@ data Routes = Routes
 
     -- Personio endpoints
     , routeAttritionRate :: ProxiedEndpoint 'PersonioProxyService
-        ("stats" :> "attrition-rate" :> Get '[JSON] AttritionRate)
-        ("personio" :> "attrition-rate" :> Get '[JSON] AttritionRate)
+        ("stats" :> "attrition-rate" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] AttritionRate)
+        ("personio" :> "attrition-rate" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] AttritionRate)
+    , routeAverageTargetMonthlyCompensation :: ProxiedEndpoint 'PersonioProxyService
+        ("stats" :> "average-target-monthly-compensation" :> Get '[JSON] MonthlyCompensation)
+        ("personio" :> "average-target-monthly-compensation" :> Get '[JSON] MonthlyCompensation)
     }
   deriving (Generic)
 

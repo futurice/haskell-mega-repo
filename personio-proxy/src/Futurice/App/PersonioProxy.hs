@@ -43,6 +43,7 @@ server :: Ctx -> Server PersonioProxyAPI
 server ctx = indexPage'
     :<|> statsPage'
     :<|> attritionRate ctx
+    :<|> averageTargetMonthlyCompensation ctx
     :<|> personioRequest ctx
 --    :<|> rawEmployees ctx
     :<|> employeePicture ctx
