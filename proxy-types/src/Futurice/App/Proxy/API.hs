@@ -95,6 +95,10 @@ data Routes = Routes
         ("report" :> "teams-hours-by-category" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] TeamsHoursByCategoryReport)
         ("reports" :> "teams-hours-by-category" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] TeamsHoursByCategoryReport)
 
+    , routeFumCapacity :: ProxiedEndpoint 'ReportsService
+        ("report" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+        ("reports" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
     , routeFutuquPeopleSimple :: Futuqu ("rada" :> "people" :> "simple"                     :> Get '[CACHED CSV] (Cached CSV [Text]))

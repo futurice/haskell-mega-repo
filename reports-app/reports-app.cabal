@@ -7,7 +7,7 @@ category:           Web
 homepage:           https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
 build-type:         Simple
@@ -137,6 +137,7 @@ library
     Futurice.App.Reports.API
     Futurice.App.Reports.ActiveAccounts
     Futurice.App.Reports.ActiveSubcontractorsByHours
+    Futurice.App.Reports.Capacity
     Futurice.App.Reports.CareerLengthChart
     Futurice.App.Reports.Config
     Futurice.App.Reports.Ctx

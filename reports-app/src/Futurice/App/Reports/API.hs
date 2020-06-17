@@ -23,6 +23,7 @@ import Servant.Graph             (ALGA, Graph)
 import Futurice.App.Reports.ActiveAccounts              (ActiveAccounts)
 import Futurice.App.Reports.ActiveSubcontractorsByHours
        (ActiveSubcontractorData)
+import Futurice.App.Reports.Capacity                    (Capacity)
 import Futurice.App.Reports.DoWeStudy
        (DoWeStudyData, StudyKind)
 import Futurice.App.Reports.IDontKnow                   (IDontKnowData)
@@ -48,7 +49,8 @@ import Futurice.App.Reports.TimereportsByTask
 import Futurice.App.Reports.TimereportsDump             (SimpleTimereport)
 import Futurice.App.Reports.ValueCreation               (ValueCreationReport)
 
-import qualified Personio as P
+import qualified FUM.Types.Login as FUM
+import qualified Personio        as P
 
 type ReportTypes = '[HTML, CSV, JSON]
 
@@ -121,6 +123,9 @@ data Record route = Record
     , recPeakonEngagementOverview :: route :- "peakon" :> "engagement" :> "overview" :> Get '[JSON] Value
     , recPeakonEngagementDrivers  :: route :- "peakon" :> "engagement" :> "drivers"  :> Get '[JSON] Value
     , recPeakonSegments           :: route :- "peakon" :> "segments" :> Get '[JSON] Value
+
+    -- For futulog
+    , recFumCapacity :: route :- "report" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity]
     }
   deriving Generic
 
