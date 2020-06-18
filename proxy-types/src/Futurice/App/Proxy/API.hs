@@ -31,6 +31,7 @@ import Futurice.App.Avatar.API                         (AvatarFumEndpoint)
 import Futurice.App.PersonioProxy.Types
        (AttritionRate, MonthlyCompensation)
 import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
+import Futurice.App.Reports.Capacity                   (Capacity)
 import Futurice.App.Reports.MissingHours               (MissingHoursReport)
 import Futurice.App.Reports.PowerAllRevenues           (PowerAllRevenues)
 import Futurice.App.Reports.ProjectMembers             (ProjectMembers)
@@ -96,8 +97,8 @@ data Routes = Routes
         ("reports" :> "teams-hours-by-category" :> QueryParam "start" Day :> QueryParam "end" Day :> Get '[JSON] TeamsHoursByCategoryReport)
 
     , routeFumCapacity :: ProxiedEndpoint 'ReportsService
-        ("report" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity])
-        ("reports" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+        ("report" :> "capacity" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+        ("reports" :> "capacity" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
