@@ -41,6 +41,7 @@ import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractorsByHours
        (ActiveSubcontractorData, activeSubcontractorsReport)
 import Futurice.App.Reports.API
+import Futurice.App.Reports.Capacity                          (hasCapacity)
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
 import Futurice.App.Reports.Config
@@ -381,6 +382,9 @@ server ctx = genericServer $ Record
     , recPeakonEngagementOverview = liftIO $ servePeakonEngagementOverviewData ctx
     , recPeakonEngagementDrivers = liftIO $ servePeakonEngagementDrivers ctx
     , recPeakonSegments         = liftIO $ servePeakonSegments ctx
+
+    -- For futulog
+    , recFumCapacity = \login month -> liftIO $ serveDataParam2 login month hasCapacity ctx
     }
   where
     lgr = ctxLogger ctx
