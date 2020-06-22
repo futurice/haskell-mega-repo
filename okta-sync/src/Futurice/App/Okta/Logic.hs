@@ -4,7 +4,7 @@
 module Futurice.App.Okta.Logic where
 
 import Futurice.CareerLevel (careerLevelToText)
-import Futurice.Email       (emailToText)
+import Futurice.Email       (emailFromText, emailToText)
 import Futurice.Generics
 import Futurice.Office      (officeFromText, officeToText)
 import Futurice.Prelude
@@ -93,7 +93,7 @@ updateUsers now employees users = do
 
     clientInformation <- fetchClientInformation now employees
 
-    let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> Map.lookup email singles' >>= changeData clientInformation ouser) $ Map.toList loginMap
+    let peopleToUpdate = catMaybes $ fmap (\(email, ouser) -> emailFromText email >>= \email' -> Map.lookup email' singles' >>= changeData clientInformation ouser) $ Map.toList loginMap
 
     -- update user information
     updated <- traverse (\c -> O.updateUser (uiOktaId c) (toJSON c)) peopleToUpdate
@@ -124,7 +124,7 @@ updateUsers now employees users = do
     activeInternalEmployees = catMaybes $ map toOktaId $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) employees
 
     toOktaId emp =
-        case emp ^. P.employeeEmail >>= \email -> Map.lookup email loginMap of
+        case emp ^. P.employeeEmail >>= \email -> Map.lookup (emailToText email) loginMap of
             Just ouser -> Just $ ouser ^. O.userId
             Nothing -> Nothing
 
@@ -203,7 +203,7 @@ updateUsers now employees users = do
     notMachineUser e = not $ e ^. P.employeeId `elem` machineUsers
     notInactiveEmployees = filter (\e -> e ^. P.employeeStatus /= P.Inactive) employees
     notFoundInOkta e =
-        case e ^. P.employeeEmail >>= \email -> loginMap ^. at email of
+        case e ^. P.employeeEmail >>= \email -> loginMap ^. at (emailToText email) of
           Just _ -> False
           Nothing -> True
     emailNotEmpty e = e ^. P.employeeEmail /= Nothing && (e ^. P.employeeEmail >>= Just . emailToText) /= Just ""
