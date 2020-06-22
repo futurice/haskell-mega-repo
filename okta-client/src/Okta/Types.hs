@@ -71,8 +71,8 @@ data Profile = Profile
     , _profileLastName         :: !Text
     , _profileMobilePhone      :: !(Maybe Text)
     , _profileSecondEmail      :: !(Maybe Text)
-    , _profileLogin            :: !Email
-    , _profileEmail            :: !Email
+    , _profileLogin            :: !Text
+    , _profileEmail            :: !Text
     , _profileEmployeeNumber   :: !(Maybe String)
     , _profileTribe            :: !(Maybe Text)
     , _profileOffice           :: !(Maybe Text)

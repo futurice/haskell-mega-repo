@@ -31,7 +31,7 @@ import Data.List                     (find)
 import Data.Time
        (addDays, addGregorianMonthsClip, fromGregorian, toGregorian)
 import Data.Time.Calendar.WeekDate   (toWeekDate)
-import Futurice.Email                (Email)
+import Futurice.Email                (Email, emailFromText)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
 import Futurice.Prelude
@@ -149,7 +149,7 @@ githubUsernamesFromOkta ctx = do
     oktaUsers <- O.users
     oktaAppUsers <- O.appUsers appId
     let appUsersMap = Map.fromList $ map (\u -> (O.appUserId u, O.credUserName $ O.appUserCredentials u)) oktaAppUsers
-    let userMap = Map.fromList $ map (\u -> (u ^. O.userProfile . O.profileLogin, GH.mkUserName <$> Map.lookup (u ^. O.userId) appUsersMap )) oktaUsers
+    let userMap = Map.fromList $ catMaybes $ map (\u -> (,GH.mkUserName <$> Map.lookup (u ^. O.userId) appUsersMap) <$> (emailFromText $ u ^. O.userProfile . O.profileLogin)) oktaUsers
     pure userMap
 
 personioPlanmillMap

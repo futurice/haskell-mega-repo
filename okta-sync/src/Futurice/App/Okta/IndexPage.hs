@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Okta.IndexPage where
 
-import Futurice.Email            (emailToText)
+import Futurice.Email            (emailFromText, emailToText)
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Prelude ()
@@ -66,7 +66,7 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
                 for_ employees $ \e -> tr_ $ do
                     td_ $ toHtml (e ^. P.employeeFullname)
                     td_ $ toHtml $ maybe "" show (e ^. P.employeeEmploymentType)
-                    td_ $ for_ (e ^. P.employeeEmail >>= \email -> loginMap ^. at email) $ \u -> do
+                    td_ $ for_ (e ^. P.employeeEmail >>= \email -> loginMap ^. at (emailToText email)) $ \u -> do
                         toHtml $ show $ u ^. O.userStatus
   where
     employeeNumber (P.EmployeeId n) = textShow n
@@ -77,17 +77,17 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
     notMachineUser e = not $ e ^. P.employeeId `elem` machineUsers
     notInactiveEmployees = filter (\e -> e ^. P.employeeStatus /= P.Inactive) employees
     notFoundInOkta e =
-        case e ^. P.employeeEmail >>= \email -> loginMap ^. at email of
+        case e ^. P.employeeEmail >>= \email -> loginMap ^. at (emailToText email) of
           Just _ -> False
           Nothing -> True
     emailNotEmpty e = e ^. P.employeeEmail /= Nothing && (e ^. P.employeeEmail >>= Just . emailToText) /= Just ""
     notInactiveEmployeesNotInOkta = filter notFoundInOkta $ filter notMachineUser $ filter emailNotEmpty notInactiveEmployees
 
-    oktaUsersNotInPersonio = filter (\u -> case personioMap ^. at (u ^. O.userProfile . O.profileLogin) of
+    oktaUsersNotInPersonio = filter (\u -> case (emailFromText $ u ^. O.userProfile . O.profileLogin) >>= \email -> personioMap ^. at email of
                                              Just _ -> False
                                              Nothing -> True) users
 
-    oktaFuturiceMember = filter (\u -> case personioMap ^. at (u ^. O.userProfile . O.profileLogin) of
+    oktaFuturiceMember = filter (\u -> case (emailFromText $ u ^. O.userProfile . O.profileLogin) >>= \email -> personioMap ^. at email of
                                     Just (e:_) | u `elem` internalGroupUsers -> not (e ^. P.employeeStatus == P.Active && e ^. P.employeeEmploymentType == Just P.Internal)
                                                | otherwise -> False
                                     _ -> True) users
