@@ -105,7 +105,7 @@ updateUsers ctx now employees users = do
     let members' = S.fromList $ map (^. O.userId) $ filter (\m -> maybe True (`S.notMember` employeeExceptions) $ (m ^. O.userProfile . O.profileEmployeeNumber >>= readMaybe >>= Just . P.EmployeeId)) members
     let membersNotActiveAnymore = filter (\u -> not $ u `S.member` (S.fromList activeInternalEmployees)) $ S.toList members'
 
-    removed <- traceShow membersNotActiveAnymore $ traverse (\u -> O.deleteUserFromGroup peakonGroup u) $ membersNotActiveAnymore
+    removed <- traverse (\u -> O.deleteUserFromGroup peakonGroup u) $ membersNotActiveAnymore
 
     -- add people to group
     let employeeNotInGroup = filter (\u -> not $ u `S.member` members') activeInternalEmployees
