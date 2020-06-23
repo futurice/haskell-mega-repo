@@ -97,7 +97,7 @@ makeCtx cfg lgr mgr cache mq = do
 
     void $ forEachMessage mq $ \msg -> case msg of
         PersonioUpdated -> do
-            (OktaUpdateStats updated removed added) <- updateJob
+            (OktaUpdateStats updated removed added) <- updateJob ctx
             runLogT "okta-sync" lgr $ logInfo_ $ "Updated " <> textShow (length updated) <> " employees"
             runLogT "okta-sync" lgr $ logInfo_ $ "Removed " <> textShow removed <> " employees from Peakon group"
             runLogT "okta-sync" lgr $ logInfo_ $ "Added " <> textShow added <> " employees to Peakon group"
@@ -107,10 +107,10 @@ makeCtx cfg lgr mgr cache mq = do
   where
     integrationCfg = cfgIntegrationsCfg cfg
 
-    updateJob = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
+    updateJob ctx = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
         es' <- P.personioEmployees
         oktaUsers <- O.users
-        updateUsers (utctDay now) es' oktaUsers
+        updateUsers ctx (utctDay now) es' oktaUsers
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

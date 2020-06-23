@@ -8,12 +8,14 @@ import Prelude ()
 
 import qualified FUM.Types.GroupName as FUM
 import qualified FUM.Types.Login     as FUM
+import qualified Personio            as P
 
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgAccessGroups       :: ![FUM.GroupName]
     , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE, ServPO ])
     , cfgGithubAppId        :: !Text
+    , cfgAlwaysInPeakon     :: ![P.EmployeeId]
     }
 
 instance Configure Config where
@@ -22,6 +24,7 @@ instance Configure Config where
       <*> envVar "ACCESS_GROUPS"
       <*> configure
       <*> envVar "GITHUBAPPID"
+      <*> envVar "ALWAYS_IN_PEAKON"
 
 instance HasOktaGithubId Config where
     oktaGithubId = cfgGithubAppId
