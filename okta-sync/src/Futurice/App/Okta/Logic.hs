@@ -3,13 +3,15 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Okta.Logic where
 
-import Futurice.CareerLevel (careerLevelToText)
-import Futurice.Email       (emailFromText, emailToText)
+import Futurice.App.Okta.Config
+import Futurice.App.Okta.Ctx
+import Futurice.CareerLevel     (careerLevelToText)
+import Futurice.Email           (emailFromText, emailToText)
 import Futurice.Generics
-import Futurice.Office      (officeFromText, officeToText)
+import Futurice.Office          (officeFromText, officeToText)
 import Futurice.Prelude
-import Futurice.Tribe       (tribeFromText, tribeToText)
-import GitHub               (untagName)
+import Futurice.Tribe           (tribeFromText, tribeToText)
+import GitHub                   (untagName)
 import Prelude ()
 
 import Futurice.App.Okta.Types
@@ -86,8 +88,8 @@ fetchClientInformation now emps = do
             in (emp ^. P.employeeId, clientStatus)
     pure $ Map.fromList $ employeeMainProject <$> emps
 
-updateUsers :: (O.MonadOkta m, Power.MonadPower m) => Day -> [P.Employee] -> [O.User] -> m OktaUpdateStats
-updateUsers now employees users = do
+updateUsers :: (O.MonadOkta m, Power.MonadPower m) => Ctx -> Day -> [P.Employee] -> [O.User] -> m OktaUpdateStats
+updateUsers ctx now employees users = do
     let (_duplicates, singles) = Map.partition (\a -> length a > 1) personioMap
     let singles' = Map.mapMaybe listToMaybe singles
 
@@ -100,7 +102,7 @@ updateUsers now employees users = do
 
     -- remove people from group
     members <- O.groupMembers peakonGroup
-    let members' = S.fromList $ map (^. O.userId) members
+    let members' = S.fromList $ map (^. O.userId) $ filter (\m -> maybe True (`S.notMember` employeeExceptions) $ (m ^. O.userProfile . O.profileEmployeeNumber >>= readMaybe >>= Just . P.EmployeeId)) members
     let membersNotActiveAnymore = filter (\u -> not $ u `S.member` (S.fromList activeInternalEmployees)) $ S.toList members'
 
     removed <- traverse (\u -> O.deleteUserFromGroup peakonGroup u) $ membersNotActiveAnymore
@@ -208,6 +210,8 @@ updateUsers now employees users = do
           Nothing -> True
     emailNotEmpty e = e ^. P.employeeEmail /= Nothing && (e ^. P.employeeEmail >>= Just . emailToText) /= Just ""
     _notInactiveEmployeesNotInOkta = filter notFoundInOkta $ filter notMachineUser $ filter emailNotEmpty notInactiveEmployees
+
+    employeeExceptions = S.fromList $ cfgAlwaysInPeakon $ ctxConfig ctx
 
 createUser :: (O.MonadOkta m) => P.Employee -> m O.User
 createUser pemp = O.createUser newUser
