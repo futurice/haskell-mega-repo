@@ -85,6 +85,15 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             (K.operationsMatching $ K.sym "library" *> many K.anySym)
             [ "Library" ]
 
+        . Sw.applyTagsFor
+            (K.operationsMatching $ K.sym "peakon" *> many K.anySym)
+            [ "Peakon" ]
+
+        . Sw.applyTagsFor
+            (K.operationsMatching $ K.sym "dev" *> many K.anySym)
+            [ "Internal dev Power endpoint" ]
+
+
 checkCreds :: Ctx -> Request -> ByteString -> ByteString -> IO Bool
 checkCreds ctx req u p = do
     let u' = decodeLatin1 u
