@@ -19,7 +19,7 @@ source-repository head
 
 library
   default-language:   Haskell2010
-  ghc-options:        -Wall -freduction-depth=30
+  ghc-options:        -Wall -freduction-depth=40
   hs-source-dirs:     src
   default-extensions:
     DeriveDataTypeable
