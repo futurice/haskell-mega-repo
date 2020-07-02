@@ -208,6 +208,7 @@ data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
     , _thcPrimaryTeam       :: !(Maybe Text)
     , _thcPrimaryCompetence :: !(Maybe Text)
     }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, NFData, HasSemanticVersion, HasDatatypeInfo)
+
 type TeamsHoursByCategory = Vector TeamsHoursByCategoryRow
 
 instance AnsiPretty TeamsHoursByCategoryRow

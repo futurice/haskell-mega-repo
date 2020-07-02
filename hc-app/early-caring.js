@@ -56,4 +56,25 @@ futu.onload(function () {
       callbacks.forEach(function (cb) { cb (); });
     });
   }
+
+  $$("button[data-futu-vacation-report-send-all]").forEach(sendVacationReport);
+
+  function sendVacationReport(btn) {
+    var url = btn.dataset.futuVacationReportSendAll;
+    btn.disabled = false;
+
+    buttonOnClick(btn, function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+
+      console.log("Posting to URL", url);
+      futu.commandFetchJSON(url, {})
+        .then(function (res) {
+          btn.className = "button success";
+        })
+        .catch(function (exc) {
+          btn.className = "button alert";
+        });
+    });
+  };
 });

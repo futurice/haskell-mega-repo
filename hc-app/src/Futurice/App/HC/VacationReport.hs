@@ -6,6 +6,8 @@ module Futurice.App.HC.VacationReport where
 import Data.Aeson       (object, (.=))
 import Futurice.Prelude
 import Prelude ()
+import Servant.API      (ToHttpApiData (..))
+import Servant.Links    (Link, fieldLink)
 import Text.Microstache (Template, compileMustacheText, renderMustache)
 
 import Futurice.App.HC.API
@@ -20,6 +22,7 @@ import qualified PlanMill    as PM
 data Holiday = Holiday
     { annualHoliday     :: !Double
     , usedAnnualHoliday :: !Double
+    , holidayYear       :: !(Maybe Int)
     } deriving (Show)
 
 data PersonHoliday = PersonHoliday
@@ -27,6 +30,12 @@ data PersonHoliday = PersonHoliday
     , employeeFirstName :: !Text
     , holidays          :: !(Map (Maybe Int) Holiday)
     } deriving (Show)
+
+data RenderTemplate = RenderTemplate
+    { rtFirstName                 :: !Text
+    , rtHolidays                  :: ![Holiday]
+    , rtAllRemainingAnnualHoliday :: !Double
+    }
 
 renderReport :: PM.EarnedVacations -> [P.Employee] -> HtmlPage "vacation-report"
 renderReport earnedVacations pemployees = page_ "German vacation report" (Just NavVacationReport) $ do
@@ -58,6 +67,7 @@ renderReport earnedVacations pemployees = page_ "German vacation report" (Just N
                 td_ $ toHtml $ textShow $ PM._vacationSavedLeave row
                 td_ $ toHtml $ textShow $ PM._vacationSavedLeaveRemaining row
     h2_ "People found in Personio"
+    sendAllButton
     sortableTable_ $ do
         thead_ $ do
             th_ "Name"
@@ -86,6 +96,8 @@ renderReport earnedVacations pemployees = page_ "German vacation report" (Just N
                 td_ $ toHtml $ textShow $ PM._vacationSavedLeave row
                 td_ $ toHtml $ textShow $ PM._vacationSavedLeaveRemaining row
                 td_ $ a_ [ style_ "display: block", recordHref_ recVacationReportEmail eid] $ toHtml ("Show email" :: Text)
+
+    sendAllButton
   where
       vacationPart = foldl (\s row ->
                               case Map.lookup (planmillNameToPersonio $ PM._vacationUserName row) personioNameMap of
@@ -100,42 +112,56 @@ renderReport earnedVacations pemployees = page_ "German vacation report" (Just N
       personioNameMap :: Map Text P.EmployeeId
       personioNameMap = Map.fromList $ (\e -> (e ^. P.employeeFullname, e ^. P.employeeId)) <$> pemployees
 
-renderReportSingle :: P.EmployeeId -> Integer -> PM.EarnedVacations -> [P.Employee] -> HtmlPage "vacation-report-single"
-renderReportSingle eid currentYear earnedVacations pemployees = page_ "German vacation report" (Just NavVacationReport) $ do
-    case Map.lookup eid toHoliday of
-      Just h ->  pre_ $ toHtml $ template h
-      Nothing -> mempty
+      sendAllButton = button_ [ id_ "futu-vacation-report-send-all"
+                              , class_ "button primary"
+                              , disabled_ "disabled"
+                              , data_ "futu-vacation-report-send-all" $ linkToText $ fieldLink recVacationReportSubmit] "Send to all"
+
+personHolidays :: P.Employee -> PM.EarnedVacations -> Maybe PersonHoliday
+personHolidays emp earnedVacations = Map.lookup (emp ^. P.employeeId) toHoliday
   where
-      toHoliday = Map.fromListWith (\h1 h2 -> PersonHoliday (employeeId h1) (employeeFirstName h1) (holidays h1 <> holidays h2))
-          $ (\h -> (employeeId h, h)) <$> (catMaybes $ rowToHoliday <$> V.toList earnedVacations)
+    rowToHoliday row = PersonHoliday
+                       (emp ^. P.employeeId)
+                       (emp ^. P.employeeFirst)
+                       (Map.singleton (PM._vacationYear row) (Holiday (PM._vacationAnnualHoliday row) (PM._vacationUsedAnnualHoliday row) (PM._vacationYear row)))
 
-      planmillNameToPersonio name =
-          case T.splitOn ", " name of
-            [surname, firstname] -> firstname <> " " <> surname
-            _ -> name
+    toHoliday = Map.fromListWith (\h1 h2 -> PersonHoliday (employeeId h1) (employeeFirstName h1) (holidays h1 <> holidays h2))
+        $ (\h -> (employeeId h, h)) <$> (rowToHoliday <$> filter (\v -> PM._vacationUserName v == personioToPlanmillname) (V.toList earnedVacations))
 
-      rowToHoliday row = (\(eid', firstName) ->
-                            PersonHoliday
-                            eid'
-                            firstName
-                            (Map.singleton (PM._vacationYear row) (Holiday (PM._vacationAnnualHoliday row) (PM._vacationUsedAnnualHoliday row))))
-                         <$> Map.lookup (planmillNameToPersonio $ PM._vacationUserName row) personioNameMap
+    personioToPlanmillname = emp ^. P.employeeLast <> ", " <> emp ^. P.employeeFirst
 
-      personioNameMap :: Map Text (P.EmployeeId, Text)
-      personioNameMap = Map.fromList $ (\e -> (e ^. P.employeeFullname, (e ^. P.employeeId, e ^. P.employeeFirst))) <$> pemployees
+renderReportSingle :: P.Employee -> Integer -> PM.EarnedVacations -> HtmlPage "vacation-report-single"
+renderReportSingle employee currentYear earnedVacations =
+    page_ "German vacation report" (Just NavVacationReport) $ pre_ $ toHtml $ fromMaybe mempty $ reportSingle employee currentYear earnedVacations
 
-      template holiday = case Map.lookup (Just $ fromInteger currentYear) (holidays holiday) of
-        Just hds -> renderTemplate (employeeFirstName holiday) (annualHoliday hds) (usedAnnualHoliday hds) (sum $ (\x -> annualHoliday x - usedAnnualHoliday x) <$> Map.elems (holidays holiday)) (fromInteger currentYear)
-        Nothing -> mempty
+reportSingle :: P.Employee -> Integer -> PM.EarnedVacations -> Maybe LazyText
+reportSingle employee currentYear earnedVacations = template <$> personHolidays employee earnedVacations
+  where
+      relevantHolidays holiday =
+          (Map.elems $ Map.filterWithKey (\k _ -> k == Just (fromInteger currentYear) || k == Just (fromInteger $ currentYear - 1)) $ holidays holiday)
+      template holiday =
+          renderTemplate $ RenderTemplate
+          { rtFirstName                 = (employeeFirstName holiday)
+          , rtHolidays                  = relevantHolidays holiday
+          , rtAllRemainingAnnualHoliday = (sum $ (\x -> annualHoliday x - usedAnnualHoliday x) <$> relevantHolidays holiday)
+          }
 
-renderTemplate :: Text -> Double -> Double -> Double -> Int -> LazyText
-renderTemplate firstName annualHoliday' usedAnnualHoliday' allRemainingAnnualHoliday currentYear= renderMustache earnedVacationsTemplate $ object
+renderTemplate :: RenderTemplate -> LazyText
+renderTemplate (RenderTemplate firstName holidays' allRemainingAnnualHoliday) =
+    renderMustache earnedVacationsTemplate $ object
     [ "firstName"                  .= firstName
-    , "annualHoliday"              .= annualHoliday'
-    , "usedAnnualHoliday"          .= usedAnnualHoliday'
+    , "holidays"                   .= map mkHoliday holidays'
     , "allRemainingAnnualHoliday"  .= allRemainingAnnualHoliday
-    , "currentYear"                .= currentYear
     ]
+  where mkHoliday (Holiday annualHoliday' usedAnnualHoliday' holidayYear') = object
+            [ "annualHoliday"     .= annualHoliday'
+            , "usedAnnualHoliday" .= usedAnnualHoliday'
+            , "holidayYear"       .= holidayYear'
+            ]
+
+
+linkToText :: Link -> Text
+linkToText l = "/" <> toUrlPiece l
 
 earnedVacationsTemplate :: Template
 earnedVacationsTemplate = either (error . show) id

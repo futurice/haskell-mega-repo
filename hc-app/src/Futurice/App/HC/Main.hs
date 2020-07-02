@@ -11,6 +11,7 @@
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.HC.Main (defaultMain) where
 
+import Data.Aeson                     (object, (.=))
 import Data.Time                      (addDays, toGregorian)
 import Futurice.App.EmailProxy.Client (sendEmail)
 import Futurice.App.EmailProxy.Types
@@ -30,7 +31,9 @@ import Servant.Chart                  (Chart)
 import Servant.Server.Generic
 import System.Entropy                 (getEntropy)
 
+import qualified Data.Map         as Map
 import qualified Data.Set         as Set
+import qualified Data.Vector      as V
 import qualified FUM.Types.Login  as FUM
 import qualified Personio         as P
 import qualified PlanMill         as PM
@@ -53,18 +56,19 @@ import Futurice.App.HC.VacationReport
 
 server :: Ctx -> Server HCAPI
 server ctx = genericServer $ Record
-    { recIndex               = indexPageAction ctx
-    , recPersonioValidations = personioValidationAction ctx
-    , recPrivateContacts     = personioPrivateContactsAction ctx
-    , recAnniversaries       = anniversariesAction ctx
-    , recHrNumbers           = hrnumbersAction ctx
-    , recEarlyCaring         = earlyCaringAction ctx
-    , recEarlyCaringCSV      = earlyCaringActionCSV ctx
-    , recEarlyCaringSubmit   = earlyCaringSubmitAction ctx
-    , recAchooReport         = achooReportAction ctx
-    , recAchooChart          = achooChartAction ctx
-    , recVacationReport      = vacationReportAction ctx
-    , recVacationReportEmail = vacationReportEmailAction ctx
+    { recIndex                = indexPageAction ctx
+    , recPersonioValidations  = personioValidationAction ctx
+    , recPrivateContacts      = personioPrivateContactsAction ctx
+    , recAnniversaries        = anniversariesAction ctx
+    , recHrNumbers            = hrnumbersAction ctx
+    , recEarlyCaring          = earlyCaringAction ctx
+    , recEarlyCaringCSV       = earlyCaringActionCSV ctx
+    , recEarlyCaringSubmit    = earlyCaringSubmitAction ctx
+    , recAchooReport          = achooReportAction ctx
+    , recAchooChart           = achooChartAction ctx
+    , recVacationReport       = vacationReportAction ctx
+    , recVacationReportEmail  = vacationReportEmailAction ctx
+    , recVacationReportSubmit = vacationReportSubmitAction ctx
     }
 
 -------------------------------------------------------------------------------
@@ -282,19 +286,61 @@ earlyCaringSubmitAction ctx mfu sb = do
 
 vacationReportAction :: Ctx -> Maybe FUM.Login -> Handler (HtmlPage "vacation-report")
 vacationReportAction = withAuthUser $ \_ -> do
-    d <- PMQ.earnedVacationsReport 3426
+    vacations <- PMQ.earnedVacationsReport 3426
+    let vacations' = V.filter (\v -> PM._vacationYear v == Just 2020 || PM._vacationYear v == Just 2019) vacations
     employees <- personio P.PersonioEmployees
-    pure $ renderReport d employees
+    let employees' = filter (\e -> e ^. P.employeeStatus /= P.Inactive) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+    pure $ renderReport vacations' employees'
 
 vacationReportEmailAction :: Ctx -> Maybe FUM.Login -> P.EmployeeId -> Handler (HtmlPage "vacation-report-single")
 vacationReportEmailAction ctx mfum eid = withAuthUser (\_ -> do
     d <- PMQ.earnedVacationsReport 3426
     employees <- personio P.PersonioEmployees
-    now <- currentDay
-    pure $ renderReportSingle eid (currentYear now) d employees) ctx mfum
+    let employees' = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+    case employees' ^.at eid of
+      Nothing -> error ""
+      Just employee -> do
+          now <- currentDay
+          pure $ renderReportSingle employee (currentYear now) d) ctx mfum
   where
     currentYear n = case toGregorian n of
       (year, _, _) -> year
+
+vacationReportSubmitAction :: Ctx -> Maybe FUM.Login -> Handler (CommandResponse ())
+vacationReportSubmitAction ctx mfu = do
+    x <- withAuthUser' False (const $ return True) ctx mfu
+    if x then liftIO f else return (CommandResponseError "Unauthorized")
+  where
+    currentYear n = case toGregorian n of
+      (year, _, _) -> year
+    lgr = ctxLogger ctx
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    impl curYear reports e = runLogT "vacation-report-submit" lgr $ do
+        let body = reportSingle e curYear reports
+        case (e ^. P.employeeEmail, body) of
+          (Just email, Just body') -> do
+            x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) $ emptyReq (fromEmail email)
+                 & reqSubject .~ "Vacation report"
+                 & reqBody    .~ body' ^. strict
+                 & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
+            case x of
+              Left exc -> logAttention "sendEmail failed" (show exc) >> return False
+              Right () -> return True
+          _ -> return False
+    f = do
+        now <- currentTime
+        day <- currentDay
+        (reports,employees') <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+            d <- PMQ.earnedVacationsReport 3426
+            employees <- personio P.PersonioEmployees
+            let employees' = filter (\e -> e ^. P.employeeStatus /= P.Inactive) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+            pure (d, employees')
+        sendResult <- for employees' $ impl (currentYear day) reports
+        liftIO $ runLogT "vacation-report-submit" lgr $ logInfo "Send vacation report" $ object
+            [ "successfully" .= (length $ filter (== True) sendResult)
+            ]
+        pure CommandResponseReload
 
 page404 :: HtmlPage a
 page404 = page_ "HC - Unauthorised" $
