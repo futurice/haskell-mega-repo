@@ -3,6 +3,8 @@
 module PlanMill.Types.Report (
     AllRevenues2,
     AllRevenuesPortfolio (..),
+    EarnedVacations,
+    EarnedVacationsRow (..),
     Report,
     Reports,
     ReportsCategories,
@@ -153,14 +155,13 @@ type PersonValueCreations = Vector PersonValueCreation
 instance AnsiPretty PersonValueCreation
 instance HasStructuralInfo PersonValueCreation where structuralInfo = sopStructuralInfo
 
+parseNum :: (Num a, Read a) => Value -> Parser a
+parseNum s = do
+    s' <- parseJSON s :: Parser String
+    maybe mempty pure $ readMaybe s'
+
 instance FromJSON PersonValueCreation where
     parseJSON = withArray "Valuecreation" $ \array -> do
-        let parseNum :: Value -> Parser Double
-            parseNum s = do
-                s' <- parseJSON s :: Parser String
-                case readMaybe s' of
-                  Just s'' -> pure s''
-                  Nothing -> mempty
         team <- traverse parseJSON (array !? 0)
         person <- traverse parseJSON (array !? 1)
         january <- traverse parseNum (array !? 2)
@@ -207,6 +208,7 @@ data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
     , _thcPrimaryTeam       :: !(Maybe Text)
     , _thcPrimaryCompetence :: !(Maybe Text)
     }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, NFData, HasSemanticVersion, HasDatatypeInfo)
+
 type TeamsHoursByCategory = Vector TeamsHoursByCategoryRow
 
 instance AnsiPretty TeamsHoursByCategoryRow
@@ -250,3 +252,47 @@ instance FromJSON TeamsHoursByCategoryRow where
                 <*> primaryTeam
                 <*> primaryTeamCompetence
         maybe mempty pure res
+
+type EarnedVacations = Vector EarnedVacationsRow
+
+data EarnedVacationsRow = EarnedVacationsRow
+    { _vacationUserName                :: !Text
+    , _vacationUserHRNumber            :: !(Maybe Int)
+    , _vacationCostCenter              :: !(Maybe Double)
+    , _vacationOrganization            :: !Text
+    , _vacationYear                    :: !(Maybe Int)
+    , _vacationAnnualHoliday           :: !Double
+    , _vacationUsedAnnualHoliday       :: !Double
+    , _vacationAnnualHolidaysRemaining :: !Double
+    , _vacationBonusHoliday            :: !Double
+    , _vacationBonusHolidayRemaining   :: !Double
+    , _vacationOtherAnnualHoliday      :: !Double
+    , _vacationSavedLeave              :: !Double
+    , _vacationSavedLeaveRemaining     :: !Double
+    , _vacationSuperior                :: !(Maybe Double)
+    } deriving (Eq, Show, Binary, NFData, GhcGeneric, SopGeneric, HasSemanticVersion, HasDatatypeInfo)
+
+instance AnsiPretty EarnedVacationsRow
+instance HasStructuralInfo EarnedVacationsRow where structuralInfo = sopStructuralInfo
+
+parseNull :: Value -> Parser (Maybe String)
+parseNull Null = pure Nothing
+parseNull val  = parseJSON val
+
+instance FromJSON EarnedVacationsRow where
+    parseJSON = withArray "earned-vacations-row" $ \arr -> do
+       EarnedVacationsRow
+           <$> parseJSON (arr ! 0)
+           <*> (fmap (>>= readMaybe) (parseNull (arr ! 1)))
+           <*> (fmap (>>= readMaybe) (parseNull (arr ! 2)))
+           <*> parseJSON (arr ! 3)
+           <*> (fmap (>>= readMaybe) (parseNull (arr ! 4)))
+           <*> parseNum (arr ! 5)
+           <*> parseNum (arr ! 6)
+           <*> parseNum (arr ! 7)
+           <*> parseNum (arr ! 8)
+           <*> parseNum (arr ! 9)
+           <*> parseNum (arr ! 10)
+           <*> parseNum (arr ! 11)
+           <*> parseNum (arr ! 12)
+           <*> (fmap (>>= readMaybe) (parseNull (arr ! 13)))

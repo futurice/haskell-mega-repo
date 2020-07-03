@@ -65,7 +65,8 @@ module PlanMill.Endpoints (
     reports,
     allRevenuesReport,
     valueCreationByMonthReport,
-    teamsHoursByCategoryReport
+    teamsHoursByCategoryReport,
+    earnedVacationsReport
     ) where
 
 import PlanMill.Internal.Prelude
@@ -349,11 +350,27 @@ deleteHook hid = planMillDeleteNoResponse $ t "hooks" // hid
 reports :: PlanMill ReportsCategories
 reports = planMillGet $ t "reports"
 
--- | Get a spesific report
+-- | Get a All Revenues 2 - report
 --
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
 allRevenuesReport :: PlanMill AllRevenues2
 allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
+
+-- | Get a Earned Vacations - report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+earnedVacationsReport :: Int -> PlanMill EarnedVacations
+earnedVacationsReport organization = planMillPagedGetQs qs $ t "reports" // t "Earned Vacations"
+  where
+    qs = Map.fromList
+        [ ("param1", "-1") -- ^ Person
+        , ("param2", "-1") -- ^ Team
+        , ("param3", "-1") -- ^ Cost center
+        , ("param5", (textShow organization)) -- ^ Organization
+        , ("param6", "-1") -- ^ Year
+        , ("param7", "1")  -- ^ Status
+--        , ("param8", "2020-12-31T14:05:15.953Z") -- ^ Endtime
+        ]
 
 -- | Get the "Value creation per month by employee" report
 --

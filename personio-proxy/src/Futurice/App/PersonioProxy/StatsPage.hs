@@ -26,14 +26,14 @@ statsPage emps = page_ "Stats page" (Just NavStats) $ do
                 for_ (sortOn (officeToText . fst) $ Map.toList officeMap) $ \(office, emps') -> do
                     tr_ $ do
                         td_ $ toHtml $ officeToText office
-                        td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) emps'
-                        td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.External) $ filter (\e -> e ^. P.employeeStatus == P.Active) emps'
-                        td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeStatus == P.Active) emps'
+                        td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emps'
+                        td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.External) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emps'
+                        td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emps'
                 tr_ $ do
                     td_ $ b_ "Sum"
-                    td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus == P.Active) emps
-                    td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.External) $ filter (\e -> e ^. P.employeeStatus == P.Active) emps
-                    td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeStatus == P.Active) emps
+                    td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emps
+                    td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeEmploymentType == Just P.External) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emps
+                    td_ $ toHtml $ textShow $ length $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emps
   where
     officeMap :: Map Office [P.Employee]
     officeMap = Map.fromListWith (<>) $ (\emp -> (emp ^. P.employeeOffice, [emp])) <$> emps

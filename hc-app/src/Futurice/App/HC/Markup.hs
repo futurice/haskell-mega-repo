@@ -7,7 +7,7 @@ module Futurice.App.HC.Markup (
     ) where
 
 import Futurice.Lucid.Foundation hiding (page_)
-import Futurice.Lucid.Navigation (Navigation (..), page_, pageParamsWithJS)
+import Futurice.Lucid.Navigation (Navigation (..), pageParamsWithJS, page_)
 import Futurice.Prelude
 import Prelude ()
 
@@ -20,6 +20,7 @@ data Nav
     | NavAchoo
     | NavAnniversaries
     | NavHrNumbers
+    | NavVacationReport
   deriving (Eq, Ord, Enum, Bounded)
 
 instance Navigation Nav where
@@ -31,6 +32,7 @@ instance Navigation Nav where
     navLink NavAchoo              = (recordHref_ recAchooReport Nothing Nothing Nothing, "Achoo report")
     navLink NavAnniversaries      = (recordHref_ recAnniversaries ,      "Anniversaries")
     navLink NavHrNumbers          = (recordHref_ recHrNumbers,           "HR Numbers")
+    navLink NavVacationReport     = (recordHref_ recVacationReport,      "German vacation report")
 
     pageParams = pageParamsWithJS
         $(makeRelativeToProject "early-caring.js" >>= embedJS)

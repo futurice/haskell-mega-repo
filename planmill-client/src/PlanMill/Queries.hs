@@ -33,6 +33,7 @@ module PlanMill.Queries (
     allRevenuesReport,
     valueCreationByMonthReport,
     teamsHoursByCategoryReport,
+    earnedVacationsReport,
     -- * Queries
     usersQuery,
     absencesQuery,
@@ -56,11 +57,11 @@ import GHC.TypeLits          (KnownSymbol, symbolVal)
 import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
-       CapacityCalendars, Me, PersonValueCreations, Project (..), ProjectId,
-       ProjectMembers, Projects, SimpleProject, Task, TaskId, Tasks, Team,
-       TeamId, TeamsHoursByCategory, TimeBalance, Timereport, Timereports,
-       User, UserCapacities, UserId, Users, ViewTemplate (..), identifier,
-       sProject, viewTemplateToInt)
+       CapacityCalendars, EarnedVacations, Me, PersonValueCreations,
+       Project (..), ProjectId, ProjectMembers, Projects, SimpleProject, Task,
+       TaskId, Tasks, Team, TeamId, TeamsHoursByCategory, TimeBalance,
+       Timereport, Timereports, User, UserCapacities, UserId, Users,
+       ViewTemplate (..), identifier, sProject, viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta           (Meta, lookupFieldEnum)
 import PlanMill.Types.Query          (Query (..), QueryTag (..))
@@ -343,6 +344,24 @@ allRevenuesReport :: (MonadPlanMillQuery m) => Integer -> Integer -> m AllRevenu
 allRevenuesReport year month = planmillQuery
     $ QueryGet QueryTagAllRevenue (Map.fromList [("param1",textShow year), ("param2", textShow month)])
     $ toUrlParts ("reports" :: Text) // ("All Revenues 2" :: Text)
+
+-- | Get a Earned Vacations - report
+--
+-- See <https://developers.planmill.com/api/#reports__reportName__get>
+earnedVacationsReport :: (MonadPlanMillQuery m) => Int -> m EarnedVacations
+earnedVacationsReport organization = planmillVectorQuery
+    $ QueryPagedGet QueryTagEarnedVacation qs
+    $ toUrlParts $ ("reports" :: Text) // ("Earned Vacations" :: Text)
+  where
+    qs = Map.fromList
+        [ ("param1", "-1") -- ^ Person
+        , ("param2", "-1") -- ^ Team
+        , ("param3", "-1") -- ^ Cost center
+        , ("param5", (textShow organization)) -- ^ Organization
+        , ("param6", "-1") -- ^ Year
+        , ("param7", "1")  -- ^ Status
+--        , ("param8", "2020-12-31T14:05:15.953Z") -- ^ Endtime
+        ]
 
 -- | Get Value creation by month per employee Report
 --
