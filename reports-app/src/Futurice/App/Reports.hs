@@ -48,6 +48,7 @@ import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
 import Futurice.App.Reports.Dashdo                            (makeDashdoServer)
 import Futurice.App.Reports.DoWeStudy                         (doWeStudyData)
+import Futurice.App.Reports.FumAbsences                       (fumAbsences)
 import Futurice.App.Reports.IDontKnow                         (iDontKnowData)
 import Futurice.App.Reports.Inventory
 import Futurice.App.Reports.LongAbsence
@@ -385,6 +386,7 @@ server ctx = genericServer $ Record
 
     -- For futulog
     , recFumCapacity = \login month -> liftIO $ serveDataParam2 login month hasCapacity ctx
+    , recFumAbsence = \login month -> liftIO $ serveDataParam2 login month fumAbsences ctx
     }
   where
     lgr = ctxLogger ctx

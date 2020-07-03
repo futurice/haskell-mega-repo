@@ -32,6 +32,7 @@ import Futurice.App.PersonioProxy.Types
        (AttritionRate, MonthlyCompensation)
 import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
 import Futurice.App.Reports.Capacity                   (Capacity)
+import Futurice.App.Reports.FumAbsences                (FumAbsences)
 import Futurice.App.Reports.MissingHours               (MissingHoursReport)
 import Futurice.App.Reports.PowerAllRevenues           (PowerAllRevenues)
 import Futurice.App.Reports.ProjectMembers             (ProjectMembers)
@@ -99,6 +100,9 @@ data Routes = Routes
     , routeFumCapacity :: ProxiedEndpoint 'ReportsService
         ("report" :> "capacity" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
         ("reports" :> "capacity" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+    , routeFumAbsence :: ProxiedEndpoint 'ReportsService
+        ("report" :> "absences" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] FumAbsences)
+        ("reports" :> "absences" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] FumAbsences)
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))
