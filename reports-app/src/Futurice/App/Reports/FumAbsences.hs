@@ -17,7 +17,7 @@ data FumAbsences = FumAbsences
     , _fumAbsencesMonth    :: !Month
     , _fumAbsencesAbsences :: ![Day]
     } deriving (GhcGeneric, ToSchema, SopGeneric, HasDatatypeInfo, NFData)
-      deriving ToJSON via (Sopica FumAbsences)
+      deriving (FromJSON, ToJSON) via (Sopica FumAbsences)
 
 fumAbsences :: (Monad m, MonadPlanMillQuery m, MonadPersonio m) => FUM.Login -> Month -> m FumAbsences
 fumAbsences username month = do
