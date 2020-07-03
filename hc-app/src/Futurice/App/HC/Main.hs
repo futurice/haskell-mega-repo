@@ -253,7 +253,6 @@ achooChartAction
 achooChartAction ctx mfu ac mi ma a = withAuthUser' (error "404") impl ctx mfu where
     impl _ = achooRenderChart ac <$> achooReportFetch mi ma a
 
-
 earlyCaringSubmitAction
     :: Ctx
     -> Maybe FUM.Login
@@ -283,36 +282,46 @@ earlyCaringSubmitAction ctx mfu sb = do
                     & reqBody    .~ body ^. strict
                     & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
 
+currentYear :: Day -> Integer
+currentYear n =
+    case toGregorian n of
+      (year, _, _) -> year
+
+futuriceGmbh :: Int
+futuriceGmbh = 3426
+
+-- need to be internal, non-inactive and not expats
+employeesForVacationReport :: (P.MonadPersonio m) => m [P.Employee]
+employeesForVacationReport = do
+    employees <- personio P.PersonioEmployees
+    pure $ filter (\e -> e ^. P.employeeExpat == False) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
 
 vacationReportAction :: Ctx -> Maybe FUM.Login -> Handler (HtmlPage "vacation-report")
 vacationReportAction = withAuthUser $ \_ -> do
-    vacations <- PMQ.earnedVacationsReport 3426
-    let vacations' = V.filter (\v -> PM._vacationYear v == Just 2020 || PM._vacationYear v == Just 2019) vacations
-    employees <- personio P.PersonioEmployees
-    let employees' = filter (\e -> e ^. P.employeeStatus /= P.Inactive) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+    vacations <- PMQ.earnedVacationsReport futuriceGmbh
+    day <- currentDay
+    let vacations' = V.filter
+            (\v -> PM._vacationYear v == Just (fromInteger $ currentYear day) || PM._vacationYear v == Just ((fromInteger $ currentYear day) - 1))
+            vacations
+    employees' <- personio P.PersonioEmployees
     pure $ renderReport vacations' employees'
 
 vacationReportEmailAction :: Ctx -> Maybe FUM.Login -> P.EmployeeId -> Handler (HtmlPage "vacation-report-single")
 vacationReportEmailAction ctx mfum eid = withAuthUser (\_ -> do
-    d <- PMQ.earnedVacationsReport 3426
-    employees <- personio P.PersonioEmployees
-    let employees' = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+    d <- PMQ.earnedVacationsReport futuriceGmbh
+    employees <- employeesForVacationReport
+    let employees' = Map.fromList $ map (\e -> (e ^. P.employeeId, e)) employees
     case employees' ^.at eid of
       Nothing -> error ""
       Just employee -> do
           now <- currentDay
           pure $ renderReportSingle employee (currentYear now) d) ctx mfum
-  where
-    currentYear n = case toGregorian n of
-      (year, _, _) -> year
 
 vacationReportSubmitAction :: Ctx -> Maybe FUM.Login -> Handler (CommandResponse ())
 vacationReportSubmitAction ctx mfu = do
     x <- withAuthUser' False (const $ return True) ctx mfu
     if x then liftIO f else return (CommandResponseError "Unauthorized")
   where
-    currentYear n = case toGregorian n of
-      (year, _, _) -> year
     lgr = ctxLogger ctx
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
@@ -325,20 +334,19 @@ vacationReportSubmitAction ctx mfu = do
                  & reqBody    .~ body' ^. strict
                  & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
             case x of
-              Left exc -> logAttention "sendEmail failed" (show exc) >> return False
-              Right () -> return True
-          _ -> return False
+              Left exc -> logAttention "sendEmail failed" (show exc) >> return Nothing
+              Right () -> return (Just e)
+          _ -> return Nothing
     f = do
         now <- currentTime
         day <- currentDay
         (reports,employees') <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
-            d <- PMQ.earnedVacationsReport 3426
-            employees <- personio P.PersonioEmployees
-            let employees' = filter (\e -> e ^. P.employeeStatus /= P.Inactive) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
+            d <- PMQ.earnedVacationsReport futuriceGmbh
+            employees' <- employeesForVacationReport
             pure (d, employees')
         sendResult <- for employees' $ impl (currentYear day) reports
         liftIO $ runLogT "vacation-report-submit" lgr $ logInfo "Send vacation report" $ object
-            [ "successfully" .= (length $ filter (== True) sendResult)
+            [ "successfully" .= (length $ filter (/= Nothing) sendResult)
             ]
         pure CommandResponseReload
 
