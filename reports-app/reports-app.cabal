@@ -143,6 +143,7 @@ library
     Futurice.App.Reports.Ctx
     Futurice.App.Reports.Dashdo
     Futurice.App.Reports.DoWeStudy
+    Futurice.App.Reports.FumAbsences
     Futurice.App.Reports.GithubReposDashdo
     Futurice.App.Reports.IDontKnow
     Futurice.App.Reports.Inventory

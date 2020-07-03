@@ -99,6 +99,9 @@ data Routes = Routes
     , routeFumCapacity :: ProxiedEndpoint 'ReportsService
         ("report" :> "capacity" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
         ("reports" :> "capacity" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+    , routeFumAbsence :: ProxiedEndpoint 'ReportsService
+        ("report" :> "absences" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
+        ("reports" :> "absences" :> Capture "login" Login :> Capture "month" Month :> Get '[JSON] [Capacity])
 
     -- Futuqu: we could real types, but this way is simpler.
     , routeFutuquPeople       :: Futuqu ("rada" :> "people"                                 :> Get '[CACHED CSV] (Cached CSV [Text]))

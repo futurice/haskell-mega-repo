@@ -26,6 +26,7 @@ import Futurice.App.Reports.ActiveSubcontractorsByHours
 import Futurice.App.Reports.Capacity                    (Capacity)
 import Futurice.App.Reports.DoWeStudy
        (DoWeStudyData, StudyKind)
+import Futurice.App.Reports.FumAbsences                 (FumAbsences)
 import Futurice.App.Reports.IDontKnow                   (IDontKnowData)
 import Futurice.App.Reports.Inventory                   (InventorySummary)
 import Futurice.App.Reports.MissingHours
@@ -126,6 +127,7 @@ data Record route = Record
 
     -- For futulog
     , recFumCapacity :: route :- "report" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity]
+    , recFumAbsence  :: route :- "report" :> "absences" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] FumAbsences
     }
   deriving Generic
 
