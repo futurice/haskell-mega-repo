@@ -53,6 +53,7 @@ data PowerUser = PowerUser
     , _powerUserMatrixSupervisorName :: !(Maybe Text)
     , _powerUserInvoiceableFTE     :: !(Maybe Double)
     , _powerUserCompetenceHome     :: !(Maybe Text)
+    , _powerUserPosition           :: !(Maybe Text)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -114,6 +115,7 @@ powerUser today es emailMap e = do
                                             >>= \su -> Just $ su ^. P.employeeFullname
         , _powerUserInvoiceableFTE = e ^. P.employeeInvoiceableFTE
         , _powerUserCompetenceHome = e ^. P.employeeCompetenceHome
+        , _powerUserPosition       = e ^. P.employeePosition
         }
   where
     s = do
