@@ -136,7 +136,7 @@ personHolidays emp earnedVacations = Map.lookup (emp ^. P.employeeId) toHoliday
     toHoliday = Map.fromListWith (\h1 h2 -> PersonHoliday (employeeId h1) (employeeFirstName h1) (holidays h1 <> holidays h2))
         $ (\h -> (employeeId h, h)) <$> (rowToHoliday <$> filter (\v -> PM._vacationUserName v == personioToPlanmillname) (V.toList earnedVacations))
 
-    personioToPlanmillname = emp ^. P.employeeLast <> ", " <> emp ^. P.employeeFirst
+    personioToPlanmillname = emp ^. P.employeeLast  <> ", " <> emp ^. P.employeeFirst
 
     expirationDate' 2019 = $(mkDay "2020-12-31")
     expirationDate' year = fromGregorian (toInteger year + 1) 3 31
