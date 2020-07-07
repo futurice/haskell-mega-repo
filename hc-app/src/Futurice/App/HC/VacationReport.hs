@@ -4,6 +4,7 @@
 module Futurice.App.HC.VacationReport where
 
 import Data.Aeson       (object, (.=))
+import Data.Time        (fromGregorian, toGregorian)
 import Futurice.Prelude
 import Prelude ()
 import Servant.API      (ToHttpApiData (..))
@@ -23,6 +24,7 @@ data Holiday = Holiday
     { annualHoliday     :: !Double
     , usedAnnualHoliday :: !Double
     , holidayYear       :: !(Maybe Int)
+    , expirationDate    :: !(Maybe Day)
     } deriving (Show)
 
 data PersonHoliday = PersonHoliday
@@ -127,12 +129,17 @@ personHolidays emp earnedVacations = Map.lookup (emp ^. P.employeeId) toHoliday
     rowToHoliday row = PersonHoliday
                        (emp ^. P.employeeId)
                        (emp ^. P.employeeFirst)
-                       (Map.singleton (PM._vacationYear row) (Holiday (PM._vacationAnnualHoliday row) (PM._vacationUsedAnnualHoliday row) (PM._vacationYear row)))
+                       (Map.singleton
+                         (PM._vacationYear row)
+                         (Holiday (PM._vacationAnnualHoliday row) (PM._vacationUsedAnnualHoliday row) (PM._vacationYear row) (expirationDate' <$> PM._vacationYear row)))
 
     toHoliday = Map.fromListWith (\h1 h2 -> PersonHoliday (employeeId h1) (employeeFirstName h1) (holidays h1 <> holidays h2))
         $ (\h -> (employeeId h, h)) <$> (rowToHoliday <$> filter (\v -> PM._vacationUserName v == personioToPlanmillname) (V.toList earnedVacations))
 
-    personioToPlanmillname = emp ^. P.employeeLast <> ", " <> emp ^. P.employeeFirst
+    personioToPlanmillname = emp ^. P.employeeLast  <> ", " <> emp ^. P.employeeFirst
+
+    expirationDate' 2019 = $(mkDay "2020-12-31")
+    expirationDate' year = fromGregorian (toInteger year + 1) 3 31
 
 renderReportSingle :: P.Employee -> Integer -> PM.EarnedVacations -> HtmlPage "vacation-report-single"
 renderReportSingle employee currentYear earnedVacations =
@@ -164,11 +171,14 @@ renderTemplate (RenderTemplate firstName holidays' allRemainingAnnualHoliday) =
     , "holidays"                   .= map mkHoliday holidays'
     , "allRemainingAnnualHoliday"  .= allRemainingAnnualHoliday
     ]
-  where mkHoliday (Holiday annualHoliday' usedAnnualHoliday' holidayYear') = object
-            [ "annualHoliday"     .= annualHoliday'
-            , "usedAnnualHoliday" .= usedAnnualHoliday'
-            , "holidayYear"       .= holidayYear'
-            ]
+  where
+    mkHoliday (Holiday annualHoliday' usedAnnualHoliday' holidayYear' expirationDate') = object
+        [ "annualHoliday"     .= annualHoliday'
+        , "usedAnnualHoliday" .= usedAnnualHoliday'
+        , "holidayYear"       .= holidayYear'
+        , "expirationDate"    .= (toDateString <$> expirationDate')
+        ]
+    toDateString date = let (y, m, d) = toGregorian date in show d <> "." <> show m <> "." <> show y
 
 
 linkToText :: Link -> Text

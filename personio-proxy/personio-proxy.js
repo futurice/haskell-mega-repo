@@ -84,7 +84,11 @@ futu.onload(function () {
     setText($_("#s-role"), e.role);
 
     setText($_("#s-login"), e.login);
-    setText($_("#s-github"), e.github);
+    if(e.github === undefined) {
+        setText($_("#s-github"), e.github);
+    } else {
+        $_("#s-github").innerHTML = "<a href=\"https://github.com/" + e.github + "\">" + e.github + "</a>";
+    }
     setText($_("#s-flowdock"), e.flowdock);
 
     setText($_("#s-status"), e.status);
