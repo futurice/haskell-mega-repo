@@ -47,10 +47,12 @@ library
     , file-embed
     , fin
     , fum-api
+    , fum-client
     , fum-types
     , futurice-foundation
     , futurice-integrations
     , futurice-logo
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -61,6 +63,7 @@ library
     , microstache
     , personio-client
     , planmill-client
+    , postgresql-simple
     , range-set-list
     , servant
     , servant-Chart
