@@ -36,6 +36,7 @@ import qualified Data.Map         as Map
 import qualified Data.Set         as Set
 import qualified Data.Vector      as V
 import qualified FUM.Types.Login  as FUM
+import qualified Futurice.IdMap   as IdMap
 import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
@@ -332,14 +333,19 @@ vacationReportSubmitAction ctx mfu = do
     lgr = ctxLogger ctx
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
-    impl fum curYear reports e = runLogT "vacation-report-submit" lgr $ do
+    supervisorEmail empMap e = do
+        sid <- e ^. P.employeeSupervisorId
+        supervisor <- empMap ^.at sid
+        email <- supervisor ^. P.employeeEmail
+        pure $ pure $ fromEmail email
+    impl empMap fum curYear reports e = runLogT "vacation-report-submit" lgr $ do
         let body = reportSingle e curYear reports
         case (e ^. P.employeeEmail, body) of
           (Just email, Just body') -> do
             x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) $ emptyReq (fromEmail email)
                  & reqSubject .~ "Vacation report"
                  & reqBody    .~ body' ^. strict
-                 & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
+                 & reqCc      .~ supervisorEmail empMap e
             case x of
               Left exc -> logAttention "sendEmail failed" (show exc) >> return Nothing
               Right () -> do
@@ -349,11 +355,12 @@ vacationReportSubmitAction ctx mfu = do
     f fum = do
         now <- currentTime
         day <- currentDay
-        (reports,employees') <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+        (reports,employees',empMap) <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
             d <- PMQ.earnedVacationsReport futuriceGmbh
             employees' <- employeesForVacationReport
-            pure (d, employees')
-        sendResult <- for employees' $ impl fum (currentYear day) reports
+            allEmployees <- personio P.PersonioEmployees
+            pure (d, employees', IdMap.fromFoldable allEmployees)
+        sendResult <- for employees' $ impl empMap fum (currentYear day) reports
         liftIO $ runLogT "vacation-report-submit" lgr $ logInfo "Send vacation report" $ object
             [ "successfully" .= (length $ filter (/= Nothing) sendResult)
             ]
