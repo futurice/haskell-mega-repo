@@ -6,6 +6,7 @@ module Futurice.App.HC.Config (
 import Futurice.Email        (Email)
 import Futurice.EnvConfig
 import Futurice.Integrations
+import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
 import Servant.Client        (BaseUrl)
@@ -20,6 +21,7 @@ data Config = Config
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgEarlyCaringCC         :: !(Maybe Email)
     , cfgPeopleManager         :: !FUM.Login
+    , cfgPostgresConnInfo      :: !ConnectInfo
     }
 
 instance Configure Config where
@@ -30,3 +32,4 @@ instance Configure Config where
         <*> envVar "EMAILPROXY_BASEURL"
         <*> optionalAlt (envVar "EARLYCARING_CC")
         <*> envVar "PEOPLE_MANAGER"
+        <*> envConnectInfo

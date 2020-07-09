@@ -3,22 +3,26 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.HC.VacationReport where
 
-import Data.Aeson       (object, (.=))
-import Data.Time        (fromGregorian, toGregorian)
+import Data.Aeson                         (object, (.=))
+import Data.Time                          (fromGregorian, toGregorian)
+import Database.PostgreSQL.Simple.FromRow
+import Database.PostgreSQL.Simple.ToRow
 import Futurice.Prelude
 import Prelude ()
-import Servant.API      (ToHttpApiData (..))
-import Servant.Links    (Link, fieldLink)
-import Text.Microstache (Template, compileMustacheText, renderMustache)
+import Servant.API                        (ToHttpApiData (..))
+import Servant.Links                      (Link, fieldLink)
+import Text.Microstache
+       (Template, compileMustacheText, renderMustache)
 
 import Futurice.App.HC.API
 import Futurice.App.HC.Markup
 
-import qualified Data.Map    as Map
-import qualified Data.Text   as T
-import qualified Data.Vector as V
-import qualified Personio    as P
-import qualified PlanMill    as PM
+import qualified Data.Map        as Map
+import qualified Data.Text       as T
+import qualified Data.Vector     as V
+import qualified FUM.Types.Login as FUM
+import qualified Personio        as P
+import qualified PlanMill        as PM
 
 data Holiday = Holiday
     { annualHoliday     :: !Double
@@ -39,8 +43,14 @@ data RenderTemplate = RenderTemplate
     , rtAllRemainingAnnualHoliday :: !Double
     }
 
-renderReport :: PM.EarnedVacations -> [P.Employee] -> HtmlPage "vacation-report"
-renderReport earnedVacations pemployees = page_ "German vacation report" (Just NavVacationReport) $ do
+data VacationReportLog = VacationReportLog
+    { vrSendTime   :: !UTCTime
+    , vrReceiver   :: !P.EmployeeId
+    , vrSender     :: !FUM.Login
+    } deriving (FromRow, ToRow, Generic)
+
+renderReport :: Map P.EmployeeId VacationReportLog -> PM.EarnedVacations -> [P.Employee] -> HtmlPage "vacation-report"
+renderReport logs earnedVacations pemployees = page_ "German vacation report" (Just NavVacationReport) $ do
     h2_ "People that are not found in Personio"
     sortableTable_ $ do
         thead_ $ do
@@ -73,7 +83,7 @@ renderReport earnedVacations pemployees = page_ "German vacation report" (Just N
     sortableTable_ $ do
         thead_ $ do
             th_ "Name"
-            th_ "HR number"
+            th_ "Last notification time"
             th_ "Year"
             th_ "Annual holiday"
             th_ "Used annual holiday"
@@ -88,7 +98,7 @@ renderReport earnedVacations pemployees = page_ "German vacation report" (Just N
         tbody_ $ do
             for_ (snd vacationPart) $ \(row,emp) -> when (shouldBeShown emp) $ tr_ $ do
                 td_ $ toHtml $ PM._vacationUserName row
-                td_ $ toHtml $ maybe "" textShow $ PM._vacationUserHRNumber row
+                td_ $ toHtml $ maybe "" textShow $ vrSendTime <$> logs ^.at (emp ^. P.employeeId)
                 td_ $ toHtml $ maybe "" textShow $ PM._vacationYear row
                 td_ $ toHtml $ textShow $ PM._vacationAnnualHoliday row
                 td_ $ toHtml $ textShow $ PM._vacationUsedAnnualHoliday row
@@ -117,11 +127,11 @@ renderReport earnedVacations pemployees = page_ "German vacation report" (Just N
       personioNameMap :: Map Text P.Employee
       personioNameMap = Map.fromList $ (\e -> (e ^. P.employeeFullname, e)) <$> pemployees
 
-      sendAllButton = button_ [class_ "button primary", disabled_ "disabled"] "Send to all"
-      -- sendAllButton = button_ [ id_ "futu-vacation-report-send-all"
-      --                         , class_ "button primary"
-      --                         , disabled_ "disabled"
-      --                         , data_ "futu-vacation-report-send-all" $ linkToText $ fieldLink recVacationReportSubmit] "Send to all"
+      -- sendAllButton = button_ [class_ "button primary", disabled_ "disabled"] "Send to all"
+      sendAllButton = button_ [ id_ "futu-vacation-report-send-all"
+                              , class_ "button primary"
+                              , disabled_ "disabled"
+                              , data_ "futu-vacation-report-send-all" $ linkToText $ fieldLink recVacationReportSubmit] "Send to all"
 
 personHolidays :: P.Employee -> PM.EarnedVacations -> Maybe PersonHoliday
 personHolidays emp earnedVacations = Map.lookup (emp ^. P.employeeId) toHoliday

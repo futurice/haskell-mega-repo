@@ -64,7 +64,7 @@ futu.onload(function () {
     btn.disabled = false;
 
     buttonOnClick(btn, function () {
-      if (btn.disabled) return;
+      if (btn.disabled || !confirm("Send vacation email to all?")) return;
       btn.disabled = true;
 
       console.log("Posting to URL", url);

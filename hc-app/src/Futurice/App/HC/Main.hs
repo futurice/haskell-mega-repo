@@ -22,6 +22,7 @@ import Futurice.Integrations
        personio, planmillEmployee, runIntegrations)
 import Futurice.Lucid.Foundation
        (HtmlPage, a_, fullRow_, h1_, href_, p_, page_)
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
 import Numeric.Interval.NonEmpty      ((...))
@@ -35,6 +36,7 @@ import qualified Data.Map         as Map
 import qualified Data.Set         as Set
 import qualified Data.Vector      as V
 import qualified FUM.Types.Login  as FUM
+import qualified Futurice.IdMap   as IdMap
 import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
@@ -297,14 +299,18 @@ employeesForVacationReport = do
     pure $ filter (\e -> e ^. P.employeeExpat == False) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal) employees
 
 vacationReportAction :: Ctx -> Maybe FUM.Login -> Handler (HtmlPage "vacation-report")
-vacationReportAction = withAuthUser $ \_ -> do
-    vacations <- PMQ.earnedVacationsReport futuriceGmbh
-    day <- currentDay
-    let vacations' = V.filter
-            (\v -> PM._vacationYear v == Just (fromInteger $ currentYear day) || PM._vacationYear v == Just ((fromInteger $ currentYear day) - 1))
-            vacations
-    employees' <- personio P.PersonioEmployees
-    pure $ renderReport vacations' employees'
+vacationReportAction ctx mfum = do
+    logs <- liftIO $ runLogT "vacation-report" (ctxLogger ctx) $ safePoolQuery_ ctx "SELECT timestamp, receiver, sender FROM hc.vacationreportlog"
+    let logMap = Map.fromListWith (\v1 v2 -> if (vrSendTime v1) > (vrSendTime v2) then v1 else v2) $ map (\l -> (vrReceiver l, l)) logs
+    withAuthUser
+        (\_ -> do
+              vacations <- PMQ.earnedVacationsReport futuriceGmbh
+              day <- currentDay
+              let vacations' = V.filter
+                      (\v -> PM._vacationYear v == Just (fromInteger $ currentYear day) || PM._vacationYear v == Just ((fromInteger $ currentYear day) - 1))
+                      vacations
+              employees' <- personio P.PersonioEmployees
+              pure $ renderReport logMap vacations' employees') ctx mfum
 
 vacationReportEmailAction :: Ctx -> Maybe FUM.Login -> P.EmployeeId -> Handler (HtmlPage "vacation-report-single")
 vacationReportEmailAction ctx mfum eid = withAuthUser (\_ -> do
@@ -319,32 +325,42 @@ vacationReportEmailAction ctx mfum eid = withAuthUser (\_ -> do
 
 vacationReportSubmitAction :: Ctx -> Maybe FUM.Login -> Handler (CommandResponse ())
 vacationReportSubmitAction ctx mfu = do
-    x <- withAuthUser' False (const $ return True) ctx mfu
-    if x then liftIO f else return (CommandResponseError "Unauthorized")
+    x <- withAuthUser' Nothing (return . Just) ctx mfu
+    case x of
+      Just fum -> liftIO $ f fum
+      Nothing -> return (CommandResponseError "Unauthorized")
   where
     lgr = ctxLogger ctx
     cfg = ctxConfig ctx
     mgr = ctxManager ctx
-    impl curYear reports e = runLogT "vacation-report-submit" lgr $ do
+    supervisorEmail empMap e = do
+        sid <- e ^. P.employeeSupervisorId
+        supervisor <- empMap ^.at sid
+        email <- supervisor ^. P.employeeEmail
+        pure $ pure $ fromEmail email
+    impl empMap fum curYear reports e = runLogT "vacation-report-submit" lgr $ do
         let body = reportSingle e curYear reports
         case (e ^. P.employeeEmail, body) of
           (Just email, Just body') -> do
             x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) $ emptyReq (fromEmail email)
                  & reqSubject .~ "Vacation report"
                  & reqBody    .~ body' ^. strict
-                 & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
+                 & reqCc      .~ supervisorEmail empMap e
             case x of
               Left exc -> logAttention "sendEmail failed" (show exc) >> return Nothing
-              Right () -> return (Just e)
+              Right () -> do
+                  void $ safePoolExecute ctx "INSERT INTO hc.vacationreportlog (receiver, sender) VALUES (?,?)" $ ((e ^. P.employeeId), fum)
+                  return (Just e)
           _ -> return Nothing
-    f = do
+    f fum = do
         now <- currentTime
         day <- currentDay
-        (reports,employees') <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
+        (reports,employees',empMap) <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
             d <- PMQ.earnedVacationsReport futuriceGmbh
             employees' <- employeesForVacationReport
-            pure (d, employees')
-        sendResult <- for employees' $ impl (currentYear day) reports
+            allEmployees <- personio P.PersonioEmployees
+            pure (d, employees', IdMap.fromFoldable allEmployees)
+        sendResult <- for employees' $ impl empMap fum (currentYear day) reports
         liftIO $ runLogT "vacation-report-submit" lgr $ logInfo "Send vacation report" $ object
             [ "successfully" .= (length $ filter (/= Nothing) sendResult)
             ]
@@ -369,5 +385,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     makeCtx :: () -> Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
     makeCtx () cfg lgr mgr _cache _mq = do
         secret <- getEntropy 64
-        let ctx = Ctx cfg lgr mgr secret
+        pp <- createPostgresPool $ cfgPostgresConnInfo cfg
+        let ctx = Ctx cfg lgr mgr secret pp
         pure (ctx, [])
