@@ -21,7 +21,7 @@ data Config = Config
     , cfgEmailProxyBaseurl     :: !BaseUrl
     , cfgEarlyCaringCC         :: !(Maybe Email)
     , cfgPeopleManager         :: !FUM.Login
-    , cfgPostgresConnInfo   :: !ConnectInfo
+    , cfgPostgresConnInfo      :: !ConnectInfo
     }
 
 instance Configure Config where
