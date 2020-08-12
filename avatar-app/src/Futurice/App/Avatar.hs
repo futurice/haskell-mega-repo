@@ -38,8 +38,8 @@ import qualified Network.HTTP.Client          as HTTP
 import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config
 import Futurice.App.Avatar.Ctx
-import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Embedded
+import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Types
 
 -------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ processOriginal ctx url = do
     req <- HTTP.parseUrlThrow (url ^. unpacked)
     res <- liftIO $ HTTP.httpLbs req mgr
     let body = HTTP.responseBody res
-    either fail return' $ do
+    either (const mzero) return' $ do  --TODO: something else?
         origImg <- decodeImage (BSL.toStrict body)
         encodeDynamicPng $ ImageRGBA8 $ convertRGBA8 origImg
   where

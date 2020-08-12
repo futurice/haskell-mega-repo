@@ -125,7 +125,7 @@ instance (Sw.ToSchema a, Typeable a) => Sw.ToSchema (Signed a) where
         let name = textShow $ typeRep (Proxy :: Proxy a)
         ref <- Sw.declareSchemaRef (Proxy :: Proxy a)
         return $ Sw.NamedSchema (Just $ "Signed " <> name) $ mempty
-            & Sw.type_ .~ Sw.SwaggerObject
+            & Sw.type_ .~ Just Sw.SwaggerObject
             & Sw.properties .~ InsOrd.fromList
                 [ ("signed", ref)
                 -- TODO: add signatures

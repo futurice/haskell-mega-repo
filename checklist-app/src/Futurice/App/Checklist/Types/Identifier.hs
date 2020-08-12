@@ -10,14 +10,13 @@ module Futurice.App.Checklist.Types.Identifier (
     identifierText,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Data.Swagger
-       (SwaggerType (SwaggerString), format, type_)
+import Data.Swagger      (SwaggerType (SwaggerString), format, type_)
 import Futurice.Generics
+import Futurice.Prelude
+import Prelude ()
 
-import qualified Data.UUID as UUID
-import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Data.UUID                          as UUID
+import qualified Database.PostgreSQL.Simple.ToField as Postgres
 
 newtype Identifier a = Identifier UUID
     deriving (Eq, Ord, Show, Typeable, Generic)
@@ -43,7 +42,7 @@ instance FromHttpApiData (Identifier a) where
 
 instance Entity a => ToParamSchema (Identifier a) where
     toParamSchema _ = mempty
-        & type_ .~ SwaggerString
+        & type_ .~ Just SwaggerString
         & format ?~ "Identifier " <> entityName (Proxy :: Proxy a) <> ": uuid"
 
 instance ToJSON (Identifier a) where

@@ -259,7 +259,7 @@ createMessageQueue lgr (Just env) awsGroup service =
                 case r1 ^. AWS.cqrsQueueURL of
                     Nothing -> do
                         logAttention "Queue creation failed" (show r1)
-                        fail "Queue creation failed"
+                        mzero --TODO: think better way --fail "Queue creation failed"
                     Just n  -> return n
 
     makeSubscribe :: Text -> IO (STM.STM Subscription)

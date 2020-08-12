@@ -9,10 +9,11 @@ import Prelude ()
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
-import qualified Data.ByteString.Base16.Lazy as Base16
-import qualified Futurice.GitHub             as GH
-import qualified PlanMill.Types              as PM
-import qualified PlanMill.Types.Query        as PM
+import qualified Data.ByteString.Base16 as Base16
+import qualified Data.ByteString.Lazy   as LBS
+import qualified Futurice.GitHub        as GH
+import qualified PlanMill.Types         as PM
+import qualified PlanMill.Types.Query   as PM
 
 main :: IO ()
 main = defaultMain tests
@@ -33,7 +34,7 @@ binaryTagTests = testGroup "BinaryTagged tags" $ map mk tags
     mk :: BTTest -> TestTree
     mk (BTTest name p ver h) = testProperty name $ once $
         ver === fromIntegral (natVal (versionProxy p)) .&&.
-        h === Base16.encode (structuralInfoSha1ByteStringDigest (structuralInfo p))
+        h === LBS.fromStrict (Base16.encode (structuralInfoSha1Digest (structuralInfo p)))
 
     versionProxy :: Proxy a -> Proxy (SemanticVersion a)
     versionProxy _ = Proxy

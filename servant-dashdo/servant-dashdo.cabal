@@ -31,7 +31,7 @@ library
     , random           ^>=1.1
     , safe-exceptions  ^>=0.1.6.0
     , servant-lucid    >=0.7.1 && <0.10
-    , servant-server   >=0.11 && <0.17
+    , servant-server   >=0.11 && <0.19
     , text
     , transformers
     , uuid-types       ^>=1.0.3

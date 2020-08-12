@@ -23,13 +23,13 @@ library
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
-    , algebraic-graphs  ^>=0.2
+    , algebraic-graphs  ^>=0.5
     , base              >=4.9 && <4.13
     , bytestring
     , deepseq
     , http-media        >=0.6.2
     , process-extras
-    , servant           >=0.12 && <0.17
+    , servant           >=0.12 && <0.19
     , swagger2
     , text
   exposed-modules:  Servant.Graph

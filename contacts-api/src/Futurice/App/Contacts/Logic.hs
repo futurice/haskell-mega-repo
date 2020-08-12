@@ -24,7 +24,6 @@ import Servant
 
 import qualified Data.HashMap.Strict     as HM
 import qualified Data.Map.Strict         as Map
-import qualified Data.Text               as T
 import qualified Futurice.App.Avatar.API as Avatar
 
 -- Data definition
@@ -35,9 +34,6 @@ import qualified Power
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
-
-compareUnicodeText :: Text -> Text -> Ordering
-compareUnicodeText = compareUnicode `on` T.unpack
 
 -- | Default avatar.
 noImage :: Text
@@ -69,7 +65,7 @@ contacts' today employees powPeople githubMembers =
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addPowerInfo powPeople res1
-    in sortBy (compareUnicodeText `on` contactName) res2
+    in sortBy (compareUnicode `on` contactName) res2
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact

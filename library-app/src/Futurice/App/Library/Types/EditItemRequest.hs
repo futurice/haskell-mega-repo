@@ -8,6 +8,7 @@ module Futurice.App.Library.Types.EditItemRequest where
 import Futurice.Prelude
 import Prelude ()
 import Servant.Multipart
+import Text.Read         (readEither)
 
 import Futurice.App.Library.Types.AddItemRequest
 import Futurice.App.Library.Types.BoardGameInformation
@@ -47,14 +48,14 @@ instance FromMultipart Mem EditBookInformation where
         <*> (lookupInputAndClean "isbn" multipartData >>= (validateISBN . T.filter (/= '-')))
         <*> lookupInputAndClean "author" multipartData
         <*> lookupInputAndClean "publisher" multipartData
-        <*> (lookupInputAndClean "published" multipartData >>= readMaybe . T.unpack)
+        <*> (lookupInputAndClean "published" multipartData >>= readEither . T.unpack)
         <*> lookupInputAndClean "info-link" multipartData
 
 instance FromMultipart Mem EditBoardGameInformation where
     fromMultipart multipartData = EditBoardGameInformation
         <$> (BoardGameInformationId <$> fromIntegral <$> (lookupInputAndClean "boardgameinformationid" multipartData >>= fromtextToInt))
         <*> lookupInputAndClean "name" multipartData
-        <*> pure (lookupInputAndClean "publisher" multipartData)
-        <*> pure (lookupInputAndClean "published" multipartData >>= readMaybe . T.unpack)
-        <*> pure (lookupInputAndClean "designer" multipartData)
-        <*> pure (lookupInputAndClean "artist" multipartData)
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "publisher" multipartData)
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "published" multipartData >>= readEither . T.unpack)
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "designer" multipartData)
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "artist" multipartData)

@@ -7,7 +7,7 @@ module Futurice.App.FUM.Report.CompareOldFum (compareOldFumReport) where
 import Control.Concurrent.STM    (readTVarIO)
 import Control.Lens              (iforOf_)
 import Data.Maybe                (isNothing)
-import Data.These                (_That, _These, _This)
+import Data.These.Lens           (_That, _These, _This)
 import Futurice.Integrations     (fumEmployeeList, runIntegrations)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude

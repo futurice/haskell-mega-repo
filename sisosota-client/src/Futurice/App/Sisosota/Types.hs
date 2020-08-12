@@ -70,11 +70,11 @@ instance ToHttpApiData ContentHash where
 instance FromHttpApiData ContentHash where
     parseUrlPiece t = do
         t' <- parseUrlPiece t
-        either (fail . view packed) pure $ contentHashFromText t'
+        either (Left . view packed) pure $ contentHashFromText t'
 
 instance ToParamSchema ContentHash where
     toParamSchema _ = mempty
-        & Swagger.type_  .~ Swagger.SwaggerString
+        & Swagger.type_  .~ Just Swagger.SwaggerString
         & Swagger.format ?~ "64 bytes encoded in URL base64"
 
 instance ToSchema ContentHash where

@@ -25,10 +25,10 @@ import Text.Parser.Char            (CharParsing (..))
 import Text.Parser.Combinators     (Parsing (..), sepBy1)
 import Text.Regex.Applicative.Text (RE')
 
+import qualified Codec.Serialise                      as S
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Csv                             as Csv
 import qualified Data.Swagger                         as Swagger
-import qualified Codec.Serialise                      as S
 import qualified Data.Text                            as T
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
@@ -112,7 +112,7 @@ instance ToHtml GroupName where
 
 instance ToParamSchema GroupName where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
 
 instance ToSchema GroupName where
@@ -148,7 +148,7 @@ instance Postgres.ToField GroupName where
 instance Postgres.FromField GroupName where
     fromField f mdata = do
         t <- Postgres.fromField f mdata
-        either fail pure (parseGroupName' t)
+        either (const empty) pure (parseGroupName' t) -- TODO: have fail somehow?
 
 instance FromEnvVar GroupName where
     fromEnvVar = fromEnvVar >=> parseGroupName

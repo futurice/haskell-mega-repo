@@ -125,7 +125,7 @@ instance ToHtml CostCenter where
 
 instance ToParamSchema CostCenter where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
 
 instance ToSchema CostCenter where

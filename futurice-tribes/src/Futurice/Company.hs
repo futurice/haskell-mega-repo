@@ -179,7 +179,7 @@ instance ToHtml Company where
 
 instance ToParamSchema Company where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
 
 instance ToSchema Company where
@@ -263,7 +263,7 @@ instance Arbitrary Country where
 
 instance ToParamSchema Country where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
 
 instance ToSchema Country where

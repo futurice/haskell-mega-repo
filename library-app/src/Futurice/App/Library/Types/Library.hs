@@ -62,7 +62,7 @@ instance ToField Library where
 instance ToSchema Library where
     declareNamedSchema _ = do
         return $ NamedSchema (Just "Library") $ mempty
-            & type_ .~ SwaggerString
+            & type_ .~ Just SwaggerString
 
 instance ToJSON Library where
     toJSON = toJSON . libraryToText

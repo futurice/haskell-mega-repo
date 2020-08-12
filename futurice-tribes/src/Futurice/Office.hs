@@ -173,7 +173,7 @@ instance ToHtml Office where
 
 instance ToParamSchema Office where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         -- & Swagger.enum_ ?~ map enumToJSON_ enumUniverse_
 
 instance ToSchema Office where
