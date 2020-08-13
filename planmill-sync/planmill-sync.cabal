@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -57,7 +58,9 @@ library
     , servant-server
     , text
     , these
+    , these-lens
     , writer-cps-mtl
+
   exposed-modules:
     Futurice.App.PlanMillSync
     Futurice.App.PlanMillSync.API

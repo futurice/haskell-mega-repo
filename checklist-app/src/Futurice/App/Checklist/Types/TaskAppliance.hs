@@ -19,8 +19,9 @@ import Futurice.Prelude
 import Prelude ()
 import Text.Trifecta
 
-import qualified Data.Text                    as T
-import qualified Text.PrettyPrint.ANSI.Leijen as PP
+import qualified Data.Text                               as T
+import qualified Data.Text.Prettyprint.Doc               as PP
+import qualified Data.Text.Prettyprint.Doc.Render.String as PPS
 
 import Futurice.App.Checklist.Types.ContractType
 
@@ -115,7 +116,7 @@ parseTaskAppliance = p . T.toLower . T.strip
     p "all" = Right TAAll
     p t     = case parseByteString taP mempty (encodeUtf8 t) of
         Success q -> Right q
-        Failure e -> Left $ PP.displayS (PP.renderCompact  $ _errDoc e) ""
+        Failure e -> Left $ PPS.renderShowS (PP.layoutCompact $ _errDoc e) ""
 
     taP = taP' <* eof
     taP' = orP

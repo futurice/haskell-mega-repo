@@ -38,8 +38,8 @@ import qualified Network.HTTP.Client          as HTTP
 import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config
 import Futurice.App.Avatar.Ctx
-import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Embedded
+import Futurice.App.Avatar.Markup
 import Futurice.App.Avatar.Types
 
 -------------------------------------------------------------------------------

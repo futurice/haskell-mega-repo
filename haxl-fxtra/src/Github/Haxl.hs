@@ -17,6 +17,7 @@ module Github.Haxl (
     GithubDataSourceException(..),
     ) where
 
+import Futurice.Generics
 import Futurice.Prelude
 
 import Control.Concurrent.ParallelIO.Local (parallel_, withPool)
@@ -27,7 +28,7 @@ import Haxl.Core
 import qualified GitHub as GH
 
 data GithubRequest a where
-    GithubRequest :: Show a => GH.Request 'GH.RA a -> GithubRequest a
+    GithubRequest :: (FromJSON a, Show a) => GH.Request 'GH.RA a -> GithubRequest a
 
 deriving instance Show (GithubRequest a)
 deriving instance Typeable GithubRequest
@@ -38,7 +39,7 @@ instance Haxl.Core.ShowP GithubRequest where showp = show
 instance Hashable (GithubRequest a) where
   hashWithSalt salt (GithubRequest gh) = hashWithSalt salt gh
 
-request :: (Eq a, Show a, Typeable a) => GH.Request 'GH.RA a -> GenHaxl u a
+request :: (Eq a, Show a, Typeable a, FromJSON a) => GH.Request 'GH.RA a -> GenHaxl u a
 request = dataFetch . GithubRequest
 
 membersOf :: GH.Name GH.Organization -> GenHaxl u (Vector GH.SimpleUser)

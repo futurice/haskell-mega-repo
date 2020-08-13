@@ -92,7 +92,7 @@ instance FromJSON SomePersonioReq where
 
 instance ToParamSchema SomePersonioReq where
     toParamSchema _ = mempty
-        & Swagger.type_ .~ Swagger.SwaggerString
+        & Swagger.type_ .~ Just Swagger.SwaggerString
         & Swagger.enum_ ?~
             [ toJSON $ SomePersonioReq PersonioEmployees
             , toJSON $ SomePersonioReq PersonioValidations

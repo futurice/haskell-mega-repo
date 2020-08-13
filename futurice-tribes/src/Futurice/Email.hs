@@ -40,7 +40,7 @@ emailToText (Email x) = x <> suffix
 emailFromText :: Text -> Maybe Email
 emailFromText = match emailRegexp
 
-parseEmail :: Monad m => Text -> m Email
+parseEmail :: (Monad m, MonadFail m) => Text -> m Email
 parseEmail t = maybe
     (fail $ "Invalid Futurice email: " <> show t)
     pure
@@ -83,7 +83,7 @@ instance ToHtml Email where
 
 instance S.ToParamSchema Email where
     toParamSchema _ = mempty
-        & S.type_  .~ S.SwaggerString
+        & S.type_  .~ Just S.SwaggerString
         & S.format ?~ "futurice-email"
 
 instance S.ToSchema Email where
@@ -106,7 +106,7 @@ instance ToHttpApiData Email where
     toUrlPiece = emailToText
 
 instance FromHttpApiData Email where
-    parseUrlPiece = parseEmail
+    parseUrlPiece s = maybe (Left $ "Invalid Futurice Email: " <> s) Right (parseEmail s)
 
 instance Csv.ToField Email where
     toField = Csv.toField . emailToText

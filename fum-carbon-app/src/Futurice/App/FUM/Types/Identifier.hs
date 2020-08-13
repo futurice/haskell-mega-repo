@@ -45,7 +45,7 @@ instance FromHttpApiData (Identifier a) where
 
 instance Entity a => ToParamSchema (Identifier a) where
     toParamSchema _ = mempty
-        & type_ .~ SwaggerString
+        & type_ .~ Just SwaggerString
         & format ?~ "Identifier " <> entityName (Proxy :: Proxy a) <> ": uuid"
 
 instance ToJSON (Identifier a) where

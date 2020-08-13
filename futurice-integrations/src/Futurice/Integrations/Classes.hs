@@ -28,6 +28,7 @@ import Control.Monad.Memoize  (MonadMemoize (..))
 import Control.Monad.Personio (MonadPersonio (..))
 import Control.Monad.PlanMill (MonadPlanMillQuery (..))
 import Data.Constraint        (Constraint)
+import Futurice.Generics
 import Futurice.GitHub        (GHTypes)
 import Futurice.Prelude
 import Generics.SOP           (All)
@@ -43,7 +44,7 @@ import qualified GitHub             as GH
 
 class (Monad m, All (MonadGitHubC m) GHTypes) => MonadGitHub m where
     type MonadGitHubC m :: * -> Constraint
-    githubReq :: MonadGitHubC m a => GH.Request 'GH.RA a -> m a
+    githubReq :: (MonadGitHubC m a, FromJSON a) => GH.Request 'GH.RA a -> m a
 
 class Monad m => MonadFlowdock m where
     flowdockOrganisationReq

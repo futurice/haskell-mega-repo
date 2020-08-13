@@ -60,7 +60,7 @@ instance ToHttpApiData Size where
 
 instance ToParamSchema Size where
     toParamSchema _ = mempty
-        & Swagger.type_  .~ Swagger.SwaggerString
+        & Swagger.type_  .~ Just Swagger.SwaggerString
         & Swagger.format ?~ "original or number from 16 to 512"
 
 mkSquare :: Int -> Size

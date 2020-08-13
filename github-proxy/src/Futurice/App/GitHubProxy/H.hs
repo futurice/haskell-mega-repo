@@ -8,7 +8,7 @@ module Futurice.App.GitHubProxy.H (
     ) where
 
 import Control.Monad.Operational     (Program, interpretWithMonad, singleton)
-import Data.Aeson                    (object)
+import Data.Aeson                    (FromJSON, object)
 import Futurice.GitHub               (requestToJSON)
 import Futurice.Integrations.Classes (MonadGitHub (..))
 import Futurice.Metrics.RateMeter    (mark)
@@ -19,7 +19,7 @@ import Prelude ()
 import qualified GitHub as GH
 
 data R a where
-    R :: NFData a => GH.Request 'GH.RA a -> R a
+    R :: (NFData a, FromJSON a) => GH.Request 'GH.RA a -> R a
 
 newtype H a = H { unH :: Program R a }
 

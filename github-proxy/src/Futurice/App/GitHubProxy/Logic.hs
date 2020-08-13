@@ -13,7 +13,7 @@ module Futurice.App.GitHubProxy.Logic (
     cleanupCache,
     ) where
 
-import Data.Aeson.Types               (parseEither, parseJSON)
+import Data.Aeson.Types               (FromJSON, parseEither, parseJSON)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
@@ -25,8 +25,7 @@ import Futurice.Integrations.Classes  (MonadGitHub (..))
 import Futurice.Metrics.RateMeter     (mark)
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Servant
-       (CachePolicy (..), Cache, genCachedIO)
+import Futurice.Servant               (Cache, CachePolicy (..), genCachedIO)
 import Futurice.TypeTag
 import Prelude ()
 
@@ -109,7 +108,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
 
     fetch'
-        :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
+        :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a, FromJSON a)
         => CacheLookup  -> ReqTag a -> Request 'RA a
         -> LIO (Either Text SomeResponse)
     fetch' cacheResult tag req = case HM.lookup sreq cacheResult of
@@ -128,7 +127,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 
     -- Fetch and store
     fetch''
-        :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
+        :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a, FromJSON a)
         => ReqTag a -> Request 'RA a -> LIO (Either Text a)
     fetch'' tag req = do
         res <- liftIO $ tryDeep $ runLogT' ctx $ do
@@ -174,7 +173,7 @@ updateCache ctx = runLIO ctx $ do
             logAttention "Invalid query" (val, err)
             void $ safePoolExecute ctx deleteQuery (Postgres.Only k)
   where
-    fetch :: ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
+    fetch :: (FromJSON a) => ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
     fetch tag req  =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' tag req
@@ -185,7 +184,7 @@ updateCache ctx = runLIO ctx $ do
         nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
 
     fetch'
-      :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
+      :: (Binary a, HasStructuralInfo a, HasSemanticVersion a, FromJSON a)
       => ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
     fetch' tag req = liftIO $ tryDeep $ runLogT' ctx $ do
         x <- fetchFromGitHub (ctxLogger ctx) (ctxCache ctx) (ctxGitHubAuth ctx) tag req
@@ -219,7 +218,7 @@ cleanupCache ctx = runLIO ctx $ do
         ]
 
 storeInPostgres
-    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, HasPostgresPool ctx)
+    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, FromJSON a, HasPostgresPool ctx)
     => ctx -> ReqTag a -> Request 'RA a -> a -> LIO ()
 storeInPostgres ctx tag req x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
@@ -241,7 +240,7 @@ storeInPostgres ctx tag req x = do
 -------------------------------------------------------------------------------
 
 -- | Run query on real planmill backend.
-fetchFromGitHub :: Logger -> Cache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
+fetchFromGitHub :: (FromJSON a) => Logger -> Cache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
 fetchFromGitHub logger cache auth tag req = case (typeableDict, nfdataDict, eqDict) of
     (Dict, Dict, Dict) -> liftIO
         -- TODO: add cache cleanup

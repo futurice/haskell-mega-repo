@@ -13,7 +13,7 @@ module Futurice.App.Smileys.Types (
     ) where
 
 import Futurice.Generics
-import Futurice.Generics.SOP -- TODO: use deriveVia
+import Futurice.Generics.SOP
 import Futurice.Prelude
 import Prelude ()
 
@@ -138,7 +138,7 @@ instance FromJSON SmileyValue where
             else fail $ "SmileyValue should be between 0 and 2, got " ++ show x
 instance ToParamSchema SmileyValue where
     toParamSchema _ = mempty
-        & Swag.type_ .~ Swag.SwaggerNumber
+        & Swag.type_ .~ Just Swag.SwaggerNumber
         & Swag.enum_ ?~ map (toJSON . SmileyValue) [0, 1, 2]
 instance ToSchema SmileyValue where
     declareNamedSchema p = pure $ Swag.NamedSchema (Just "SmileyValue") $

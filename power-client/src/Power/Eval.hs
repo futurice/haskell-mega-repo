@@ -13,8 +13,7 @@ import Servant.Client
 import Servant.Client.Free
 import Servant.Client.Generic
 import Servant.Client.Internal.HttpClient
-       (catchConnectionError, clientResponseToResponse, mkFailureResponse,
-       requestToClientRequest)
+       (catchConnectionError, clientResponseToResponse, mkFailureResponse)
 
 import qualified Network.HTTP.Client as HTTP
 
@@ -47,7 +46,7 @@ evalIOReq baseReq mgr req = runExceptT $ case req of
     act :: ClientF x -> ExceptT ClientError IO x
     act (Throw err)             = throwError err
     act (RunRequest sReq sRes)  = do
-        let httpReq = amendRequest (requestToClientRequest burl sReq)
+        let httpReq = amendRequest (defaultMakeClientRequest burl sReq)
         httpRes <- liftIO $ catchConnectionError $ HTTP.httpLbs httpReq mgr
         case httpRes of
             Left err -> throwError err

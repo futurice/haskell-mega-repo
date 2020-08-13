@@ -14,6 +14,7 @@ import Futurice.Office   (offOther)
 import Futurice.Prelude
 import Prelude ()
 import Servant.Multipart
+import Text.Read         (readEither)
 
 import Futurice.App.Library.Types.BoardGameInformation
 import Futurice.App.Library.Types.BookInformation
@@ -68,19 +69,17 @@ usedLibraries = let isKnownLibrary lib = (lib /= OfficeLibrary offOther) && (lib
                     usedLibs = filter isKnownLibrary allLibraries
                 in sortBy librarySelectSortOrder usedLibs
 
-fromtextToInt :: Text -> Maybe Int
-fromtextToInt t = case decimal t of
-    Left _ -> Nothing
-    Right (num,_) -> Just num
+fromtextToInt :: Text -> Either String Int
+fromtextToInt t = fst <$> decimal t
 
-lookupInputAndClean :: Text -> MultipartData a -> Maybe Text
+lookupInputAndClean :: Text -> MultipartData a -> Either String Text
 lookupInputAndClean a b = T.strip <$> lookupInput a b
 
 booksPerLibrary :: MultipartData a -> [(Library, Int)]
-booksPerLibrary dt = catMaybes $ map (\l -> sequence (l, lookupInputAndClean ("amount-" <> libraryToText l) dt >>= fromtextToInt)) $ usedLibraries
+booksPerLibrary dt = catMaybes $ map (\l -> sequence (l, (either (const Nothing) Just (lookupInputAndClean ("amount-" <> libraryToText l) dt >>= fromtextToInt)))) $ usedLibraries
 
-validateISBN :: Text -> Maybe Text
-validateISBN isbn = if all isDigit isbnString && isbncheck then Just isbn else Nothing
+validateISBN :: Text -> Either String Text
+validateISBN isbn = if all isDigit isbnString && isbncheck then Right isbn else Left "malformed isbn"
   where
     isbnString = T.unpack isbn
     isbncheck | length isbnString == 10 = isbn10check
@@ -95,29 +94,29 @@ instance FromMultipart Mem AddBookInformation where
         <*> (lookupInputAndClean "isbn" multipartData >>= (validateISBN . T.filter (/= '-')))
         <*> lookupInputAndClean "author" multipartData
         <*> lookupInputAndClean "publisher" multipartData
-        <*> (lookupInputAndClean "published" multipartData >>= readMaybe . T.unpack)
+        <*> (lookupInputAndClean "published" multipartData >>= readEither . T.unpack)
         <*> lookupInputAndClean "info-link" multipartData
         <*> pure (booksPerLibrary multipartData)
-        <*> cover
-        <*> pure (BookInformationId <$> fromIntegral <$> (lookupInputAndClean "bookinformationid" multipartData >>= fromtextToInt))
+        <*> maybe (Left "No cover data") Right cover
+        <*> pure (either (const Nothing) Just $ BookInformationId <$> fromIntegral <$> (lookupInputAndClean "bookinformationid" multipartData >>= fromtextToInt))
       where
         isEmptyT t | T.null t = Nothing
                    | otherwise = Just t
         isEmptyB b | DBL.null (fdPayload b) = Nothing
                    | otherwise = Just b
-        cover = (CoverUrl <$> (lookupInput "cover-url" multipartData >>= isEmptyT)) <|> (CoverData <$> (lookupFile "cover-file" multipartData >>= isEmptyB))
+        cover = (CoverUrl <$> ((either (const Nothing) Just $ lookupInput "cover-url" multipartData) >>= isEmptyT)) <|> (CoverData <$> ((either (const Nothing) Just $ lookupFile "cover-file" multipartData) >>= isEmptyB))
 
 instance FromMultipart Mem AddBoardGameInformation where
     fromMultipart multipartData = AddBoardGameInformation
         <$> lookupInputAndClean "name" multipartData
-        <*> pure (lookupInputAndClean "publisher" multipartData)
-        <*> pure (lookupInputAndClean "published" multipartData >>= fromtextToInt)
-        <*> pure (lookupInputAndClean "designer" multipartData)
-        <*> pure (lookupInputAndClean "artist" multipartData)
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "publisher" multipartData)
+        <*> pure ((either (const Nothing) Just $ lookupInputAndClean "published" multipartData >>= fromtextToInt))
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "designer" multipartData)
+        <*> pure (either (const Nothing) Just $ lookupInputAndClean "artist" multipartData)
         <*> pure (booksPerLibrary multipartData)
 
 instance FromMultipart Mem AddItemRequest where
     fromMultipart multipartData = AddItemRequest
         <$> (libraryFromText <$> lookupInputAndClean "library" multipartData)
-        <*> pure (lookupInputAndClean "bookinformationid" multipartData >>= readMaybe . T.unpack)
-        <*> pure (lookupInputAndClean "boardgameinformationid" multipartData >>= readMaybe . T.unpack)
+        <*> pure ((either (const Nothing) Just $ lookupInputAndClean "bookinformationid" multipartData) >>= readMaybe . T.unpack)
+        <*> pure ((either (const Nothing) Just $ lookupInputAndClean "boardgameinformationid" multipartData) >>= readMaybe . T.unpack)
