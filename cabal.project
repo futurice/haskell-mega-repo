@@ -18,7 +18,7 @@ constraints:
   haxl                  ^>= 2.0.0.0,
   http-types            ^>= 0.12,
   lens                  ^>= 4.18,
-  log-base              ^>= 0.7.4.0,
+  log-base              ^>= 0.8.0.1,
   semigroupoids         ^>= 5.3.1,
   servant               ^>= 0.17,
   postgresql-simple     ^>= 0.6,
@@ -36,7 +36,8 @@ constraints:
   gogol-apps-calendar   ^>= 0.5.0,
   gogol-core            ^>= 0.5.0,
   gogol-people          ^>= 0.5.0,
-  deriving-compat       ==0.5.6
+  -- this is for keeping TH derivingVias working without modification
+  deriving-compat       ==0.5.6 
 
 -- diagrams + lens + Chart
 allow-newer:

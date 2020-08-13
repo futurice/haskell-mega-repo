@@ -90,7 +90,7 @@ processOriginal ctx url = do
     req <- HTTP.parseUrlThrow (url ^. unpacked)
     res <- liftIO $ HTTP.httpLbs req mgr
     let body = HTTP.responseBody res
-    either (const mzero) return' $ do  --TODO: something else?
+    either fail return' $ do
         origImg <- decodeImage (BSL.toStrict body)
         encodeDynamicPng $ ImageRGBA8 $ convertRGBA8 origImg
   where
