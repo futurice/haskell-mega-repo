@@ -190,6 +190,7 @@ renderTemplate (RenderTemplate firstName holidays' allRemainingAnnualHoliday) =
         , "usedAnnualHoliday" .= usedAnnualHoliday'
         , "holidayYear"       .= holidayYear'
         , "expirationDate"    .= (toDateString <$> expirationDate')
+        , "remainingDays"     .= (annualHoliday' - usedAnnualHoliday')
         ]
     toDateString date = let (y, m, d) = toGregorian date in show d <> "." <> show m <> "." <> show y
 

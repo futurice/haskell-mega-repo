@@ -343,7 +343,7 @@ vacationReportSubmitAction ctx mfu usersToIgnore = do
         case (e ^. P.employeeEmail, body) of
           (Just email, Just body') -> do
             x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) $ emptyReq (fromEmail email)
-                 & reqSubject .~ "Vacation report"
+                 & reqSubject .~ "Remaining annual holidays"
                  & reqBody    .~ body' ^. strict
                  & reqCc      .~ supervisorEmail empMap e
             case x of
