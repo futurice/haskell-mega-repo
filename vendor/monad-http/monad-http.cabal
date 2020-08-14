@@ -26,7 +26,7 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base                >=4.8      && <4.13
+      base                >=4.8      && <4.15
     , base-compat         >=0.6.0    && <0.12
     , bytestring          >=0.10.0.4 && <0.12
     , exceptions          >=0.10.0   && <0.11
