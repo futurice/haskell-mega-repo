@@ -66,6 +66,7 @@ data Record route = Record
         :> Get '[HTML] (HtmlPage "vacation-report-single")
     , recVacationReportSubmit :: route :- SSOUser
         :> "vacation-report-submit"
+        :> ReqBody '[JSON] (Set P.EmployeeId)
         :> Post '[JSON] (CommandResponse ())
     }
   deriving Generic

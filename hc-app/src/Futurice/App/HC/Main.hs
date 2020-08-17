@@ -307,7 +307,7 @@ vacationReportAction ctx mfum = do
               vacations <- PMQ.earnedVacationsReport futuriceGmbh
               day <- currentDay
               let vacations' = V.filter
-                      (\v -> PM._vacationYear v == Just (fromInteger $ currentYear day) || PM._vacationYear v == Just ((fromInteger $ currentYear day) - 1))
+                      (\v -> PM._vacationYear v == Just (fromInteger $ currentYear day))
                       vacations
               employees' <- personio P.PersonioEmployees
               pure $ renderReport logMap vacations' employees') ctx mfum
@@ -323,8 +323,8 @@ vacationReportEmailAction ctx mfum eid = withAuthUser (\_ -> do
           now <- currentDay
           pure $ renderReportSingle employee (currentYear now) d) ctx mfum
 
-vacationReportSubmitAction :: Ctx -> Maybe FUM.Login -> Handler (CommandResponse ())
-vacationReportSubmitAction ctx mfu = do
+vacationReportSubmitAction :: Ctx -> Maybe FUM.Login -> Set P.EmployeeId -> Handler (CommandResponse ())
+vacationReportSubmitAction ctx mfu usersToIgnore = do
     x <- withAuthUser' Nothing (return . Just) ctx mfu
     case x of
       Just fum -> liftIO $ f fum
@@ -343,7 +343,7 @@ vacationReportSubmitAction ctx mfu = do
         case (e ^. P.employeeEmail, body) of
           (Just email, Just body') -> do
             x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) $ emptyReq (fromEmail email)
-                 & reqSubject .~ "Vacation report"
+                 & reqSubject .~ "Remaining annual holidays"
                  & reqBody    .~ body' ^. strict
                  & reqCc      .~ supervisorEmail empMap e
             case x of
@@ -357,7 +357,7 @@ vacationReportSubmitAction ctx mfu = do
         day <- currentDay
         (reports,employees',empMap) <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
             d <- PMQ.earnedVacationsReport futuriceGmbh
-            employees' <- employeesForVacationReport
+            employees' <- fmap (filter (\e -> (e ^. P.employeeId) `Set.notMember` usersToIgnore)) employeesForVacationReport
             allEmployees <- personio P.PersonioEmployees
             pure (d, employees', IdMap.fromFoldable allEmployees)
         sendResult <- for employees' $ impl empMap fum (currentYear day) reports

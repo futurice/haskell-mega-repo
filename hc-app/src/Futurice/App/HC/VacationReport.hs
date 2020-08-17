@@ -82,6 +82,7 @@ renderReport logs earnedVacations pemployees = page_ "German vacation report" (J
     sendAllButton
     sortableTable_ $ do
         thead_ $ do
+            th_ "Ignore"
             th_ "Name"
             th_ "Last notification time"
             th_ "Year"
@@ -97,6 +98,7 @@ renderReport logs earnedVacations pemployees = page_ "German vacation report" (J
             th_ ""
         tbody_ $ do
             for_ (snd vacationPart) $ \(row,emp) -> when (shouldBeShown emp) $ tr_ $ do
+                td_ $ checkbox_ False [ data_ "futu-vacation-report-ignore-user" $ textShow $ employeeNumber $ emp ^. P.employeeId ]
                 td_ $ toHtml $ PM._vacationUserName row
                 td_ $ toHtml $ maybe "" textShow $ vrSendTime <$> logs ^.at (emp ^. P.employeeId)
                 td_ $ toHtml $ maybe "" textShow $ PM._vacationYear row
@@ -113,6 +115,7 @@ renderReport logs earnedVacations pemployees = page_ "German vacation report" (J
 
     sendAllButton
   where
+      employeeNumber (P.EmployeeId eid) = eid
       shouldBeShown e = e ^. P.employeeExpat == False && e ^. P.employeeStatus /= P.Inactive && e ^. P.employeeEmploymentType == Just P.Internal
       vacationPart = foldl (\s row ->
                               case Map.lookup (planmillNameToPersonio $ PM._vacationUserName row) personioNameMap of
@@ -187,6 +190,7 @@ renderTemplate (RenderTemplate firstName holidays' allRemainingAnnualHoliday) =
         , "usedAnnualHoliday" .= usedAnnualHoliday'
         , "holidayYear"       .= holidayYear'
         , "expirationDate"    .= (toDateString <$> expirationDate')
+        , "remainingDays"     .= (annualHoliday' - usedAnnualHoliday')
         ]
     toDateString date = let (y, m, d) = toGregorian date in show d <> "." <> show m <> "." <> show y
 

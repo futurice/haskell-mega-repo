@@ -57,6 +57,34 @@ futu.onload(function () {
     });
   }
 
+    var ignoreUsersSrc$ = menrva.source([]);
+    var ignoreUsers$ = ignoreUsersSrc$.map(function (xs) {
+        return _.sortedUniq(_.sortBy(xs));
+    }, _.isEqual);
+
+    var checkboxes = $$("input[data-futu-vacation-report-ignore-user]");
+    checkboxes.forEach(function (chk) {
+        chk.addEventListener("change", function () {
+        var personId = chk.dataset.futuVacationReportIgnoreUser;
+        if (chk.checked) {
+          menrva.transaction([
+            ignoreUsersSrc$, function (xs) {
+              return xs.concat([personId]);
+            }]).commit();
+            chk.parentNode.parentNode.style = "color:#ccc";
+        } else {
+          menrva.transaction([
+            ignoreUsersSrc$, function (xs) {
+              return xs.filter(function (x) {
+                return x !== personId;
+              });
+            }]).commit();
+            chk.parentNode.parentNode.style = "";
+        }
+        console.log(ignoreUsers$.value());
+      });
+    });
+
   $$("button[data-futu-vacation-report-send-all]").forEach(sendVacationReport);
 
   function sendVacationReport(btn) {
@@ -68,13 +96,19 @@ futu.onload(function () {
       btn.disabled = true;
 
       console.log("Posting to URL", url);
-      futu.commandFetchJSON(url, {})
+        futu.commandFetchJSON(url, ignoreUsers$.value().map(x => parseInt(x)))
         .then(function (res) {
-          btn.className = "button success";
+            btn.className = "button success";
+            checkboxes.forEach(function (chk) { chk.checked = false;});
+            menrva.transaction([
+                ignoreUsersSrc$, function (xs) {
+                    return [];
+                }]).commit();
         })
         .catch(function (exc) {
           btn.className = "button alert";
         });
     });
   };
+
 });
