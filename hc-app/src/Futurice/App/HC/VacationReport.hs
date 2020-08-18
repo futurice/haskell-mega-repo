@@ -98,7 +98,7 @@ renderReport logs earnedVacations pemployees = page_ "German vacation report" (J
             th_ ""
         tbody_ $ do
             for_ (snd vacationPart) $ \(row,emp) -> when (shouldBeShown emp) $ tr_ $ do
-                td_ $ checkbox_ False [ data_ "futu-vacation-report-ignore-user" $ textShow $ employeeNumber $ emp ^. P.employeeId ]
+                td_ $ checkbox_ False [ data_ "futu-vacation-report-ignore-user" $ textShow $ employeeNumber $ emp ^. P.employeeId]
                 td_ $ toHtml $ PM._vacationUserName row
                 td_ $ toHtml $ maybe "" textShow $ vrSendTime <$> logs ^.at (emp ^. P.employeeId)
                 td_ $ toHtml $ maybe "" textShow $ PM._vacationYear row
