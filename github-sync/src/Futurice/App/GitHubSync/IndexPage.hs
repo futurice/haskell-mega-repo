@@ -1,11 +1,11 @@
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 module Futurice.App.GitHubSync.IndexPage (indexPage) where
 
-import Control.Lens              (contains, filtered)
-import Data.Set.Lens             (setOf)
-import Data.Map.Lens             (toMapOf)
+import Control.Lens     (contains, filtered)
+import Data.Map.Lens    (toMapOf)
+import Data.Set.Lens    (setOf)
 import Futurice.Prelude
 import Prelude ()
 
@@ -13,6 +13,7 @@ import Futurice.App.GitHubSync.Config (Pinned (..))
 import Futurice.App.GitHubSync.Markup
 
 import qualified GitHub   as GH
+import qualified Okta     as O
 import qualified Personio as P
 
 indexPage
@@ -21,16 +22,17 @@ indexPage
     -> [GH.User]
     -> [GH.Invitation]
     -> [P.Employee]
+    -> [O.AppUser]
     -> HtmlPage "index"
-indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Personio sync" (Just NavHome) $ do
+indexPage today (Pin pinned) githubs githubInvs personios oktas = page_ "GitHub ← Personio sync" (Just NavHome) $ do
     ul_ $ do
         li_ $ "User list is updated only once per day (at night)"
     hr_ []
 
-    fullRow_ $ h2_ "Only in GitHub, not in Personio"
-    fullRow_ $ i_ "People in GitHub organisation, not mentioned in Personio"
+    fullRow_ $ h2_ "Only in GitHub, not in Personio or in Okta"
+    fullRow_ $ i_ "People in GitHub organisation, not mentioned in Personio nor added to Okta"
     fullRow_ $ do
-        table_ $ do
+        sortableTable_ $ do
             thead_ $ tr_ $ do
                 td_ mempty
                 td_ "Username"
@@ -42,7 +44,7 @@ indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Pe
 
             tbody_ $ for_ githubs $ \u -> do
                 let login = GH.userLogin u
-                unless (personioLogins ^. contains login) $ tr_ $ do
+                unless (personioLogins ^. contains login || oktaGithubLogins ^. contains login) $ tr_ $ do
                     td_ $ checkbox_ False [ data_ "futu-remove-user" $ GH.untagName $ GH.userLogin u]
                     td_ $ toHtml $ GH.userLogin u
                     td_ $ maybe "" toHtml $ GH.userName u
@@ -116,3 +118,6 @@ indexPage today (Pin pinned) githubs githubInvs personios = page_ "GitHub ← Pe
     personioMap = toMapOf (folded . getter f . _Just . ifolded) personios
       where
         f e = (,e) <$> e ^. P.employeeGithub
+
+    oktaGithubLogins :: Set (GH.Name GH.User)
+    oktaGithubLogins = setOf (folded . getter O.appUserCredentials . getter O.credUserName . getter (GH.mkName Proxy)) oktas

@@ -15,8 +15,9 @@ import Futurice.Prelude
 import Prelude ()
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
+import qualified Data.Text as T
 import qualified FUM
-import qualified Personio as P
+import qualified Personio  as P
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -141,6 +142,20 @@ newtype OktaId = OktaId Text
     deriving anyclass (NFData, AnsiPretty, Hashable)
     deriving newtype (FromJSON, ToJSON)
 
+newtype OktaGroupId = OktaGroupId Text
+    deriving (Eq, Show, Generic)
+    deriving anyclass (Hashable)
+
+instance FromEnvVar OktaGroupId where
+    fromEnvVar = Just . OktaGroupId . T.pack
+
+newtype OktaAppId = OktaAppId Text
+    deriving (Eq, Show, Generic)
+    deriving anyclass (Hashable)
+
+instance FromEnvVar OktaAppId where
+    fromEnvVar = Just . OktaAppId . T.pack
+
 data User = User
     { _userId      :: !OktaId
     , _userStatus  :: !Status
@@ -153,6 +168,24 @@ data User = User
 makeLenses ''User
 
 instance AnsiPretty User
+
+data SimpleUser = SimpleUser
+    { _simpleUserId         :: !OktaId
+    , _simpleUserFirstName  :: !Text
+    , _simpleUserSecondName :: !Text
+    , _simpleUserStatus     :: !Status
+    } deriving (Generic)
+
+instance AnsiPretty SimpleUser
+
+simpleUser :: User -> SimpleUser
+simpleUser user =
+    SimpleUser
+    { _simpleUserId         = user ^. userId
+    , _simpleUserFirstName  = user ^. userProfile . profileFirstName
+    , _simpleUserSecondName = user ^. userProfile . profileLastName
+    , _simpleUserStatus     = user ^. userStatus
+    }
 
 data AppUser = AppUser
     { appUserId          :: !OktaId

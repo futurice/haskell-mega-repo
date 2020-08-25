@@ -12,7 +12,7 @@ class Monad m => MonadOkta m where
 users :: MonadOkta m => m [User]
 users = oktaReq ReqGetAllUsers
 
-appUsers :: MonadOkta m => Text -> m [AppUser]
+appUsers :: MonadOkta m => OktaAppId -> m [AppUser]
 appUsers = oktaReq . ReqGetAppUsers
 
 updateUser :: MonadOkta m => OktaId -> Value -> m User
@@ -24,7 +24,7 @@ createUser = oktaReq . ReqCreateUser
 groups :: MonadOkta m => m [Group]
 groups = oktaReq ReqGetAllGroups
 
-groupMembers :: MonadOkta m => Text -> m [User]
+groupMembers :: MonadOkta m => OktaGroupId -> m [User]
 groupMembers = oktaReq . ReqGetGroupUsers
 
 addUserToGroup :: MonadOkta m => Text -> OktaId -> m ()
