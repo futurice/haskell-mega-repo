@@ -32,13 +32,13 @@ groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
 internalGroupName :: Text
 internalGroupName = ojInternalGroup groupInfo
 
-internalGroup :: Text
+internalGroup :: O.OktaGroupId
 internalGroup = maybe (error "No internal group found") giId $ Map.lookup internalGroupName groupMap
 
 externalGroupName :: Text
 externalGroupName = ojExternalGroup groupInfo
 
-peakonGroup :: Text
+peakonGroup :: O.OktaGroupId
 peakonGroup = maybe (error "No App-Peakon group found") giId $ Map.lookup "App-Peakon" groupMap
 
 allGroupFuturiceEmployees :: (O.MonadOkta m) => m [O.User]

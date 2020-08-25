@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveLift        #-}
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -143,8 +144,9 @@ newtype OktaId = OktaId Text
     deriving newtype (FromJSON, ToJSON)
 
 newtype OktaGroupId = OktaGroupId Text
-    deriving (Eq, Show, Generic)
+    deriving (Eq, Show, Generic, Lift)
     deriving anyclass (Hashable)
+    deriving newtype (FromJSON, ToJSON)
 
 instance FromEnvVar OktaGroupId where
     fromEnvVar = Just . OktaGroupId . T.pack
@@ -220,9 +222,7 @@ groupToText BuiltIn   = "BUILT_IN"
 instance FromJSON GroupType where
     parseJSON x = do
         t <- parseJSON x
-        case groupFromText t of
-          Just g -> pure g
-          Nothing -> empty
+        maybe empty pure (groupFromText t)
 
 instance ToJSON GroupType where
     toJSON = toJSON . groupToText
@@ -290,7 +290,7 @@ instance Exception OktaError
 
 data NewUser = NewUser
     { newUserProfile  :: !NewUserProfile
-    , newUserGroupIds :: ![Text]
+    , newUserGroupIds :: ![OktaGroupId]
     } deriving (Eq, Show, Hashable, GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving ToJSON via Sopica NewUser
 

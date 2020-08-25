@@ -16,8 +16,8 @@ data Req a where
     ReqGetAppUsers         :: OktaAppId -> Req [AppUser]
     ReqCreateUser          :: NewUser -> Req User
     ReqUpdateUser          :: OktaId -> Value -> Req User
-    ReqAddUserToGroup      :: Text -> OktaId -> Req ()
-    ReqRemoveUserFromGroup :: Text -> OktaId -> Req ()
+    ReqAddUserToGroup      :: OktaGroupId -> OktaId -> Req ()
+    ReqRemoveUserFromGroup :: OktaGroupId -> OktaId -> Req ()
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
