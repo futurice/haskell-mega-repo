@@ -12,6 +12,7 @@ import Prelude ()
 
 import qualified FUM.Types.GroupName as FUM
 import qualified FUM.Types.Login     as FUM
+import qualified Okta                as O
 
 type ChecklistIntegrations = '[ ServFUM6, ServGH, ServOK, ServPE, ServPM ]
 
@@ -23,7 +24,7 @@ data Config = Config
     , cfgFumITGroup         :: !FUM.GroupName
     , cfgFumHRGroup         :: !FUM.GroupName
     , cfgFumSupervisorGroup :: !FUM.GroupName
-    , cfgGithubAppId        :: !Text
+    , cfgGithubAppId        :: !O.OktaAppId
     }
 
 instance Configure Config where

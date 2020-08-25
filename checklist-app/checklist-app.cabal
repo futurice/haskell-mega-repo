@@ -68,6 +68,7 @@ library
     , lens-aeson
     , lucid
     , mtl
+    , okta-client
     , periocron
     , personio-client
     , planmill-client
