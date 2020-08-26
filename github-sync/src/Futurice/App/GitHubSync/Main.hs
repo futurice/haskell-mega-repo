@@ -7,11 +7,10 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.GitHubSync.Main (defaultMain) where
 
-import Control.Applicative       (liftA3)
 import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage, fullRow_, h1_, page_)
-import Futurice.Postgres         (safePoolQuery_, createPostgresPool)
+import Futurice.Postgres         (createPostgresPool, safePoolQuery_)
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
@@ -27,6 +26,7 @@ import Futurice.App.GitHubSync.RemoveUsers
 import qualified Data.Set        as Set
 import qualified FUM.Types.Login as FUM
 import qualified GitHub          as GH
+import qualified Okta            as O
 import qualified Personio        as P
 
 server :: Ctx -> Server GitHubSyncAPI
@@ -41,7 +41,7 @@ server ctx = indexPageAction ctx
 withAuthUser
     :: (MonadIO m, MonadTime m)
     => Ctx
-    -> (FUM.Login -> Integrations '[ ServFUM6, ServGH, ServPE ] (HtmlPage a))
+    -> (FUM.Login -> Integrations '[ ServFUM6, ServGH, ServOK, ServPE ] (HtmlPage a))
     -> Maybe FUM.Login
     -> m (HtmlPage a)
 withAuthUser ctx f = withAuthUser' page404 f ctx
@@ -55,7 +55,7 @@ page404 = page_ "GitHub Sync - Unauthorised" $
 withAuthUser'
     :: (MonadIO m, MonadTime m)
     => a
-    -> (FUM.Login -> Integrations '[ ServFUM6, ServGH, ServPE ] a)
+    -> (FUM.Login -> Integrations '[ ServFUM6, ServGH, ServOK, ServPE ] a)
     -> Ctx -> Maybe FUM.Login
     -> m a
 withAuthUser' def action ctx mfu = case mfu <|> cfgMockUser cfg of
@@ -102,8 +102,8 @@ indexPageAction
     -> Handler (HtmlPage "index")
 indexPageAction ctx = withAuthUser ctx $ \_ -> do
     today <- currentDay
-    (gh, ghi, p) <- liftA3 (,,) github githubI personioE
-    pure $ indexPage today (cfgPinnedUsers cfg) gh ghi p
+    (gh, ghi, p, o) <- (,,,) <$> github <*> githubI <*> personioE <*> githubMembersFromOkta
+    pure $ indexPage today (cfgPinnedUsers cfg) gh ghi p o
   where
     cfg = ctxConfig ctx
 
@@ -117,6 +117,10 @@ indexPageAction ctx = withAuthUser ctx $ \_ -> do
     githubDetailedMembers = do
         githubMembers <- githubOrganisationMembers
         traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
+
+    githubMembersFromOkta = do
+       O.appUsers $ cfgGithubOktaId cfg
+
 
 auditPageAction
     :: Ctx

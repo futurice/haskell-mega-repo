@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -46,12 +47,14 @@ library
     , github
     , haxl
     , lens
+    , okta-client
     , personio-client
     , postgresql-simple
     , regex-applicative
     , servant
     , servant-lucid
     , servant-server
+
   exposed-modules:
     Futurice.App.GitHubSync.API
     Futurice.App.GitHubSync.AuditPage

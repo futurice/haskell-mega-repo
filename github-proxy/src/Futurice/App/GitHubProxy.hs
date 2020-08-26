@@ -5,7 +5,6 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.GitHubProxy (defaultMain) where
 
 import Futurice.Postgres (createPostgresPool)

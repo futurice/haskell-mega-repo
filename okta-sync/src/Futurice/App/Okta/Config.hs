@@ -8,13 +8,14 @@ import Prelude ()
 
 import qualified FUM.Types.GroupName as FUM
 import qualified FUM.Types.Login     as FUM
+import qualified Okta                as O
 import qualified Personio            as P
 
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgAccessGroups       :: ![FUM.GroupName]
     , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE, ServPO ])
-    , cfgGithubAppId        :: !Text
+    , cfgGithubAppId        :: !O.OktaAppId
     , cfgAlwaysInPeakon     :: ![P.EmployeeId]
     }
 

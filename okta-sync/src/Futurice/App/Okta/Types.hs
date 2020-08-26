@@ -24,7 +24,7 @@ data OktaJSON = OktaJSON
       deriving (FromJSON) via Sopica OktaJSON
 
 data GroupInfo = GroupInfo
-    { giId   :: !Text
+    { giId   :: !O.OktaGroupId
     , giName :: !Text
     } deriving (SopGeneric, GhcGeneric, HasDatatypeInfo, Lift)
       deriving (FromJSON) via Sopica GroupInfo

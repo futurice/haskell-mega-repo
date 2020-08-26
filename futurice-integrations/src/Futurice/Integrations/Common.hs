@@ -59,7 +59,7 @@ class HasGithubOrgName a where
     githubOrganisationName :: Lens' a (GH.Name GH.Organization)
 
 class HasOktaGithubId a where
-    oktaGithubId :: a -> Text
+    oktaGithubId :: a -> O.OktaAppId
 
 -- |
 --

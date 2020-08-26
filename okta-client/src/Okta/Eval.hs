@@ -26,13 +26,13 @@ evalOktaReq :: (MonadThrow m, MonadIO m, MonadLog m, Monad m, MonadReader env m,
 evalOktaReq r = case r of
     ReqGetAllUsers        -> pagedReq "/api/v1/users"
     ReqGetAllGroups       -> singleReq "/api/v1/groups"
-    ReqGetGroupUsers gid  -> singleReq $ "/api/v1/groups/" <> T.unpack gid <> "/users"
+    ReqGetGroupUsers (OktaGroupId gid)  -> singleReq $ "/api/v1/groups/" <> T.unpack gid <> "/users"
     ReqGetAllApps         -> pagedReq "/api/v1/apps"
-    ReqGetAppUsers aid    -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
+    ReqGetAppUsers (OktaAppId aid)    -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
     ReqCreateUser newUser -> postReq "/api/v1/users?activate=false" $ encode $ newUser
     ReqUpdateUser (OktaId uid) userData -> postReq ("/api/v1/users/" <> T.unpack uid) $ encode $ object [ "profile" .= userData]
-    ReqAddUserToGroup gid (OktaId uid) -> putReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
-    ReqRemoveUserFromGroup gid (OktaId uid) -> deleteReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
+    ReqAddUserToGroup (OktaGroupId gid) (OktaId uid) -> putReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
+    ReqRemoveUserFromGroup (OktaGroupId gid) (OktaId uid) -> deleteReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
   where
      go _ _ responses Nothing = pure responses
      go mgr token responses (Just url) = do

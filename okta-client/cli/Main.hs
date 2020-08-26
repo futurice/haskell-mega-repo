@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import Data.Aeson                              (object, (.=))
 import Futurice.EnvConfig                      (getConfig)
 import Futurice.Prelude
 import Prelude ()
@@ -18,7 +17,7 @@ import qualified Options.Applicative as O
 data Cmd = CmdGetAllUsers
          | CmdGetAllGroups
          | CmdGetAllGroupsWithType GroupType
-         | CmdGetAllGroupMembers Text
+         | CmdGetAllGroupMembers Text Bool
          | CmdGetAllApps
          | CmdGetAppUsers Text
 
@@ -32,7 +31,9 @@ getAllGroupsWithTypeOptions :: O.Parser Cmd
 getAllGroupsWithTypeOptions = CmdGetAllGroupsWithType <$> argument (O.maybeReader (groupFromText . T.pack)) [ O.metavar ":group-type", O.help "Group type"]
 
 getAllGroupMembersOptions :: O.Parser Cmd
-getAllGroupMembersOptions = CmdGetAllGroupMembers <$> strArgument [ O.metavar ":group-id", O.help "Group id"]
+getAllGroupMembersOptions = CmdGetAllGroupMembers
+    <$> strArgument [ O.metavar ":group-id", O.help "Group id"]
+    <*> O.switch (mconcat [ O.long "show-all"])
 
 getAllAppsOptions :: O.Parser Cmd
 getAllAppsOptions = pure CmdGetAllApps
@@ -77,10 +78,13 @@ main' lgr token (CmdGetAllGroupsWithType groupFilter) = do
     let groups' = filter (\g -> (groupType g) == groupFilter) groups
     putPretty groups'
     pure ()
-main' lgr token (CmdGetAllGroupMembers gid) = do
+main' lgr token (CmdGetAllGroupMembers gid showAll) = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    users <- evalOktaReqIO token mgr lgr $ ReqGetGroupUsers gid
-    putPretty users
+    users <- evalOktaReqIO token mgr lgr $ ReqGetGroupUsers $ OktaGroupId gid
+    let x = users
+    putPretty $ if showAll
+        then x
+        else take 10 x
     pure ()
 main' lgr token CmdGetAllApps = do
     mgr <- liftIO $ newManager tlsManagerSettings
@@ -89,7 +93,7 @@ main' lgr token CmdGetAllApps = do
     pure ()
 main' lgr token (CmdGetAppUsers aid) = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    users <- evalOktaReqIO token mgr lgr $ ReqGetAppUsers aid
+    users <- evalOktaReqIO token mgr lgr $ ReqGetAppUsers $ OktaAppId aid
     putPretty users
     pure ()
 

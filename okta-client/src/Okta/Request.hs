@@ -11,13 +11,13 @@ import Okta.Types
 data Req a where
     ReqGetAllUsers         :: Req [User]
     ReqGetAllGroups        :: Req [Group]
-    ReqGetGroupUsers       :: Text -> Req [User]
+    ReqGetGroupUsers       :: OktaGroupId -> Req [User]
     ReqGetAllApps          :: Req [App]
-    ReqGetAppUsers         :: Text -> Req [AppUser]
+    ReqGetAppUsers         :: OktaAppId -> Req [AppUser]
     ReqCreateUser          :: NewUser -> Req User
     ReqUpdateUser          :: OktaId -> Value -> Req User
-    ReqAddUserToGroup      :: Text -> OktaId -> Req ()
-    ReqRemoveUserFromGroup :: Text -> OktaId -> Req ()
+    ReqAddUserToGroup      :: OktaGroupId -> OktaId -> Req ()
+    ReqRemoveUserFromGroup :: OktaGroupId -> OktaId -> Req ()
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
