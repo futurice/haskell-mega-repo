@@ -52,9 +52,13 @@ data OktaUpdateStats = OktaUpdateStats
     }
 
 data ClientStatus = MainClient Text
+                  | NoMainClient
                   | NoClient
                   | Other
                   deriving (Ord, Eq, Show)
+
+data CheckMain = Main
+               | NonMain
 
 fetchClientInformation :: (Power.MonadPower m) => Day -> [P.Employee] -> m (Map.Map P.EmployeeId ClientStatus)
 fetchClientInformation now emps = do
@@ -68,20 +72,29 @@ fetchClientInformation now emps = do
     let employeeAllocations emp = filter (\a -> Power.allocationPersonId a == Just (Power.personId emp)) allocations
     let filterCurrentAllocations = filter (\a -> utctDay (Power.allocationStartDate a) <= now && now <= utctDay (Power.allocationEndDate a) && Power.allocationProposed a == False)
     let filterMainAllocations = filter (\a -> Power.allocationTotalAllocation a > 0.5)
-    let getRelevantAllocations as = filterMainAllocations $ filterCurrentAllocations as
+    let filterNonMainAllocations = filter (\a -> not (Power.allocationTotalAllocation a > 0.5))
+    let getRelevantAllocations Main as = filterMainAllocations $ filterCurrentAllocations as
+        getRelevantAllocations NonMain as = filterNonMainAllocations $ filterCurrentAllocations as
 
-    let isOnProject as p = Power.projectId p `elem` (Power.allocationProjectId <$> getRelevantAllocations as)
-    let employeeProjects as = filter (isOnProject as) projects
+    let isOnProject as cm p = Power.projectId p `elem` (Power.allocationProjectId <$> getRelevantAllocations cm as)
+    let employeeProjects cm as = filter (isOnProject as cm) projects
     let employeeCustomers ps = filter (\c -> elem (Power.customerId c) (Power.projectCustomerId <$> ps)) customers
 
     let employeeMainProject emp =
-            let employeeCustomer e = listToMaybe $ Power.customerName <$> (employeeCustomers $ employeeProjects $ employeeAllocations e)
+            let employeeCustomer cm allocs = listToMaybe $ Power.customerName <$> (employeeCustomers $ employeeProjects cm $ allocs)
+
+                processAllocs :: [Power.Allocation] -> ClientStatus
+                processAllocs [] = NoClient
+                processAllocs allocs | Just customer <- employeeCustomer Main allocs = MainClient customer
+                                     | Just _ <- employeeCustomer NonMain allocs     = NoMainClient
+                                     | otherwise                                     = Other
+
                 clientStatus =
                     case emp ^. P.employeeLogin >>= \x -> personsMap ^.at x of
                       Just e | Power.personUtzTarget e > 0 ->
-                                   let allocs = filterCurrentAllocations $ employeeAllocations e
-                                   in if length allocs > 0 then
-                                        maybe Other MainClient $ employeeCustomer e
+                                   let allocs = employeeAllocations e
+                                   in if length (filterCurrentAllocations allocs) > 0 then
+                                        processAllocs allocs
                                       else
                                         NoClient
                       _ -> Other
@@ -139,7 +152,7 @@ updateUsers ctx now employees users = do
     personioEmployeeToUpdate clientInformation oktaId pemp =
         UpdateInformation
         { uiOktaId = oktaId
-        , uiSecondEmail = maybe "" T.strip (pemp ^. P.employeeHomeEmail)
+        , uiSecondEmail = maybe "" T.strip (listToMaybe . T.splitOn "," =<< pemp ^. P.employeeHomeEmail) -- some have two emails....
         , uiEmployeeNumber = Just $ pemp ^. P.employeeId
         , uiTribe = Just $ pemp ^. P.employeeTribe
         , uiOffice = Just $ pemp ^. P.employeeOffice
@@ -160,6 +173,7 @@ updateUsers ctx now employees users = do
           <&> \info ->
                 case info of
                     MainClient client | info `elem` customersToFollow clientInformation -> client
+                    NoMainClient -> "No main client (client with >50% allocation)"
                     NoClient -> "No client"
                     _ -> "Other"
         , uiCareerLevel = let levelToText (n : _) = readMaybe [n]
