@@ -36,10 +36,12 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
             thead_ $ do
                 th_ "#"
                 th_ "Name"
+                th_ "Contract end date"
             tbody_ $ do
                 for_ inactiveInPersonio $ \e -> tr_ $ do
                     td_ $ toHtml (e ^. P.employeeId)
                     td_ $ toHtml (e ^. P.employeeFullname)
+                    td_ $ toHtml $ maybe "" textShow (e ^. P.employeeEndDate)
         h2_ "People in Okta that are not in Personio"
         sortableTable_ $ do
             thead_ $ do
