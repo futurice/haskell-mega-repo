@@ -173,6 +173,7 @@ updateUsers ctx now employees users = do
           <&> \info ->
                 case info of
                     MainClient client | info `elem` customersToFollow clientInformation -> client
+                    MainClient _ -> "Small client (< 4 internal people as main client)"
                     NoMainClient -> "No main client (client with >50% allocation)"
                     NoClient -> "No client"
                     _ -> "Other"
