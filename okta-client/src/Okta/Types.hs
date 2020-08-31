@@ -68,6 +68,23 @@ instance ToJSON Status where
 
 instance AnsiPretty Status where ansiPretty = ansiPretty . show
 
+data Nationality = Native
+                 | NonNative
+                 deriving (Eq, Show, Generic, NFData)
+
+instance ToJSON Nationality where
+    toJSON Native = "Native"
+    toJSON NonNative = "Non-native"
+
+instance FromJSON Nationality where
+    parseJSON = withText "nationality" $ \nationality ->
+      case nationality of
+        "Native" -> pure Native
+        "Non-native" -> pure NonNative
+        _ -> fail "Testing"
+
+instance AnsiPretty Nationality
+
 data Profile = Profile
     { _profileFirstName        :: !Text
     , _profileLastName         :: !Text
@@ -93,6 +110,7 @@ data Profile = Profile
     , _profileClientAccount    :: !(Maybe Text)
     , _profileCareerLevel      :: !(Maybe Int)
     , _profileDisplayName      :: !(Maybe Text)
+    , _profileNationality      :: !(Maybe Nationality)
     } deriving (Eq, Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON) via (Sopica Profile)
 
@@ -125,6 +143,7 @@ instance FromJSON Profile where
       <*> o .:? "clientAccount"
       <*> o .:? "careerLevel"
       <*> o .:? "displayName"
+      <*> o .:? "nationality"
 
 instance AnsiPretty Profile
 
