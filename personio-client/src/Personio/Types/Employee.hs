@@ -89,6 +89,7 @@ data Employee = Employee
     , _employeeMonthlyFixedVariableSalary :: !(Maybe Int)
     , _employeeMonthlyVariableSalary      :: !(Maybe Int)
     , _employeeSalaryCurrency             :: !(Maybe Currency)
+    , _employeeNationality       :: !(Maybe Text)
 #ifdef PERSONIO_DEBUG
     , _employeeRest              :: !(HashMap Text Attribute)
 #endif
@@ -205,6 +206,7 @@ parseEmployeeObject obj' = Employee
     <*> optional (parseDynamicAttribute obj "Monthly Fixed Variable Salary (66%)")
     <*> optional (parseDynamicAttribute obj "Monthly variable salary 100%")
     <*> fmap (\x -> x >>= notEmpty >>= currencyFromText) (parseDynamicAttribute obj "Salary currency")
+    <*> optional (parseDynamicAttribute obj "Nationality")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif

@@ -132,8 +132,8 @@ evalPersonioReq personioReq = do
                 = ("Authorization", encodeUtf8 $ "Bearer " <> token)
                 : H.requestHeaders req
             -- Note: Personio API seems to be very slow
-            -- Let give it 50sec (default is 30)
-            , H.responseTimeout = H.responseTimeoutMicro $ 50 * 1000000
+            -- Let give it 60sec (default is 30)
+            , H.responseTimeout = H.responseTimeoutMicro $ 60 * 1000000
             }
         logTrace "personio response" dur
         -- logTrace "response" (T.take 10000 $ decodeUtf8Lenient $ H.responseBody res ^. strict)

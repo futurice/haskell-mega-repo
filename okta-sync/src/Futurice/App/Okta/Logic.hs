@@ -6,6 +6,7 @@ module Futurice.App.Okta.Logic where
 import Futurice.App.Okta.Config
 import Futurice.App.Okta.Ctx
 import Futurice.CareerLevel     (careerLevelToText)
+import Futurice.Company         (countryToText')
 import Futurice.Email           (emailFromText, emailToText)
 import Futurice.Generics
 import Futurice.Office          (officeFromText, officeToText)
@@ -181,6 +182,10 @@ updateUsers ctx now employees users = do
                               levelToText _ = Nothing
                           in pemp ^. P.employeeCareerLevel >>= levelToText . T.unpack . careerLevelToText
         , uiDisplayName = Just $ pemp ^. P.employeeFullname
+        , uiNationality = case (pemp ^. P.employeeNationality, pemp ^. P.employeeCountry) of
+                            (Just nationality, Just country) ->
+                                if nationality == countryToText' country then Just O.Native else Just O.NonNative
+                            _ -> Nothing
         }
 
     oktaUserToUpdate ouser =
@@ -206,6 +211,7 @@ updateUsers ctx now employees users = do
         , uiClientAccount = ouser ^. O.userProfile . O.profileClientAccount
         , uiCareerLevel = ouser ^. O.userProfile . O.profileCareerLevel
         , uiDisplayName = ouser ^. O.userProfile . O.profileDisplayName
+        , uiNationality = ouser ^. O.userProfile . O.profileNationality
         }
 
     changeData clientInformation ouser pemp =
