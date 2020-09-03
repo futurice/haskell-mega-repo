@@ -81,7 +81,7 @@ instance FromJSON Nationality where
       case nationality of
         "Native" -> pure Native
         "Non-native" -> pure NonNative
-        _ -> fail "Testing"
+        _ -> fail "Can't parse given string"
 
 instance AnsiPretty Nationality
 
