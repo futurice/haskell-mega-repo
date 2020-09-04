@@ -20,6 +20,7 @@ data Cmd = CmdGetAllUsers
          | CmdGetAllGroupMembers Text Bool
          | CmdGetAllApps
          | CmdGetAppUsers Text
+         | CmdGetUserApps Text
 
 getAllUsersOptions :: O.Parser Cmd
 getAllUsersOptions = pure CmdGetAllUsers
@@ -41,6 +42,9 @@ getAllAppsOptions = pure CmdGetAllApps
 getAppUsersOptions :: O.Parser Cmd
 getAppUsersOptions = CmdGetAppUsers <$> strArgument [ O.metavar ":app-id", O.help "App id"]
 
+getUserAppsOptions :: O.Parser Cmd
+getUserAppsOptions = CmdGetUserApps <$> strArgument [ O.metavar ":user-id", O.help "User id"]
+
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "get-all-users"  getAllUsersOptions "Get all users"
@@ -49,6 +53,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "get-group-members" getAllGroupMembersOptions "Get all members of spesific group"
     , cmdParser "get-all-apps" getAllAppsOptions "Get all apps"
     , cmdParser "get-app-users" getAppUsersOptions "Get all users assigned to app"
+    , cmdParser "get-user-apps" getUserAppsOptions "get all apps user has"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -94,6 +99,11 @@ main' lgr token CmdGetAllApps = do
 main' lgr token (CmdGetAppUsers aid) = do
     mgr <- liftIO $ newManager tlsManagerSettings
     users <- evalOktaReqIO token mgr lgr $ ReqGetAppUsers $ OktaAppId aid
+    putPretty users
+    pure ()
+main' lgr token (CmdGetUserApps uid) = do
+    mgr <- liftIO $ newManager tlsManagerSettings
+    users <- evalOktaReqIO token mgr lgr $ ReqGetAppLinks $ OktaId uid
     putPretty users
     pure ()
 

@@ -172,7 +172,8 @@ instance FromEnvVar OktaGroupId where
 
 newtype OktaAppId = OktaAppId Text
     deriving (Eq, Show, Generic)
-    deriving anyclass (Hashable)
+    deriving anyclass (Hashable, NFData, AnsiPretty)
+    deriving newtype (FromJSON, ToJSON)
 
 instance FromEnvVar OktaAppId where
     fromEnvVar = Just . OktaAppId . T.pack
@@ -219,6 +220,16 @@ data AppUser = AppUser
       deriving (ToJSON, FromJSON) via (Sopica AppUser)
 
 instance AnsiPretty AppUser
+
+data AppLink = AppLink
+    { alId      :: !OktaAppId
+    , alAppName :: !Text
+    , alLabel   :: !Text
+    , alLogoUrl :: !Text
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+      deriving (ToJSON, FromJSON) via (Sopica AppLink)
+
+instance AnsiPretty AppLink
 
 data GroupType = OktaGroup
                | AppGroup

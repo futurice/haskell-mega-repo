@@ -107,6 +107,7 @@ packages:
   mega-repo-tool/
   monad-memoize/
   okta-client/
+  okta-proxy/
   okta-sync/
   optparse-sop/
   peakon-client/

@@ -33,6 +33,7 @@ evalOktaReq r = case r of
     ReqUpdateUser (OktaId uid) userData -> postReq ("/api/v1/users/" <> T.unpack uid) $ encode $ object [ "profile" .= userData]
     ReqAddUserToGroup (OktaGroupId gid) (OktaId uid) -> putReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
     ReqRemoveUserFromGroup (OktaGroupId gid) (OktaId uid) -> deleteReq $ "/api/v1/groups/" <> T.unpack gid <> "/users/" <> T.unpack uid
+    ReqGetAppLinks (OktaId uid) -> pagedReq $ "/api/v1/users/" <> T.unpack uid <> "/appLinks"
   where
      go _ _ responses Nothing = pure responses
      go mgr token responses (Just url) = do
