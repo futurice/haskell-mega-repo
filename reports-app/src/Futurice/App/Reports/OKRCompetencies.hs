@@ -105,8 +105,8 @@ planmillUserToPersonioEmployee ppMap (tribe, project, users) = do
     let employees = map (pToP ppMap) users
     return (tribe, project, catMaybes employees)
     where
-        pToP ppMap user =
-            fmap fst $ (=<<) (`HM.lookup` ppMap) $ PM.userLogin user
+        pToP ppMap' user =
+            fmap fst $ (=<<) (`HM.lookup` ppMap') $ PM.userLogin user
 
 competencyData :: forall m. (MonadTime m, MonadPersonio m, MonadPlanMillQuery m, MonadPower m) => m CompetencyReport
 competencyData = do
