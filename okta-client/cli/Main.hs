@@ -86,7 +86,7 @@ main' lgr token (CmdGetAllGroupsWithType groupFilter) = do
 main' lgr token (CmdGetAllGroupMembers gid showAll) = do
     mgr <- liftIO $ newManager tlsManagerSettings
     users <- evalOktaReqIO token mgr lgr $ ReqGetGroupUsers $ OktaGroupId gid
-    let x = users
+    let x = simpleUser <$> users
     putPretty $ if showAll
         then x
         else take 10 x

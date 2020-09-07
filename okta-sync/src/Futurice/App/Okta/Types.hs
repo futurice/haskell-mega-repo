@@ -16,19 +16,6 @@ import qualified FUM
 import qualified Okta     as O
 import qualified Personio as P
 
-data OktaJSON = OktaJSON
-    { ojExternalGroup :: !Text,
-      ojInternalGroup :: !Text,
-      ojGroups        :: [GroupInfo]
-    } deriving (SopGeneric, GhcGeneric, HasDatatypeInfo, Lift)
-      deriving (FromJSON) via Sopica OktaJSON
-
-data GroupInfo = GroupInfo
-    { giId   :: !O.OktaGroupId
-    , giName :: !Text
-    } deriving (SopGeneric, GhcGeneric, HasDatatypeInfo, Lift)
-      deriving (FromJSON) via Sopica GroupInfo
-
 data UpdateInformation = UpdateInformation
     { uiOktaId           :: !O.OktaId
     , uiSecondEmail      :: !Text

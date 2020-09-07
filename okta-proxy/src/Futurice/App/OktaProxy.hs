@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.OktaProxy where
 
+import Futurice.Integrations
 import Futurice.Prelude
 import Futurice.Servant
 import Prelude ()
@@ -11,20 +12,29 @@ import Servant.Server.Generic
 import Futurice.App.OktaProxy.API
 import Futurice.App.OktaProxy.Config
 import Futurice.App.OktaProxy.Ctx
+import Futurice.App.OktaProxy.Logic
+
+import qualified FUM.Types.Login as FUM
 
 apiServer :: Ctx -> Server OktaProxyAPI
 apiServer ctx = genericServer $ Record
-    { testUrl = testUrlImpl ctx
+    { getGroupMembers = getGroupMembersImpl ctx
     }
 
 makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-makeCtx cfg lgr mgr cache mq = do
+makeCtx cfg lgr mgr cache _mq = do
     let ctx = Ctx cfg lgr mgr cache
 
     return (ctx, [])
 
-testUrlImpl :: Ctx -> Handler Bool
-testUrlImpl _ = pure True
+getGroupMembersImpl :: Ctx -> Text -> Handler [FUM.Login]
+getGroupMembersImpl ctx groupName = do
+    now <- currentTime
+    liftIO $ runIntegrations mgr lgr now cfg $ groupMembers groupName
+  where
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
+    cfg = cfgIntegrationsCfg (ctxConfig ctx)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig

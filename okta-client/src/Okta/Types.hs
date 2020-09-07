@@ -4,7 +4,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Okta.Types where
+module Okta.Types
+  ( module Okta.Types
+  , module Okta.Types.Group
+  , module Okta.Types.GroupInfo
+  ) where
 
 import Data.Aeson
 import Data.Aeson.Types                        (withText)
@@ -16,9 +20,19 @@ import Futurice.Prelude
 import Prelude ()
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
+import Okta.Types.Group
+import Okta.Types.GroupInfo
+
+import qualified Data.Map  as Map
 import qualified Data.Text as T
 import qualified FUM
 import qualified Personio  as P
+
+groupInfo :: OktaJSON
+groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
+
+groupMap :: Map Text GroupInfo
+groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -83,7 +97,8 @@ instance FromJSON Nationality where
         "Non-native" -> pure NonNative
         _ -> fail "Can't parse given string"
 
-instance AnsiPretty Nationality
+instance AnsiPretty Nationality where
+    ansiPretty = ansiPretty . show
 
 data Profile = Profile
     { _profileFirstName        :: !Text
@@ -161,14 +176,6 @@ newtype OktaId = OktaId Text
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass (NFData, AnsiPretty, Hashable)
     deriving newtype (FromJSON, ToJSON)
-
-newtype OktaGroupId = OktaGroupId Text
-    deriving (Eq, Show, Generic, Lift)
-    deriving anyclass (Hashable)
-    deriving newtype (FromJSON, ToJSON)
-
-instance FromEnvVar OktaGroupId where
-    fromEnvVar = Just . OktaGroupId . T.pack
 
 newtype OktaAppId = OktaAppId Text
     deriving (Eq, Show, Generic)

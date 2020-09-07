@@ -54,6 +54,7 @@ library
     Futurice.App.OktaProxy.API
     Futurice.App.OktaProxy.Config
     Futurice.App.OktaProxy.Ctx
+    Futurice.App.OktaProxy.Logic
 
 executable okta-proxy-server
   default-language: Haskell2010
