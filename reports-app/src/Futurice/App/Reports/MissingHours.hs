@@ -48,6 +48,7 @@ import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
+import qualified Data.Set            as Set
 import qualified Data.Tuple.Strict   as S
 import qualified Data.Vector         as V
 import qualified FUM
@@ -227,6 +228,7 @@ data MissingHoursSimplifiedReport = MissingHoursSimplifiedReport
     , _mhsFilterTribe    :: !(Maybe Tribe)
     , _mhsWholeInterval  :: !(PM.Interval Day)
     , _mhsAllEmployees   :: ![Employee]
+    , _mhsActiveTribes   :: !(Set Tribe)
     } deriving (NFData, Generic, ToSchema)
 
 missingHoursSimplifiedReport
@@ -259,6 +261,7 @@ missingHoursSimplifiedReport predicate interval wholeInterval memp mmonth mtribe
         mtribe
         wholeInterval
         employees
+        (activeTribes $ fst <$> HM.elems fpm0)
   where
     perUser :: P.Employee -> PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pEmployee pmUser = (S.:!:)
@@ -270,12 +273,16 @@ missingHoursSimplifiedReport predicate interval wholeInterval memp mmonth mtribe
         i = inf interval & mcase (pEmployee ^. P.employeeHireDate) id max
         s = sup interval & mcase (pEmployee ^. P.employeeEndDate) id min
 
+    -- All tribes that currently working employees are in
+    activeTribes :: [P.Employee] -> Set Tribe
+    activeTribes emp = Set.fromList $ map (^. P.employeeTribe) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emp
+
 instance ToHtml MissingHoursSimplifiedReport where
     toHtmlRaw = toHtml
     toHtml = toHtml . renderMissingHoursSimplifiedReport
 
 renderMissingHoursSimplifiedReport :: MissingHoursSimplifiedReport -> HtmlPage "missing-hours-simplified"
-renderMissingHoursSimplifiedReport (MissingHoursSimplifiedReport params d memp mmonth mtribe wholeInterval employees) = page_ "Missing hours" $ do
+renderMissingHoursSimplifiedReport (MissingHoursSimplifiedReport params d memp mmonth mtribe wholeInterval employees activeTribes) = page_ "Missing hours" $ do
     fullRow_ $ h1_ "Missing hours markings (internal; salary; Monthly)"
     fullRow_ $ toHtml params
     form_ $ div_ [ class_ "row" ] $ do
@@ -292,7 +299,7 @@ renderMissingHoursSimplifiedReport (MissingHoursSimplifiedReport params d memp m
               optionSelected_ (Just (employeeName employee) == memp) [ value_ $ employeeName employee ] $ toHtml $ employeeName employee
         div_ [ class_ "columns medium-3" ] $ select_ [ name_ "tribe", data_ "futu-id" "missing-hours-tribe" ] $ do
             optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
-            for_ [ minBound .. maxBound ] $ \tribe ->
+            for_ (sortOn tribeToText $ toList activeTribes) $ \tribe ->
                 optionSelected_ (Just tribe == mtribe) [value_ $ tribeToText tribe ] $ toHtml tribe
         div_ [ class_ "columns medium-2" ] $ input_ [ class_ "button", type_ "submit", value_ "Update" ]
 
