@@ -19,6 +19,7 @@ data Config = Config
     , _cfgContactsApiBaseurl   :: !BaseUrl
     , _cfgSmsProxyBaseurl      :: !BaseUrl
     , _cfgLibraryBaseurl       :: !BaseUrl
+    , _cfgOktaProxyBaseUrl     :: !BaseUrl
     }
 
 makeLenses ''Config
@@ -36,3 +37,4 @@ instance Configure Config where
         <*> envVar "CONTACTSAPI_BASEURL"
         <*> envVar "SMSPROXY_BASEURL"
         <*> envVar "LIBRARY_BASEURL"
+        <*> envVar "OKTAPROXY_BASEURL"

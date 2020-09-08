@@ -29,6 +29,7 @@ library
     , binary
     , bytestring
     , constraints
+    , containers
     , env-config
     , free
     , fum-client
@@ -36,6 +37,7 @@ library
     , futurice-tribes
     , http-client
     , http-types
+    , lens-aeson
     , personio-client
     , servant
     , servant-client
@@ -48,6 +50,8 @@ library
     Okta.Eval
     Okta.Request
     Okta.Types
+    Okta.Types.Group
+    Okta.Types.GroupInfo
 
 executable okta-cli
   main-is:        Main.hs

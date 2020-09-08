@@ -4,10 +4,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Okta.Types where
+module Okta.Types
+  ( module Okta.Types
+  , module Okta.Types.Group
+  , module Okta.Types.GroupInfo
+  ) where
 
 import Data.Aeson
-import Data.Aeson.Types                        (withText)
+import Data.Aeson.Lens
+import Data.Aeson.Types                        (Parser, withText)
 import Futurice.Company                        (Country)
 import Futurice.Email
 import Futurice.EnvConfig
@@ -16,9 +21,19 @@ import Futurice.Prelude
 import Prelude ()
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
+import Okta.Types.Group
+import Okta.Types.GroupInfo
+
+import qualified Data.Map  as Map
 import qualified Data.Text as T
 import qualified FUM
 import qualified Personio  as P
+
+groupInfo :: OktaJSON
+groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
+
+groupMap :: Map Text GroupInfo
+groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -83,7 +98,8 @@ instance FromJSON Nationality where
         "Non-native" -> pure NonNative
         _ -> fail "Can't parse given string"
 
-instance AnsiPretty Nationality
+instance AnsiPretty Nationality where
+    ansiPretty = ansiPretty . show
 
 data Profile = Profile
     { _profileFirstName        :: !Text
@@ -162,17 +178,10 @@ newtype OktaId = OktaId Text
     deriving anyclass (NFData, AnsiPretty, Hashable)
     deriving newtype (FromJSON, ToJSON)
 
-newtype OktaGroupId = OktaGroupId Text
-    deriving (Eq, Show, Generic, Lift)
-    deriving anyclass (Hashable)
-    deriving newtype (FromJSON, ToJSON)
-
-instance FromEnvVar OktaGroupId where
-    fromEnvVar = Just . OktaGroupId . T.pack
-
 newtype OktaAppId = OktaAppId Text
     deriving (Eq, Show, Generic)
-    deriving anyclass (Hashable)
+    deriving anyclass (Hashable, NFData, AnsiPretty)
+    deriving newtype (FromJSON, ToJSON)
 
 instance FromEnvVar OktaAppId where
     fromEnvVar = Just . OktaAppId . T.pack
@@ -219,6 +228,17 @@ data AppUser = AppUser
       deriving (ToJSON, FromJSON) via (Sopica AppUser)
 
 instance AnsiPretty AppUser
+
+data AppLink = AppLink
+    { alId            :: !Text
+    , alAppName       :: !Text
+    , alLabel         :: !Text
+    , alLogoUrl       :: !Text
+    , alAppInstanceId :: !OktaAppId
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+      deriving (ToJSON, FromJSON) via (Sopica AppLink)
+
+instance AnsiPretty AppLink
 
 data GroupType = OktaGroup
                | AppGroup
@@ -292,12 +312,24 @@ instance ToJSON AppCredentials where
 
 instance AnsiPretty AppCredentials
 
+data Links = Links
+    { linkLogoUrls :: ![Text]
+    } deriving (Show, Generic)
+
+instance AnsiPretty Links
+
+instance FromJSON Links where
+    parseJSON = withObject "links" $ \obj -> do
+      logoLinks <- (obj .: "logo" :: Parser Array)
+      pure $ Links $ fmap (^. key "href" . _String) $ toList logoLinks
+
 data App = App
     { appId          :: !Text
     , appName        :: !Text
     , appLabel       :: !Text
     , appStatus      :: !Status
     , appVisibility  :: !Visibility
+    , app_links      :: !Links
     } deriving (Show,GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving (FromJSON) via (Sopica App)
 

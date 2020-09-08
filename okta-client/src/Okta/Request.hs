@@ -18,6 +18,9 @@ data Req a where
     ReqUpdateUser          :: OktaId -> Value -> Req User
     ReqAddUserToGroup      :: OktaGroupId -> OktaId -> Req ()
     ReqRemoveUserFromGroup :: OktaGroupId -> OktaId -> Req ()
+    ReqGetAppLinks         :: OktaId -> Req [AppLink]
+    ReqGetApplication      :: OktaAppId -> Req App
+    ReqGetUser             :: OktaId -> Req User
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
@@ -32,15 +35,21 @@ instance Hashable (Req a) where
     hashWithSalt salt (ReqUpdateUser u t)          = hashWithSalt salt (6 :: Int, u, t)
     hashWithSalt salt (ReqAddUserToGroup u g)      = hashWithSalt salt (7 :: Int, u, g)
     hashWithSalt salt (ReqRemoveUserFromGroup u g) = hashWithSalt salt (8 :: Int, u, g)
+    hashWithSalt salt (ReqGetAppLinks i)           = hashWithSalt salt (9 :: Int, i)
+    hashWithSalt salt (ReqGetApplication i)        = hashWithSalt salt (10 :: Int, i)
+    hashWithSalt salt (ReqGetUser u)               = hashWithSalt salt (11 :: Int, u)
 
 requestDict
     :: ( c [User]
        , c [Group]
        , c [User]
        , c [App]
+       , c App
        , c [AppUser]
+       , c [AppLink]
        , c User
-       , c ())
+       , c ()
+       , c Value)
     => Proxy c
     -> Req a
     -> Dict (c a)
@@ -53,3 +62,6 @@ requestDict _ (ReqCreateUser _) = Dict
 requestDict _ (ReqUpdateUser _ _) = Dict
 requestDict _ (ReqAddUserToGroup _ _) = Dict
 requestDict _ (ReqRemoveUserFromGroup _ _) = Dict
+requestDict _ (ReqGetAppLinks _) = Dict
+requestDict _ (ReqGetApplication _) = Dict
+requestDict _ (ReqGetUser _) = Dict
