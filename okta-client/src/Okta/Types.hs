@@ -11,7 +11,8 @@ module Okta.Types
   ) where
 
 import Data.Aeson
-import Data.Aeson.Types                        (withText)
+import Data.Aeson.Lens
+import Data.Aeson.Types                        (Parser, withText)
 import Futurice.Company                        (Country)
 import Futurice.Email
 import Futurice.EnvConfig
@@ -229,10 +230,11 @@ data AppUser = AppUser
 instance AnsiPretty AppUser
 
 data AppLink = AppLink
-    { alId      :: !OktaAppId
-    , alAppName :: !Text
-    , alLabel   :: !Text
-    , alLogoUrl :: !Text
+    { alId            :: !Text
+    , alAppName       :: !Text
+    , alLabel         :: !Text
+    , alLogoUrl       :: !Text
+    , alAppInstanceId :: !OktaAppId
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica AppLink)
 
@@ -310,12 +312,24 @@ instance ToJSON AppCredentials where
 
 instance AnsiPretty AppCredentials
 
+data Links = Links
+    { linkLogoUrls :: ![Text]
+    } deriving (Show, Generic)
+
+instance AnsiPretty Links
+
+instance FromJSON Links where
+    parseJSON = withObject "links" $ \obj -> do
+      logoLinks <- (obj .: "logo" :: Parser Array)
+      pure $ Links $ fmap (^. key "href" . _String) $ toList logoLinks
+
 data App = App
     { appId          :: !Text
     , appName        :: !Text
     , appLabel       :: !Text
     , appStatus      :: !Status
     , appVisibility  :: !Visibility
+    , app_links      :: !Links
     } deriving (Show,GhcGeneric, SopGeneric, HasDatatypeInfo)
       deriving (FromJSON) via (Sopica App)
 

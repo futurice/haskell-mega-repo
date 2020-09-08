@@ -32,3 +32,12 @@ addUserToGroup gid uid = oktaReq $ ReqAddUserToGroup gid uid
 
 deleteUserFromGroup :: MonadOkta m => OktaGroupId -> OktaId -> m ()
 deleteUserFromGroup gid uid = oktaReq $ ReqRemoveUserFromGroup gid uid
+
+userApplications :: MonadOkta m => OktaId -> m [AppLink]
+userApplications = oktaReq . ReqGetAppLinks
+
+application :: MonadOkta m => OktaAppId -> m App
+application = oktaReq . ReqGetApplication
+
+user :: MonadOkta m => OktaId -> m User
+user = oktaReq . ReqGetUser

@@ -21,6 +21,7 @@ data Cmd = CmdGetAllUsers
          | CmdGetAllApps
          | CmdGetAppUsers Text
          | CmdGetUserApps Text
+         | CmdGetApplication Text
 
 getAllUsersOptions :: O.Parser Cmd
 getAllUsersOptions = pure CmdGetAllUsers
@@ -45,6 +46,9 @@ getAppUsersOptions = CmdGetAppUsers <$> strArgument [ O.metavar ":app-id", O.hel
 getUserAppsOptions :: O.Parser Cmd
 getUserAppsOptions = CmdGetUserApps <$> strArgument [ O.metavar ":user-id", O.help "User id"]
 
+getApplicationOptions :: O.Parser Cmd
+getApplicationOptions = CmdGetApplication <$> strArgument [ O.metavar ":app-id", O.help "App id"]
+
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "get-all-users"  getAllUsersOptions "Get all users"
@@ -53,7 +57,8 @@ optsParser = O.subparser $ mconcat
     , cmdParser "get-group-members" getAllGroupMembersOptions "Get all members of spesific group"
     , cmdParser "get-all-apps" getAllAppsOptions "Get all apps"
     , cmdParser "get-app-users" getAppUsersOptions "Get all users assigned to app"
-    , cmdParser "get-user-apps" getUserAppsOptions "get all apps user has"
+    , cmdParser "get-user-apps" getUserAppsOptions "Get all apps user has"
+    , cmdParser "get-application" getApplicationOptions "Get application information"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -104,6 +109,11 @@ main' lgr token (CmdGetAppUsers aid) = do
 main' lgr token (CmdGetUserApps uid) = do
     mgr <- liftIO $ newManager tlsManagerSettings
     users <- evalOktaReqIO token mgr lgr $ ReqGetAppLinks $ OktaId uid
+    putPretty users
+    pure ()
+main' lgr token (CmdGetApplication aid) = do
+    mgr <- liftIO $ newManager tlsManagerSettings
+    users <- evalOktaReqIO token mgr lgr $ ReqGetApplication $ OktaAppId aid
     putPretty users
     pure ()
 

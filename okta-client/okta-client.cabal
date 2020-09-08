@@ -37,6 +37,7 @@ library
     , futurice-tribes
     , http-client
     , http-types
+    , lens-aeson
     , personio-client
     , servant
     , servant-client
