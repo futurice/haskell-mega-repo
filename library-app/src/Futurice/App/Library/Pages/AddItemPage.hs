@@ -38,7 +38,7 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                 th_ "Publisher"
                 td_ $ input_ [ name_ "publisher", type_ "text", required_ ""]
             tr_ $ do
-                th_ "Published"
+                th_ "Published(year)"
                 td_ $ input_ [ name_ "published", type_ "number", required_ ""]
             tr_ $ do
                 th_ "Info link"
