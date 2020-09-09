@@ -23,7 +23,7 @@ import qualified PlanMill.Queries as PMQ
 data TimereportKind
     = KindBillable        -- ^ billable work
     | KindNonBillable     -- ^ non-billable client work
-    | KindInternal        -- ^ non-billable internal work: @account type: "My Company"@
+    | KindInternal        -- ^ non-billable internal work: @account type: "My Company"@ or project type Team Internal work
     | KindAbsence         -- ^ absences: @project category = "Absence"@
     | KindSickLeave       -- ^ sick leave
     | KindBalanceAbsence  -- ^ balance absence
