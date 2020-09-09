@@ -101,7 +101,7 @@ timereportKind tr = do
     kind _                           _                   "Non-billable" (Just "Sick leave by medical certificate") = KindSickLeave
     kind (Just "Absence")            _                   "Non-billable" _                                          = KindAbsence
     kind _                           (Just "My company") "Non-billable" _                                          = KindInternal
-    kind (Just "Team Internal Work") _                   "Non-billable" _                                          = KindInternal
+    kind (Just "Team internal work") _                   "Non-billable" _                                          = KindInternal
     kind _                           _                   "Non-billable" _                                          = KindNonBillable
     kind _                           _                   _              _                                          = KindBillable
 
