@@ -66,6 +66,8 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
                     updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList intervals)
                 "all-recent-timereports" -> -- don't try to update old timereports often
                     updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now 730
+                "update-all-timereports" -> -- update all existing timereports
+                    updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now 3000
                 _ -> do
                     day <- currentDay
                     checkIsWeekend day $ updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now 3000
