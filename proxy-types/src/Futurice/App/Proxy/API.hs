@@ -173,6 +173,10 @@ data Routes = Routes
         ("uiapi" :> "powerprojecttoplanmillproject" :> "" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "powerprojecttoplanmillproject" :> Get '[JSON] Value)
 
+    , routePowerV3PersonSkillExperience :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "personskillexperience" :> "" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "personskillexperience" :> Get '[JSON] Value)
+
     -- Power dev endpoints
     , routeDevPowerPeople :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "person" :> "" :>  QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[JSON] Value)
