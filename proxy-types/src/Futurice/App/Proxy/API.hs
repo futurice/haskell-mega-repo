@@ -124,7 +124,7 @@ data Routes = Routes
     , routeFutuquTimereportsStream :: Futuqu ("strm" :> "timereports.csv.gz" :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
     , routeFutuquCapacitiesStream  :: Futuqu ("strm" :> "capacities.csv.gz"  :> QueryParam "since-month" Month :> StreamGet NoFraming (CACHED (GZIP CSV)) (SourceIO (Cached (GZIP CSV) Text)))
 
-    -- Power v3
+    -- Power v3 (2020)
     , routePowerV3PersonCompetences :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "timeline" :> "personskill/" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "person_competences" :> Get '[JSON] Value)
@@ -172,6 +172,10 @@ data Routes = Routes
     , routePowerV3PowerToPlanMillProject :: ProxiedEndpoint 'PowerService
         ("uiapi" :> "powerprojecttoplanmillproject" :> "" :> Get '[JSON] Value)
         ("power" :> "api" :> "v3" :> "powerprojecttoplanmillproject" :> Get '[JSON] Value)
+
+    , routePowerV3PersonSkillExperience :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "personskillexperience" :> "" :> Get '[JSON] Value)
+        ("power" :> "api" :> "v3" :> "personskillexperience" :> Get '[JSON] Value)
 
     -- Power dev endpoints
     , routeDevPowerPeople :: ProxiedEndpoint 'PowerService
