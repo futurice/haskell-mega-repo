@@ -28,6 +28,7 @@ import Servant.CSV.Cassava         (CSV)
 import FUM.Types.GroupName                             (GroupName)
 import FUM.Types.Login                                 (Login)
 import Futurice.App.Avatar.API                         (AvatarFumEndpoint)
+import Futurice.App.OktaProxy.Types                    (AppResponse)
 import Futurice.App.PersonioProxy.Types
        (AttritionRate, MonthlyCompensation)
 import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
@@ -263,6 +264,9 @@ data Routes = Routes
     , routeGroupMembers :: ProxiedEndpoint 'OktaProxyService
         ("group" :> "members" :> ReqBody '[JSON] Text :> Post '[JSON] [Login])
         ("okta" :> "group" :> "members" :> ReqBody '[JSON] Text :> Post '[JSON] [Login])
+    , routeEmployeeApplications :: ProxiedEndpoint 'OktaProxyService
+        ("applications" :> QueryParam' '[Required] "employeeId" Personio.EmployeeId :> Get '[JSON] (Set AppResponse))
+        ("okta" :> "applications" :> QueryParam' '[Required] "employeeId" Personio.EmployeeId :> Get '[JSON] (Set AppResponse))
     }
   deriving (Generic)
 

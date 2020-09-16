@@ -6,7 +6,7 @@ import Futurice.Prelude
 import Prelude ()
 
 data AppResponse = AppResponse
-    { appResLabel :: !Text
-    , appResUrl   :: !(Maybe Text)
+    { appResLabel      :: !Text
+    , appResImageUrl   :: !(Maybe Text)
     } deriving (Eq, Ord, SopGeneric, GhcGeneric, ToSchema, HasDatatypeInfo)
-      deriving (ToJSON) via (Sopica AppResponse)
+      deriving (FromJSON, ToJSON) via (Sopica AppResponse)
