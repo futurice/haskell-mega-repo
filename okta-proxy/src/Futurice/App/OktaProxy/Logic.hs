@@ -37,6 +37,6 @@ userApplications eid = do
   where
     toAppResponse app =
         AppResponse
-        { appResLabel = O.appLabel app
-        , appResUrl   = listToMaybe $ O.linkLogoUrls $ O.app_links app
+        { appResLabel      = O.appLabel app
+        , appResImageUrl   = listToMaybe $ O.linkLogoUrls $ O.app_links app
         }

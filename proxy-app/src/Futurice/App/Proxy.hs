@@ -90,6 +90,10 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
             [ "Peakon" ]
 
         . Sw.applyTagsFor
+            (K.operationsMatching $ K.sym "okta" *> many K.anySym)
+            [ "Okta" ]
+
+        . Sw.applyTagsFor
             (K.operationsMatching $ K.sym "dev" *> many K.anySym)
             [ "Internal dev Power endpoint" ]
 

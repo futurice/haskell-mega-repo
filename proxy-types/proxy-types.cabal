@@ -58,6 +58,7 @@ library
     , fum-api
     , futurice-github
     , library-app
+    , okta-proxy
     , personio-client
     , personio-proxy
     , planmill-client
