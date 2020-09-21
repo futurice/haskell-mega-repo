@@ -12,18 +12,22 @@ module PlanMill.Types.Project (
     Project(..),
     Projects,
     ProjectId,
+    PortfolioId (..),
     ProjectMember(..),
     ProjectMembers,
-    Portfolios,
+    Portfolios (..),
+    Portfolio (..),
+    ProjectType (..),
     ViewTemplate (..),
-    PortfolioId,
-    viewTemplateToInt) where
+    viewTemplateToInt,
+    getPortfolio) where
 
 import PlanMill.Internal.Prelude
 
 import PlanMill.Types.Account                  (AccountId)
 import PlanMill.Types.Enumeration              (EnumValue (..))
 import PlanMill.Types.Identifier               (HasIdentifier (..), Identifier)
+import PlanMill.Types.Meta                     (Meta (..))
 import PlanMill.Types.User                     (UserId)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
@@ -41,10 +45,10 @@ newtype PortfolioId = PortfolioId Int
     deriving newtype ( AnsiPretty,Hashable, Binary, HasStructuralInfo, FromJSON, NFData)
 
 newtype Portfolios = Portfolios (Vector Portfolio)
-    deriving (Generic)
+    deriving (Show, Generic)
     deriving newtype (AnsiPretty)
 
-data ProjectType = CustomerProject | InternalProject deriving (Show, Generic)
+data ProjectType = CustomerProject | InternalProject deriving (Eq, Show, Generic)
 
 instance AnsiPretty ProjectType where ansiPretty = ansiPretty . show
 
@@ -65,24 +69,34 @@ data Portfolio = Portfolio
     , _portfolioName        :: !Text
     } deriving (Show, Generic, AnsiPretty)
 
+checkProjectType :: Text -> Maybe ProjectType
+checkProjectType s =
+    let projectTypeString = T.toLower $ T.strip $ T.takeWhile (/= '\\') s
+    in case projectTypeString of
+      "customer projects" -> Just CustomerProject
+      "internal projects" -> Just InternalProject
+      _                   -> Nothing
+
+toPortfolio :: (Text, Text) -> Maybe Portfolio
+toPortfolio (k,v) =
+    let getPortfolioName s = last $ T.splitOn "\\" s
+    in Portfolio
+       <$> (PortfolioId <$> readMaybe (T.unpack k))
+       <*> checkProjectType v
+       <*> (Just $ getPortfolioName v)
+
 instance FromJSON Portfolios where
     parseJSON val =
         let filters = val ^? L.key "filters" . L._Array
             filters' = join $ listToMaybe . filter (\v -> v ^. L.key "name" . L._String == "portfolioFilter") . V.toList <$> filters
             portfolios = filters' ^. _Just . L.key "values" . L._Object
-            checkProjectType s =
-                let projectTypeString = T.toLower $ T.strip $ T.takeWhile (/= '\\') s
-                in case projectTypeString of
-                  "customer projects" -> Just CustomerProject
-                  "internal projects" -> Just InternalProject
-                  _                   -> Nothing
-            getPortfolioName s = last $ T.splitOn "\\\\" s
-            toPortfolio (k,v) = Portfolio
-                <$> (PortfolioId <$> readMaybe (T.unpack k))
-                <*> checkProjectType (v ^. L._String)
-                <*> (Just $ getPortfolioName $ v ^. L._String)
-            res = mapMaybe toPortfolio $ HM.toList portfolios
+            res = mapMaybe toPortfolio $ map (\(k,v) -> (k, v ^. L._String)) $ HM.toList portfolios
         in pure $ Portfolios $ V.fromList res
+
+getPortfolio :: Meta -> Portfolios
+getPortfolio (Meta _ filters) =
+    let portfolios = catMaybes . map toPortfolio . HM.toList <$> filters ^.at "portfolioFilter"
+    in Portfolios $ V.fromList $ fromMaybe mempty portfolios
 
 data Project = Project
     { _pId                        :: !ProjectId
@@ -149,11 +163,10 @@ instance FromJSON Project where
         <*> obj .:? "actualEffort"    .!= 0
         <*> obj .:? "totalEffort"     .!= 0
 
-
 data ProjectMember = ProjectMember
     { _projectMemberName   :: !Text
     , _projectMemberUserId :: !UserId
-    } deriving (Eq, Show, Generic, Binary, NFData, HasStructuralInfo, Typeable, HasSemanticVersion)
+    } deriving (Eq, Ord, Show, Generic, Binary, NFData, HasStructuralInfo, Typeable, HasSemanticVersion)
 
 instance FromJSON ProjectMember where
     parseJSON = withObject "ProjectMember" $ \p -> do

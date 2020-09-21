@@ -19,6 +19,7 @@ module Futurice.App.Reports.MissingHours (
     missingHoursEmployeeNotificationPredicate,
     -- * Data
     MissingHour (..),
+    MissingHoursParams (..),
     -- * Logic
     missingHoursForUser,
     -- * Lenses

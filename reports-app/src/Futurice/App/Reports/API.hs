@@ -31,6 +31,7 @@ import Futurice.App.Reports.IDontKnow                   (IDontKnowData)
 import Futurice.App.Reports.Inventory                   (InventorySummary)
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursSimplifiedReport)
+import Futurice.App.Reports.MissingHoursByProject       (MissingHoursByProject)
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
 import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
@@ -62,6 +63,7 @@ data Record route = Record
     , recMissingHours :: route :- "missing-hours" :> Get ReportTypes MissingHoursReport
     , recHoursByTask  :: route :- "hours-by-task" :> Get ReportTypes TimereportsByTaskReport
     , recMissingHoursSimplified :: route :- "missing-hours-simplified" :> QueryParam' '[Lenient, Optional] "employee" Text :> QueryParam' '[Lenient, Optional] "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] MissingHoursSimplifiedReport
+    , recMissingHoursByProject :: route :- "missing-hours-by-project" :> QueryParam' '[Lenient, Optional] "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] MissingHoursByProject
 
     -- Tables
     , recTablesActiveAccounts       :: route :- "tables" :> "active-accounts"      :> Get '[HTML] ActiveAccounts
