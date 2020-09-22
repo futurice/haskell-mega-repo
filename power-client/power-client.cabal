@@ -29,6 +29,7 @@ library
     , futurice-prelude
     , http-client
     , http-types
+    , planmill-client
     , servant
     , servant-client
     , servant-client-core
