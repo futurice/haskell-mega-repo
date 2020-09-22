@@ -107,7 +107,7 @@ data ProjectMapping = ProjectMapping
     { _pmPowerProjectId    :: !ProjectId
     , _pmPlanMillProjectId :: !PM.ProjectId
     , _pmManuallySet       :: !Bool
-    }
+    } deriving Show
 
 instance PyJSON ProjectMapping where
     parsePyJSON = withObject "ProjectMapping" $ \obj -> ProjectMapping
