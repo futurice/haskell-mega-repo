@@ -43,6 +43,7 @@ module PlanMill.Queries (
     projects',
     projectsWithType,
     simpleProject,
+    portfolios
     ) where
 
 import PlanMill.Internal.Prelude
@@ -58,10 +59,11 @@ import Control.Monad.PlanMill
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
        CapacityCalendars, EarnedVacations, Me, PersonValueCreations,
-       Project (..), ProjectId, ProjectMembers, Projects, SimpleProject, Task,
-       TaskId, Tasks, Team, TeamId, TeamsHoursByCategory, TimeBalance,
-       Timereport, Timereports, User, UserCapacities, UserId, Users,
-       ViewTemplate (..), identifier, sProject, viewTemplateToInt)
+       Portfolios, Project (..), ProjectId, ProjectMembers, Projects,
+       SimpleProject, Task, TaskId, Tasks, Team, TeamId, TeamsHoursByCategory,
+       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
+       Users, ViewTemplate (..), getPortfolio, identifier, sProject,
+       viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta           (Meta, lookupFieldEnum)
 import PlanMill.Types.Query          (Query (..), QueryTag (..))
@@ -396,6 +398,14 @@ assignments pid = planmillVectorQuery
     $ QueryPagedGet QueryTagAssignment mempty
     $ toUrlParts $ ("projects" :: Text) // pid // ("assignments" :: Text)
 
+
+-- | Get a hashmap of all possible portfolios
+--
+-- Uses the project meta field to fetch the values
+portfolios :: MonadPlanMillQuery m => m Portfolios
+portfolios = getPortfolio <$> planmillQuery
+    ( QueryGet QueryTagMeta mempty
+    $ toUrlParts $ ("projects" :: Text) // ("meta" :: Text))
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations
 -------------------------------------------------------------------------------

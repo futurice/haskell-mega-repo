@@ -58,6 +58,8 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursSimplifiedReport, mhpTotalHours,
        missingHoursEmployeePredicate, missingHoursReport,
        missingHoursSimplifiedReport)
+import Futurice.App.Reports.MissingHoursByProject
+       (MissingHoursByProject, missingHoursByProject)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
 import Futurice.App.Reports.MissingHoursDailyChart
@@ -125,6 +127,19 @@ serveMissingHoursSimplifiedReport ctx memp mmonth mtribe = cachedIO' ctx (memp, 
     let filterInterval = fmap (\m -> firstDayOfMonth m ... previousFriday (maxCurrentMonth m)) mmonth
     let interval = fromMaybe (beginningOfPrev2Month day ... previousFriday day) filterInterval
     runIntegrations' ctx (missingHoursSimplifiedReport missingHoursEmployeePredicate interval (beginningOfPrev2Month day ... previousFriday day) memp' mmonth mtribe)
+
+serveMissingHoursByProjectReport :: Ctx -> Maybe Month -> Maybe Tribe -> IO MissingHoursByProject
+serveMissingHoursByProjectReport ctx mmonth mtribe = cachedIO' ctx (mmonth, mtribe) $ do
+    day <- currentDay
+    let maxCurrentMonth m =
+            let curMonth = dayToMonth day
+            in if curMonth == m  then
+                 min day (lastDayOfMonth m)
+               else
+                 lastDayOfMonth m
+    let filterInterval = fmap (\m -> firstDayOfMonth m ... previousFriday (maxCurrentMonth m)) mmonth
+    let interval = fromMaybe (beginningOfPrev2Month day ... previousFriday day) filterInterval
+    runIntegrations' ctx (missingHoursByProject missingHoursEmployeePredicate interval (beginningOfPrev2Month day ... previousFriday day) mmonth mtribe)
 
 missingHoursStats :: Ctx -> IO ()
 missingHoursStats ctx = runLogT "missing-hours-series" lgr $ do
@@ -322,7 +337,11 @@ server ctx = genericServer $ Record
                           (emp >>= either (const Nothing) Just)
                           (month >>= either (const Nothing) Just)
                           (tribe >>= either (const Nothing) Just)
-
+    , recMissingHoursByProject =
+      \month tribe ->  liftIO $ serveMissingHoursByProjectReport
+                          ctx
+                          (month >>= either (const Nothing) Just)
+                          (tribe >>= either (const Nothing) Just)
     -- Tables
     , recTablesActiveAccounts       = liftIO $ serveData activeAccountsData ctx
     , recTablesActiveAccountsJSON   = liftIO $ serveData activeAccountsData ctx

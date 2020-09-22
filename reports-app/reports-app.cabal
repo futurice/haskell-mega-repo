@@ -150,6 +150,7 @@ library
     Futurice.App.Reports.LongAbsence
     Futurice.App.Reports.Markup
     Futurice.App.Reports.MissingHours
+    Futurice.App.Reports.MissingHoursByProject
     Futurice.App.Reports.MissingHoursChart
     Futurice.App.Reports.MissingHoursDailyChart
     Futurice.App.Reports.MissingHoursDashdo

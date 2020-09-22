@@ -11,10 +11,12 @@ module PlanMill.Types.Meta (Meta(..), lookupFieldEnum) where
 
 import PlanMill.Internal.Prelude
 
-import Data.Char (isSpace)
+import Data.Aeson.Types (Parser)
+import Data.Char        (isSpace)
 
 import qualified Data.HashMap.Strict         as HM
 import qualified Data.Text                   as T
+import qualified Data.Vector                 as V
 import qualified Text.Regex.Applicative.Text as RE
 
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
@@ -42,7 +44,8 @@ instance Binary MetaField
 instance HasSemanticVersion MetaField
 
 data Meta = Meta
-    { metaFields :: HashMap Text MetaField
+    { metaFields  :: HashMap Text MetaField
+    , metaFilters :: HashMap Text (HashMap Text Text)
     }
     deriving (Eq, Show, Read, Generic, Typeable)
 
@@ -75,9 +78,18 @@ instance FromJSON MetaField where
         <$> obj .:? "format" .!= FieldFormatText
         <*> obj .:? "caption" .!= ""
 
+toHashMap :: Vector Value -> Parser (HashMap Text (HashMap Text Text))
+toHashMap vec =
+    let toFilterOption obj = do
+            name <- obj .: "name"
+            values <- obj .:? "values"
+            pure (name, fromMaybe mempty values)
+    in HM.fromList . V.toList <$> mapM (withObject "filter" toFilterOption) vec
+
 instance FromJSON Meta where
     parseJSON = withObject "Meta" $ \obj -> Meta
         <$> obj .:? "fields" .!= mempty
+        <*> (obj .:? "filters" >>= traverse toHashMap) .!= mempty
 
 lookupFieldEnum
     :: Meta
