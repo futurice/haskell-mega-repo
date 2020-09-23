@@ -16,6 +16,8 @@ import Prelude ()
 
 import Power.PyJSON
 
+import qualified PlanMill as PM
+
 newtype PersonId = PersonId Int deriving newtype (Eq, Ord, Show, NFData, FromJSON, ToJSON)
 newtype ProjectId = ProjectId Int deriving newtype (Eq, Ord, Show, FromJSON)
 newtype CustomerId = CustomerId Int deriving newtype (Eq, Ord, Show, FromJSON)
@@ -96,3 +98,19 @@ instance PyJSON Allocation where
         <*> obj .: "total_allocation"
         <*> (posixSecondsToUTCTime . (/ 1000) <$> obj .: "start_date")
         <*> (posixSecondsToUTCTime . (/ 1000) <$> obj .: "end_date")
+
+-------------------------------------------------------------------------------
+-- /powerprojecttoplanmillproject
+-------------------------------------------------------------------------------
+
+data ProjectMapping = ProjectMapping
+    { _pmPowerProjectId    :: !ProjectId
+    , _pmPlanMillProjectId :: !PM.ProjectId
+    , _pmManuallySet       :: !Bool
+    } deriving Show
+
+instance PyJSON ProjectMapping where
+    parsePyJSON = withObject "ProjectMapping" $ \obj -> ProjectMapping
+        <$> obj .: "power_project_id"
+        <*> obj .: "planmill_project_id"
+        <*> obj .: "manually_set"
