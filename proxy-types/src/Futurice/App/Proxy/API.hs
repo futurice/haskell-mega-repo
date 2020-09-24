@@ -263,6 +263,9 @@ data Routes = Routes
     , routeAverageTargetMonthlyCompensation :: ProxiedEndpoint 'PersonioProxyService
         ("stats" :> "average-target-monthly-compensation" :> Get '[JSON] MonthlyCompensation)
         ("personio" :> "average-target-monthly-compensation" :> Get '[JSON] MonthlyCompensation)
+    , routeUsername :: ProxiedEndpoint 'PersonioProxyService
+        ("username" :> Capture "employee-name" Text :> Get '[PlainText] Login)
+        ("personio" :> "username" :> Capture "employee-name" Text :> Get '[PlainText] Login)
 
     -- Okta endpoints
     , routeGroupMembers :: ProxiedEndpoint 'OktaProxyService

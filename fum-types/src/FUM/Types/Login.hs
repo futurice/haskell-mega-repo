@@ -1,5 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
 module FUM.Types.Login (
     Login,
     loginToText,
@@ -22,6 +23,8 @@ import Futurice.Prelude
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
+import Servant.API
+       (MimeRender, MimeUnrender, PlainText, mimeRender, mimeUnrender)
 import Text.Regex.Applicative.Text (RE')
 
 import qualified Codec.Serialise                      as S
@@ -186,6 +189,12 @@ instance S.Serialise Login where
     decode           = do
         l <- S.decode
         either fail return $ parseLogin' l
+
+instance MimeRender PlainText Login where
+    mimeRender prox = mimeRender prox . loginToText
+
+instance MimeUnrender PlainText Login where
+    mimeUnrender prox a = mimeUnrender prox a >>= parseLogin' . T.pack
 
 -- $setup
 -- >>> import qualified Kleene.Internal.Pretty as K

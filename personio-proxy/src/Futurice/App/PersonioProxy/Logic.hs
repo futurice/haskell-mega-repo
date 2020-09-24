@@ -17,10 +17,12 @@ import Data.Functor.Rep
        (Representable (..), apRep, distributeRep, pureRep)
 import Data.List                        (foldl', partition)
 import Data.Time                        (addDays, fromGregorian, toGregorian)
+import FUM.Types.Login                  (Login)
 import Futurice.App.PersonioProxy.Types
 import Futurice.Cache                   (cachedIO)
 import Futurice.CareerLevel
 import Futurice.Daily
+import Futurice.Email                   (emailFromText)
 import Futurice.Monoid                  (Average (..), mkAverage)
 import Futurice.Office                  (officeToText)
 import Futurice.Prelude
@@ -73,6 +75,14 @@ inventoryEmployees :: Ctx -> Handler [P.InventoryEmployee]
 inventoryEmployees ctx = do
     es <- P.paEmployees <$> (liftIO $ readTVarIO $ ctxPersonioData ctx)
     pure $ P.inventoryEmployeeFromPersonio $ toList es
+
+employeeUsername :: Ctx -> Text -> Handler Login
+employeeUsername ctx name = do
+    es <- P.paEmployees <$> (liftIO $ readTVarIO $ ctxPersonioData ctx)
+    let emap = Map.fromList $ catMaybes $ (\e -> (,) <$> (e ^. P.employeeEmail) <*> (e ^. P.employeeLogin)) <$> es
+    case emailFromText (name <> "@futurice.com") >>= \e -> emap ^.at e of
+      Just login -> pure login
+      Nothing -> throwError $ err404 { errBody = "No login found" }
 
 getSimpleEmployees :: Ctx -> LogT IO (Map Day [P.SimpleEmployee])
 getSimpleEmployees ctx = do

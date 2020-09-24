@@ -47,6 +47,7 @@ server ctx = indexPage'
     :<|> personioRequest ctx
 --    :<|> rawEmployees ctx
     :<|> employeePicture ctx
+    :<|> employeeUsername ctx
     :<|> scheduleEmployees ctx
     :<|> inventoryEmployees ctx
     :<|> employeesChart ctx
