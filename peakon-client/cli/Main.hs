@@ -14,13 +14,18 @@ import qualified Data.Text           as T
 import qualified Options.Applicative as O
 
 data Cmd = CmdGetOverview
+         | CmdGetEmployees
 
 getOverviewOptions :: O.Parser Cmd
 getOverviewOptions = pure CmdGetOverview
 
+employeesOptions :: O.Parser Cmd
+employeesOptions = pure CmdGetEmployees
+
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "get-overview" getOverviewOptions "Get overview"
+    , cmdParser "employees" employeesOptions "Get employees"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -38,6 +43,11 @@ main' lgr token CmdGetOverview = do
     mgr <- liftIO $ newManager tlsManagerSettings
     overview <- evalPeakonReqIO token mgr lgr ReqEngagementOverview
     print overview
+    pure ()
+main' lgr token CmdGetEmployees = do
+    mgr <- liftIO $ newManager tlsManagerSettings
+    employees <- evalPeakonReqIO token mgr lgr ReqEmployees
+    print employees
     pure ()
 
 main :: IO ()

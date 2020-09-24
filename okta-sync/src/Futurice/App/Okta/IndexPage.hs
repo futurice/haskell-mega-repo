@@ -9,12 +9,14 @@ import Prelude ()
 
 import Futurice.App.Okta.Markup
 
-import qualified Data.Map as Map
-import qualified Okta     as O
-import qualified Personio as P
+import qualified Data.Map  as Map
+import qualified Data.Text as T
+import qualified Okta      as O
+import qualified Peakon    as PK
+import qualified Personio  as P
 
-indexPage :: [P.Employee] -> [O.User] -> [O.User] -> HtmlPage "indexpage"
-indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) $ do
+indexPage :: [P.Employee] -> [O.User] -> [O.User] -> [PK.Employee] -> HtmlPage "indexpage"
+indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync" (Just NavHome) $ do
     fullRow_ $ do
         h2_ "Not inactive people in Personio that are not in Okta"
         sortableTable_ $ do
@@ -51,6 +53,17 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
                 for_ oktaUsersNotInPersonio $ \u -> tr_ $ do
                     td_ $ toHtml $ (u ^. O.userProfile . O.profileFirstName) <> " " <> (u ^. O.userProfile . O.profileLastName)
                     td_ $ toHtml $ u ^. O.userProfile . O.profileLogin
+        h2_ "People with incorrect termination date in Peakon"
+        sortableTable_ $ do
+            thead_ $ do
+                th_ "Name"
+                th_ "Personio contract end date"
+                th_ "Peakon termination date"
+            tbody_ $ do
+                for_ incorrectTerminationDate $ \(d,pemp) -> tr_ $ do
+                    td_ $ toHtml $ pemp ^. P.employeeFullname
+                    td_ $ toHtml $ maybe "" textShow $ pemp ^. P.employeeEndDate
+                    td_ $ toHtml $ textShow d
         h2_ "People in Futurice group that are not active internal employees in Personio"
         sortableTable_ $ do
             thead_ $ do
@@ -94,3 +107,13 @@ indexPage employees users internalGroupUsers = page_ "Okta sync" (Just NavHome) 
                                                | otherwise -> False
                                     _ -> True) users
     inactiveInPersonio = filter (not . notFoundInOkta) $ filter (\e -> e ^. P.employeeStatus == P.Inactive) employees
+
+    peakonMap :: Map P.EmployeeId PK.Employee
+    peakonMap = Map.fromList $ catMaybes $ map (\pk -> (,) <$> (Just . P.EmployeeId =<< readMaybe . T.unpack =<< PK._employeeIdentifier pk) <*> Just pk) peakonEmployees
+
+    incorrectTerminationDate :: [(Maybe Day, P.Employee)]
+    incorrectTerminationDate =
+        let checkTerminationDate p = case peakonMap ^.at (p ^. P.employeeId) >>= PK._employeeTerminationDate of
+                                       d | d /= (p ^. P.employeeEndDate) -> Just (d, p)
+                                       _ -> Nothing
+        in catMaybes $ map checkTerminationDate $ filter (\e -> e ^. P.employeeEmploymentType == Just P.Internal && e ^. P.employeeStatus == P.Active) $ employees

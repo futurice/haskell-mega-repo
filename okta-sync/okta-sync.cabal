@@ -48,6 +48,7 @@ library
     , github
     , lens
     , okta-client
+    , peakon-client
     , personio-client
     , power-client
     , servant

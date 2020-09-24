@@ -2,7 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Peakon.Eval where
 
-import Data.Aeson       (Value (..), eitherDecode, encode, object, (.=))
+import Data.Aeson
+       (Value (..), eitherDecode, encode, object, parseJSON, (.=))
+import Data.Aeson.Types (parseEither)
 import Futurice.Prelude
 import Prelude ()
 
@@ -43,6 +45,7 @@ evalPeakonReq req = case req of
     ReqEngagementOverview -> singleReq "/v1/engagement/overview"
     ReqEngagementDrivers  -> singleReq "/v1/engagement/drivers"
     ReqSegments           -> pagedReq "/v1/segments"
+    ReqEmployees          -> pagedReq "/v1/employees"
   where
     singleReq endpoint = do
         jwt <- getAuth
@@ -63,7 +66,7 @@ evalPeakonReq req = case req of
               pure rs
     extractData :: Value -> Maybe (Vector Value)
     extractData r = r ^? L.key "data" . L._Array
-    go :: (MonadThrow m, MonadIO m, MonadLog m, Monad m, MonadReader env m, HasHttpManager env, HasPeakonCfg env) => (Maybe String) -> Text -> List Value -> m Value
+    go :: (MonadThrow m, MonadIO m, MonadLog m, Monad m, MonadReader env m, HasHttpManager env, HasPeakonCfg env) => Maybe String -> Text -> List Value -> m Value
     go Nothing _ responses = pure $ Array $ fold $ catMaybes $ fmap extractData responses
     go (Just endpoint) jwt responses = do
         mgr <- view httpManager
@@ -84,7 +87,10 @@ evalPeakonReq req = case req of
     pagedReq endpoint = do
          jwt <- getAuth
          (PeakonCfg _ baseUrl) <- view peakonCfg
-         go (Just $ T.unpack baseUrl <> endpoint) jwt []
+         res <- go (Just $ T.unpack baseUrl <> endpoint) jwt []
+         case parseEither parseJSON res of
+           Left err -> throwM $ PeakonError $ "Error while decoding response: " <> err
+           Right res' -> pure res'
 
 evalPeakonReqIO :: PeakonCfg -> Manager -> Logger -> Req a -> IO a
 evalPeakonReqIO cfg mgr lgr req = runLogT "peakon-request" lgr $ flip runReaderT (Cfg cfg mgr) $ evalPeakonReq req

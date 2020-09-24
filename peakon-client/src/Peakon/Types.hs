@@ -1,6 +1,11 @@
+{-# LANGUAGE DerivingVia       #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Peakon.Types where
 
+import Data.Aeson
+
 import Futurice.EnvConfig
+import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
@@ -34,3 +39,17 @@ instance HasHttpManager Cfg where
 newtype PeakonError = PeakonError String deriving Show
 
 instance Exception PeakonError
+
+data Employee = Employee
+    { _employeeIdentifier      :: !(Maybe Text)
+    , _employeeName            :: !Text
+    , _employeeTerminationDate :: !(Maybe Day)
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo)
+
+instance FromJSON Employee where
+    parseJSON = withObject "Employee" $ \obj -> do
+      employeeData <- obj .: "attributes"
+      Employee
+        <$> employeeData .: "identifier"
+        <*> employeeData .: "name"
+        <*> employeeData .:? "Termination date"
