@@ -23,6 +23,7 @@ import qualified Data.Set        as Set
 import qualified FUM.Types.Login as FUM
 import qualified GitHub          as GH
 import qualified Okta            as O
+import qualified Peakon          as PK
 import qualified Personio        as P
 
 apiServer :: Ctx -> Server OktaSyncAPI
@@ -39,10 +40,12 @@ htmlServer ctx = genericServer $ HtmlRecord
 indexPageImpl :: Ctx -> Maybe FUM.Login -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx login = withAuthUser ctx login $ \_ -> do
     now <- currentTime
-    es' <- liftIO $ runIntegrations mgr lgr now integrationCfg P.personioEmployees
-    oktaUsers <- liftIO $ runIntegrations mgr lgr now integrationCfg O.users
-    groupUsers <- liftIO $ runIntegrations mgr lgr now integrationCfg $ O.groupMembers internalGroup
-    pure $ indexPage es' oktaUsers groupUsers
+    (es', oktaUsers, groupUsers, peakonUsers) <- liftIO $ runIntegrations mgr lgr now integrationCfg $
+        (,,,) <$> P.personioEmployees
+              <*> O.users
+              <*> O.groupMembers internalGroup
+              <*> PK.employees
+    pure $ indexPage es' oktaUsers groupUsers peakonUsers
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx

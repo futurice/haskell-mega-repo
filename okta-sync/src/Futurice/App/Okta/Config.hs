@@ -14,7 +14,7 @@ import qualified Personio            as P
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgAccessGroups       :: ![FUM.GroupName]
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE, ServPO ])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE, ServPK, ServPO ])
     , cfgGithubAppId        :: !O.OktaAppId
     , cfgAlwaysInPeakon     :: ![P.EmployeeId]
     }
