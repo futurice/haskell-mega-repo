@@ -6,14 +6,12 @@
 module Futurice.App.Reports.MissingHoursByProject where
 
 import Control.Lens              (sumOf)
-import Control.Monad             (filterM)
 import Data.Aeson.Types          (ToJSONKey)
-import Futurice.Constants        (fumPublicUrl)
+import Futurice.Constants        (fumPublicUrl, powerPublicUrl)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
-import Futurice.Time
 import Futurice.Time.Month
 import Futurice.Tribe
 import Numeric.Interval.NonEmpty (Interval, inf, sup)
@@ -25,13 +23,13 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map            as Map
 import qualified Data.Set            as Set
 import qualified Data.Tuple.Strict   as S
-import qualified Data.Vector         as V
 import qualified Personio            as P
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
+import qualified Power
 
 data MissingHoursProject = MissingHoursProject
-    { mhpProjectId   :: !PM.ProjectId
+    { mhpProjectId   :: !Power.ProjectId
     , mhpProjectName :: !Text
     , mhpTribe       :: !(Maybe Text)
     } deriving (Eq, Ord, NFData, Generic, ToSchema)
@@ -48,8 +46,37 @@ data MissingHoursByProject = MissingHoursByProject
     , _mhsActiveTribes   :: !(Set Tribe)
     } deriving (NFData, Generic, ToSchema)
 
+powerProjectMapping :: (MonadPower m) => m (Map Power.Project [PM.ProjectId])
+powerProjectMapping = do
+    projects <- Power.powerProjects
+    let projects' = Map.fromList $ map (\p -> (Power.projectId p, p)) projects
+    mappings <- Power.powerProjectMapping
+    let mappings' = Map.fromListWith (<>)
+            $ catMaybes
+            $ map (\m -> (,) <$> (projects' ^.at (Power._pmPowerProjectId m)) <*> Just [Power._pmPlanMillProjectId m]) mappings
+    pure mappings'
+
+powerProjectMembers :: forall m. (MonadPower m, MonadPersonio m, MonadPlanMillQuery m)
+    => PM.Interval Day
+    -> m (Map Power.ProjectId [PM.UserId])
+powerProjectMembers interval = do
+    allocations <- Power.powerAllocationsByDate (Just $ inf interval) (Just $ sup interval)
+
+    let filterCurrentAllocations = filter (\a -> utctDay (Power.allocationStartDate a) <= (sup interval) && (inf interval) <= utctDay (Power.allocationEndDate a) && Power.allocationProposed a == False)
+
+    let allocs' = filterCurrentAllocations allocations
+
+    persons <- Power.powerPeople
+    let persons' = Map.fromList $ map (\p -> (Power.personId p, Power.personLogin p)) persons
+
+    ppmap <- personioPlanmillMap
+
+    pure $ Map.fromListWith (<>)
+        $ map (\a -> (Power.allocationProjectId a,
+                      catMaybes [Power.allocationPersonId a >>= (\p -> persons' ^.at p) >>= (\e -> PM._uId . snd <$> ppmap ^.at e)])) allocs'
+
 missingHoursByProject
-  :: forall m. (PM.MonadTime m, MonadPlanMillQuery m, MonadPersonio m)
+  :: forall m. (PM.MonadTime m, MonadPlanMillQuery m, MonadPersonio m, MonadPower m)
   => (PM.Interval Day -> P.Employee -> Bool)
   -> PM.Interval Day
   -> PM.Interval Day
@@ -59,21 +86,13 @@ missingHoursByProject
 missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     now <- currentTime
 
-    projects <- PMQ.projects
-    portfolioMap <- toPortfolioMap <$> PMQ.portfolios
-    let tribes = ([minBound .. maxBound] :: [Tribe])
-    let activeProjects' = toList $ V.filter (\p -> PM.pStart p <= Just now && Just now <= PM.pFinish p) projects
-    let removeInternalProjects project = do
-            projectCategory <- (`PMQ.enumerationValue` "C?") ((^. PM.pCategory) project)
-            let portfolio = PM._pPortfolioId project >>= \pid -> portfolioMap ^.at pid
-            pure $ projectCategory /= "Team internal work"
-                && projectCategory /= "Futurice internal"
-                && ((PM._portfolioProjectType <$> portfolio) /= Just PM.InternalProject)
-    activeProjects <- filterM removeInternalProjects activeProjects'
-    let membersForProject p = do
-            members <- PMQ.projectMembers (p ^. PM.pId)
-            pure (toMissingHourProject portfolioMap p, Set.fromList $ map PM._projectMemberUserId $ V.toList members)
-    membersMap <- Map.fromList <$> traverse membersForProject activeProjects
+    powerProjects <- Power.powerProjects
+    let powerProjects' = Map.fromList $ map (\p -> (Power.projectId p, p)) $ powerProjects
+
+    members <- powerProjectMembers interval
+
+    let members' = Map.fromList $ catMaybes $
+            map (\(pid,ms) -> powerProjects' ^.at pid >>= \p -> Just (toMissingHourProject p, ms)) $ Map.toList members
 
     fpm0 <- personioPlanmillMap
     let fpm0' = HM.fromList $ map (\(_,(pemp,plemp)) -> (PM._uId plemp,(pemp,plemp))) $ HM.toList fpm0
@@ -83,7 +102,7 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     let fpm2 = maybe fpm1' (\emp -> HM.filter (\(e S.:!: _) -> employeeTribe e == emp) fpm1') mtribe
     let total = sumOf (folded . folded . folded . missingHourCapacity) fpm2
 
-    let fpm3 = Map.mapWithKey (\_ members -> mapMaybe (\m -> fpm2 ^.at m) $ toList members) membersMap
+    let fpm3 = Map.mapWithKey (\_ ms -> mapMaybe (\m -> fpm2 ^.at m) $ toList ms) members'
 
     pure $ MissingHoursByProject
         (MissingHoursParams now (inf interval) (sup interval) total (fumPublicUrl <> "/"))
@@ -107,14 +126,11 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     activeTribes :: [P.Employee] -> Set Tribe
     activeTribes emp = Set.fromList $ map (^. P.employeeTribe) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emp
 
-    toMissingHourProject portfolioMap p = MissingHoursProject
-        { mhpProjectId   = p ^. PM.pId
-        , mhpProjectName = p ^. PM.pName
-        , mhpTribe       = textShow <$> (PM._pPortfolioId p >>= (\pid -> (portfolioMap ^.at pid)) >>= Just . PM._portfolioName)
+    toMissingHourProject p = MissingHoursProject
+        { mhpProjectId   = Power.projectId p
+        , mhpProjectName = Power.projectName p
+        , mhpTribe       = Just ""
         }
-
-    toPortfolioMap :: PM.Portfolios -> Map PM.PortfolioId PM.Portfolio
-    toPortfolioMap (PM.Portfolios portfolios) = Map.fromList $ (\p -> (PM._portfolioId p, p)) <$> V.toList portfolios
 
 instance ToHtml MissingHoursByProject where
     toHtmlRaw = toHtml
@@ -127,15 +143,15 @@ renderMissingHoursByProject (MissingHoursByProject params data' mmonth mtribe wh
     form_ $ div_ [ class_ "row" ] $ do
         div_ [ class_ "columns medium-3" ] $ select_ [ name_ "month", data_ "futu-id" "missing-hours-month" ] $ do
             optionSelected_ (mmonth == Nothing) [ value_ "-"] $
-                toHtml (dayToMonth $ params ^. mhpFromDay)
+                toHtml (dayToMonth $ inf wholeInterval)
                 <> toHtml (tid " - ")
-                <> toHtml (dayToMonth $ params ^. mhpToDay)
+                <> toHtml (dayToMonth $ sup wholeInterval)
             for_ [ (dayToMonth $ inf wholeInterval ) .. (dayToMonth $ sup wholeInterval) ] $ \m ->
               optionSelected_ (Just m == mmonth) [ value_ $ monthToText m ] $ toHtml m
-        div_ [ class_ "columns medium-3" ] $ select_ [ name_ "tribe", data_ "futu-id" "missing-hours-tribe" ] $ do
-            optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
-            for_ (sortOn tribeToText $ toList activeTribes) $ \tribe ->
-                optionSelected_ (Just tribe == mtribe) [value_ $ tribeToText tribe ] $ toHtml tribe
+        -- div_ [ class_ "columns medium-3" ] $ select_ [ name_ "tribe", data_ "futu-id" "missing-hours-tribe" ] $ do
+        --     optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
+        --     for_ (sortOn tribeToText $ toList activeTribes) $ \tribe ->
+        --         optionSelected_ (Just tribe == mtribe) [value_ $ tribeToText tribe ] $ toHtml tribe
         div_ [ class_ "columns medium-2" ] $ input_ [ class_ "button", type_ "submit", value_ "Update" ]
 
     fullRow_ $ do
@@ -149,13 +165,19 @@ renderMissingHoursByProject (MissingHoursByProject params data' mmonth mtribe wh
             tbody_ $ for_ (sortOn (mhpProjectName . fst) $ Map.toList data') $ \(project, empList) -> do
                 let empList' = filter (\(_ S.:!: vecHours) -> ((sum $ _missingHourCapacity <$> vecHours) > 0)) empList
                 when (length empList' > 0) $
-                    rows [toHtml (mhpProjectName project), toHtml (fromMaybe "" $ mhpTribe project)] $
+                    rows [projectToHtml project, toHtml (fromMaybe "" $ mhpTribe project)] $
                     (flip map) empList' $ \(employee S.:!: vecHours) -> do
                         td_ $ toHtml $ employeeName employee
                         td_ $ toHtml $ sum $ _missingHourCapacity <$> vecHours
   where
       tid :: Text -> Text
       tid = id
+
+      projectToHtml :: (Monad m) => MissingHoursProject -> HtmlT m ()
+      projectToHtml p = do
+          let t = textShow $ mhpProjectId p
+          a_ [ class_ "power", href_ $ powerPublicUrl <> "/v3/projects/" <> t ] $ toHtml $ mhpProjectName p
+
 
 
 rows :: (Monad m, Foldable f) => [HtmlT m ()] -> f (HtmlT m ()) -> HtmlT m ()

@@ -26,7 +26,7 @@ routes = genericClient
 evalIO :: BaseUrl -> Manager -> Req a -> IO (Either ClientError a)
 evalIO burl mgr req = case req of
     ReqPeople -> runClientM (routePeople routes) env
-    ReqAllocation -> runClientM (routeAllocation routes) env
+    ReqAllocation startDate endDate -> runClientM (routeAllocation routes startDate endDate) env
     ReqCustomer -> runClientM (routeCustomer routes) env
     ReqProject -> runClientM (routeProject routes) env
     ReqProjectMapping -> runClientM (routeProjectMapping routes) env
@@ -40,7 +40,7 @@ freeRoutes = genericClient
 evalIOReq :: HTTP.Request -> Manager -> Req a -> IO (Either ClientError a)
 evalIOReq baseReq mgr req = runExceptT $ case req of
     ReqPeople     -> foldFree act (routePeople freeRoutes)
-    ReqAllocation -> foldFree act (routeAllocation freeRoutes)
+    ReqAllocation startDate endDate -> foldFree act (routeAllocation freeRoutes startDate endDate)
     ReqCustomer   -> foldFree act (routeCustomer freeRoutes)
     ReqProject    -> foldFree act (routeProject freeRoutes)
     ReqProjectMapping -> foldFree act (routeProjectMapping freeRoutes)

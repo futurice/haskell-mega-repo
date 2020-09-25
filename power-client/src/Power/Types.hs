@@ -19,7 +19,7 @@ import Power.PyJSON
 import qualified PlanMill as PM
 
 newtype PersonId = PersonId Int deriving newtype (Eq, Ord, Show, NFData, FromJSON, ToJSON)
-newtype ProjectId = ProjectId Int deriving newtype (Eq, Ord, Show, FromJSON)
+newtype ProjectId = ProjectId Int deriving newtype (Eq, Ord, Show, NFData, FromJSON, ToSchema, ToJSON)
 newtype CustomerId = CustomerId Int deriving newtype (Eq, Ord, Show, FromJSON)
 
 -------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ data Project = Project
     { projectId         :: !ProjectId
     , projectName       :: !Text
     , projectCustomerId :: !CustomerId
-    } deriving Show
+    } deriving (Eq, Ord, Show)
 
 instance PyJSON Project where
     parsePyJSON = withObject "Project" $ \obj -> Project

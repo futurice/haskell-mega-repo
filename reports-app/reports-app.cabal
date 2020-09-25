@@ -101,6 +101,7 @@ library
     , plotlyhs
     , postgresql-simple
     , postgresql-simple-url
+    , power-client
     , preferences-client
     , regex-applicative
     , regex-applicative-text
