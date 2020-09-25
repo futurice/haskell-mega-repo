@@ -58,7 +58,7 @@ powerProjectMapping = do
 
 powerProjectMembers :: forall m. (MonadPower m, MonadPersonio m, MonadPlanMillQuery m)
     => PM.Interval Day
-    -> m (Map Power.ProjectId [PM.UserId])
+    -> m (Map Power.ProjectId (Set PM.UserId))
 powerProjectMembers interval = do
     allocations <- Power.powerAllocationsByDate (Just $ inf interval) (Just $ sup interval)
 
@@ -73,7 +73,7 @@ powerProjectMembers interval = do
 
     pure $ Map.fromListWith (<>)
         $ map (\a -> (Power.allocationProjectId a,
-                      catMaybes [Power.allocationPersonId a >>= (\p -> persons' ^.at p) >>= (\e -> PM._uId . snd <$> ppmap ^.at e)])) allocs'
+                      Set.fromList $ catMaybes [Power.allocationPersonId a >>= (\p -> persons' ^.at p) >>= (\e -> PM._uId . snd <$> ppmap ^.at e)])) allocs'
 
 missingHoursByProject
   :: forall m. (PM.MonadTime m, MonadPlanMillQuery m, MonadPersonio m, MonadPower m)
@@ -159,13 +159,13 @@ renderMissingHoursByProject (MissingHoursByProject params data' mmonth mtribe wh
         table_ [data_ "futu-id" "missing-hours-by-project-table"] $ do
             thead_ $ do
                 th_ "Project name"
-                th_ "Tribe"
+--                th_ "Tribe"
                 th_ "Employee name"
                 th_ "Hours"
             tbody_ $ for_ (sortOn (mhpProjectName . fst) $ Map.toList data') $ \(project, empList) -> do
                 let empList' = filter (\(_ S.:!: vecHours) -> ((sum $ _missingHourCapacity <$> vecHours) > 0)) empList
                 when (length empList' > 0) $
-                    rows [projectToHtml project, toHtml (fromMaybe "" $ mhpTribe project)] $
+                    rows [projectToHtml project] $
                     (flip map) empList' $ \(employee S.:!: vecHours) -> do
                         td_ $ toHtml $ employeeName employee
                         td_ $ toHtml $ sum $ _missingHourCapacity <$> vecHours
