@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -45,10 +46,12 @@ library
     , QuickCheck
     , regex-applicative-text
     , serialise
+    , servant
     , swagger2
     , template-haskell
     , text
     , vector
+
   exposed-modules:
     FUM.Types.GroupName
     FUM.Types.Login

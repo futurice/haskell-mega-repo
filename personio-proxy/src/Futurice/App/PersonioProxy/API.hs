@@ -3,6 +3,7 @@
 module Futurice.App.PersonioProxy.API where
 
 import Codec.Picture             (DynamicImage)
+import FUM.Types.Login           (Login)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
 import Futurice.Servant          (HTML)
@@ -24,6 +25,7 @@ type PersonioProxyAPI =
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
 --    :<|> "employees" :> Get '[JSON] [Personio.Employee]
     :<|> "employee-picture" :> Capture "employee-id" Personio.EmployeeId :> Get '[PNG] DynamicImage
+    :<|> "username" :> Capture "employee-name" Text :> Get '[PlainText] Login
     :<|> Summary "Tailor made for schedule.app" :> "schedule-info" :> Get '[JSON] [Personio.ScheduleEmployee]
     :<|> Summary "Tailor made for inventory.app" :> "inventory" :> Get '[JSON] [Personio.InventoryEmployee]
     :<|> "charts" :> "employees.svg" :>          Get '[CACHED SVG] (Cached SVG (Chart "employees"))
