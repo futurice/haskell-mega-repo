@@ -26,3 +26,6 @@ powerProjects = powerReq ReqProject
 
 powerProjectMapping :: MonadPower m => m [ProjectMapping]
 powerProjectMapping = powerReq ReqProjectMapping
+
+powerTribes :: MonadPower m => m [Tribe]
+powerTribes = powerReq ReqTribes

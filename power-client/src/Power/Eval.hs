@@ -30,6 +30,7 @@ evalIO burl mgr req = case req of
     ReqCustomer -> runClientM (routeCustomer routes) env
     ReqProject -> runClientM (routeProject routes) env
     ReqProjectMapping -> runClientM (routeProjectMapping routes) env
+    ReqTribes -> runClientM (routeTribes routes) env
   where
     env = mkClientEnv mgr burl
 
@@ -44,6 +45,7 @@ evalIOReq baseReq mgr req = runExceptT $ case req of
     ReqCustomer   -> foldFree act (routeCustomer freeRoutes)
     ReqProject    -> foldFree act (routeProject freeRoutes)
     ReqProjectMapping -> foldFree act (routeProjectMapping freeRoutes)
+    ReqTribes -> foldFree act (routeTribes freeRoutes)
   where
     act :: ClientF x -> ExceptT ClientError IO x
     act (Throw err)             = throwError err

@@ -29,6 +29,7 @@ request (Power.ReqAllocation a b) = dataFetch (PR $ Power.ReqAllocation a b)
 request Power.ReqCustomer         = dataFetch (PR Power.ReqCustomer)
 request Power.ReqProject          = dataFetch (PR Power.ReqProject)
 request Power.ReqProjectMapping   = dataFetch (PR Power.ReqProjectMapping)
+request Power.ReqTribes           = dataFetch (PR Power.ReqTribes)
 
 instance StateKey PowerRequest where
     data State PowerRequest = PowerState Logger Manager HTTP.Request

@@ -20,6 +20,7 @@ import qualified PlanMill as PM
 
 newtype PersonId = PersonId Int deriving newtype (Eq, Ord, Show, NFData, FromJSON, ToJSON)
 newtype ProjectId = ProjectId Int deriving newtype (Eq, Ord, Show, NFData, FromJSON, ToSchema, ToJSON)
+newtype TribeId = TribeId Int deriving newtype (Eq, Ord, Show, NFData, FromJSON, ToSchema, ToJSON)
 newtype CustomerId = CustomerId Int deriving newtype (Eq, Ord, Show, FromJSON)
 
 -------------------------------------------------------------------------------
@@ -69,6 +70,7 @@ data Project = Project
     { projectId         :: !ProjectId
     , projectName       :: !Text
     , projectCustomerId :: !CustomerId
+    , projectTribeId    :: !TribeId
     } deriving (Eq, Ord, Show)
 
 instance PyJSON Project where
@@ -76,6 +78,7 @@ instance PyJSON Project where
         <$> obj .: "id"
         <*> obj .: "name"
         <*> obj .: "customer_id"
+        <*> obj .: "tribe_id"
 
 -------------------------------------------------------------------------------
 -- /allocation
@@ -114,3 +117,17 @@ instance PyJSON ProjectMapping where
         <$> obj .: "power_project_id"
         <*> obj .: "planmill_project_id"
         <*> obj .: "manually_set"
+
+-------------------------------------------------------------------------------
+-- /tribe
+-------------------------------------------------------------------------------
+
+data Tribe = Tribe
+    { tribeId   :: !TribeId
+    , tribeName :: !Text
+    } deriving Show
+
+instance PyJSON Tribe where
+    parsePyJSON = withObject "Tribe" $ \obj -> Tribe
+        <$> obj .: "id"
+        <*> obj .: "name"

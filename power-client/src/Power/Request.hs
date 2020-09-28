@@ -12,6 +12,7 @@ data Req a where
     ReqCustomer       :: Req [Customer]
     ReqProject        :: Req [Project]
     ReqProjectMapping :: Req [ProjectMapping]
+    ReqTribes         :: Req [Tribe]
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
@@ -22,3 +23,4 @@ instance Hashable (Req a) where
     hashWithSalt salt ReqCustomer         = salt `hashWithSalt` (2 :: Int)
     hashWithSalt salt ReqProject          = salt `hashWithSalt` (3 :: Int)
     hashWithSalt salt ReqProjectMapping   = salt `hashWithSalt` (4 :: Int)
+    hashWithSalt salt ReqTribes           = salt `hashWithSalt` (5 :: Int)

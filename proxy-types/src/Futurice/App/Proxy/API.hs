@@ -199,6 +199,10 @@ data Routes = Routes
         ("uiapi" :> "powerprojecttoplanmillproject" :> "" :> Get '[JSON] Value)
         ("dev" :> "power" :> "uiapi" :> "powerprojecttoplanmillproject" :> Get '[JSON] Value)
 
+    , routeDevPowerTribes :: ProxiedEndpoint 'PowerService
+        ("uiapi" :> "tribe" :> "" :> Get '[JSON] Value)
+        ("dev" :> "power" :> "uiapi" :> "tribe" :> Get '[JSON] Value)
+
     -- FUM
     , routeFumGroupMembers :: ProxiedEndpoint 'FumCarbonService
           FUM6.GroupMembersEndpoint

@@ -20,6 +20,7 @@ data PowerRoutes route = PowerRoutes
     , routeCustomer       :: route :- "customer" :> "" :> Get '[PYJSON] [Customer]
     , routeProject        :: route :- "project" :> "" :> Get '[PYJSON] [Project]
     , routeProjectMapping :: route :- "powerprojecttoplanmillproject" :> "" :> Get '[PYJSON] [ProjectMapping]
+    , routeTribes         :: route :- "tribe" :> "" :> Get '[PYJSON] [Tribe]
     }
   deriving stock (Generic)
 

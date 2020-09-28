@@ -89,10 +89,12 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     powerProjects <- Power.powerProjects
     let powerProjects' = Map.fromList $ map (\p -> (Power.projectId p, p)) $ powerProjects
 
+    tribes <- Power.powerTribes
+    let tribes' = Map.fromList $ map (\t -> (Power.tribeId t, Power.tribeName t)) tribes
     members <- powerProjectMembers interval
 
     let members' = Map.fromList $ catMaybes $
-            map (\(pid,ms) -> powerProjects' ^.at pid >>= \p -> Just (toMissingHourProject p, ms)) $ Map.toList members
+            map (\(pid,ms) -> powerProjects' ^.at pid >>= \p -> Just (toMissingHourProject p (tribes' ^. at (Power.projectTribeId p)), ms)) $ Map.toList members
 
     fpm0 <- personioPlanmillMap
     let fpm0' = HM.fromList $ map (\(_,(pemp,plemp)) -> (PM._uId plemp,(pemp,plemp))) $ HM.toList fpm0
@@ -126,10 +128,10 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     activeTribes :: [P.Employee] -> Set Tribe
     activeTribes emp = Set.fromList $ map (^. P.employeeTribe) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emp
 
-    toMissingHourProject p = MissingHoursProject
-        { mhpProjectId   = Power.projectId p
-        , mhpProjectName = Power.projectName p
-        , mhpTribe       = Just ""
+    toMissingHourProject project tribeName = MissingHoursProject
+        { mhpProjectId   = Power.projectId project
+        , mhpProjectName = Power.projectName project
+        , mhpTribe       = tribeName
         }
 
 instance ToHtml MissingHoursByProject where
@@ -159,13 +161,13 @@ renderMissingHoursByProject (MissingHoursByProject params data' mmonth mtribe wh
         table_ [data_ "futu-id" "missing-hours-by-project-table"] $ do
             thead_ $ do
                 th_ "Project name"
---                th_ "Tribe"
+                th_ "Tribe"
                 th_ "Employee name"
                 th_ "Hours"
             tbody_ $ for_ (sortOn (mhpProjectName . fst) $ Map.toList data') $ \(project, empList) -> do
                 let empList' = filter (\(_ S.:!: vecHours) -> ((sum $ _missingHourCapacity <$> vecHours) > 0)) empList
                 when (length empList' > 0) $
-                    rows [projectToHtml project] $
+                    rows [projectToHtml project, toHtml (fromMaybe "" $ mhpTribe project)] $
                     (flip map) empList' $ \(employee S.:!: vecHours) -> do
                         td_ $ toHtml $ employeeName employee
                         td_ $ toHtml $ sum $ _missingHourCapacity <$> vecHours
