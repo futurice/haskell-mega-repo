@@ -63,7 +63,7 @@ data Record route = Record
     , recMissingHours :: route :- "missing-hours" :> Get ReportTypes MissingHoursReport
     , recHoursByTask  :: route :- "hours-by-task" :> Get ReportTypes TimereportsByTaskReport
     , recMissingHoursSimplified :: route :- "missing-hours-simplified" :> QueryParam' '[Lenient, Optional] "employee" Text :> QueryParam' '[Lenient, Optional] "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] MissingHoursSimplifiedReport
-    , recMissingHoursByProject :: route :- "missing-hours-by-project" :> QueryParam' '[Lenient, Optional] "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Tribe :> Get '[HTML] MissingHoursByProject
+    , recMissingHoursByProject :: route :- "missing-hours-by-project" :> QueryParam' '[Lenient, Optional] "month" Month :> QueryParam' '[Lenient, Optional] "tribe" Text :> Get '[HTML] MissingHoursByProject
 
     -- Tables
     , recTablesActiveAccounts       :: route :- "tables" :> "active-accounts"      :> Get '[HTML] ActiveAccounts

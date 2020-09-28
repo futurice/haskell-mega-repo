@@ -41,9 +41,9 @@ data MissingHoursByProject = MissingHoursByProject
     { _mhsParams         :: !MissingHoursParams
     , _mhsData           :: !(Map MissingHoursProject [StrictPair Employee :$ Vector :$ MissingHour])
     , _mhsFilterMonth    :: !(Maybe Month)
-    , _mhsFilterTribe    :: !(Maybe Tribe)
+    , _mhsFilterTribe    :: !(Maybe Text)
     , _mhsWholeInterval  :: !(PM.Interval Day)
-    , _mhsActiveTribes   :: !(Set Tribe)
+    , _mhsActiveTribes   :: !(Set Text)
     } deriving (NFData, Generic, ToSchema)
 
 powerProjectMapping :: (MonadPower m) => m (Map Power.Project [PM.ProjectId])
@@ -81,30 +81,35 @@ missingHoursByProject
   -> PM.Interval Day
   -> PM.Interval Day
   -> Maybe Month
-  -> Maybe Tribe
+  -> Maybe Text
   -> m MissingHoursByProject
 missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     now <- currentTime
 
-    powerProjects <- Power.powerProjects
-    let powerProjects' = Map.fromList $ map (\p -> (Power.projectId p, p)) $ powerProjects
-
     tribes <- Power.powerTribes
-    let tribes' = Map.fromList $ map (\t -> (Power.tribeId t, Power.tribeName t)) tribes
+    let tribeById = Map.fromList $ map (\t -> (Power.tribeId t, Power.tribeName t)) tribes
+    let tribeByName = Map.fromList $ map (\t -> (Power.tribeName t, Power.tribeId t)) tribes
+
+    powerProjects <- Power.powerProjects
+    let powerProjects' = maybe
+                         powerProjects
+                         (\tribeId -> filter (\p -> Power.projectTribeId p == tribeId) powerProjects)
+                         (mtribe >>= (\t -> tribeByName ^.at t))
+    let powerProjects'' = Map.fromList $ map (\p -> (Power.projectId p, p)) $ powerProjects'
+
     members <- powerProjectMembers interval
 
     let members' = Map.fromList $ catMaybes $
-            map (\(pid,ms) -> powerProjects' ^.at pid >>= \p -> Just (toMissingHourProject p (tribes' ^. at (Power.projectTribeId p)), ms)) $ Map.toList members
+            map (\(pid,ms) -> powerProjects'' ^.at pid >>= \p -> Just (toMissingHourProject p (tribeById ^. at (Power.projectTribeId p)), ms)) $ Map.toList members
 
     fpm0 <- personioPlanmillMap
     let fpm0' = HM.fromList $ map (\(_,(pemp,plemp)) -> (PM._uId plemp,(pemp,plemp))) $ HM.toList fpm0
     let fpm1 = HM.filter (predicate interval . fst) fpm0'
 
     fpm1' <- traverse (uncurry perUser) fpm1
-    let fpm2 = maybe fpm1' (\emp -> HM.filter (\(e S.:!: _) -> employeeTribe e == emp) fpm1') mtribe
-    let total = sumOf (folded . folded . folded . missingHourCapacity) fpm2
+    let total = sumOf (folded . folded . folded . missingHourCapacity) fpm1'
 
-    let fpm3 = Map.mapWithKey (\_ ms -> mapMaybe (\m -> fpm2 ^.at m) $ toList ms) members'
+    let fpm3 = Map.mapWithKey (\_ ms -> mapMaybe (\m -> fpm1' ^.at m) $ toList ms) members'
 
     pure $ MissingHoursByProject
         (MissingHoursParams now (inf interval) (sup interval) total (fumPublicUrl <> "/"))
@@ -112,7 +117,7 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
         mmonth
         mtribe
         wholeInterval
-        (activeTribes $ fst <$> HM.elems fpm0)
+        (Set.fromList $ Power.tribeName <$> tribes)
   where
     perUser :: P.Employee -> PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pEmployee pmUser = (S.:!:)
@@ -150,10 +155,10 @@ renderMissingHoursByProject (MissingHoursByProject params data' mmonth mtribe wh
                 <> toHtml (dayToMonth $ sup wholeInterval)
             for_ [ (dayToMonth $ inf wholeInterval ) .. (dayToMonth $ sup wholeInterval) ] $ \m ->
               optionSelected_ (Just m == mmonth) [ value_ $ monthToText m ] $ toHtml m
-        -- div_ [ class_ "columns medium-3" ] $ select_ [ name_ "tribe", data_ "futu-id" "missing-hours-tribe" ] $ do
-        --     optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
-        --     for_ (sortOn tribeToText $ toList activeTribes) $ \tribe ->
-        --         optionSelected_ (Just tribe == mtribe) [value_ $ tribeToText tribe ] $ toHtml tribe
+        div_ [ class_ "columns medium-3" ] $ select_ [ name_ "tribe", data_ "futu-id" "missing-hours-tribe" ] $ do
+            optionSelected_ (mtribe == Nothing) [ value_ "-"] "All tribes"
+            for_ (sort $ toList activeTribes) $ \tribe ->
+                optionSelected_ (Just tribe == mtribe) [value_ $ tribe ] $ toHtml tribe
         div_ [ class_ "columns medium-2" ] $ input_ [ class_ "button", type_ "submit", value_ "Update" ]
 
     fullRow_ $ do
