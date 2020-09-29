@@ -68,6 +68,7 @@ indexPage today = page_ "Reports" $ do
     fullRow_ $ h2_ "Tables"
     fullRow_ $ ul_ $ do
         li_ $ a_ [ recordHref_ recMissingHoursSimplified Nothing Nothing Nothing] "Missing hours"
+        li_ $ a_ [ recordHref_ recMissingHoursByProject Nothing Nothing] "Missing hours by project"
         li_ $ a_ [ recordHref_ recMissingHours ] "Missing hours extended representation"
         li_ $ a_ [ recordHref_ recHoursByTask  ] "Hours by task"
 

@@ -16,10 +16,11 @@ import Power.Types
 
 data PowerRoutes route = PowerRoutes
     { routePeople         :: route :- "person" :> "" :> Get '[PYJSON] [Person]
-    , routeAllocation     :: route :- "allocation" :> "" :> Get '[PYJSON] [Allocation]
+    , routeAllocation     :: route :- "allocation" :> "" :> QueryParam "start_date" Day :> QueryParam "end_date" Day :> Get '[PYJSON] [Allocation]
     , routeCustomer       :: route :- "customer" :> "" :> Get '[PYJSON] [Customer]
     , routeProject        :: route :- "project" :> "" :> Get '[PYJSON] [Project]
     , routeProjectMapping :: route :- "powerprojecttoplanmillproject" :> "" :> Get '[PYJSON] [ProjectMapping]
+    , routeTribes         :: route :- "tribe" :> "" :> Get '[PYJSON] [Tribe]
     }
   deriving stock (Generic)
 

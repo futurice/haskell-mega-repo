@@ -12,6 +12,8 @@ module Futurice.Constants (
     servicePublicUrl,
     supportEmailHtml,
     competenceMap,
+    powerPublicUrlStr,
+    powerPublicUrl
     ) where
 
 import Data.Functor.Rep  (index)
@@ -59,6 +61,12 @@ planmillPublicUrl = servicePublicUrl PlanmillService
 
 planmillPublicUrlStr :: String
 planmillPublicUrlStr = planmillPublicUrl ^. unpacked
+
+powerPublicUrl :: Text
+powerPublicUrl = servicePublicUrl PowerService
+
+powerPublicUrlStr :: String
+powerPublicUrlStr = powerPublicUrl ^. unpacked
 
 -------------------------------------------------------------------------------
 -- Other constants

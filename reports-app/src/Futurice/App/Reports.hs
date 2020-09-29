@@ -128,7 +128,7 @@ serveMissingHoursSimplifiedReport ctx memp mmonth mtribe = cachedIO' ctx (memp, 
     let interval = fromMaybe (beginningOfPrev2Month day ... previousFriday day) filterInterval
     runIntegrations' ctx (missingHoursSimplifiedReport missingHoursEmployeePredicate interval (beginningOfPrev2Month day ... previousFriday day) memp' mmonth mtribe)
 
-serveMissingHoursByProjectReport :: Ctx -> Maybe Month -> Maybe Tribe -> IO MissingHoursByProject
+serveMissingHoursByProjectReport :: Ctx -> Maybe Month -> Maybe Text -> IO MissingHoursByProject
 serveMissingHoursByProjectReport ctx mmonth mtribe = cachedIO' ctx (mmonth, mtribe) $ do
     day <- currentDay
     let maxCurrentMonth m =
