@@ -13,8 +13,7 @@ import Futurice.Integrations
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Time.Month
-import Futurice.Tribe
-import Numeric.Interval.NonEmpty (Interval, inf, sup)
+import Numeric.Interval.NonEmpty (inf, sup)
 import Prelude ()
 
 import Futurice.App.Reports.MissingHours
@@ -25,7 +24,6 @@ import qualified Data.Set            as Set
 import qualified Data.Tuple.Strict   as S
 import qualified Personio            as P
 import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
 import qualified Power
 
 data MissingHoursProject = MissingHoursProject
@@ -98,9 +96,10 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
     let powerProjects'' = Map.fromList $ map (\p -> (Power.projectId p, p)) $ powerProjects'
 
     members <- powerProjectMembers interval
-
-    let members' = Map.fromList $ catMaybes $
-            map (\(pid,ms) -> powerProjects'' ^.at pid >>= \p -> Just (toMissingHourProject p (tribeById ^. at (Power.projectTribeId p)), ms)) $ Map.toList members
+    let members' = Map.fromList $
+                   catMaybes $
+                   map (\(pid,ms) -> powerProjects'' ^.at pid >>= \p -> Just (toMissingHourProject p (tribeById ^. at (Power.projectTribeId p)), ms)) $
+                   Map.toList members
 
     fpm0 <- personioPlanmillMap
     let fpm0' = HM.fromList $ map (\(_,(pemp,plemp)) -> (PM._uId plemp,(pemp,plemp))) $ HM.toList fpm0
@@ -128,10 +127,6 @@ missingHoursByProject predicate interval wholeInterval mmonth mtribe = do
         interval' = i PM.... s
         i = inf interval & mcase (pEmployee ^. P.employeeHireDate) id max
         s = sup interval & mcase (pEmployee ^. P.employeeEndDate) id min
-
-    -- All tribes that currently working employees are in
-    activeTribes :: [P.Employee] -> Set Tribe
-    activeTribes emp = Set.fromList $ map (^. P.employeeTribe) $ filter (\e -> e ^. P.employeeStatus /= P.Inactive) emp
 
     toMissingHourProject project tribeName = MissingHoursProject
         { mhpProjectId   = Power.projectId project
