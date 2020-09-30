@@ -223,7 +223,7 @@ data AppUser = AppUser
     , appUserCreated     :: !UTCTime
     , appUserActive      :: !(Maybe UTCTime)
     , appUserProfile     :: !GithubProfile
-    , appUserCredentials :: !AppCredentials
+    , appUserCredentials :: !(Maybe AppCredentials)
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
       deriving (ToJSON, FromJSON) via (Sopica AppUser)
 
