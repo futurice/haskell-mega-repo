@@ -120,4 +120,4 @@ indexPage today (Pin pinned) githubs githubInvs personios oktas = page_ "GitHub 
         f e = (,e) <$> e ^. P.employeeGithub
 
     oktaGithubLogins :: Set (GH.Name GH.User)
-    oktaGithubLogins = setOf (folded . getter O.appUserCredentials . getter O.credUserName . getter (GH.mkName Proxy)) oktas
+    oktaGithubLogins = setOf (folded . getter O.appUserCredentials . _Just . getter O.credUserName . getter (GH.mkName Proxy)) oktas
