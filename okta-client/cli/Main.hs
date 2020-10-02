@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+import Data.Aeson
+import Data.Char                               (isAlphaNum)
 import Futurice.EnvConfig                      (getConfig)
 import Futurice.Prelude
 import Prelude ()
@@ -12,6 +14,7 @@ import Okta.Request
 import Okta.Types
 
 import qualified Data.Text           as T
+import qualified Data.Text.Encoding  as TE
 import qualified Options.Applicative as O
 
 data Cmd = CmdGetAllUsers
@@ -22,6 +25,7 @@ data Cmd = CmdGetAllUsers
          | CmdGetAppUsers Text
          | CmdGetUserApps Text
          | CmdGetApplication Text
+         | CmdUpdateUser Text Value
 
 getAllUsersOptions :: O.Parser Cmd
 getAllUsersOptions = pure CmdGetAllUsers
@@ -49,6 +53,22 @@ getUserAppsOptions = CmdGetUserApps <$> strArgument [ O.metavar ":user-id", O.he
 getApplicationOptions :: O.Parser Cmd
 getApplicationOptions = CmdGetApplication <$> strArgument [ O.metavar ":app-id", O.help "App id"]
 
+readValue :: String -> Either String Value
+readValue s = case eitherDecodeStrict $ TE.encodeUtf8 t of
+  Right v -> Right v
+  Left err
+      -- if it's not valid JSON, but looks like an identifier
+      | T.all (\c -> isAlphaNum c || c == '-' || c == '_') t -> Right (String t)
+      | otherwise -> Left err
+  where
+    t = T.pack s
+
+getUpdateUserOptions :: O.Parser Cmd
+getUpdateUserOptions = CmdUpdateUser <$> strArgument [ O.metavar ":user-id", O.help "User id"] <*> (O.argument (O.eitherReader readValue) $ mconcat
+        [ O.metavar ":json"
+        , O.help "Profile payload"
+        ])
+
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "get-all-users"  getAllUsersOptions "Get all users"
@@ -59,6 +79,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "get-app-users" getAppUsersOptions "Get all users assigned to app"
     , cmdParser "get-user-apps" getUserAppsOptions "Get all apps user has"
     , cmdParser "get-application" getApplicationOptions "Get application information"
+    , cmdParser "update-user" getUpdateUserOptions "Update user information"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -115,6 +136,11 @@ main' lgr token (CmdGetApplication aid) = do
     mgr <- liftIO $ newManager tlsManagerSettings
     users <- evalOktaReqIO token mgr lgr $ ReqGetApplication $ OktaAppId aid
     putPretty users
+    pure ()
+main' lgr token (CmdUpdateUser oid value) = do
+    mgr <- liftIO $ newManager tlsManagerSettings
+    user <- evalOktaReqIO token mgr lgr $ ReqUpdateUser (OktaId oid) value
+    putPretty user
     pure ()
 
 main :: IO ()
