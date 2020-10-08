@@ -19,7 +19,7 @@ import System.Environment  (lookupEnv)
 import System.Exit         (exitFailure)
 import System.Exit.Lens    (_ExitFailure)
 import System.FilePath     ((</>))
-import System.IO           (stderr, hPutStr)
+import System.IO           (hPutStr, stderr)
 
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Lazy      as LBS
@@ -82,7 +82,7 @@ readStorage = do
     readKeys fp = handleIOError (const mempty) $ do
         encrypted <- BS.readFile fp
         (ec, contents, err) <- ProcessBS.readProcessWithExitCode
-            "gpg2" ["-d"] encrypted
+            "gpg" ["-d"] encrypted
         BS.hPutStr stderr err
         forOf_ _ExitFailure ec $ \_ ->  do
             BS.hPutStr stderr err
@@ -93,7 +93,7 @@ writeStorageAll :: Storage -> Map Text Text -> IO ()
 writeStorageAll storage m = do
     let args = "-e" : "-a" : concatMap recipient fprs
     (ec, encrypted, err) <- ProcessBS.readProcessWithExitCode
-        "gpg2" args (LBS.toStrict contents)
+        "gpg" args (LBS.toStrict contents)
     forOf_ _ExitFailure ec $ \_ ->  do
         BS.hPutStr stderr err
         exitFailure
@@ -107,7 +107,7 @@ writeStorageAll storage m = do
 writeStorageOwn :: Storage -> Map Text Text -> IO ()
 writeStorageOwn storage m = do
     (ec, encrypted, err) <- ProcessBS.readProcessWithExitCode
-        "gpg2" ["-e", "-a", "-r", fprArg $ storageFpr storage ] (LBS.toStrict contents)
+        "gpg" ["-e", "-a", "-r", fprArg $ storageFpr storage ] (LBS.toStrict contents)
     forOf_ _ExitFailure ec $ \_ ->  do
         BS.hPutStr stderr err
         exitFailure
