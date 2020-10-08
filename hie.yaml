@@ -1,0 +1,445 @@
+cradle:
+  cabal:
+    - path: "arcola/src"
+      component: "lib:arcola"
+
+    - path: "arcola/echo/Main.hs"
+      component: "arcola:exe:arcola-echo"
+
+    - path: "avatar-app/src"
+      component: "lib:avatar-app"
+
+    - path: "avatar-app/srv/Main.hs"
+      component: "avatar-app:exe:avatar-server"
+
+    - path: "avatar-app/src-internal"
+      component: "avatar-app:lib:avatar-internal"
+
+    - path: "avatar-app/src-process/ProcessLambda.hs"
+      component: "avatar-app:exe:avatar-process-lambda"
+
+    - path: "avatar-app/lambdas/ProcessLambda.hs"
+      component: "avatar-app:exe:avatar-process-lambda"
+
+    - path: "avatar-app/src-process/Futurice.Lambda.Avatar.Process.hs"
+      component: "avatar-app:exe:avatar-process-lambda"
+
+    - path: "avatar-app/lambdas/Futurice.Lambda.Avatar.Process.hs"
+      component: "avatar-app:exe:avatar-process-lambda"
+
+    - path: "avatar-client/src"
+      component: "lib:avatar-client"
+
+    - path: "badge-app/src"
+      component: "lib:badge-app"
+
+    - path: "badge-app/srv/Main.hs"
+      component: "badge-app:exe:badge-app-server"
+
+    - path: "checklist-app/src"
+      component: "lib:checklist-app"
+
+    - path: "checklist-app/srv/Main.hs"
+      component: "checklist-app:exe:checklist-app-server"
+
+    - path: "checklist-app/tests/"
+      component: "checklist-app:test:unit-tests"
+
+    - path: "contacts-api/src"
+      component: "lib:contacts-api"
+
+    - path: "contacts-api/srv/Main.hs"
+      component: "contacts-api:exe:contacts-api-server"
+
+    - path: "dynmap-cache/src"
+      component: "lib:dynmap-cache"
+
+    - path: "dynmap-cache/test"
+      component: "dynmap-cache:test:unit-tests"
+
+    - path: "email-proxy/src"
+      component: "lib:email-proxy"
+
+    - path: "email-proxy/srv/Main.hs"
+      component: "email-proxy:exe:email-proxy-server"
+
+    - path: "email-proxy/mock/Main.hs"
+      component: "email-proxy:exe:email-proxy-mock"
+
+    - path: "email-proxy-client/src"
+      component: "lib:email-proxy-client"
+
+    - path: "env-config/src"
+      component: "lib:env-config"
+
+    - path: "flowdock-grep/src/Main.hs"
+      component: "flowdock-grep:exe:flowdock-grep"
+
+    - path: "flowdock-rest/src"
+      component: "lib:flowdock-rest"
+
+    - path: "flowdock-rest/test"
+      component: "flowdock-rest:test:flowdock-rest-test"
+
+    - path: "fum-api/src"
+      component: "lib:fum-api"
+
+    - path: "fum-carbon-app/src"
+      component: "lib:fum-carbon-app"
+
+    - path: "fum-carbon-app/srv/Main.hs"
+      component: "fum-carbon-app:exe:fum-carbon-server"
+
+    - path: "fum-carbon-app/tests/"
+      component: "fum-carbon-app:test:unit-tests"
+
+    - path: "fum-client/src"
+      component: "lib:fum-client"
+
+    - path: "fum-types/src"
+      component: "lib:fum-types"
+
+    - path: "futuqu/src"
+      component: "lib:futuqu"
+
+    - path: "futurice-chart/src"
+      component: "lib:futurice-chart"
+
+    - path: "futurice-constants/src"
+      component: "lib:futurice-constants"
+
+    - path: "futurice-croned/src"
+      component: "lib:futurice-croned"
+
+    - path: "futurice-croned/srv/Main.hs"
+      component: "futurice-croned:exe:croned-server"
+
+    - path: "futurice-foundation/src"
+      component: "lib:futurice-foundation"
+
+    - path: "futurice-github/src"
+      component: "lib:futurice-github"
+
+    - path: "futurice-integrations/src"
+      component: "lib:futurice-integrations"
+
+    - path: "futurice-lambda/src"
+      component: "lib:futurice-lambda"
+
+    - path: "futurice-logo/src"
+      component: "lib:futurice-logo"
+
+    - path: "futurice-metrics/src"
+      component: "lib:futurice-metrics"
+
+    - path: "futurice-postgres/src"
+      component: "lib:futurice-postgres"
+
+    - path: "futurice-prelude/src"
+      component: "lib:futurice-prelude"
+
+    - path: "futurice-prelude/test"
+      component: "futurice-prelude:test:tests"
+
+    - path: "futurice-pure-trans/src"
+      component: "lib:futurice-pure-trans"
+
+    - path: "futurice-reports/src"
+      component: "lib:futurice-reports"
+
+    - path: "futurice-servant/src"
+      component: "lib:futurice-servant"
+
+    - path: "futurice-signed/src"
+      component: "lib:futurice-signed"
+
+    - path: "futurice-tribes/src"
+      component: "lib:futurice-tribes"
+
+    - path: "futuroom-app/src"
+      component: "lib:futuroom-app"
+
+    - path: "futuroom-app/srv/Main.hs"
+      component: "futuroom-app:exe:futuroom-app-server"
+
+    - path: "github-proxy/src"
+      component: "lib:github-proxy"
+
+    - path: "github-proxy/cli/Main.hs"
+      component: "github-proxy:exe:github-proxy-client"
+
+    - path: "github-proxy/srv/Main.hs"
+      component: "github-proxy:exe:github-proxy-server"
+
+    - path: "github-sync/src"
+      component: "lib:github-sync"
+
+    - path: "github-sync/srv/Main.hs"
+      component: "github-sync:exe:github-sync-server"
+
+    - path: "google-client/src"
+      component: "lib:google-client"
+
+    - path: "google-client/cli/Main.hs"
+      component: "google-client:exe:google-cli"
+
+    - path: "haxl-fxtra/src"
+      component: "lib:haxl-fxtra"
+
+    - path: "hc-app/src"
+      component: "lib:hc-app"
+
+    - path: "hc-app/srv/Main.hs"
+      component: "hc-app:exe:hc-app-server"
+
+    - path: "hours-api/src"
+      component: "lib:hours-api"
+
+    - path: "hours-api/srv/Main.hs"
+      component: "hours-api:exe:hours-api-server"
+
+    - path: "hours-api/mock/Main.hs"
+      component: "hours-api:exe:hours-mock-server"
+
+    - path: "lambdacss/src"
+      component: "lib:lambdacss"
+
+    - path: "lambdacss/test"
+      component: "lambdacss:test:fixtures"
+
+    - path: "library-app/src"
+      component: "lib:library-app"
+
+    - path: "library-app/srv/Main.hs"
+      component: "library-app:exe:library-app-server"
+
+    - path: "library-app/tests/"
+      component: "library-app:test:unit-tests"
+
+    - path: "log-cloudwatch/src"
+      component: "lib:log-cloudwatch"
+
+    - path: "mega-repo-tool/src"
+      component: "lib:mega-repo-tool"
+
+    - path: "mega-repo-tool/cli/Main.hs"
+      component: "mega-repo-tool:exe:mega-repo-tool"
+
+    - path: "monad-memoize/src"
+      component: "lib:monad-memoize"
+
+    - path: "okta-client/src"
+      component: "lib:okta-client"
+
+    - path: "okta-client/cli/Main.hs"
+      component: "okta-client:exe:okta-cli"
+
+    - path: "okta-proxy/src"
+      component: "lib:okta-proxy"
+
+    - path: "okta-proxy/srv/Main.hs"
+      component: "okta-proxy:exe:okta-proxy-server"
+
+    - path: "okta-sync/src"
+      component: "lib:okta-sync"
+
+    - path: "okta-sync/srv/Main.hs"
+      component: "okta-sync:exe:okta-sync-server"
+
+    - path: "optparse-sop/src"
+      component: "lib:optparse-sop"
+
+    - path: "peakon-client/src"
+      component: "lib:peakon-client"
+
+    - path: "peakon-client/cli/Main.hs"
+      component: "peakon-client:exe:peakon-cli"
+
+    - path: "periocron/src"
+      component: "lib:periocron"
+
+    - path: "personio-client/src"
+      component: "lib:personio-client"
+
+    - path: "personio-client/tests/"
+      component: "personio-client:test:unit-tests"
+
+    - path: "personio-proxy/src"
+      component: "lib:personio-proxy"
+
+    - path: "personio-proxy/srv/Main.hs"
+      component: "personio-proxy:exe:personio-proxy-server"
+
+    - path: "planmill-client/src"
+      component: "lib:planmill-client"
+
+    - path: "planmill-client/cli/Main.hs"
+      component: "planmill-client:exe:planmill-client"
+
+    - path: "planmill-client/cli/Caching.hs"
+      component: "planmill-client:exe:planmill-client"
+
+    - path: "planmill-client/cli/MonadPretty.hs"
+      component: "planmill-client:exe:planmill-client"
+
+    - path: "planmill-client/cli2/Main.hs"
+      component: "planmill-client:exe:pm-cli"
+
+    - path: "planmill-client/integration"
+      component: "planmill-client:test:integration"
+
+    - path: "planmill-client/test"
+      component: "planmill-client:test:test"
+
+    - path: "planmill-proxy/src"
+      component: "lib:planmill-proxy"
+
+    - path: "planmill-proxy/src-capacity/CapacityLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
+
+    - path: "planmill-proxy/lambdas/CapacityLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
+
+    - path: "planmill-proxy/src-capacity/Futurice.Lambda.PlanMillProxy.Capacity.hs"
+      component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
+
+    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Capacity.hs"
+      component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
+
+    - path: "planmill-proxy/src-timereports/TimereportLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
+
+    - path: "planmill-proxy/lambdas/TimereportLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
+
+    - path: "planmill-proxy/src-timereports/Futurice.Lambda.PlanMillProxy.Timereports.hs"
+      component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
+
+    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Timereports.hs"
+      component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
+
+    - path: "planmill-proxy/src-cache/CacheLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
+
+    - path: "planmill-proxy/lambdas/CacheLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
+
+    - path: "planmill-proxy/src-cache/Futurice.Lambda.PlanMillProxy.Cache.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
+
+    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Cache.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
+
+    - path: "planmill-proxy/src-cache-slow/CacheSlowLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
+
+    - path: "planmill-proxy/lambdas/CacheSlowLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
+
+    - path: "planmill-proxy/src-cache-slow/Futurice.Lambda.PlanMillProxy.CacheSlow.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
+
+    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.CacheSlow.hs"
+      component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
+
+    - path: "planmill-proxy/src-accounts/AccountsLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
+
+    - path: "planmill-proxy/lambdas/AccountsLambda.hs"
+      component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
+
+    - path: "planmill-proxy/src-accounts/Futurice.Lambda.PlanMillProxy.Accounts.hs"
+      component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
+
+    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Accounts.hs"
+      component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
+
+    - path: "planmill-proxy/srv/Main.hs"
+      component: "planmill-proxy:exe:planmill-proxy-server"
+
+    - path: "planmill-sync/src"
+      component: "lib:planmill-sync"
+
+    - path: "planmill-sync/srv/Main.hs"
+      component: "planmill-sync:exe:planmill-sync-server"
+
+    - path: "power-client/src"
+      component: "lib:power-client"
+
+    - path: "preferences-app/src"
+      component: "lib:preferences-app"
+
+    - path: "preferences-app/srv/Main.hs"
+      component: "preferences-app:exe:preferences-app-server"
+
+    - path: "preferences-client/src"
+      component: "lib:preferences-client"
+
+    - path: "proxy-app/src"
+      component: "lib:proxy-app"
+
+    - path: "proxy-app/srv/Main.hs"
+      component: "proxy-app:exe:proxy-app-server"
+
+    - path: "proxy-app/tests/"
+      component: "proxy-app:test:proxy-app-tests"
+
+    - path: "proxy-mgmt-app/src"
+      component: "lib:proxy-mgmt-app"
+
+    - path: "proxy-mgmt-app/srv/Main.hs"
+      component: "proxy-mgmt-app:exe:proxy-mgmt-app-server"
+
+    - path: "proxy-types/src"
+      component: "lib:proxy-types"
+
+    - path: "reports-app/src"
+      component: "lib:reports-app"
+
+    - path: "reports-app/srv/Main.hs"
+      component: "reports-app:exe:reports-app-server"
+
+    - path: "servant-Chart/src"
+      component: "lib:servant-Chart"
+
+    - path: "servant-algebraic-graphs/src"
+      component: "lib:servant-algebraic-graphs"
+
+    - path: "servant-binary-tagged/src"
+      component: "lib:servant-binary-tagged"
+
+    - path: "servant-cached/src"
+      component: "lib:servant-cached"
+
+    - path: "servant-dashdo/src"
+      component: "lib:servant-dashdo"
+
+    - path: "sisosota-app/src"
+      component: "lib:sisosota-app"
+
+    - path: "sisosota-app/srv/Main.hs"
+      component: "sisosota-app:exe:sisosota-app-server"
+
+    - path: "sisosota-client/src"
+      component: "lib:sisosota-client"
+
+    - path: "smileys-app/src"
+      component: "lib:smileys-app"
+
+    - path: "smileys-app/srv/Main.hs"
+      component: "smileys-app:exe:smileys-app-server"
+
+    - path: "sms-proxy/src"
+      component: "lib:sms-proxy"
+
+    - path: "sms-proxy/srv/Main.hs"
+      component: "sms-proxy:exe:sms-proxy-server"
+
+    - path: "sms-proxy-client/src"
+      component: "lib:sms-proxy-client"
+
+    - path: "theme-app/src"
+      component: "lib:theme-app"
+
+    - path: "theme-app/srv/Main.hs"
+      component: "theme-app:exe:theme-app-server"
