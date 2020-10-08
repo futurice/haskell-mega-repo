@@ -54,7 +54,7 @@ indexPage crit itemInfos direction limit startBookInfoId startBoardGameInfoId se
                   th_ $ a_ [ indexPageLink (BookSort SortAuthor)] "Author"
                   th_ $ a_ [ indexPageLink (BookSort SortPublished)] "Published"
                   th_ $ a_ [ indexPageLink (BookSort SortISBN)] "ISBN"
-              tbody_ $ for_ books $ \(BookInformation binfoid title isbn author _publisher published cover _infoLink) -> tr_ $ do
+              tbody_ $ for_ books $ \(BookInformation binfoid title isbn author _publisher published cover _infoLink _language) -> tr_ $ do
                   td_ $ case contentHashToText cover of
                     "" -> "No cover image available"
                     _  -> img_ [height_ "160", width_ "128", src_ $ toUrlPiece $ fieldLink bookCoverGet cover ]

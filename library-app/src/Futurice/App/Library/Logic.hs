@@ -242,8 +242,8 @@ fetchBookResponse ctx binfoid = do
       Just info -> pure $ [toBookInformationResponse (fold (toBooks <$> books)) info]
   where
       toBooks item = [Books (idLibrary item) (idItemId item)]
-      toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover infoLink) =
-          BookInformationResponse infoid title isbn author publisher published cover infoLink books
+      toBookInformationResponse books (BookInformation infoid title isbn author publisher published cover infoLink language) =
+          BookInformationResponse infoid title isbn author publisher published cover infoLink books language
 
 fetchBoardGameResponse :: (MonadLog m, MonadBaseControl IO m, MonadCatch m, HasPostgresPool ctx) => ctx -> BoardGameInformationId -> m (Maybe BoardGameInformationResponse)
 fetchBoardGameResponse ctx infoid = do
@@ -274,8 +274,8 @@ fetchBooksResponse ctx bookInfos = do
           case bookinfoid of
               BookInfoId binfoid -> Just (binfoid, [Books lib iid])
               _                  -> Nothing
-      toBookInformationResponse books (BookInformation binfoid title isbn author publisher published cover infoLink) =
-          BookInformationResponse binfoid title isbn author publisher published cover infoLink (fromMaybe [] (books ^.at binfoid))
+      toBookInformationResponse books (BookInformation binfoid title isbn author publisher published cover infoLink language) =
+          BookInformationResponse binfoid title isbn author publisher published cover infoLink (fromMaybe [] (books ^.at binfoid)) language
 
 bookIdToInformation :: ItemId -> Map ItemId (Maybe BookInformationId, Library) -> Map BookInformationId BookInformation -> Maybe BookInformation
 bookIdToInformation iid bookidmap bookinfomap = do

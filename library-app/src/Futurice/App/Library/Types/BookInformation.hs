@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeOperators     #-}
 module Futurice.App.Library.Types.BookInformation where
 
+import Data.Aeson                           (withText)
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToField
@@ -17,6 +18,26 @@ import Prelude ()
 
 newtype BookInformationId   = BookInformationId Int32 deriving newtype (Eq, Ord, Show, Read, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
+data Language = English
+              | Finnish
+              | German
+              | Other
+              deriving (Show, Generic, FromField, ToSchema)
+
+instance ToJSON Language where
+    toJSON English = "English"
+    toJSON Finnish = "Finnish"
+    toJSON German  = "German"
+    toJSON _       = "Other"
+
+instance FromJSON Language where
+    parseJSON = withText "Language" $ \language ->
+      case language of
+        "English" -> pure English
+        "Finnish" -> pure Finnish
+        "German"  -> pure German
+        _         -> pure Other
+
 data BookInformation = BookInformation
     { _bookInformationId          :: !BookInformationId
     , _bookTitle                  :: !Text
@@ -25,7 +46,8 @@ data BookInformation = BookInformation
     , _bookPublisher              :: !Text
     , _bookPublished              :: !Int
     , _bookCover                  :: !ContentHash
-    , _bookInfoLink             :: !Text
+    , _bookInfoLink               :: !Text
+    , _bookLanguage               :: !Language
     }
   deriving (Show, Typeable, Generic, FromRow)
 

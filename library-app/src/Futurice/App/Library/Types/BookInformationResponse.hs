@@ -30,6 +30,7 @@ data BookInformationResponse = BookInformationResponse
     , _cover       :: !ContentHash
     , _infoLink    :: !Text
     , _books       :: ![Books]
+    , _language    :: !Language
     } deriving  (Show, Typeable, Generic)
 
 deriveGeneric ''Books
