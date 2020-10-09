@@ -3,6 +3,7 @@
 
 module Futurice.App.Library.Pages.AddItemPage where
 
+import Futurice.Generics
 import Futurice.Lucid.Foundation hiding (page_)
 import Futurice.Prelude
 import Prelude ()
@@ -10,6 +11,7 @@ import Prelude ()
 import Futurice.App.Library.API
 import Futurice.App.Library.Markup
 import Futurice.App.Library.Types
+import Futurice.App.Library.Types.BookInformation
 
 addItemPage :: HtmlPage "additempage"
 addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
@@ -49,6 +51,18 @@ addItemPage = page_ "Add item to Library" (Just NavAddItem) $ do
                     input_ [ name_ "cover-file", type_ "file"]
                     input_ [ name_ "cover-url", type_ "url", style_ "display:none"]
                     img_ [ id_ "cover-image", src_ "", hidden_ ""]
+            tr_ $ do
+                th_ "Language"
+                td_ $ select_ [ name_ "language"] $ do
+                  optionSelected_ True [ value_ "-"] $ toHtml ("" :: Text)
+                  for_ [minBound .. maxBound] $ \(language :: Language) ->
+                    optionSelected_ False [ value_ (enumToText language)] $ toHtml $ enumToText language
+            tr_ $ do
+                th_ "Category"
+                td_ $ select_ [ name_ "category"] $ do
+                  optionSelected_ True [ value_ "-"] $ toHtml ("" :: Text)
+                  for_ [minBound .. maxBound] $ \(category :: Category) ->
+                    optionSelected_ False [ value_ (enumToText category)] $ toHtml $ enumToText category
             tr_ $ do
                 th_ "Library"
                 td_ $ libraryInput

@@ -10,6 +10,7 @@ module Futurice.App.Library.Types.AddItemRequest where
 import Data.Char      (digitToInt, isDigit)
 import Data.Text.Read (decimal)
 
+import Futurice.Generics
 import Futurice.Office   (offOther)
 import Futurice.Prelude
 import Prelude ()
@@ -37,6 +38,8 @@ data AddBookInformation = AddBookInformation
     , _addBookLibraries              :: ![(Library, Int)]
     , _addBookCover                  :: !CoverData
     , _addBookInformationId          :: !(Maybe BookInformationId)
+    , _addBookLanguage               :: !(Maybe Language)
+    , _addBookCategory               :: !(Maybe Category)
     } deriving Show
 
 data AddBoardGameInformation = AddBoardGameInformation
@@ -99,6 +102,8 @@ instance FromMultipart Mem AddBookInformation where
         <*> pure (booksPerLibrary multipartData)
         <*> maybe (Left "No cover data") Right cover
         <*> pure (either (const Nothing) Just $ BookInformationId <$> fromIntegral <$> (lookupInputAndClean "bookinformationid" multipartData >>= fromtextToInt))
+        <*> (lookupInputAndClean "language" multipartData <&> enumFromText)
+        <*> (lookupInputAndClean "category" multipartData <&> enumFromText)
       where
         isEmptyT t | T.null t = Nothing
                    | otherwise = Just t

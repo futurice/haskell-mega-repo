@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -16,27 +17,62 @@ import Futurice.IdMap                       (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Data.Text as T
+
 newtype BookInformationId   = BookInformationId Int32 deriving newtype (Eq, Ord, Show, Read, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, FromField, ToField)
 
 data Language = English
               | Finnish
               | German
               | Other
-              deriving (Show, Generic, FromField, ToSchema)
+              deriving (Show, GhcGeneric, SopGeneric, ToSchema, Enum, Bounded)
+
+instance TextEnum Language where
+    type TextEnumNames Language = '["English", "Finnish", "German", "Other"]
+
+instance FromField Language where
+    fromField _ mlang =
+      case mlang of
+        Nothing -> mzero
+        Just lan -> maybe mzero pure $ enumFromText $ decodeUtf8Lenient lan
+
+instance ToField Language where
+    toField = toField . enumToText
 
 instance ToJSON Language where
-    toJSON English = "English"
-    toJSON Finnish = "Finnish"
-    toJSON German  = "German"
-    toJSON _       = "Other"
+    toJSON = toJSON . enumToText
 
 instance FromJSON Language where
     parseJSON = withText "Language" $ \language ->
-      case language of
-        "English" -> pure English
-        "Finnish" -> pure Finnish
-        "German"  -> pure German
-        _         -> pure Other
+        maybe mzero pure $ enumFromText language
+
+data Category = CategoryTech
+              | CategoryStrategyAndCulture
+              | CategoryDesign
+              | CategoryOther
+              deriving (GhcGeneric, SopGeneric, ToSchema, Enum, Bounded)
+
+instance TextEnum Category where
+    type TextEnumNames Category = '["Tech", "Strategy and Culture", "Design", "Other"]
+
+instance Show Category where
+    show = T.unpack . enumToText
+
+instance FromField Category where
+    fromField _ mcategory =
+      case mcategory of
+        Nothing -> mzero
+        Just cat -> maybe mzero pure $ enumFromText $ decodeUtf8Lenient cat
+
+instance ToField Category where
+    toField = toField . enumToText
+
+instance ToJSON Category where
+  toJSON = toJSON . enumToText
+
+instance FromJSON Category where
+  parseJSON = withText "Category" $ \category ->
+    maybe mzero pure $ enumFromText category
 
 data BookInformation = BookInformation
     { _bookInformationId          :: !BookInformationId
@@ -47,7 +83,8 @@ data BookInformation = BookInformation
     , _bookPublished              :: !Int
     , _bookCover                  :: !ContentHash
     , _bookInfoLink               :: !Text
-    , _bookLanguage               :: !Language
+    , _bookLanguage               :: !(Maybe Language)
+    , _bookCategory               :: !(Maybe Category)
     }
   deriving (Show, Typeable, Generic, FromRow)
 
