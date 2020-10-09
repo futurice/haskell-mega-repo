@@ -17,7 +17,8 @@ import Futurice.App.Library.Logic
 import Futurice.App.Library.Types
 import Futurice.App.Library.Types.BoardGameInformation
        (BoardGameInformationId (..))
-import Futurice.App.Library.Types.BookInformation      (BookInformationId (..))
+import Futurice.App.Library.Types.BookInformation
+       (BookInformationId (..), Category (..), Language (..))
 
 import qualified Data.Text as T
 
@@ -88,7 +89,7 @@ tests = testGroup "Sql tests"
     allBoardGameCriterias    = [minBound .. maxBound] :: [BoardGameSortCriteria]
     allDirections            = [minBound .. maxBound] :: [SortDirection]
 
-    testBookInformation      = BookInformation (BookInformationId 2) "TestTitle" "1234567890" "TestAuthor" "TestPublisher" 1963 testContentHash "Testlink"
+    testBookInformation      = BookInformation (BookInformationId 2) "TestTitle" "1234567890" "TestAuthor" "TestPublisher" 1963 testContentHash "Testlink" (Just English) (Just CategoryTech)
     testBoardGameInformation = BoardGameInformation (BoardGameInformationId 2) "TestName" Nothing Nothing Nothing Nothing
 
     allBookItems             = [ Nothing, Just (ItemBook testBookInformation) ]
