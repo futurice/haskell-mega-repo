@@ -66,6 +66,8 @@ before_install:
 # Create DB stuff
 - psql -c 'create database travis_ci_test;' -U postgres
 - psql -f library-app/schema.sql -U postgres travis_ci_test
+- psql -f library-app/link-migration.sql -U postgres travis_ci_test
+- psql -f library-app/02-additional-book-fields.sql -U postgres travis_ci_test
 - export TEST_DB_URL=postgresql://postgres@/travis_ci_test
 
 
