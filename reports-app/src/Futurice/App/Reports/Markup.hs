@@ -106,6 +106,8 @@ indexPage today = page_ "Reports" $ do
                 "Personio → PlanMill: data agree"
             elink_ GithubSyncService "/"
                 "Personio → GitHub: data agree"
+            elink_ OktaSyncService "/"
+                "Personio → Okta: data agree"
 --            elink_ PersonioProxyService "/charts/employees.svg"
 --                "Personio active employees chart"
   where
