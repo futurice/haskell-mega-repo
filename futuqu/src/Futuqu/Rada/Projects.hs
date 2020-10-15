@@ -28,7 +28,6 @@ data Project = Project
     , prjName     :: !Text
     , prjCategory :: !Text -- TODO, make EnumTextValue
     , prjOperationalId :: !(Maybe Int)
-    , prjPortfolioId   :: !(Maybe PM.PortfolioId)
 
     -- these fields are asked for dashboards:
     , prjStart                      :: !(Maybe UTCTime)
@@ -43,6 +42,8 @@ data Project = Project
     , prjTotalCost                  :: !Double
     , prjActualEffort               :: !Int
     , prjTotalEffort                :: !Int
+
+    , prjPortfolioId   :: !(Maybe PM.PortfolioId)
     }
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
@@ -77,7 +78,6 @@ projectsData fAccIds = do
             , prjName      = p ^. PM.pName
             , prjCategory  = fromMaybe "-" $ cats ^? ix (p ^. PM.pCategory)
             , prjOperationalId = p ^. PM.pOperationalId
-            , prjPortfolioId   = PM._pPortfolioId p
             , prjStart           = PM.pStart p
             , prjFinish          = PM.pFinish p
             , prjProjectManager  = PM.pProjectManager p
@@ -88,6 +88,7 @@ projectsData fAccIds = do
             , prjTotalCost       = PM.pTotalCost p
             , prjActualEffort    = PM.pActualEffort p
             , prjTotalEffort     = PM.pTotalEffort p
+            , prjPortfolioId   = PM._pPortfolioId p
             }
 
     predAccount accId = case fAccIds of
