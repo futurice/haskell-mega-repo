@@ -40,7 +40,7 @@ Install `mega-repo-tool` from the repo.
 
 `mega-repo-tool build-docker <app-name>`, for example
 `mega-repo-tool build-docker checklist`.
-If the tool instructs you to run some docker commands, then do it and re-run the build-docker command.
+If the tool instructs you to run some docker commands, then do it and re-run the build-docker command. Docker will probably need to have at least 4GB of ram to successfully run the command.
 
 ## Maintaining
 
