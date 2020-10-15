@@ -106,10 +106,8 @@ indexPage today = page_ "Reports" $ do
                 "Personio → PlanMill: data agree"
             elink_ GithubSyncService "/"
                 "Personio → GitHub: data agree"
-            elink_ PersonioProxyService "/charts/employees.svg"
-                "Personio active employees chart"
-            elink_ SmileysApiService "/charts/absolute.svg"
-                "Smileys absolute count chart"
+--            elink_ PersonioProxyService "/charts/employees.svg"
+--                "Personio active employees chart"
   where
     elink_ :: Monad m => Service -> Text -> Text -> HtmlT m ()
     elink_ service href description = li_ $ do
