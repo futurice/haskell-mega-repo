@@ -177,7 +177,7 @@ futu = (function () {
         // no cell: return null
           if (!td) return null;
 
-          if(td.innerText.match(/\d+.\d+/)) {
+          if(td.innerText.match(/\d+\.\d+/)) {
               return parseFloat(td.innerText);
           }
 
