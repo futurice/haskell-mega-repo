@@ -353,8 +353,10 @@ reports = planMillGet $ t "reports"
 -- | Get a All Revenues 2 - report
 --
 -- See <https://developers.planmill.com/api/#reports__reportName__get>
-allRevenuesReport :: PlanMill AllRevenues2
-allRevenuesReport = planMillGet $ t "reports" // t "All Revenues 2"
+allRevenuesReport :: Int -> Int -> PlanMill AllRevenues2
+allRevenuesReport year month = planMillGetQs qs $ t "reports" // t "All Revenues 2"
+  where
+    qs = (Map.fromList [("param1",textShow year), ("param2", textShow month)])
 
 -- | Get a Earned Vacations - report
 --

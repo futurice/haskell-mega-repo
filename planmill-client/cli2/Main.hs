@@ -44,7 +44,7 @@ data Cmd
     = CmdAbsencesInterval (PM.Interval Day)
     | CmdAccount PM.AccountId
     | CmdAccounts
-    | CmdAllRevenuesReport
+    | CmdAllRevenuesReport Int Int
     | CmdAssignments PM.ProjectId
     | CmdBalance PM.UserId
     | CmdCapacity PM.UserId (PM.Interval Day)
@@ -242,8 +242,8 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdReports -> do
         x <- PM.planmillAction PM.reports
         putPretty x
-    CmdAllRevenuesReport -> do
-        x <- PM.planmillAction PM.allRevenuesReport
+    CmdAllRevenuesReport year month -> do
+        x <- PM.planmillAction $ PM.allRevenuesReport year month
         putPretty x
     CmdPortfolios -> do
         x <- PM.planmillAction PM.portfolios

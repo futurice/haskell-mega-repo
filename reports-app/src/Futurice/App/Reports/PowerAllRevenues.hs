@@ -1,12 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Reports.PowerAllRevenues where
 
 import Futurice.Generics
 import Futurice.Integrations
-import Futurice.Time.Month            (Month (..))
 import Futurice.Prelude
+import Futurice.Time.Month   (Month (..))
 import Prelude ()
 
 import qualified Data.Map         as M
@@ -33,6 +33,7 @@ data PowerAllRevenuesRow = PowerAllRevenuesRow
     , powerAllRevenuesRowActualNonBillable :: !(Maybe Double)
     , powerAllRevenuesRowSalesPrice        :: !(Maybe Double)
     , powerAllRevenuesRowEffectivePrice    :: !(Maybe Double)
+    , powerAllRevenuesRowInvoiceNumber     :: !(Maybe Int)
     } deriving (GhcGeneric, SopGeneric, HasDatatypeInfo, NFData, ToSchema)
       deriving (FromJSON, ToJSON) via (Sopica PowerAllRevenuesRow)
 
@@ -61,5 +62,6 @@ powerAllRevenuesReport mmonth = do
                 , powerAllRevenuesRowActualNonBillable = PM._arpActualNonBillable p
                 , powerAllRevenuesRowSalesPrice        = PM._arpSalesPrice p
                 , powerAllRevenuesRowEffectivePrice    = PM._arpEffectivePrice p
+                , powerAllRevenuesRowInvoiceNumber     = PM._arpInvoiceNumber p
                 }
         in (tribe, fmap row portfolios)
