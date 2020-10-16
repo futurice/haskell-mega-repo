@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 module PlanMill.Types.Report (
     AllRevenues2,
     AllRevenuesPortfolio (..),
@@ -16,8 +16,8 @@ module PlanMill.Types.Report (
 
 import Data.Aeson
 import Data.Aeson.Types  (Parser)
+import Data.Fixed        (Centi)
 import Data.Map          (fromListWith)
-import Data.Fixed                  (Centi)
 import Data.Vector
 import Futurice.Generics
 import Futurice.Prelude
@@ -95,6 +95,7 @@ data AllRevenuesPortfolio = AllRevenuesPortfolio
     , _arpActualNonBillable :: !(Maybe Double)
     , _arpSalesPrice        :: !(Maybe Double)
     , _arpEffectivePrice    :: !(Maybe Double)
+    , _arpInvoiceNumber     :: !(Maybe Int)
     } deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, HasDatatypeInfo, NFData)
       deriving (ToJSON) via (Sopica AllRevenuesPortfolio)
 
@@ -118,6 +119,7 @@ instance FromJSON AllRevenuesPortfolio where
         actualNonBillable <- traverse parseNum (array !? 8)
         salesPrice <- traverse parseNum (array !? 9)
         effectivePrice <- traverse parseNum (array !? 10)
+        invoiceNumber <- traverse parseNum (array !? 11)
         let res = AllRevenuesPortfolio
                 <$> portfolioName
                 <*> customer
@@ -130,6 +132,7 @@ instance FromJSON AllRevenuesPortfolio where
                 <*> actualNonBillable
                 <*> salesPrice
                 <*> effectivePrice
+                <*> invoiceNumber
         case res of
           Just a -> pure a
           Nothing -> mempty
