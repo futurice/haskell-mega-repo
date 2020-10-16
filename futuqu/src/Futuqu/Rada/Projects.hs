@@ -42,6 +42,8 @@ data Project = Project
     , prjTotalCost                  :: !Double
     , prjActualEffort               :: !Int
     , prjTotalEffort                :: !Int
+
+    , prjPortfolioId   :: !(Maybe PM.PortfolioId)
     }
   deriving stock (Eq, Ord, Show, GhcGeneric)
   deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
@@ -76,7 +78,6 @@ projectsData fAccIds = do
             , prjName      = p ^. PM.pName
             , prjCategory  = fromMaybe "-" $ cats ^? ix (p ^. PM.pCategory)
             , prjOperationalId = p ^. PM.pOperationalId
-
             , prjStart           = PM.pStart p
             , prjFinish          = PM.pFinish p
             , prjProjectManager  = PM.pProjectManager p
@@ -87,6 +88,7 @@ projectsData fAccIds = do
             , prjTotalCost       = PM.pTotalCost p
             , prjActualEffort    = PM.pActualEffort p
             , prjTotalEffort     = PM.pTotalEffort p
+            , prjPortfolioId   = PM._pPortfolioId p
             }
 
     predAccount accId = case fAccIds of

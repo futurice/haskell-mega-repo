@@ -24,6 +24,7 @@ module PlanMill.Types.Project (
 
 import PlanMill.Internal.Prelude
 
+import Futurice.Generics
 import PlanMill.Types.Account                  (AccountId)
 import PlanMill.Types.Enumeration              (EnumValue (..))
 import PlanMill.Types.Identifier               (HasIdentifier (..), Identifier)
@@ -32,6 +33,7 @@ import PlanMill.Types.User                     (UserId)
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
 import qualified Data.Aeson.Lens     as L
+import qualified Data.Csv            as Csv
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
 import qualified Data.Vector         as V
@@ -40,9 +42,9 @@ import qualified Options.SOP         as O
 type ProjectId = Identifier Project
 type Projects = Vector Project
 
-newtype PortfolioId = PortfolioId Int
+newtype PortfolioId = PortfolioId Int --TODO: change to use Identifier
     deriving (Eq, Ord, Show, Read, Generic)
-    deriving newtype ( AnsiPretty,Hashable, Binary, HasStructuralInfo, FromJSON, NFData)
+    deriving newtype ( AnsiPretty,Hashable, Binary, HasStructuralInfo, FromJSON, ToJSON, Csv.ToField, ToSchema, NFData)
 
 newtype Portfolios = Portfolios (Vector Portfolio)
     deriving (Show, Generic)
