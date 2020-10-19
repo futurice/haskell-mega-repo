@@ -130,6 +130,7 @@ library
     PlanMill.Types.Hook
     PlanMill.Types.Identifier
     PlanMill.Types.Inserted
+    PlanMill.Types.Invoice
     PlanMill.Types.Me
     PlanMill.Types.Meta
     PlanMill.Types.Project

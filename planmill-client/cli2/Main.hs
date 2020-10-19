@@ -53,6 +53,7 @@ data Cmd
     | CmdHookAdd PM.HookType Text
     | CmdHookDelete PM.HookId
     | CmdHooks
+    | CmdInvoices
     | CmdMe
     | CmdMeta Text
     | CmdPortfolios
@@ -260,6 +261,11 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
     CmdEarnedVacations organization -> do
         x <- PM.planmillAction $ PM.earnedVacationsReport organization
         putPretty x
+    CmdInvoices -> do
+        x <- PM.planmillAction $ PM.invoices
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
 -------------------------------------------------------------------------------
 -- M - monad with custom instances
 -------------------------------------------------------------------------------
