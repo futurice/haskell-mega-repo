@@ -37,10 +37,10 @@ import Servant.Server.Generic         (genericServer)
 import qualified Data.Swagger           as Sw
 import qualified Futurice.KleeneSwagger as K
 
+import Futurice.App.Reports.API
 import Futurice.App.Reports.ActiveAccounts
 import Futurice.App.Reports.ActiveSubcontractorsByHours
        (ActiveSubcontractorData, activeSubcontractorsReport)
-import Futurice.App.Reports.API
 import Futurice.App.Reports.Capacity                          (hasCapacity)
 import Futurice.App.Reports.CareerLengthChart
        (careerLengthData, careerLengthRelativeRender, careerLengthRender)
@@ -51,6 +51,7 @@ import Futurice.App.Reports.DoWeStudy                         (doWeStudyData)
 import Futurice.App.Reports.FumAbsences                       (fumAbsences)
 import Futurice.App.Reports.IDontKnow                         (iDontKnowData)
 import Futurice.App.Reports.Inventory
+import Futurice.App.Reports.Invoice                           (invoiceData)
 import Futurice.App.Reports.LongAbsence
        (longAbsencesNotification)
 import Futurice.App.Reports.Markup
@@ -65,9 +66,9 @@ import Futurice.App.Reports.MissingHoursChart
 import Futurice.App.Reports.MissingHoursDailyChart
        (missingHoursDailyChartData, missingHoursDailyChartRender)
 import Futurice.App.Reports.MissingHoursNotifications
+import Futurice.App.Reports.OKRCompetencies                   (competencyData)
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeData (..), officeVibeData)
-import Futurice.App.Reports.OKRCompetencies                   (competencyData)
 import Futurice.App.Reports.OwnedComputers                    (userComputers)
 import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
@@ -77,10 +78,10 @@ import Futurice.App.Reports.PowerAllRevenues
        (PowerAllRevenues, powerAllRevenuesReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
-import Futurice.App.Reports.PowerUser
-       (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.PowerUTZ
        (PowerUTZReport, powerUTZReport)
+import Futurice.App.Reports.PowerUser
+       (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.ProjectHours                      (projectHoursData)
 import Futurice.App.Reports.ProjectMembers
        (projectMemberData)
@@ -406,6 +407,8 @@ server ctx = genericServer $ Record
     -- For futulog
     , recFumCapacity = \login month -> liftIO $ serveDataParam2 login month hasCapacity ctx
     , recFumAbsence = \login month -> liftIO $ serveDataParam2 login month fumAbsences ctx
+
+    , recInvoice = \month -> liftIO $ serveDataParam month invoiceData ctx
     }
   where
     lgr = ctxLogger ctx

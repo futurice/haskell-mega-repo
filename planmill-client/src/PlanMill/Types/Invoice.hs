@@ -2,7 +2,7 @@
 module PlanMill.Types.Invoice where
 
 import PlanMill.Internal.Prelude
-import PlanMill.Types.Identifier (HasIdentifier (..), Identifier)
+import PlanMill.Types.Identifier (Identifier)
 
 type InvoiceId = Identifier InvoiceData
 type InvoiceDatas = Vector InvoiceData
@@ -13,7 +13,7 @@ data InvoiceData = InvoiceData
   , _invoiceDate    :: !Text
   , _invoiceDueDate :: !UTCTime
   , _invoiceCreated :: !UTCTime
-  } deriving (Generic)
+  } deriving (Eq, Show, Binary, NFData, HasStructuralInfo, Generic, HasSemanticVersion)
 
 instance AnsiPretty InvoiceData
 

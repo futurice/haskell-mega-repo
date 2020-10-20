@@ -29,18 +29,19 @@ import Futurice.App.Reports.DoWeStudy
 import Futurice.App.Reports.FumAbsences                 (FumAbsences)
 import Futurice.App.Reports.IDontKnow                   (IDontKnowData)
 import Futurice.App.Reports.Inventory                   (InventorySummary)
+import Futurice.App.Reports.Invoice                     (Invoice)
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursSimplifiedReport)
 import Futurice.App.Reports.MissingHoursByProject       (MissingHoursByProject)
+import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
 import Futurice.App.Reports.OfficeVibeIntegration
        (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
-import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
 import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
 import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
 import Futurice.App.Reports.PowerProjects               (PowerProjectsReport)
-import Futurice.App.Reports.PowerUser                   (PowerUserReport)
 import Futurice.App.Reports.PowerUTZ                    (PowerUTZReport)
+import Futurice.App.Reports.PowerUser                   (PowerUserReport)
 import Futurice.App.Reports.ProjectHours                (ProjectHoursData)
 import Futurice.App.Reports.ProjectMembers              (ProjectMembers)
 import Futurice.App.Reports.SupervisorsGraph            (Emp)
@@ -130,6 +131,8 @@ data Record route = Record
     -- For futulog
     , recFumCapacity :: route :- "report" :> "capacity" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] [Capacity]
     , recFumAbsence  :: route :- "report" :> "absences" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] FumAbsences
+
+    , recInvoice :: route :- "invoice" :> QueryParam "month" Month :> Get '[JSON] [Invoice]
     }
   deriving Generic
 
