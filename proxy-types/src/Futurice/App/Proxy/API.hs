@@ -21,8 +21,8 @@ import Futurice.Servant            (GZIP)
 import Futurice.Services
 import Prelude ()
 import Servant.API
-import Servant.Cached              (CACHED, Cached)
 import Servant.CSV.Cassava         (CSV)
+import Servant.Cached              (CACHED, Cached)
 
 -- Integrations
 import FUM.Types.GroupName                             (GroupName)
@@ -34,6 +34,7 @@ import Futurice.App.PersonioProxy.Types
 import Futurice.App.Reports.ActiveAccounts             (ActiveAccounts)
 import Futurice.App.Reports.Capacity                   (Capacity)
 import Futurice.App.Reports.FumAbsences                (FumAbsences)
+import Futurice.App.Reports.Invoice                    (Invoice)
 import Futurice.App.Reports.MissingHours               (MissingHoursReport)
 import Futurice.App.Reports.PowerAllRevenues           (PowerAllRevenues)
 import Futurice.App.Reports.ProjectMembers             (ProjectMembers)
@@ -278,6 +279,10 @@ data Routes = Routes
     , routeEmployeeApplications :: ProxiedEndpoint 'OktaProxyService
         ("applications" :> QueryParam' '[Required] "employeeId" Personio.EmployeeId :> Get '[JSON] (Set AppResponse))
         ("okta" :> "applications" :> QueryParam' '[Required] "employeeId" Personio.EmployeeId :> Get '[JSON] (Set AppResponse))
+
+    , routeInvoices :: ProxiedEndpoint 'ReportsService
+        ("invoice" :> QueryParam "month" Month :> Get '[JSON] [Invoice])
+        ("reports" :> "invoice" :> QueryParam "month" Month :> Get '[JSON] [Invoice])
     }
   deriving (Generic)
 
