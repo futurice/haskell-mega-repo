@@ -418,7 +418,7 @@ invoices mmonth = planmillVectorQuery $ QueryPagedGet QueryTagInvoiceData qs $ t
     qs = Map.fromList [("cyear", monthString)]
     monthString =
       case mmonth of
-        Just (Month mName year) -> (textShow $ fromEnum mName) <> "/" <> (textShow year)
+        Just (Month year mName) -> (textShow $ fromEnum mName) <> "/" <> (textShow year)
         Nothing    -> ""
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations
