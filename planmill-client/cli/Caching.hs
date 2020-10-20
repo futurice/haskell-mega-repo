@@ -4,11 +4,11 @@
 {-# LANGUAGE InstanceSigs            #-}
 {-# LANGUAGE MultiParamTypeClasses   #-}
 {-# LANGUAGE NoOverloadedStrings     #-}
+{-# LANGUAGE RankNTypes              #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TypeFamilies            #-}
 {-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE UndecidableInstances    #-}
-{-# LANGUAGE RankNTypes              #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# OPTIONS_GHC -fconstraint-solver-iterations=10 #-}
@@ -20,7 +20,7 @@ import Prelude ()
 
 import Data.Binary          (encode)
 import Data.Binary.Tagged   (taggedDecodeFileOrFail, taggedEncodeFile)
-import Data.Constraint      (Dict (..), type (:-)(..), (\\))
+import Data.Constraint      (Dict (..), type (:-) (..), (\\))
 import Data.Digest.Pure.SHA (sha256, showDigest)
 import GHC.TypeLits         (KnownSymbol)
 
@@ -78,6 +78,7 @@ instance MonadPlanMillC m AllRevenues2         => CachingTC m AllRevenues2
 instance MonadPlanMillC m PersonValueCreation  => CachingTC m PersonValueCreation
 instance MonadPlanMillC m TeamsHoursByCategoryRow => CachingTC m TeamsHoursByCategoryRow
 instance MonadPlanMillC m EarnedVacationsRow   => CachingTC m EarnedVacationsRow
+instance MonadPlanMillC m InvoiceData          => CachingTC m InvoiceData
 
 instance (MonadPlanMillC m (Vector a), CachingTC m a) => CachingTC m (Vector a)
 

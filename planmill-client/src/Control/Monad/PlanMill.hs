@@ -22,11 +22,12 @@ module Control.Monad.PlanMill (
     MonadPlanMillConstraint(..),
     ) where
 
-import Prelude ()
 import PlanMill.Internal.Prelude
+import Prelude ()
 
 import Control.Monad.Memoize            (MonadMemoize)
-import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
+import Data.Constraint
+       (Constraint, Dict (..), type (:-) (..), (\\))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Futurice.Trans.PureT
 
@@ -71,6 +72,7 @@ class
     , MonadPlanMillC m PersonValueCreation
     , MonadPlanMillC m TeamsHoursByCategoryRow
     , MonadPlanMillC m EarnedVacationsRow
+    , MonadPlanMillC m InvoiceData
     )
   => MonadPlanMillConstraint m where
 

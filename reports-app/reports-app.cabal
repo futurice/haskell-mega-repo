@@ -135,9 +135,9 @@ library
 
   exposed-modules:
     Futurice.App.Reports
-    Futurice.App.Reports.API
     Futurice.App.Reports.ActiveAccounts
     Futurice.App.Reports.ActiveSubcontractorsByHours
+    Futurice.App.Reports.API
     Futurice.App.Reports.Capacity
     Futurice.App.Reports.CareerLengthChart
     Futurice.App.Reports.Config
@@ -148,6 +148,7 @@ library
     Futurice.App.Reports.GithubReposDashdo
     Futurice.App.Reports.IDontKnow
     Futurice.App.Reports.Inventory
+    Futurice.App.Reports.Invoice
     Futurice.App.Reports.LongAbsence
     Futurice.App.Reports.Markup
     Futurice.App.Reports.MissingHours
@@ -156,15 +157,15 @@ library
     Futurice.App.Reports.MissingHoursDailyChart
     Futurice.App.Reports.MissingHoursDashdo
     Futurice.App.Reports.MissingHoursNotifications
-    Futurice.App.Reports.OKRCompetencies
     Futurice.App.Reports.OfficeVibeIntegration
+    Futurice.App.Reports.OKRCompetencies
     Futurice.App.Reports.OwnedComputers
     Futurice.App.Reports.PlanMillAccountValidation
     Futurice.App.Reports.PowerAbsences
     Futurice.App.Reports.PowerAllRevenues
     Futurice.App.Reports.PowerProjects
-    Futurice.App.Reports.PowerUTZ
     Futurice.App.Reports.PowerUser
+    Futurice.App.Reports.PowerUTZ
     Futurice.App.Reports.ProjectHours
     Futurice.App.Reports.ProjectMembers
     Futurice.App.Reports.SubcontractorBillingNotifications

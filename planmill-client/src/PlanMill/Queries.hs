@@ -43,7 +43,8 @@ module PlanMill.Queries (
     projects',
     projectsWithType,
     simpleProject,
-    portfolios
+    portfolios,
+    invoices
     ) where
 
 import PlanMill.Internal.Prelude
@@ -56,14 +57,15 @@ import Data.Reflection       (reifySymbol)
 import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
+import Futurice.Time.Month           (Month (..))
 import PlanMill.Types
        (Absence, Absences, Account, AccountId, AllRevenues2, Assignments,
-       CapacityCalendars, EarnedVacations, Me, PersonValueCreations,
-       Portfolios, Project (..), ProjectId, ProjectMembers, Projects,
-       SimpleProject, Task, TaskId, Tasks, Team, TeamId, TeamsHoursByCategory,
-       TimeBalance, Timereport, Timereports, User, UserCapacities, UserId,
-       Users, ViewTemplate (..), getPortfolio, identifier, sProject,
-       viewTemplateToInt)
+       CapacityCalendars, EarnedVacations, InvoiceDatas, Me,
+       PersonValueCreations, Portfolios, Project (..), ProjectId,
+       ProjectMembers, Projects, SimpleProject, Task, TaskId, Tasks, Team,
+       TeamId, TeamsHoursByCategory, TimeBalance, Timereport, Timereports, User,
+       UserCapacities, UserId, Users, ViewTemplate (..), getPortfolio,
+       identifier, sProject, viewTemplateToInt)
 import PlanMill.Types.Enumeration
 import PlanMill.Types.Meta           (Meta, lookupFieldEnum)
 import PlanMill.Types.Query          (Query (..), QueryTag (..))
@@ -406,6 +408,18 @@ portfolios :: MonadPlanMillQuery m => m Portfolios
 portfolios = getPortfolio <$> planmillQuery
     ( QueryGet QueryTagMeta mempty
     $ toUrlParts $ ("projects" :: Text) // ("meta" :: Text))
+
+-- | Get the metadata about invoices
+--
+-- See <https://developers.planmill.com/api_docs/#invoices_get>
+invoices :: MonadPlanMillQuery m => Maybe Month -> m InvoiceDatas
+invoices mmonth = planmillVectorQuery $ QueryPagedGet QueryTagInvoiceData qs $ toUrlParts $ ("invoices" :: Text)
+  where
+    qs = Map.fromList [("cyear", monthString)]
+    monthString =
+      case mmonth of
+        Just (Month year mName) -> (textShow $ fromEnum mName) <> "/" <> (textShow year)
+        Nothing    -> ""
 -------------------------------------------------------------------------------
 -- Duplication from PlanMill.Enumerations
 -------------------------------------------------------------------------------

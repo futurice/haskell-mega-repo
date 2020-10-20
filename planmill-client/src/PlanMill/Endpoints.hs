@@ -66,7 +66,9 @@ module PlanMill.Endpoints (
     allRevenuesReport,
     valueCreationByMonthReport,
     teamsHoursByCategoryReport,
-    earnedVacationsReport
+    earnedVacationsReport,
+    -- * Invoices
+    invoices
     ) where
 
 import PlanMill.Internal.Prelude
@@ -400,6 +402,13 @@ projectMembers i = planMillGet $ t "projects" // i // t "members"
 -- Uses the project meta field to fetch the values
 portfolios :: PlanMill Portfolios
 portfolios = planMillGet $ t "projects" // t "meta"
+
+-- | Get the metadata about invoices
+--
+-- See <https://developers.planmill.com/api_docs/#invoices_get>
+invoices :: PlanMill InvoiceDatas
+invoices = planMillPagedGet $ t "invoices"
+
 -------------------------------------------------------------------------------
 -- Utilities
 -------------------------------------------------------------------------------
