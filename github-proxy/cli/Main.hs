@@ -44,23 +44,23 @@ script0 = githubReq $ GH.publicOrganizationR "futurice"
 -- H(axl) Monad
 -------------------------------------------------------------------------------
 
-newtype H a = H { unH :: H.GenHaxl () a }
+newtype H w a = H { unH :: H.GenHaxl () w a }
 
-instance Functor H where
+instance Functor (H w) where
     fmap f (H x) = H (fmap f x)
 
-instance Applicative H where
+instance Applicative (H w) where
     pure = H . pure
     H f <*> H x = H (f <*> x)
     H f *> H x = H (f *> x)
 
-instance Monad H where
+instance Monad (H w) where
     return = pure
     (>>) = (*>)
     H f >>= k = H $ f >>= unH . k
 
-instance MonadGitHub H where
-    type MonadGitHubC H = FlipIn GH.GHTypes
+instance MonadGitHub (H w) where
+    type MonadGitHubC (H w) = FlipIn GH.GHTypes
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> H (H.dataFetch $ GHR tag req)
       where
@@ -68,7 +68,7 @@ instance MonadGitHub H where
         showDict     = typeTagDict (Proxy :: Proxy Show) tag
         typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
 
-runH :: Logger -> Manager -> Request -> H a -> IO a
+runH :: Logger -> Manager -> Request -> H w a -> IO a
 runH lgr mgr req (H haxl) = do
     let stateStore = H.stateSet (initDataSource lgr mgr req) H.stateEmpty
     env <- H.initEnv stateStore ()

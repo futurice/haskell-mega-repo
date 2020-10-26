@@ -14,8 +14,8 @@ import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
        (Integrations, IntegrationsConfig, MonadPersonio (..),
-       githubOrganisationMembers, githubUsernamesFromOkta,
-       personioPlanmillMap', runIntegrations)
+       githubOrganisationMembers, githubUsernamesFromOkta, personioPlanmillMap',
+       runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -27,8 +27,8 @@ import Servant.Chart             (Chart)
 import Servant.Graph             (Graph (..))
 import Servant.Server.Generic    (genericServer)
 
-import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.API
+import Futurice.App.Checklist.Ack
 import Futurice.App.Checklist.Charts.Done
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config

@@ -45,11 +45,11 @@ doFetch cred mgr (BlockedFetch (GR r) v) = do
     res <- evalGoogleReqIO cred mgr r
     putSuccess v res
 
-events :: ReadOnlyScope -> Day -> Day -> Text -> GenHaxl u [Event]
+events :: ReadOnlyScope -> Day -> Day -> Text -> GenHaxl u w [Event]
 events readonly x y z = dataFetch $ GR $ ReqEvents readonly x y z
 
-calendarResources :: ReadOnlyScope -> GenHaxl u [CalendarResource]
+calendarResources :: ReadOnlyScope -> GenHaxl u w [CalendarResource]
 calendarResources = dataFetch . GR . ReqCalendarResources
 
-request :: (Show a, Typeable a) => Req a -> GenHaxl u a
+request :: (Show a, Typeable a) => Req a -> GenHaxl u w a
 request = dataFetch . GR

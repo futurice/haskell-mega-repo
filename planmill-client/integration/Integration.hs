@@ -118,36 +118,36 @@ integration _debug cfg = withStderrLogger $ \logger ->
 -- Haxl example
 -------------------------------------------------------------------------------
 
-newtype H a = H { unH :: H.GenHaxl () a }
+newtype H w a = H { unH :: H.GenHaxl () w a }
 
-instance Functor H where
+instance Functor (H w) where
     fmap f (H x) = H (fmap f x)
 
-instance Applicative H where
+instance Applicative (H w) where
     pure = H . pure
     H f <*> H x = H (f <*> x)
     H f *> H x = H (f *> x)
 
-instance Monad H where
+instance Monad (H w) where
     return = pure
     (>>) = (*>)
     H f >>= k = H $ f >>= unH . k
 
-instance MonadPlanMillConstraint H where
-    type MonadPlanMillC H = Unit1
+instance MonadPlanMillConstraint (H w) where
+    type MonadPlanMillC (H w) = Unit1
     entailMonadPlanMillCVector _ _ = Sub Dict
 
-instance MonadPlanMillQuery H where
+instance MonadPlanMillQuery (H w) where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> H (H.dataFetch q)
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-instance MonadMemoize H where
+instance MonadMemoize (H w) where
     memo k (H m) = H (H.memo k m)
 
-runH :: Cfg -> H a -> IO a
+runH :: Cfg -> H w a -> IO a
 runH cfg (H haxl) = withStderrLogger $ \logger ->  do
     let stateStore = H.stateSet (initDataSourceSimpleIO logger cfg) H.stateEmpty
     env <- H.initEnv stateStore ()

@@ -46,8 +46,8 @@ batchFetch cfg lgr mgr fetches =
 oktaFetch :: State OktaRequest -> Flags -> u -> PerformFetch OktaRequest
 oktaFetch (OktaState cfg lgr mgr) _f _u = SyncFetch $ batchFetch cfg lgr mgr
 
-request :: (Show a, Typeable a) => Req a -> GenHaxl u a
+request :: (Show a, Typeable a) => Req a -> GenHaxl u w a
 request = dataFetch . OR
 
-fetchUsers :: GenHaxl u [User]
+fetchUsers :: GenHaxl u w [User]
 fetchUsers = request ReqGetAllUsers

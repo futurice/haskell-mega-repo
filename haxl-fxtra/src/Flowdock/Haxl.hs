@@ -44,14 +44,14 @@ instance Hashable (FlowdockRequest a) where
       `hashWithSalt` flow
       `hashWithSalt` since
 
-organisation :: FD.ParamName FD.Organisation -> GenHaxl u FD.Organisation
+organisation :: FD.ParamName FD.Organisation -> GenHaxl u w FD.Organisation
 organisation = dataFetch . FetchOrganisation
 
 messagesSince
     :: FD.ParamName FD.Organisation
     -> FD.ParamName FD.Flow
     -> Maybe FD.MessageId
-    -> GenHaxl u [FD.Message]
+    -> GenHaxl u w [FD.Message]
 messagesSince org flow since = dataFetch (FetchMessages org flow since)
 
 instance StateKey FlowdockRequest where

@@ -55,7 +55,7 @@ makeLenses ''Env
 --
 -- /TODO:/ :)
 --
-newtype Hours a = Hours { _unHours :: ReaderT Env (Haxl.GenHaxl ()) a }
+newtype Hours a = Hours { _unHours :: ReaderT Env (Haxl.GenHaxl () ()) a }
   deriving (Functor, Applicative, Monad, MonadMemoize)
 
 runHours :: Ctx -> PM.User -> Text -> Hours a -> Handler a

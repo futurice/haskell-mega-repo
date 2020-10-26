@@ -32,8 +32,8 @@ import Data.GADT.Compare        (GEq (..))
 import Data.Type.Equality
 import FUM.Types.GroupName      (GroupName)
 import FUM.Types.Login          (Login)
-import Futurice.Signed (Signed)
 import Futurice.Prelude
+import Futurice.Signed          (Signed)
 import Haxl.Core
 import Prelude ()
 import Servant.API
@@ -154,7 +154,7 @@ instance S.ToSchema SomeFUM6Response where
 -- Haxl DataSource
 -------------------------------------------------------------------------------
 
-fumHaxlRequest :: FUM6 a -> GenHaxl u a
+fumHaxlRequest :: FUM6 a -> GenHaxl u w a
 fumHaxlRequest req = case req of
     FUMGroupEmployees _ -> dataFetch req
 

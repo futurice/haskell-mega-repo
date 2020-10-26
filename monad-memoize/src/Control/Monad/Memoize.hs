@@ -30,5 +30,5 @@ class Monad m => MonadMemoize m where
 instance MonadMemoize m => MonadMemoize (ReaderT env m) where
     memo k (ReaderT m) = ReaderT $ \env -> memo k (m env)
 
-instance MonadMemoize (Haxl.GenHaxl u) where
+instance MonadMemoize (Haxl.GenHaxl w u) where
     memo = Haxl.memo

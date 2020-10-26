@@ -1,4 +1,4 @@
-index-state: 2020-09-16T10:24:18Z
+index-state: 2020-10-23T11:17:31Z
 tests: True
 with-compiler: ghc-8.6.5
 
@@ -15,7 +15,7 @@ constraints:
   diagrams-postscript   ^>= 1.5,
   generics-sop          ^>= 0.5.1.0,
   github                ^>= 0.26,
-  haxl                  ^>= 2.0.0.0,
+  haxl                  ^>= 2.3.0.0,
   http-types            ^>= 0.12,
   lens                  ^>= 4.18,
   log-base              ^>= 0.8.0.1,

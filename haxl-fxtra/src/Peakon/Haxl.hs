@@ -46,5 +46,5 @@ batchFetch cfg lgr mgr fetches =
 peakonFetch :: State PeakonRequest -> Flags -> u -> PerformFetch PeakonRequest
 peakonFetch (PeakonState cfg lgr mgr) _f _u = SyncFetch $ batchFetch cfg lgr mgr
 
-request :: (Show a, Typeable a) => Req a -> GenHaxl u a
+request :: (Show a, Typeable a) => Req a -> GenHaxl u w a
 request = dataFetch . PK
