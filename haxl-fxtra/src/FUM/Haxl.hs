@@ -37,13 +37,13 @@ instance Hashable (FumRequest a) where
 
 request
     :: (Show a, Typeable a, FromJSON a)
-    => FUM.FUM a -> GenHaxl u a
+    => FUM.FUM a -> GenHaxl u w a
 request = dataFetch . FumRequest
 
-fetchUsers :: GenHaxl u (Vector FUM.User)
+fetchUsers :: GenHaxl u w (Vector FUM.User)
 fetchUsers = request FUM.fumUsersR
 
-fetchList :: FUM.ListName -> GenHaxl u (Vector FUM.User)
+fetchList :: FUM.ListName -> GenHaxl u w (Vector FUM.User)
 fetchList = request . FUM.fumListR
 
 instance StateKey FumRequest where

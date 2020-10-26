@@ -18,8 +18,8 @@ import Servant
 import FUM.Types.Login         (Login)
 import Futurice.FUM.MachineAPI (FUM6 (..), fum6)
 
-import Futurice.App.PlanMillSync.Actions
 import Futurice.App.PlanMillSync.API
+import Futurice.App.PlanMillSync.Actions
 import Futurice.App.PlanMillSync.Config
 import Futurice.App.PlanMillSync.Ctx
 import Futurice.App.PlanMillSync.IndexPage

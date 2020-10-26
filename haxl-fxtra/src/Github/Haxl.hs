@@ -39,13 +39,13 @@ instance Haxl.Core.ShowP GithubRequest where showp = show
 instance Hashable (GithubRequest a) where
   hashWithSalt salt (GithubRequest gh) = hashWithSalt salt gh
 
-request :: (Eq a, Show a, Typeable a, FromJSON a) => GH.Request 'GH.RA a -> GenHaxl u a
+request :: (Eq a, Show a, Typeable a, FromJSON a) => GH.Request 'GH.RA a -> GenHaxl u w a
 request = dataFetch . GithubRequest
 
-membersOf :: GH.Name GH.Organization -> GenHaxl u (Vector GH.SimpleUser)
+membersOf :: GH.Name GH.Organization -> GenHaxl u w (Vector GH.SimpleUser)
 membersOf = request . flip GH.membersOfR GH.FetchAll
 
-userInfoFor :: GH.Name GH.User -> GenHaxl u GH.User
+userInfoFor :: GH.Name GH.User -> GenHaxl u w GH.User
 userInfoFor = request . GH.userInfoForR
 
 instance StateKey GithubRequest where

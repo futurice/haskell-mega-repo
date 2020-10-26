@@ -40,9 +40,9 @@ import Futurice.TypeTag
 import Prelude ()
 
 import qualified Chat.Flowdock.REST           as FD
-import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
 import qualified FUM.Haxl
+import qualified Flowdock.Haxl                as FD.Haxl
 import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.GitHub              as GH
 import qualified Futurice.Integrations.GitHub as GH
@@ -91,10 +91,10 @@ makeLenses ''Env
 -- We fake type level set.
 --
 newtype Integrations (ss :: [Serv]) a
-    = Integr { unIntegr :: ReaderT Env (H.GenHaxl ()) a }
+    = Integr { unIntegr :: ReaderT Env (H.GenHaxl () ()) a }
 
 -- | Lift arbitrary haxl computations into 'Integrations'. This is potentially unsafe.
-liftHaxl :: H.GenHaxl () a -> Integrations ss a
+liftHaxl :: H.GenHaxl () () a -> Integrations ss a
 liftHaxl = Integr . lift
 
 -------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ runIntegrations
 runIntegrations mgr lgr now cfg m =
     runIntegrationsWithHaxlStore now (integrationConfigToState mgr lgr cfg) m
 
-data IntegrationsEnv (ss :: [Serv]) = IE Env (H.Env ())
+data IntegrationsEnv (ss :: [Serv]) = IE Env (H.Env () ())
 
 makeIntegrationsEnv
     :: ServSet ss
