@@ -168,6 +168,7 @@ library
     Futurice.App.Reports.PowerUTZ
     Futurice.App.Reports.ProjectHours
     Futurice.App.Reports.ProjectMembers
+    Futurice.App.Reports.PublicCareerLevel
     Futurice.App.Reports.SubcontractorBillingNotifications
     Futurice.App.Reports.SubcontractorHoursNotifications
     Futurice.App.Reports.SupervisorsGraph

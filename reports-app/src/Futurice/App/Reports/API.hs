@@ -34,8 +34,6 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursSimplifiedReport)
 import Futurice.App.Reports.MissingHoursByProject       (MissingHoursByProject)
 import Futurice.App.Reports.OKRCompetencies             (CompetencyReport)
-import Futurice.App.Reports.OfficeVibeIntegration
-       (OfficeVibeGroup, OfficeVibeRelation, OfficeVibeUser)
 import Futurice.App.Reports.PlanMillAccountValidation   (PMAccountValidation)
 import Futurice.App.Reports.PowerAbsences               (PowerAbsenceReport)
 import Futurice.App.Reports.PowerAllRevenues            (PowerAllRevenues)
@@ -44,6 +42,7 @@ import Futurice.App.Reports.PowerUTZ                    (PowerUTZReport)
 import Futurice.App.Reports.PowerUser                   (PowerUserReport)
 import Futurice.App.Reports.ProjectHours                (ProjectHoursData)
 import Futurice.App.Reports.ProjectMembers              (ProjectMembers)
+import Futurice.App.Reports.PublicCareerLevel           (PublicCareerLevelData)
 import Futurice.App.Reports.SupervisorsGraph            (Emp)
 import Futurice.App.Reports.TeamsHoursByCategoryReport
        (TeamsHoursByCategoryReport)
@@ -78,11 +77,7 @@ data Record route = Record
     , recActiveSubcontractors       :: route :- "tables" :> "active-subcontractors" :> QueryParam "day" Day :> Get '[HTML] ActiveSubcontractorData
     , recOKRCompetences             :: route :- "tables" :> "multdisciplinary-projects-count"      :> Get '[HTML] CompetencyReport
     , recOKRCompetencesJSON         :: route :- "tables" :> "multdisciplinary-projects-count.json" :> Get '[JSON] CompetencyReport
-
-    -- Officevibe
-    , recOfficevibeUsers         :: route :- "officevibe" :> "users.csv" :> Get '[CSV] [OfficeVibeUser]
-    , recOfficevibeGroups        :: route :- "officevibe" :> "groups.csv" :> Get '[CSV] [OfficeVibeGroup]
-    , recOfficevibeGroupsMapping :: route :- "officevibe" :> "groups-mapping.csv" :> Get '[CSV] [OfficeVibeRelation]
+    , recPublicCareerLevels         :: route :- "career-levels" :> Get '[HTML] PublicCareerLevelData
 
     -- Dump: can be deleted, we have futuqu
     , recTimereportsDump :: route :- "dump" :> "timereports.csv.xz" :> CachedGet (LZMA CSV) [SimpleTimereport]

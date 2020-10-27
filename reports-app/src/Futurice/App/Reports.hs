@@ -67,8 +67,6 @@ import Futurice.App.Reports.MissingHoursDailyChart
        (missingHoursDailyChartData, missingHoursDailyChartRender)
 import Futurice.App.Reports.MissingHoursNotifications
 import Futurice.App.Reports.OKRCompetencies                   (competencyData)
-import Futurice.App.Reports.OfficeVibeIntegration
-       (OfficeVibeData (..), officeVibeData)
 import Futurice.App.Reports.OwnedComputers                    (userComputers)
 import Futurice.App.Reports.PlanMillAccountValidation
        (pmAccountValidationData)
@@ -85,6 +83,8 @@ import Futurice.App.Reports.PowerUser
 import Futurice.App.Reports.ProjectHours                      (projectHoursData)
 import Futurice.App.Reports.ProjectMembers
        (projectMemberData)
+import Futurice.App.Reports.PublicCareerLevel
+       (publicCareerLevelData)
 import Futurice.App.Reports.SubcontractorBillingNotifications
 import Futurice.App.Reports.SubcontractorHoursNotifications
        (subcontractorHoursNotifications)
@@ -355,10 +355,7 @@ server ctx = genericServer $ Record
     , recActiveSubcontractors       = liftIO . serveActiveSubcontractorReport ctx
     , recOKRCompetences             = liftIO $ serveData competencyData ctx
     , recOKRCompetencesJSON         = liftIO $ serveData competencyData ctx
-    -- Officevibe
-    , recOfficevibeUsers         = liftIO $ serveData' () (const officeVibeData) ovdUsers ctx
-    , recOfficevibeGroups        = liftIO $ serveData' () (const officeVibeData) ovdGroups ctx
-    , recOfficevibeGroupsMapping = liftIO $ serveData' () (const officeVibeData) ovdRelations ctx
+    , recPublicCareerLevels         = liftIO $ serveData publicCareerLevelData ctx
 
     -- Dump: can be deleted, we have futuqu
     , recTimereportsDump = liftIO (serveData (mkCached <$> timereportsDump) ctx)
