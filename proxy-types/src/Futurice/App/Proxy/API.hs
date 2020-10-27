@@ -1,10 +1,12 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE InstanceSigs    #-}
-{-# LANGUAGE KindSignatures  #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE DerivingVia      #-}
+{-# LANGUAGE InstanceSigs     #-}
+{-# LANGUAGE KindSignatures   #-}
+{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE TypeOperators    #-}
 module Futurice.App.Proxy.API (
     Routes (..),
     ProxyAPI,
@@ -314,8 +316,10 @@ proxyEndpoints :: Set Endpoint
 proxyEndpoints = Set.map coerce $ proxyEndpoints' (Proxy :: Proxy Routes)
 
 newtype Endpoint = Endpoint Text
-  deriving stock (Eq, Ord)
+  deriving stock (Eq, Ord, GhcGeneric)
   deriving newtype (Show, NFData)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, Postgres.ToField, Postgres.FromField, ToHtml) via (Textica Endpoint)
 
 instance Enum Endpoint where
     fromEnum e = case Set.lookupIndex e proxyEndpoints of
@@ -337,14 +341,6 @@ instance Textual Endpoint where
       where
         raws = proxyEndpoints' (Proxy :: Proxy Routes)
 
-deriveVia [t| ToJSON Endpoint             `Via` Textica Endpoint |]
-deriveVia [t| FromJSON Endpoint           `Via` Textica Endpoint |]
-deriveVia [t| ToHttpApiData Endpoint      `Via` Textica Endpoint |]
-deriveVia [t| FromHttpApiData Endpoint    `Via` Textica Endpoint |]
-deriveVia [t| Postgres.ToField Endpoint   `Via` Textica Endpoint |]
-deriveVia [t| Postgres.FromField Endpoint `Via` Textica Endpoint |]
-deriveVia [t| ToHtml Endpoint             `Via` Textica Endpoint |]
-
 instance ToParamSchema Endpoint where toParamSchema = textualToParamSchema
 instance ToSchema Endpoint where declareNamedSchema = textualDeclareNamedSchema
 
@@ -354,21 +350,15 @@ instance ToSchema Endpoint where declareNamedSchema = textualDeclareNamedSchema
 
 -- | Parsing this always succeeds.
 newtype LenientEndpoint = LenientEndpoint Text
-  deriving stock (Eq, Ord)
+  deriving stock (Eq, Ord, GhcGeneric)
   deriving newtype (Show, NFData)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, Postgres.ToField, Postgres.FromField, ToHtml) via (Textica LenientEndpoint)
 
 -- | No verification.
 instance Textual LenientEndpoint where
     textualToText   = coerce
     textualFromText = Right . coerce
-
-deriveVia [t| ToJSON LenientEndpoint             `Via` Textica LenientEndpoint |]
-deriveVia [t| FromJSON LenientEndpoint           `Via` Textica LenientEndpoint |]
-deriveVia [t| ToHttpApiData LenientEndpoint      `Via` Textica LenientEndpoint |]
-deriveVia [t| FromHttpApiData LenientEndpoint    `Via` Textica LenientEndpoint |]
-deriveVia [t| Postgres.ToField LenientEndpoint   `Via` Textica LenientEndpoint |]
-deriveVia [t| Postgres.FromField LenientEndpoint `Via` Textica LenientEndpoint |]
-deriveVia [t| ToHtml LenientEndpoint             `Via` Textica LenientEndpoint |]
 
 instance ToParamSchema LenientEndpoint where toParamSchema = textualToParamSchema
 instance ToSchema LenientEndpoint where declareNamedSchema = textualDeclareNamedSchema

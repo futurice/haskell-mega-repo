@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingVia         #-}
 {-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
@@ -30,13 +31,10 @@ data ScheduleEmployee = ScheduleEmployee
     , _seHrnumber        :: !(Maybe Int)
     , _seFutubuddy       :: !(Maybe Email)
     }
-  deriving (Show, Typeable, Generic)
+  deriving (Show, Typeable, GhcGeneric, SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON) via (Sopica ScheduleEmployee)
 
 makeLenses ''ScheduleEmployee
-deriveGeneric ''ScheduleEmployee
-
-deriveVia [t| ToJSON ScheduleEmployee   `Via` Sopica ScheduleEmployee |]
-deriveVia [t| FromJSON ScheduleEmployee `Via` Sopica ScheduleEmployee |]
 
 instance ToSchema ScheduleEmployee where declareNamedSchema = sopDeclareNamedSchema
 

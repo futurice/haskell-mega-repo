@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -24,15 +25,12 @@ data BoardGameInformation = BoardGameInformation
     , _boardGameDesigner       :: !(Maybe Text)
     , _boardGameArtist         :: !(Maybe Text)
     }
-    deriving (Eq, Ord, Show, Typeable, Generic, FromRow)
+    deriving (Eq, Ord, Show, Typeable, Generic, FromRow, SopGeneric, HasDatatypeInfo)
+    deriving (ToJSON, FromJSON) via (Sopica BoardGameInformation)
 
 deriveGeneric ''BoardGameInformationId
-deriveGeneric ''BoardGameInformation
 
 makeLenses ''BoardGameInformation
-
-deriveVia [t| ToJSON BoardGameInformation `Via` Sopica BoardGameInformation |]
-deriveVia [t| FromJSON BoardGameInformation `Via` Sopica BoardGameInformation |]
 
 instance HasKey BoardGameInformation where
     type Key BoardGameInformation = BoardGameInformationId

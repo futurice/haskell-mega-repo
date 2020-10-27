@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DeriveAnyClass  #-}
+{-# LANGUAGE DerivingVia     #-}
 {-# LANGUAGE InstanceSigs    #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
@@ -13,7 +15,9 @@ data Preferences = Preferences
     { _prefHoursPingSMS   :: !Bool
     , _prefHoursPingEmail :: !Bool
     }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Show, GhcGeneric)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON) via (Sopica Preferences)
 
 defaultPreferences :: Preferences
 defaultPreferences = Preferences
@@ -22,9 +26,5 @@ defaultPreferences = Preferences
     }
 
 makeLenses ''Preferences
-deriveGeneric ''Preferences
-
-deriveVia [t| ToJSON Preferences   `Via` Sopica Preferences |]
-deriveVia [t| FromJSON Preferences `Via` Sopica Preferences |]
 
 instance ToSchema Preferences where declareNamedSchema = sopDeclareNamedSchema

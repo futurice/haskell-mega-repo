@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -19,23 +20,15 @@ data BorrowRequest = BorrowRequest
     { _borrowBook      :: !BookInformationId
     , _borrowLibrary   :: !Library
     }
-    deriving (Show, Typeable)
-
-deriveGeneric ''BorrowRequest
-
-deriveVia [t| ToJSON BorrowRequest `Via` Sopica BorrowRequest |]
-deriveVia [t| FromJSON BorrowRequest `Via` Sopica BorrowRequest |]
+    deriving (Show, Typeable, GhcGeneric, SopGeneric, HasDatatypeInfo)
+    deriving (ToJSON, FromJSON) via (Sopica BorrowRequest)
 
 instance ToSchema BorrowRequest where declareNamedSchema = sopDeclareNamedSchema
 
 data BorrowRequestWithUser = BorrowRequestWithUser
     { _brwuUser    :: !Login
     , _brwuRequest :: !BorrowRequest
-    } deriving (Show, Typeable)
-
-deriveGeneric ''BorrowRequestWithUser
-
-deriveVia [t| ToJSON BorrowRequestWithUser `Via` Sopica BorrowRequestWithUser |]
-deriveVia [t| FromJSON BorrowRequestWithUser `Via` Sopica BorrowRequestWithUser |]
+    } deriving (Show, Typeable, GhcGeneric, SopGeneric, HasDatatypeInfo)
+      deriving (ToJSON, FromJSON) via (Sopica BorrowRequestWithUser)
 
 instance ToSchema BorrowRequestWithUser where declareNamedSchema = sopDeclareNamedSchema

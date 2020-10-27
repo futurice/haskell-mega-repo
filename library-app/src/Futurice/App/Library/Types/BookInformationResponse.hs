@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DerivingVia     #-}
 {-# LANGUAGE InstanceSigs    #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
@@ -18,7 +19,8 @@ data Books = Books
     { _booksLibrary :: !Library
     , _booksBookId  :: !ItemId
     }
-    deriving (Eq, Ord, Show, Generic, ToSchema, Typeable)
+    deriving (Eq, Ord, Show, GhcGeneric, ToSchema, Typeable, SopGeneric, HasDatatypeInfo)
+    deriving (ToJSON, FromJSON) via (Sopica Books)
 
 data BookInformationResponse = BookInformationResponse
     { _id          :: !BookInformationId
@@ -30,14 +32,7 @@ data BookInformationResponse = BookInformationResponse
     , _cover       :: !ContentHash
     , _infoLink    :: !Text
     , _books       :: ![Books]
-    } deriving  (Show, Typeable, Generic)
-
-deriveGeneric ''Books
-deriveGeneric ''BookInformationResponse
-
-deriveVia [t| ToJSON BookInformationResponse `Via` Sopica BookInformationResponse |]
-deriveVia [t| FromJSON BookInformationResponse `Via` Sopica BookInformationResponse |]
-deriveVia [t| ToJSON Books `Via` Sopica Books |]
-deriveVia [t| FromJSON Books `Via` Sopica Books |]
+    } deriving (Show, Typeable, GhcGeneric, SopGeneric, HasDatatypeInfo)
+      deriving (ToJSON, FromJSON) via (Sopica BookInformationResponse)
 
 instance ToSchema BookInformationResponse

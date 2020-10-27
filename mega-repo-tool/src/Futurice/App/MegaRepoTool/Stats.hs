@@ -11,15 +11,19 @@ import Data.Machine.Runner      (foldT)
 import Data.Semigroup           (Max (..))
 import Data.Semigroup.Generic   (gmappend, gmempty)
 import Data.TDigest             (TDigest, singleton)
-import Data.TDigest.Postprocess (HistBin, histogram, quantile, cdf)
+import Data.TDigest.Postprocess (HistBin, cdf, histogram, quantile)
 import Futurice.Monoid          (Average (..))
 import Futurice.Prelude
 import Prelude ()
-import System.Directory.Machine (directoryWalk', files)
 import Text.Printf              (printf)
 
 import qualified Data.ByteString.Char8 as BS8
 
+directoryWalk' :: ([Char] -> Bool) -> MachineT IO (Is FilePath) a
+directoryWalk' = undefined -- TODO
+
+files :: ProcessT IO a [Char]
+files = undefined --TODO
 -------------------------------------------------------------------------------
 -- Stats monoid
 -------------------------------------------------------------------------------

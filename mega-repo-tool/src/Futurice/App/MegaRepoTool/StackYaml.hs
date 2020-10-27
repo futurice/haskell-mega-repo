@@ -2,8 +2,8 @@
 module Futurice.App.MegaRepoTool.StackYaml (stackYaml) where
 
 import Cabal.Plan
-       (FlagName, PkgId (..), PkgName, PlanJson (..), Unit (..), UnitType (..),
-       findAndDecodePlanJson, SearchPlanJson (..))
+       (FlagName, PkgId (..), PkgName, PlanJson (..), SearchPlanJson (..),
+       Unit (..), UnitType (..), findAndDecodePlanJson)
 import Control.Monad.Trans.State (StateT, execStateT, modify')
 import Data.Aeson                (ToJSON (..), object, (.=))
 import Data.List                 (elemIndex)
@@ -11,11 +11,11 @@ import Data.Yaml.Pretty          (defConfig, encodePretty, setConfCompare)
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.ByteString            as BS
-import qualified Data.Map                   as Map
-import qualified Data.Text                  as T
-import qualified Distribution.Parsec.Common as P
-import qualified Distribution.Parsec.Parser as P
+import qualified Data.ByteString     as BS
+import qualified Data.Map            as Map
+import qualified Data.Text           as T
+import qualified Distribution.Fields as P
+import qualified Distribution.Parsec as P
 
 -------------------------------------------------------------------------------
 -- stack.yaml

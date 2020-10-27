@@ -45,7 +45,7 @@ library
     , base16-bytestring
     , base64-bytestring
     , bytestring
-    , Cabal                 ^>=2.2 || ^>=2.4
+    , Cabal                 ^>=3.0 || ^>=3.2
     , cabal-plan
     , case-insensitive
     , containers
@@ -60,7 +60,6 @@ library
     , http-client-tls
     , lens
     , machines              >=0.6.1
-    , machines-directory    >=0.2.1.0
     , microstache
     , optparse-applicative
     , parsec

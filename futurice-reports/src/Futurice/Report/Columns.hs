@@ -8,6 +8,7 @@
 {-# LANGUAGE RankNTypes              #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TemplateHaskell         #-}
+{-# LANGUAGE TypeApplications        #-}
 {-# LANGUAGE TypeFamilies            #-}
 {-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE UndecidableInstances    #-}
@@ -41,8 +42,8 @@ import Futurice.Prelude
 import Futurice.Time
        (AsScientific, IsTimeUnit (..), NDT (..), TimeUnit (..))
 import Futurice.Tribe            (Tribe)
-import Generics.SOP              ((:.:) (..), All, SListI)
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
+import Generics.SOP              (All, SListI, (:.:) (..))
 import Prelude ()
 import Servant.API               (MimeRender (..))
 import Servant.CSV.Cassava       (CSV', EncodeOpts, SHasHeaderI, encodeOpts')
@@ -54,9 +55,8 @@ import qualified Generics.SOP      as SOP
 import qualified PlanMill          as PM
 
 -- instances
-import qualified Chat.Flowdock.REST as FD
-import qualified FUM.Types.Login    as FUM
-import qualified GitHub             as GH
+import qualified FUM.Types.Login as FUM
+import qualified GitHub          as GH
 import qualified Personio
 
 -------------------------------------------------------------------------------
@@ -612,11 +612,6 @@ instance ReportValue FUM.Login where
     reportValueType _ = CTFumUser
     type ReportValueC FUM.Login = Unit1
     reportValueHtml = toHtml
-
-instance ReportValue a => ReportValue (FD.Identifier a res) where
-    type ReportValueC (FD.Identifier a res) = ReportValueC a
-    reportValueHtml   = reportValueHtml . FD.getIdentifier
-    reportValueType _ = reportValueType (Proxy :: Proxy a)
 
 instance ReportValue Personio.EmployeeId where
     reportValueType _ = CTText

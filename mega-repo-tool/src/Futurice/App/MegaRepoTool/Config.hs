@@ -9,12 +9,12 @@ import Control.Monad.Trans.State (StateT, execStateT)
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.ByteString            as BS
-import qualified Data.Map                   as Map
-import qualified Data.Text                  as T
-import qualified Distribution.Parsec.Common as P
-import qualified Distribution.Parsec.Parser as P
-import qualified Text.Microstache           as M
+import qualified Data.ByteString     as BS
+import qualified Data.Map            as Map
+import qualified Data.Text           as T
+import qualified Distribution.Fields as P
+import qualified Distribution.Parsec as P
+import qualified Text.Microstache    as M
 
 -------------------------------------------------------------------------------
 -- Types
