@@ -15,7 +15,7 @@ import Prelude ()
 import qualified Data.ByteString as BS
 import qualified Data.Map        as Map
 import qualified Data.Text       as T
-#if __GLASGOW_HASKELL__ >= 880
+#if __GLASGOW_HASKELL__ >= 808
 import qualified Distribution.Fields as P
 import qualified Distribution.Parsec as P
 #else
