@@ -14,10 +14,10 @@
     - Ubuntu: `sudo make install-ubuntu-dependencies`
 3. Install cabal and ghc
     - Ubuntu: See https://launchpad.net/~hvr/+archive/ubuntu/ghc
-        - `apt-get install ghc-8.6.5 cabal-install-head`
+        - `apt-get install ghc-8.8.4 cabal-install-head`
 	- Be sure to add `/opt/ghc/bin/` and `/opt/cabal/bin/` to your `$PATH`
     - macOS:
-	- From [haskell.futurice.com](https://haskell.futurice.com/): `curl -sL https://haskell.futurice.com/haskell-on-macos.py | python3 - --make-dirs --paths.d --ghc-alias=8.6.5 --cabal-alias=head install ghc-8.4.4 ghc-8.6.5 cabal-install-head`
+	- From [haskell.futurice.com](https://haskell.futurice.com/): `curl -sL https://haskell.futurice.com/haskell-on-macos.py | python3 - --make-dirs --paths.d --ghc-alias=8.6.5 --cabal-alias=head install ghc-8.6.5 ghc-8.8.4 cabal-install-head`
 4. `cabal new-update`
 5. `cp -r data.sample data`
 6. `cabal new-run theme-app-server`
