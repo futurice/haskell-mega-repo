@@ -45,7 +45,7 @@ library
     , base16-bytestring
     , base64-bytestring
     , bytestring
-    , Cabal                 ^>=3.0 || ^>=3.2
+    , Cabal                 ^>=2.2 || ^>=2.4 || ^>=3.0 || ^>=3.2
     , cabal-plan
     , case-insensitive
     , containers
