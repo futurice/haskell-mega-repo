@@ -154,14 +154,11 @@ instance FromJSON Project where
         <*> (getU <$$> obj .:? "start")
         <*> (getU <$$> obj .:? "finish")
         <*> obj .:? "projectManager"
-
-        -- it might be needed to change other fields to be lenient
-        -- but let's see if we don't need to!
         <*> obj .:? "invoicedRevenue" .!= 0
         <*> obj .:? "actualRevenue"   .!= 0
         <*> obj .:? "totalRevenue"    .!= 0
         <*> obj .:? "actualCost"      .!= 0
-        <*> obj .: "totalCost"
+        <*> obj .:? "totalCost"       .!= 0
         <*> obj .:? "actualEffort"    .!= 0
         <*> obj .:? "totalEffort"     .!= 0
 
