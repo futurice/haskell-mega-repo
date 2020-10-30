@@ -92,8 +92,8 @@ build)
         ;;
 
     cabal)
-        timed cabal new-build --enable-tests  $CONCURRENCY all
-        timed cabal new-test --enable-tests all
+        timed cabal v2-build --write-ghc-environment-files=always --enable-tests $CONCURRENCY all
+        timed cabal v2-test --enable-tests all
 
         # Prepare environment
         for envfile in .ghc.environment.*; do
