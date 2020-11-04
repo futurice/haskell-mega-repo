@@ -15,7 +15,7 @@ sendMessageToAll :: Ctx -> Text -> IO ()
 sendMessageToAll ctx message = do
     employees <- runIntegrations' ctx $ P.personio P.PersonioEmployees
     let activeEmployees = filter (\p -> p ^. P.employeeStatus == P.Active && p ^. P.employeeEmploymentType == Just P.Internal) employees
-    for_ (take 10 activeEmployees) $ \p ->
+    for_ activeEmployees $ \p ->
       case p ^. P.employeeWorkPhone of
         Nothing -> runLogT "missing-hours-notifications" lgr $ logAttention "Employee without phone" $ p ^. P.employeeLogin
         Just numb -> do
