@@ -7,7 +7,7 @@ category:           Web
 homepage:           https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
 build-type:         Simple
@@ -24,7 +24,7 @@ library
   build-depends:
     , aeson
     , aeson-compat
-    , base       
+    , base
     , base-compat
     , bytestring
     , env-config
@@ -36,16 +36,27 @@ library
     , servant-server
     , sms-proxy-client
     , text
+
   exposed-modules:
     Futurice.App.SmsProxy
     Futurice.App.SmsProxy.Config
     Futurice.App.SmsProxy.Ctx
     Futurice.App.SmsProxy.Logic
+    Futurice.App.SmsProxy.Mock
 
 executable sms-proxy-server
   default-language: Haskell2010
   main-is:          Main.hs
   hs-source-dirs:   srv
+  ghc-options:      -Wall -threaded -rtsopts
+  build-depends:
+    , base
+    , sms-proxy
+
+executable sms-proxy-mock
+  default-language: Haskell2010
+  main-is:          Main.hs
+  hs-source-dirs:   mock
   ghc-options:      -Wall -threaded -rtsopts
   build-depends:
     , base
