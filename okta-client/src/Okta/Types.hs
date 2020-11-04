@@ -151,7 +151,7 @@ instance FromJSON Profile where
       <*> o .:? "start_date"
       <*> o .:? "manager"
       <*> (o .:? "fum_username" <|> pure Nothing)
-      <*> o .:? "terminationDate"
+      <*> (o .:? "terminationDate" <|> pure Nothing)
       <*> o .:? "separation_reason"
       <*> o .:? "birthday"
       <*> o .:? "competenceHome"
