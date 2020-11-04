@@ -55,6 +55,7 @@ import Futurice.App.Reports.Invoice                           (invoiceData)
 import Futurice.App.Reports.LongAbsence
        (longAbsencesNotification)
 import Futurice.App.Reports.Markup
+import Futurice.App.Reports.MassSend                          (sendMessageToAll)
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, MissingHoursSimplifiedReport, mhpTotalHours,
        missingHoursEmployeePredicate, missingHoursReport,
@@ -324,6 +325,9 @@ servePeakonEngagementDrivers ctx = runIntegrations' ctx $ engagementDrivers
 servePeakonSegments :: Ctx -> IO Value
 servePeakonSegments ctx = runIntegrations' ctx $ segments
 
+serveSendMessageToAll :: Ctx -> Text -> IO ()
+serveSendMessageToAll ctx smstext = sendMessageToAll ctx smstext
+
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = genericServer $ Record
@@ -406,6 +410,7 @@ server ctx = genericServer $ Record
     , recFumAbsence = \login month -> liftIO $ serveDataParam2 login month fumAbsences ctx
 
     , recInvoice = \month -> liftIO $ serveDataParam month invoiceData ctx
+    , recMassSendSMS = \smstext -> liftIO $ serveSendMessageToAll ctx smstext
     }
   where
     lgr = ctxLogger ctx
