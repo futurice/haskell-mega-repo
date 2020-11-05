@@ -139,7 +139,7 @@ warnings with *other* GHCs are ok.
 > Everything should be compilable with the last three releases of GHC.
 
 We don't apply the three release policy for the applications. It's enough that
-we can compile applications with some recent GHC version (currently *8.0.2*).
+we can compile applications with some recent GHC version (currently *8.6.5*).
 
 For libraries we aim to support the last three GHC versions, but this
 doesn't apply to this repository, only for submodules.
