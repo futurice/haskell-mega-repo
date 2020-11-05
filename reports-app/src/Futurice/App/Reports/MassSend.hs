@@ -3,7 +3,6 @@ module Futurice.App.Reports.MassSend where
 
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.Ctx
-import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
