@@ -93,6 +93,7 @@ library
     , lucid-extras
     , microstache
     , mtl
+    , okta-proxy
     , optparse-applicative
     , peakon-client
     , periocron

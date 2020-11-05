@@ -15,6 +15,7 @@ import Futurice.Prelude
 import Prelude ()
 import Servant.Client             (BaseUrl)
 
+import qualified FUM.Types.Login                   as FUM
 import qualified Futurice.Integrations.Serv.Config as C
 
 type ReportIntegrations = '[ ServFD, ServFUM, ServGH, ServPE, ServPK, ServPM, ServPO ]
@@ -27,6 +28,9 @@ data Config = Config
     , cfgPostgresConnInfo      :: !ConnectInfo
     , cfgPostgresConnInfoInv   :: !ConnectInfo
     , cfgHcEmailCC             :: !(Maybe Email)
+    , cfgOktaProxyBaseurl      :: !BaseUrl
+    , cfgMockUser              :: !(Maybe FUM.Login)
+    , cfgITTeamOktaGroup       :: Text
     }
 
 instance Configure Config where
@@ -38,6 +42,9 @@ instance Configure Config where
         <*> envConnectInfo
         <*> envConnectInfo' "INVENTORY_"
         <*> optionalAlt (envVar "HCEMAIL_CC")
+        <*> envVar "OKTAPROXY_BASEURL"
+        <*> optionalAlt (envVar "MOCKUSER")
+        <*> envVar "OKTA_GROUP_IT"
 
 toFutuquCfg
     :: C.IntegrationsConfig ReportIntegrations

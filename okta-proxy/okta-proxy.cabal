@@ -48,11 +48,14 @@ library
     , okta-client
     , personio-client
     , servant
+    , servant-client
+    , servant-client-core
     , servant-server
 
   exposed-modules:
     Futurice.App.OktaProxy
     Futurice.App.OktaProxy.API
+    Futurice.App.OktaProxy.Client
     Futurice.App.OktaProxy.Config
     Futurice.App.OktaProxy.Ctx
     Futurice.App.OktaProxy.Logic

@@ -129,7 +129,7 @@ data Record route = Record
 
     , recInvoice :: route :- "invoice" :> QueryParam "month" Month :> Get '[JSON] [Invoice]
 
-    , recMassSendSMS :: route :- "mass-send-sms" :> ReqBody '[JSON] Text :> Post '[JSON] ()
+    , recMassSendSMS :: route :- SSOUser :> "mass-send-sms" :> ReqBody '[JSON] Text :> Post '[JSON] ()
     }
   deriving Generic
 

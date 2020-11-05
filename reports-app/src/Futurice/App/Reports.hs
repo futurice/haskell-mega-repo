@@ -13,6 +13,7 @@ import Control.Lens                   (each)
 import Data.Aeson                     (object, (.=))
 import Data.List                      (isSuffixOf)
 import Futuqu                         (futuquServer)
+import Futurice.App.OktaProxy.Client  (groupMembers)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, endOfPrevMonth, previousFriday)
 import Futurice.Periocron
@@ -34,7 +35,9 @@ import Servant.Chart                  (Chart (..))
 import Servant.Graph                  (Graph (..))
 import Servant.Server.Generic         (genericServer)
 
+import qualified Data.Set               as Set
 import qualified Data.Swagger           as Sw
+import qualified FUM.Types.Login        as FUM
 import qualified Futurice.KleeneSwagger as K
 
 import Futurice.App.Reports.API
@@ -325,8 +328,18 @@ servePeakonEngagementDrivers ctx = runIntegrations' ctx $ engagementDrivers
 servePeakonSegments :: Ctx -> IO Value
 servePeakonSegments ctx = runIntegrations' ctx $ segments
 
-serveSendMessageToAll :: Ctx -> Text -> IO ()
-serveSendMessageToAll ctx smstext = sendMessageToAll ctx smstext
+serveSendMessageToAll :: Ctx -> Maybe FUM.Login -> Text -> IO ()
+serveSendMessageToAll ctx mfum smstext =
+    case mfum <|> (cfgMockUser cfg) of
+      Nothing -> error "No user found"
+      Just login -> do
+          res <- groupMembers (ctxManager ctx) (cfgOktaProxyBaseurl cfg) (cfgITTeamOktaGroup cfg)
+          if login `Set.member` (Set.fromList res) then
+            sendMessageToAll ctx smstext
+          else
+            error "Not authorized"
+  where
+    cfg = ctxConfig ctx
 
 -- | API server
 server :: Ctx -> Server ReportsAPI
@@ -410,7 +423,7 @@ server ctx = genericServer $ Record
     , recFumAbsence = \login month -> liftIO $ serveDataParam2 login month fumAbsences ctx
 
     , recInvoice = \month -> liftIO $ serveDataParam month invoiceData ctx
-    , recMassSendSMS = \smstext -> liftIO $ serveSendMessageToAll ctx smstext
+    , recMassSendSMS = \user smstext -> liftIO $ serveSendMessageToAll ctx user smstext
     }
   where
     lgr = ctxLogger ctx
