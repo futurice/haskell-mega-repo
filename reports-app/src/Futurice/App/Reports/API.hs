@@ -128,6 +128,8 @@ data Record route = Record
     , recFumAbsence  :: route :- "report" :> "absences" :> Capture "login" FUM.Login :> Capture "month" Month :> Get '[JSON] FumAbsences
 
     , recInvoice :: route :- "invoice" :> QueryParam "month" Month :> Get '[JSON] [Invoice]
+
+    , recMassSendSMS :: route :- SSOUser :> "mass-send-sms" :> ReqBody '[JSON] Text :> Post '[JSON] ()
     }
   deriving Generic
 

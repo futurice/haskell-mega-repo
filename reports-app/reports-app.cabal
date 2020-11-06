@@ -93,6 +93,7 @@ library
     , lucid-extras
     , microstache
     , mtl
+    , okta-proxy
     , optparse-applicative
     , peakon-client
     , periocron
@@ -151,6 +152,7 @@ library
     Futurice.App.Reports.Invoice
     Futurice.App.Reports.LongAbsence
     Futurice.App.Reports.Markup
+    Futurice.App.Reports.MassSend
     Futurice.App.Reports.MissingHours
     Futurice.App.Reports.MissingHoursByProject
     Futurice.App.Reports.MissingHoursChart
