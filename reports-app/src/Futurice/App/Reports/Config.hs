@@ -30,7 +30,7 @@ data Config = Config
     , cfgHcEmailCC             :: !(Maybe Email)
     , cfgOktaProxyBaseurl      :: !BaseUrl
     , cfgMockUser              :: !(Maybe FUM.Login)
-    , cfgITTeamOktaGroup       :: Text
+    , cfgITTeamOktaGroup       :: !Text
     }
 
 instance Configure Config where
