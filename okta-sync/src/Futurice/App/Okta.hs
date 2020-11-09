@@ -109,11 +109,13 @@ makeCtx cfg lgr mgr cache mq = do
     return (ctx, [])
   where
     integrationCfg = cfgIntegrationsCfg cfg
+    ignoreSet      = cfgIgnoreFromPersonio cfg
 
     updateJob ctx = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
         es' <- P.personioEmployees
+        let es'' = filter (\p -> (p ^. P.employeeId) `Set.notMember` ignoreSet) es'
         oktaUsers <- O.users
-        updateUsers ctx (utctDay now) es' oktaUsers
+        updateUsers ctx (utctDay now) es'' oktaUsers
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
