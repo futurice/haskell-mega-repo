@@ -17,6 +17,7 @@ data Config = Config
     , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServFUM6, ServOK, ServPE, ServPK, ServPO ])
     , cfgGithubAppId        :: !O.OktaAppId
     , cfgAlwaysInPeakon     :: ![P.EmployeeId]
+    , cfgIgnoreFromPersonio :: !(Set P.EmployeeId) -- Employee information we don't want to sync
     }
 
 instance Configure Config where
@@ -26,6 +27,7 @@ instance Configure Config where
       <*> configure
       <*> envVar "GITHUBAPPID"
       <*> envVar "ALWAYS_IN_PEAKON"
+      <*> envVar "IGNORE_FROM_PERSONIO"
 
 instance HasOktaGithubId Config where
     oktaGithubId = cfgGithubAppId
