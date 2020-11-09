@@ -19,7 +19,7 @@
     - macOS:
 	- From [haskell.futurice.com](https://haskell.futurice.com/): `curl -sL https://haskell.futurice.com/haskell-on-macos.py | python3 - --make-dirs --paths.d --ghc-alias=8.6.5 --cabal-alias=head install ghc-8.4.4 ghc-8.6.5 cabal-install-head`
 4. `cabal new-update`
-5. `cp data.sample data`
+5. `cp -r data.sample data`
 6. `cabal new-run theme-app-server`
 
 We use `new-` commands, e.g.
