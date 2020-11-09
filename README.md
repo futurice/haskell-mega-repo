@@ -18,8 +18,9 @@
 	- Be sure to add `/opt/ghc/bin/` and `/opt/cabal/bin/` to your `$PATH`
     - macOS:
 	- From [haskell.futurice.com](https://haskell.futurice.com/): `curl -sL https://haskell.futurice.com/haskell-on-macos.py | python3 - --make-dirs --paths.d --ghc-alias=8.6.5 --cabal-alias=head install ghc-8.4.4 ghc-8.6.5 cabal-install-head`
-4. `cabal update`
-5. `cabal new-run theme-app-server`
+4. `cabal new-update`
+5. `cp data.sample data`
+6. `cabal new-run theme-app-server`
 
 We use `new-` commands, e.g.
 - `cabal new-repl theme-app` to run GHCi repl in the `theme-app` library.
@@ -66,6 +67,7 @@ mega-repo-tool stats
 ```
 
 ### Update deps graph
+[`cabal-plan`](https://hackage.haskell.org/package/cabal-plan) and [`dot`](https://graphviz.org/) needs to be in your `$PATH`
 
 ```
 make deps.png
@@ -100,7 +102,7 @@ We use [stylish-haskell](https://github.com/jaspervdj/stylish-haskell).
 [Example `stylish-haskell.yaml`](https://github.com/futurice/haskell-servant-status/blob/master/.stylish-haskell.yaml).
 
 Packages have to be buildable with `-Wall -Werror` with some of the supported
-GHCs (currently usually *8.0.2*).
+GHCs (currently usually *8.6.5*).
 
 ### GHC Extensions
 
