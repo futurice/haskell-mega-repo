@@ -37,6 +37,8 @@ library
     , env-config
     , futurice-prelude
     , http-client
+    , lens-aeson
+    , text
 
   exposed-modules:
     Slack

@@ -31,3 +31,7 @@ instance HasHttpManager Cfg where
 
 instance HasSlackToken Cfg where
     slackToken f cfg = fmap (\newToken -> cfg { slackCfg = newToken}) (f (slackCfg cfg))
+
+newtype SlackError = SlackError String deriving Show
+
+instance Exception SlackError
