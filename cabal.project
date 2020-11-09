@@ -131,6 +131,7 @@ packages:
   servant-dashdo/
   sisosota-app/
   sisosota-client/
+  slack-client/
   smileys-app/
   sms-proxy-client/
   sms-proxy/

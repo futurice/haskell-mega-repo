@@ -1,0 +1,55 @@
+cabal-version:      2.2
+name:               slack-client
+version:            0
+synopsis:           Helper API for interacting with Slack 
+description:        Helper API for interacting with Slack
+category:           Web
+homepage:           https://github.com/futurice/haskell-mega-rpo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-rpo/issues
+author:             Toni Okuogume <toni.okuogume@futurice.com>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
+license:            BSD-3-Clause
+license-file:       LICENSE
+build-type:         Simple
+extra-source-files: README.md
+
+source-repository head
+  type:     git
+  location: https://github.com/futurice/haskell-mega-rpo
+
+library
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+  hs-source-dirs:     src
+  default-extensions:
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    GeneralizedNewtypeDeriving
+    ScopedTypeVariables
+
+  build-depends:
+    , aeson
+    , base
+    , env-config
+    , futurice-prelude
+    , http-client
+
+  exposed-modules:
+    Slack
+    Slack.Eval
+    Slack.Types
+
+executable slack-cli
+  main-is:        Main.hs
+  hs-source-dirs: cli
+  ghc-options:    -Wall -threaded
+  build-depends:
+    , base
+    , env-config
+    , futurice-prelude
+    , optparse-applicative
+    , slack-client
