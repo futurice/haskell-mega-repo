@@ -26,6 +26,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM.Types.Login            as FUM
 import qualified GitHub                     as GH
 import qualified Personio
+import qualified Slack
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
@@ -45,6 +46,8 @@ data Ctx = Ctx
     , ctxACL             :: TVar (Map FUM.Login TaskRole)
     , ctxPersonio        :: TVar [Personio.Employee]
     , ctxOktaGithub      :: TVar (Map Email (Maybe (GH.Name GH.User)))
+    , ctxSlackToken      :: Slack.SlackToken
+    , ctxSlackChannel    :: Slack.ChannelId
     }
 
 newCtx
@@ -55,8 +58,10 @@ newCtx
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World
+    -> Slack.SlackToken
+    -> Slack.ChannelId
     -> IO Ctx
-newCtx lgr mgr cache cfg ci mockUser w = do
+newCtx lgr mgr cache cfg ci mockUser w token channel = do
     Ctx lgr mgr cache cfg
         <$> newTVarIO w
         <*> pure w
@@ -66,6 +71,8 @@ newCtx lgr mgr cache cfg ci mockUser w = do
         <*> newTVarIO M.empty
         <*> newTVarIO []
         <*> newTVarIO M.empty
+        <*> pure token
+        <*> pure channel
 
 ctxWithCryptoGen
     :: MonadIO m

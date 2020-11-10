@@ -4,8 +4,7 @@
 module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Control.Lens
-       (Getting, filtered, has, hasn't, ifoldMapOf, minimumOf, only, re,
-       united)
+       (Getting, filtered, has, hasn't, ifoldMapOf, minimumOf, only, re, united)
 import Data.Semigroup            (Arg (..))
 import Data.Time                 (addDays, diffDays)
 import Futurice.Graph            (closure)
@@ -205,6 +204,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                                 Just (Arg offset task) -> a_
                                   [ indexPageHref mloc mlistId (Just task) showDone showOld
                                   , title_ $ "Filter to: " <> task ^. nameText
+                                  , style_ (if (addDays offset startingDay) < today then "text-decoration: underline;font-weight: bold;" else "")
                                   ] $
                                   day'_ (addDays offset startingDay)) $ \task ->
                       td_ $ day'_ $ addDays (task ^. taskOffset) $ employee ^. employeeStartingDay

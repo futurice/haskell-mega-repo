@@ -13,6 +13,7 @@ import Prelude ()
 import qualified FUM.Types.GroupName as FUM
 import qualified FUM.Types.Login     as FUM
 import qualified Okta                as O
+import qualified Slack
 
 type ChecklistIntegrations = '[ ServFUM6, ServGH, ServOK, ServPE, ServPM ]
 
@@ -25,6 +26,8 @@ data Config = Config
     , cfgFumHRGroup         :: !FUM.GroupName
     , cfgFumSupervisorGroup :: !FUM.GroupName
     , cfgGithubAppId        :: !O.OktaAppId
+    , cfgSlackToken         :: !Slack.SlackToken
+    , cfgSlackChannel       :: !Slack.ChannelId
     }
 
 instance Configure Config where
@@ -36,6 +39,8 @@ instance Configure Config where
         <*> envVar "FUM_HR_GROUP"
         <*> envVar "FUM_SUPERVISOR_GROUP"
         <*> envVar "GITHUBAPPID"
+        <*> configure
+        <*> envVar "ITTEAM_SLACK_CHANNEL"
 
 instance HasOktaGithubId Config where
     oktaGithubId = cfgGithubAppId

@@ -34,6 +34,7 @@ import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Ctx
 import Futurice.App.Checklist.Logic
+import Futurice.App.Checklist.Notifications
 import Futurice.App.Checklist.Pages.AgentAudit
 import Futurice.App.Checklist.Pages.Agents
 import Futurice.App.Checklist.Pages.Archive
@@ -517,6 +518,8 @@ makeCtx cfg@Config {..} lgr mgr cache mq = do
         cfgPostgresConnInfo
         cfgMockUser
         emptyWorld
+        cfgSlackToken
+        cfgSlackChannel
     cmds <- withResource (ctxPostgres ctx) $ \conn ->
         Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
     let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
@@ -555,6 +558,7 @@ makeCtx cfg@Config {..} lgr mgr cache mq = do
     -- listen to MQ, especially updated Personio
     void $ forEachMessage mq $ \msg -> case msg of
         PersonioUpdated -> personioAction
+        DueDatePing     -> checkDueDates ctx
         _               -> pure ()
 
     pure (ctx, [aclJob, personioJob, oktaGithubJob])
