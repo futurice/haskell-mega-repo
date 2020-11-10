@@ -72,6 +72,7 @@ stackedToPlot' positions index' ps =
         { _plot_fillbetween_title  = index' titles idx
         , _plot_fillbetween_style  = index' fillStyles idx
         , _plot_fillbetween_values = fmap2 (flip index' idx) values
+        , _plot_fillbetween_line   = Nothing
         }
 
 fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
