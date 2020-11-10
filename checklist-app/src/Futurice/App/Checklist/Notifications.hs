@@ -1,21 +1,32 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Notifications where
 
 import Control.Concurrent.STM      (readTVarIO)
 import Control.Lens                (filtered, has, minimumOf)
+import Data.Aeson                  (object, (.=))
 import Data.Semigroup              (Arg (..))
 import Data.Time                   (addDays)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Prelude
 import Prelude ()
+import Text.Microstache
+       (Template, compileMustacheText, renderMustache)
 
 import Futurice.App.Checklist.Ctx
 import Futurice.App.Checklist.Types
 
+import qualified Data.Text.Lazy as LT
 import qualified Slack
 
 data LateTask = LateTask Text Integer (Name Task) deriving Show
+
+checklistDueDateTemplate :: Template
+checklistDueDateTemplate = either (error . show) id
+    $ compileMustacheText "checklist-due-date.template"
+    $(makeRelativeToProject "checklist-due-date.template" >>= embedStringFile)
+{-# NOINLINE checklistDueDateTemplate #-}
 
 checkIsWeekend :: Day -> LogT IO () -> LogT IO ()
 checkIsWeekend day m
@@ -57,7 +68,7 @@ checkDueDates ctx = do
               in lateEmployees employee startingDay
 
         when (length res > 0) $ liftIO $ Slack.evalSlackReqIO token mgr $
-            Slack.ReqSendMessage channelId $ "Buongiorno! Today checklist has *"<> (textShow $ length res) <>"* employees whose one or more tasks are overdue. Please check them by going to checklist.app.futurice.com"
+            Slack.ReqSendMessage channelId $ LT.toStrict $ renderMustache checklistDueDateTemplate $ object [("lateEmployees" .= length res)]
 
     pure ()
   where

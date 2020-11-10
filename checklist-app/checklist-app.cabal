@@ -67,6 +67,7 @@ library
     , lens
     , lens-aeson
     , lucid
+    , microstache
     , mtl
     , okta-client
     , periocron
