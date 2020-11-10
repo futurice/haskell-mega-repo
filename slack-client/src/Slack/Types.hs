@@ -1,11 +1,16 @@
 {-# LANGUAGE GADTs #-}
 module Slack.Types where
 
-import Futurice.EnvConfig (Configure (..), envVar)
+import Futurice.EnvConfig (Configure (..), FromEnvVar (..), envVar)
 import Futurice.Prelude
 import Prelude ()
 
+import qualified Data.Text as T
+
 newtype ChannelId = ChannelId Text
+
+instance FromEnvVar ChannelId where
+    fromEnvVar = Just . ChannelId . T.pack
 
 class HasHttpManager a where
     httpManager :: Lens' a Manager

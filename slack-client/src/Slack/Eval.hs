@@ -21,7 +21,11 @@ evalSlackReq (ReqSendMessage (ChannelId cid) message) = do
     let req' = req
             { HTTP.requestBody = HTTP.RequestBodyLBS $ encode $ object
                                  ["channel" .= cid
-                                 ,"text"    .= message]
+                                 ,"blocks"    .= [(
+                                       object ["type" .= (tid "section")
+                                              ,"text" .= (object ["type" .= (tid "mrkdwn")
+                                                                 , "text" .= message
+                                                                 ])])]]
             , HTTP.method = "POST"
             , HTTP.requestHeaders = ("Authorization", encodeUtf8 $ "Bearer " <> token)
                                     : ("Content-Type", "application/json")
@@ -35,6 +39,9 @@ evalSlackReq (ReqSendMessage (ChannelId cid) message) = do
             Just True -> pure ()
             _ -> throwM $ SlackError $ T.unpack $ fromMaybe "Couldn't decode response" $ res' ^? L.key "error" . L._String
       Left err -> throwM $ SlackError err
+  where
+   tid :: Text -> Text
+   tid = id
 
 evalSlackReqIO :: SlackToken -> Manager -> Req a -> IO a
 evalSlackReqIO token mgr req = flip runReaderT (Cfg token mgr) $ evalSlackReq req
