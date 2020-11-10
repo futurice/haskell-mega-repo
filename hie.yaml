@@ -423,6 +423,12 @@ cradle:
     - path: "sisosota-client/src"
       component: "lib:sisosota-client"
 
+    - path: "slack-client/src"
+      component: "lib:slack-client"
+
+    - path: "slack-client/cli/Main.hs"
+      component: "slack-client:exe:slack-cli"
+
     - path: "smileys-app/src"
       component: "lib:smileys-app"
 
@@ -434,6 +440,9 @@ cradle:
 
     - path: "sms-proxy/srv/Main.hs"
       component: "sms-proxy:exe:sms-proxy-server"
+
+    - path: "sms-proxy/mock/Main.hs"
+      component: "sms-proxy:exe:sms-proxy-mock"
 
     - path: "sms-proxy-client/src"
       component: "lib:sms-proxy-client"

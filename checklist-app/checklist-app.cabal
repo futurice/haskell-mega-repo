@@ -7,7 +7,7 @@ category:      Web
 homepage:      https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:   https://github.com/futurice/haskell-mega-repo/issues
 author:        Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:    Toni Okuogume <toni.okuogume@futurice.com>
 license:       BSD-3-Clause
 license-file:  LICENSE
 build-type:    Simple
@@ -67,6 +67,7 @@ library
     , lens
     , lens-aeson
     , lucid
+    , microstache
     , mtl
     , okta-client
     , periocron
@@ -85,6 +86,7 @@ library
     , servant-lucid
     , servant-server
     , singleton-bool
+    , slack-client
     , split
     , stm
     , swagger2
@@ -95,8 +97,8 @@ library
 
   exposed-modules:
     Futurice.App.Checklist
-    Futurice.App.Checklist.API
     Futurice.App.Checklist.Ack
+    Futurice.App.Checklist.API
     Futurice.App.Checklist.Charts.Done
     Futurice.App.Checklist.Clay
     Futurice.App.Checklist.Command
@@ -104,6 +106,7 @@ library
     Futurice.App.Checklist.Ctx
     Futurice.App.Checklist.Logic
     Futurice.App.Checklist.Markup
+    Futurice.App.Checklist.Notifications
     Futurice.App.Checklist.Pages.AgentAudit
     Futurice.App.Checklist.Pages.Agents
     Futurice.App.Checklist.Pages.Archive
