@@ -34,6 +34,7 @@ import qualified Data.Text                as T
 import qualified Data.Text.Lazy           as LT
 import qualified FUM.Types.Login          as FUM
 import qualified GitHub                   as GH
+import qualified Okta                     as O
 import qualified Personio                 as P
 import qualified PlanMill                 as PM
 import qualified Test.QuickCheck          as QC
@@ -183,6 +184,7 @@ data IntegrationData = IntegrationData
     , _personioData   :: !(Map P.EmployeeId P.Employee)
     , _planmillData   :: !(HashMap FUM.Login (P.Employee, PMUser))
     , _oktaGithubData :: !(Map.Map Email (Maybe (GH.Name GH.User)))
+    , _oktaUsers      :: !(Map.Map Text O.User)
     }
   deriving (Show, Generic)
 

@@ -62,6 +62,7 @@ import qualified FUM.Types.GroupName        as FUM
 import qualified FUM.Types.Login            as FUM
 import qualified Futurice.FUM.MachineAPI    as FUM
 import qualified GitHub                     as GH
+import qualified Okta                       as O
 import qualified Personio
 import qualified PlanMill                   as PM
 import qualified PlanMill.Queries           as PMQ
@@ -307,11 +308,12 @@ getEmployeeExternalData now ctx = liftIO $ do
     ps <- getPersonioEmployees ctx
     githubOkta <- liftIO $ readTVarIO $ ctxOktaGithub ctx
     cachedIO lgr cache 180 ps $ do
-        (githubD, personioD, planmillD) <- runIntegrations mgr lgr now cfg $ fetchEmployeeExternalData ps
-        return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD githubOkta
+        (githubD, personioD, planmillD, oktaEmployees) <- runIntegrations mgr lgr now cfg $ fetchEmployeeExternalData ps
+        return $ IntegrationData (githubDataMap githubD) (personioDataMap personioD) planmillD githubOkta (oktaDataMap oktaEmployees)
   where
       githubDataMap gd = Map.fromList $ map (\g -> (GH.simpleUserLogin g, g)) (toList gd)
       personioDataMap pd = Map.fromList $ map (\e -> (e ^. Personio.employeeId, e)) pd
+      oktaDataMap od = Map.fromList $ map (\o -> (o ^. O.userProfile . O.profileLogin, o)) od
       lgr = ctxLogger ctx
       mgr = ctxManager ctx
       cfg = ctxIntegrationsCfg ctx
@@ -332,11 +334,13 @@ personioPlanmillPMuserMap ps = do
 fetchEmployeeExternalData :: [Personio.Employee]
     -> M ( Vector GH.SimpleUser
          , [Personio.Employee]
-         , HashMap FUM.Login (Personio.Employee, PMUser))
-fetchEmployeeExternalData ps = (,,)
+         , HashMap FUM.Login (Personio.Employee, PMUser)
+         , [O.User])
+fetchEmployeeExternalData ps = (,,,)
     <$> githubOrganisationMembers
     <*> personio Personio.PersonioEmployees
     <*> personioPlanmillPMuserMap ps
+    <*> O.users
 
 -------------------------------------------------------------------------------
 -- Personio helper

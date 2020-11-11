@@ -28,6 +28,7 @@ data TaskTag
     | PlanmillTask     -- ^ This task relates to Planmill
     | FirstContactTask -- ^ This task relates to accepting job offer
     | FUMTask          -- ^ This task relates to FUM
+    | OktaTask         -- ^ This task related to Okta
  deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic)
 
 makePrisms ''TaskTag
@@ -35,7 +36,7 @@ deriveGeneric ''TaskTag
 deriveLift ''TaskTag
 
 instance TextEnum TaskTag where
-    type TextEnumNames TaskTag = '["GitHub", "PlanMill", "FirstContact", "FUM"]
+    type TextEnumNames TaskTag = '["GitHub", "PlanMill", "FirstContact", "FUM", "Okta"]
 
 taskTagToText :: TaskTag -> Text
 taskTagToText = enumToText

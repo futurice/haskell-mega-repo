@@ -174,9 +174,9 @@ data GithubProfile = GithubProfile
 instance AnsiPretty GithubProfile
 
 newtype OktaId = OktaId Text
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, Ord, Generic)
     deriving anyclass (NFData, AnsiPretty, Hashable)
-    deriving newtype (FromJSON, ToJSON)
+    deriving newtype (FromJSON, ToJSON, Show)
 
 newtype OktaAppId = OktaAppId Text
     deriving (Eq, Show, Generic)
