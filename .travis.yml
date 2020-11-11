@@ -76,7 +76,7 @@ install:
 - scripts/travis.sh install $BUILD || true
 
 script:
-- travis_wait 60 scripts/travis.sh build $BUILD
+- scripts/travis.sh build $BUILD
 
 matrix:
   fast_finish: true
