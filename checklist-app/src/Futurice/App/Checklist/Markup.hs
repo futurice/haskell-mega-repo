@@ -49,8 +49,9 @@ module Futurice.App.Checklist.Markup (
     defaultShowAll,
     ) where
 
-import Control.Lens     (has, re, _Wrapped)
+import Control.Lens     (_Wrapped, has, re)
 import FUM.Types.Login  (Login, loginToText)
+import Futurice.Email   (emailToText)
 import Futurice.Exit
 import Futurice.Prelude
 import Prelude ()
@@ -65,6 +66,7 @@ import Futurice.Lucid.Foundation
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
 import qualified GitHub    as GH
+import qualified Okta      as O
 import qualified Personio  as P
 import qualified PlanMill  as PM
 
@@ -331,6 +333,11 @@ hasFUMLoginHtml login = case login of
     Nothing -> pure $ b_ "No" <> " FUM Login found in Personio or Checklist"
     Just l -> pure $ "FUM login: " <> toHtml l
 
+hasOktaAccountHtml :: Monad m => Maybe O.OktaId -> [HtmlT m ()]
+hasOktaAccountHtml moktaId = case moktaId of
+    Nothing -> pure $ b_ "No Okta account found connected to work email"
+    Just (O.OktaId oktaId) -> pure $ "Okta account: " <> a_ [href_ ("https://futurice-admin.okta-emea.com/admin/user/profile/view/" <> oktaId)] (toHtml oktaId)
+
 taskInfo_
     :: Monad m
     => Task
@@ -365,12 +372,18 @@ taskInfo_ task employee idata
         pe <- personioEmployee
         email <- pe ^. P.employeeEmail
         join $ idata ^. oktaGithubData . at email
+    oktaAccount = do
+        emp <- personioEmployee
+        email <- emp ^. P.employeeEmail
+        user <- idata ^. oktaUsers . at (emailToText email)
+        Just $ user ^. O.userId
     infos = foldMap info (task ^. taskTags)
     info GithubTask       = isInGithubOrganizationHtml personioEmployee githubEmployee githubNickInOkta
                             <> checkGithubUsernames personioEmployee githubNickInOkta
     info PlanmillTask     = isInPlanmillOrganizationHtml planmillEmployee employeeHRnumber
     info FirstContactTask = showFirstContactInformationHtml personioEmployee
     info FUMTask          = hasFUMLoginHtml fumLogin
+    info OktaTask         = hasOktaAccountHtml oktaAccount
 
 -------------------------------------------------------------------------------
 -- Tasks
