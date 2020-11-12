@@ -65,7 +65,7 @@ install)
     cabal)
         # Install doctest
 		(cd /tmp && echo "" | cabal new-repl --build-dep fail)
-		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --bindir="$HOME/.local/bin") || exit 1
+		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --installdir="$HOME/.local/bin") || exit 1
         doctest --version
 
         # Generate cabal.project.local file, with -Werror
@@ -92,8 +92,8 @@ build)
         ;;
 
     cabal)
-        timed cabal v2-build --write-ghc-environment-files=always --enable-tests $CONCURRENCY all
-        timed cabal v2-test --enable-tests all
+        timed cabal v2-build --write-ghc-environment-files=always --disable-optimization --enable-tests $CONCURRENCY all
+        timed cabal v2-test --disable-optimization --enable-tests all
 
         # Prepare environment
         for envfile in .ghc.environment.*; do
