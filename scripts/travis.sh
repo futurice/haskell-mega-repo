@@ -92,7 +92,7 @@ build)
         ;;
 
     cabal)
-        timed cabal v2-build --write-ghc-environment-files=always --disable-optimization --enable-tests $CONCURRENCY all
+        timed cabal v2-build --write-ghc-environment-files=always --enable-tests $CONCURRENCY all
         timed cabal v2-test --enable-tests all
 
         # Prepare environment
