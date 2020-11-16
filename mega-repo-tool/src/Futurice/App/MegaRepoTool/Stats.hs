@@ -5,6 +5,7 @@ module Futurice.App.MegaRepoTool.Stats (
     stats,
     ) where
 
+import Control.Monad            (filterM)
 import Data.List                (isSuffixOf)
 import Data.Machine
 import Data.Machine.Runner      (foldT)
@@ -15,15 +16,44 @@ import Data.TDigest.Postprocess (HistBin, cdf, histogram, quantile)
 import Futurice.Monoid          (Average (..))
 import Futurice.Prelude
 import Prelude ()
+import System.Directory
+       (doesDirectoryExist, doesFileExist, getDirectoryContents, makeAbsolute)
+import System.FilePath          ((</>))
 import Text.Printf              (printf)
 
 import qualified Data.ByteString.Char8 as BS8
 
-directoryWalk' :: ([Char] -> Bool) -> MachineT IO (Is FilePath) a
-directoryWalk' = undefined -- TODO
+-- | Recursively (breadth-first) walk thru the directory structure.
+directoryWalk' :: ([Char] -> Bool) -> ProcessT IO FilePath FilePath
+directoryWalk' pred' = construct $ do
+    startDir <- await
+    absolutePath <- lift $ makeAbsolute startDir
+    go [absolutePath]
+  where
+    go [] = stop
+    go (dir:dirs) = do
+        yield dir
+        contents <- lift $ getDirectoryContents dir
+        let contents' = filter notSpecial contents
+        let contents'' = map (dir </>) contents'
+        directories <- lift $ filterM doesDirectoryExist contents''
+        let directories' = filter pred' directories
+        go (dirs <> directories')
 
-files :: ProcessT IO a [Char]
-files = undefined --TODO
+    notSpecial d = not . any ($ d) $
+        [ isSuffixOf "."
+        , isSuffixOf ".."
+        ]
+
+-- | Get all files in directory
+files :: ProcessT IO FilePath FilePath
+files = repeatedly $ do
+    curDir <- await
+    contents <- lift $ getDirectoryContents curDir
+    let contents' = map (curDir </>) contents
+    contents'' <- lift $ filterM doesFileExist contents'
+    mapM yield contents''
+
 -------------------------------------------------------------------------------
 -- Stats monoid
 -------------------------------------------------------------------------------
