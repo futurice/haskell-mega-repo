@@ -3,10 +3,10 @@
 {-# LANGUAGE KindSignatures #-}
 module Futurice.App.Library.Types.ItemType where
 
-import Data.Aeson       (Encoding, ToJSON (..), Value)
-import Web.HttpApiData
+import Data.Aeson       (Encoding, ToJSON (..))
 import Futurice.Prelude
 import Prelude ()
+import Web.HttpApiData
 
 -- | Used as type via @DataKinds@
 data ItemType = Book | BoardGame

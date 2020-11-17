@@ -1,4 +1,3 @@
-{-# LANGUAGE AutoDeriveTypeable    #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -18,8 +17,7 @@ module Servant.Binary.Tagged where
 import Data.Bifunctor     (bimap)
 import Data.Binary        (Binary)
 import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, taggedDecodeOrFail,
-       taggedEncode)
+       (HasSemanticVersion, HasStructuralInfo, taggedDecodeOrFail, taggedEncode)
 import Servant.API        (Accept (..), MimeRender (..), MimeUnrender (..))
 
 import qualified Codec.Compression.GZip as GZip

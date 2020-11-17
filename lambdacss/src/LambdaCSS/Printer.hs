@@ -6,7 +6,6 @@ import Data.ByteString.Builder.Scientific
 import Data.Char                          (isAscii, isLetter, ord)
 import Data.List.NonEmpty                 (NonEmpty (..))
 import Data.Scientific                    (Scientific)
-import Data.Semigroup                     (Semigroup (..))
 import Data.String                        (IsString (..))
 
 import qualified Data.ByteString.Builder as B
@@ -134,7 +133,7 @@ tsToBuilder ts = iter (TokPunct ' ') (runTS ts []) where
     sep (TokPunct '-')  = fspace
     sep (TokPunct '+')  = fspace
     sep _ = id
-    
+
     fspace = (B.char8 ' ' <>)
 
     tok p (TokIdent s)       = sep p $ fromString s
@@ -143,7 +142,7 @@ tsToBuilder ts = iter (TokPunct ' ') (runTS ts []) where
     tok p (TokNumber n)      = sep p $ sci n
     tok p (TokPercentage n)  = sep p $ sci n <> B.char8 '%'
     tok p (TokDimension n s) = sep p $ sci n <> fromString s
-    tok p (TokPunct c)       
+    tok p (TokPunct c)
           | c == '(' && p == TokIdent "and" = fspace (B.char8 c)
           | otherwise        = B.char8 c
     tok _ (TokString s)      = B.char8 '"' <> foldMap schar s <> B.char8 '"' where

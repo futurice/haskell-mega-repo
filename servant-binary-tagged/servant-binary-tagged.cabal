@@ -4,19 +4,18 @@ version:            0
 synopsis:           Servant support for binary-tagged
 description:        Servant support for binary-tagged
 category:           Web
-homepage:           https://github.com/phadej/servant-yaml#readme
-bug-reports:        https://github.com/phadej/servant-yaml/issues
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
-tested-with:        ghc ==7.8.4 ghc ==7.10.3 ghc ==8.0.1
 build-type:         Simple
 extra-source-files: README.md
 
 source-repository head
   type:     git
-  location: https://github.com/phadej/servant-yaml
+  location: https://github.com/futurice/haskell-mega-repo
 
 library
   hs-source-dirs:   src

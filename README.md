@@ -73,6 +73,14 @@ mega-repo-tool stats
 make deps.png
 ```
 
+### Support for haskell-language-server
+
+To get hmr work correctly with haskell-language-server you need generate hie.yaml file. This can be done quickly using [`gen-hie`](https://github.com/Avi-D-coder/implicit-hie)
+
+```
+gen-hie > hie.yaml
+```
+
 ### LTS version bumps
 
 *outdated*

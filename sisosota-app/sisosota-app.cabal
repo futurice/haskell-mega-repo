@@ -4,10 +4,10 @@ version:            0
 synopsis:           Simple CAS
 description:        Simple CAS
 category:           Web
-homepage:           https://github.com/futurice/haskell-mega-rpo#readme
-bug-reports:        https://github.com/futurice/haskell-mega-rpo/issues
+homepage:           https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:        https://github.com/futurice/haskell-mega-repo/issues
 author:             Oleg Grenrus <oleg.grenrus@iki.fi>
-maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Toni Okuogume <toni.okuogume@futurice.com>
 license:            BSD-3-Clause
 license-file:       LICENSE
 build-type:         Simple
