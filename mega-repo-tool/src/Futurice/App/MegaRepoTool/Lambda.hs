@@ -5,7 +5,6 @@ import Control.Lens       (firstOf)
 import Data.Aeson         (encode)
 import Data.Machine
        (MachineT (..), Step (..), await, repeatedly, runT_, (<~))
-import Futurice.Clock     (clocked, timeSpecToSecondsD)
 import Futurice.Prelude
 import Prelude ()
 import System.Directory   (doesFileExist)

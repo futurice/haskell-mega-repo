@@ -10,7 +10,7 @@ import Data.Aeson.Compat  (FromJSON)
 import Data.Binary.Get    (Get, runGetOrFail)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
-       structuralInfo, structuralInfoSha1ByteStringDigest)
+       structuralInfo, structuralInfoSha1Digest)
 import Data.Constraint
 import Futurice.Postgres  hiding (Query)
 import Futurice.Prelude
@@ -73,4 +73,4 @@ checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
     proxyV = Proxy :: Proxy (SemanticVersion a)
     proxyA = Proxy :: Proxy a
     ver' = fromIntegral (natVal proxyV) :: Version
-    hash'' = structuralInfoSha1ByteStringDigest . structuralInfo $ proxyA
+    hash'' = structuralInfoSha1Digest . structuralInfo $ proxyA
