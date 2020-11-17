@@ -25,7 +25,7 @@ constraints:
   servant-client-core   ^>= 0.17,
   servant-lucid         ^>= 0.9,
   servant-server        ^>= 0.17,
-  servant-swagger-ui    ^>= 0.3.0.3.13.2,
+  servant-swagger-ui    ^>= 0.3.4.3.36.1,
   SVGFonts              ^>= 1.7,
   unix-time             ^>= 0.3.8,
   tdigest               ^>= 0.2,
