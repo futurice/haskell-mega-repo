@@ -21,7 +21,7 @@ source-repository head
 library
   exposed-modules:  Dashdo.Servant
   build-depends:
-    , base             >=4.9 && <4.13
+    , base             >=4.9 && <4.15
     , bytestring
     , containers
     , dashdo

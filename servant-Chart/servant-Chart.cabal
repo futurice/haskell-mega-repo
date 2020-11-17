@@ -22,7 +22,7 @@ library
   hs-source-dirs:   src
   ghc-options:      -Wall
   build-depends:
-    , base             >=4.7 && <4.13
+    , base             >=4.7 && <4.15
     , Chart
     , Chart-diagrams
     , deepseq

@@ -1,8 +1,9 @@
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE InstanceSigs    #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE InstanceSigs     #-}
+{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE TypeOperators    #-}
 module Futurice.App.Checklist.Types.SortCriteria where
 
 import Futurice.Generics

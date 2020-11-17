@@ -54,7 +54,7 @@ before_install:
 - export JOB_START_TIME=$(date +%s)
 # paths
 - export PATH=/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$PATH
-- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/2.4/bin:$PATH
+- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/3.2/bin:$PATH
 - export PATH=$HOME/.local/bin:$PATH
 # Disable hardening
 # https://ghc.haskell.org/trac/ghc/ticket/9007
@@ -89,6 +89,18 @@ matrix:
         - hvr-ghc
         packages:
         - libfftw3-dev
-        - cabal-install-2.4
+        - cabal-install-3.2
         - ghc-8.6.5
+        - libgmp-dev
+
+  - env: BUILD=cabal GHCVER=8.8.4 # PEDANTIC=YES
+    compiler: ghc-8.8.4
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - libfftw3-dev
+        - cabal-install-3.2
+        - ghc-8.8.4
         - libgmp-dev

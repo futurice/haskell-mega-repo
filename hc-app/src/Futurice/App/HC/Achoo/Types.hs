@@ -3,6 +3,7 @@
 {-# LANGUAGE InstanceSigs       #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
 {-# LANGUAGE TypeFamilies       #-}
 {-# LANGUAGE TypeOperators      #-}
 module Futurice.App.HC.Achoo.Types where

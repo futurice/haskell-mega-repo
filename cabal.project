@@ -1,6 +1,5 @@
-index-state: 2020-10-23T11:17:31Z
+index-state: 2020-11-16T06:29:52Z
 tests: True
-with-compiler: ghc-8.6.5
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
@@ -26,7 +25,8 @@ constraints:
   servant-client-core   ^>= 0.17,
   servant-lucid         ^>= 0.9,
   servant-server        ^>= 0.17,
-  servant-swagger-ui    ^>= 0.3.0.3.13.2,
+  -- TODO: solve Swagger UI syntax coloring induced slowness
+  servant-swagger-ui    ==0.3.4.3.23.11,
   SVGFonts              ^>= 1.7,
   unix-time             ^>= 0.3.8,
   tdigest               ^>= 0.2,
@@ -162,7 +162,7 @@ package planmill-client
   ghc-options: +RTS -M2G -RTS
 
 package reports-app
-  ghc-options: +RTS -M2G -RTS
+  ghc-options: +RTS -M3G -RTS
 
 package fum-carbon-app
   ghc-options: +RTS -M2G -RTS

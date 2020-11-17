@@ -1,17 +1,19 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DerivingVia           #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.ProxyMgmt.Types where
 
+import Algebra.Lattice                    ((\/))
+import Data.Char                          (isLower)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..), field)
 import Futurice.Generics
-import Data.Char (isLower)
-import Algebra.Lattice ((\/))
 import Futurice.Prelude
 import Prelude ()
 
@@ -27,22 +29,16 @@ import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 -------------------------------------------------------------------------------
 
 newtype PolicyName = PolicyName Text
-  deriving stock (Eq, Ord)
+  deriving stock (Eq, Ord, GhcGeneric)
   deriving newtype (Show, NFData)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, Postgres.ToField, Postgres.FromField, ToHtml) via (Textica PolicyName)
 
 instance Textual PolicyName where
     textualToText   = coerce
     textualFromText t
         | T.all (isLower \/ (== '-')) t = Right (PolicyName t)
         | otherwise = Left "Policy name should consist only from lower case letter and dash (-)"
-
-deriveVia [t| ToJSON PolicyName             `Via` Textica PolicyName |]
-deriveVia [t| FromJSON PolicyName           `Via` Textica PolicyName |]
-deriveVia [t| ToHttpApiData PolicyName      `Via` Textica PolicyName |]
-deriveVia [t| FromHttpApiData PolicyName    `Via` Textica PolicyName |]
-deriveVia [t| Postgres.ToField PolicyName   `Via` Textica PolicyName |]
-deriveVia [t| Postgres.FromField PolicyName `Via` Textica PolicyName |]
-deriveVia [t| ToHtml PolicyName             `Via` Textica PolicyName |]
 
 instance ToParamSchema PolicyName where toParamSchema = textualToParamSchema
 instance ToSchema PolicyName where declareNamedSchema = textualDeclareNamedSchema
@@ -52,22 +48,16 @@ instance ToSchema PolicyName where declareNamedSchema = textualDeclareNamedSchem
 -------------------------------------------------------------------------------
 
 newtype UserName = UserName Text
-  deriving stock (Eq, Ord)
+  deriving stock (Eq, Ord, GhcGeneric)
   deriving newtype (Show, NFData)
+  deriving anyclass (SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON, ToHttpApiData, FromHttpApiData, Postgres.ToField, Postgres.FromField, ToHtml) via (Textica UserName)
 
 instance Textual UserName where
     textualToText   = coerce
     textualFromText t
         | T.all (isLower \/ (== '-')) t = Right (UserName t)
         | otherwise = Left "User name should consist only from lower case letter and dash (-)"
-
-deriveVia [t| ToJSON UserName             `Via` Textica UserName |]
-deriveVia [t| FromJSON UserName           `Via` Textica UserName |]
-deriveVia [t| ToHttpApiData UserName      `Via` Textica UserName |]
-deriveVia [t| FromHttpApiData UserName    `Via` Textica UserName |]
-deriveVia [t| Postgres.ToField UserName   `Via` Textica UserName |]
-deriveVia [t| Postgres.FromField UserName `Via` Textica UserName |]
-deriveVia [t| ToHtml UserName             `Via` Textica UserName |]
 
 instance ToParamSchema UserName where toParamSchema = textualToParamSchema
 instance ToSchema UserName where declareNamedSchema = textualDeclareNamedSchema

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -25,17 +26,14 @@ data BookInformation = BookInformation
     , _bookPublisher              :: !Text
     , _bookPublished              :: !Int
     , _bookCover                  :: !ContentHash
-    , _bookInfoLink             :: !Text
+    , _bookInfoLink               :: !Text
     }
-  deriving (Show, Typeable, Generic, FromRow)
+  deriving (Show, Typeable, GhcGeneric, FromRow, SopGeneric, HasDatatypeInfo)
+  deriving (FromJSON, ToJSON) via (Sopica BookInformation)
 
 deriveGeneric ''BookInformationId
-deriveGeneric ''BookInformation
 
 makeLenses ''BookInformation
-
-deriveVia [t| ToJSON BookInformation `Via` Sopica BookInformation |]
-deriveVia [t| FromJSON BookInformation `Via` Sopica BookInformation |]
 
 instance HasKey BookInformation where
     type Key BookInformation = BookInformationId

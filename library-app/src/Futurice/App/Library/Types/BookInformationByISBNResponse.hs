@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -38,11 +39,9 @@ data BookInformationByISBNResponse = BookInformationByISBNResponse
     , _byISBNAuthor          :: !Text
     , _byISBNPublisher       :: !Text
     , _byISBNPublished       :: !Int
-    , _byISBNInfoLink      :: !Text
+    , _byISBNInfoLink        :: !Text
     , _byISBNBooks           :: !(Map Library Int)
     , _byISBNDataSource      :: !DataSource
-    } deriving (Show, Typeable, Generic, ToSchema)
+    } deriving (Show, Typeable, GhcGeneric, ToSchema, SopGeneric, HasDatatypeInfo)
+      deriving (ToJSON) via (Sopica BookInformationByISBNResponse)
 
-deriveGeneric ''BookInformationByISBNResponse
-
-deriveVia [t| ToJSON BookInformationByISBNResponse `Via` Sopica BookInformationByISBNResponse |]

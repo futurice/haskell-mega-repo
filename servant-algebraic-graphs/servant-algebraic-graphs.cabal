@@ -24,7 +24,7 @@ library
   ghc-options:      -Wall
   build-depends:
     , algebraic-graphs  ^>=0.5
-    , base              >=4.9 && <4.13
+    , base              >=4.9 && <4.15
     , bytestring
     , deepseq
     , http-media        >=0.6.2

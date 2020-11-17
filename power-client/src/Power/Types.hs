@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -32,13 +33,9 @@ data Person = Person
     , personUtzTarget :: Int    -- ^ integer percentages
     , personId        :: PersonId
     }
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (NFData)
-
-deriveGeneric ''Person
-
-deriveVia [t| ToJSON Person   `Via` Sopica Person |]
-deriveVia [t| FromJSON Person `Via` Sopica Person |]
+  deriving stock (Eq, Ord, Show, GhcGeneric)
+  deriving anyclass (NFData, SopGeneric, HasDatatypeInfo)
+  deriving (ToJSON, FromJSON) via (Sopica Person)
 
 instance PyJSON Person where
     parsePyJSON = withObject "Person" $ \obj -> Person

@@ -4,18 +4,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
 module Futuqu.Ggrr.HourKinds where
 
 import Data.Fixed                           (Centi)
+import Data.Set.Lens                        (setOf)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Integrations.TimereportKind
 import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
-import Data.Set.Lens (setOf)
 
 import qualified Data.Map.Strict as Map
 import qualified PlanMill        as PM
