@@ -28,6 +28,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , aeson-compat
@@ -56,6 +57,7 @@ library
     , unordered-containers
     , wai-app-static
     , writer-cps-mtl
+
   exposed-modules:
     Futurice.CommandResponse
     Futurice.JavaScript
