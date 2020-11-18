@@ -181,6 +181,11 @@ futu = (function () {
               return parseFloat(td.innerText);
           }
 
+          //for checklist-app task page list which have checkbox inside table value
+          if(td.children[0] && td.children[0].children[0] && td.children[0].children[0].type === "checkbox") {
+              return td.children[0].children[0].checked + td.innerText;
+          }
+
         // otherwise return inner text
         return td.innerText;
       }
