@@ -94,6 +94,7 @@ library
     , time
     , trifecta
     , uuid
+    , vector
 
   exposed-modules:
     Futurice.App.Checklist
