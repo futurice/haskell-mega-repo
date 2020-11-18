@@ -17,10 +17,17 @@ import Text.Microstache
 import Futurice.App.Checklist.Ctx
 import Futurice.App.Checklist.Types
 
+import qualified Data.Map       as Map
 import qualified Data.Text.Lazy as LT
+import qualified Data.Vector    as V
 import qualified Slack
 
-data LateTask = LateTask Text Integer (Name Task) deriving Show
+data LateTask = LateTask
+    { ltChecklistId :: !(Name Checklist)
+    , ltName        :: !Text
+    , ltOffset      :: !Integer
+    , ltTaskName    :: !(Name Task)
+    } deriving Show
 
 checklistDueDateTemplate :: Template
 checklistDueDateTemplate = either (error . show) id
@@ -44,7 +51,7 @@ checkDueDates :: Ctx -> IO ()
 checkDueDates ctx = do
     today <- currentDay
     runLogT "checklist-slack-notification" lgr $ checkIsWeekend today $ do
-        logInfo_ "Calculating"
+        logInfo_ "Sending Slack notification"
         world <- liftIO $ readTVarIO (ctxWorld ctx)
         let employees' = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         let cutoffDate = addDays (-60) today
@@ -59,7 +66,12 @@ checkDueDates ctx = do
                   Just (Arg offset task) ->
                       let dueDate = addDays offset startingDay
                       in if dueDate < today then
-                           Just $ LateTask (employee ^. employeeFirstName <> " " <> employee ^. employeeLastName) offset (task ^. taskName)
+                           Just $ LateTask
+                           { ltChecklistId = employee ^. employeeChecklist . checklistIdName
+                           , ltName = employee ^. employeeFirstName <> " " <> employee ^. employeeLastName
+                           , ltOffset = offset
+                           , ltTaskName = task ^. taskName
+                           }
                          else
                            Nothing
 
@@ -68,7 +80,12 @@ checkDueDates ctx = do
               in lateEmployees employee startingDay
 
         when (length res > 0) $ liftIO $ Slack.evalSlackReqIO token mgr $
-            Slack.ReqSendMessage channelId $ LT.toStrict $ renderMustache checklistDueDateTemplate $ object [("lateEmployees" .= length res)]
+            Slack.ReqSendMessage channelId $ LT.toStrict $ renderMustache checklistDueDateTemplate
+            $ object [ "lateEmployees" .= length res
+                     , "stats" .= V.fromList (fmap toObject
+                                    $ Map.toList
+                                    $ Map.map length
+                                    $ Map.fromListWith (<>) $ (\l -> (ltChecklistId l, [l])) <$> res)]
 
     pure ()
   where
@@ -76,3 +93,6 @@ checkDueDates ctx = do
     mgr = ctxManager ctx
     token = ctxSlackToken ctx
     channelId = ctxSlackChannel ctx
+
+    toObject (cName, taskAmount) = object ["name" .= cName
+                                          ,"amount" .= taskAmount]

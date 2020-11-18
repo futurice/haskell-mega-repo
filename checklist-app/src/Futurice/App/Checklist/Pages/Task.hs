@@ -1,8 +1,9 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.Task (taskPage) where
 
-import Control.Lens              (contains, forOf_, lengthOf, re)
+import Control.Lens              (contains, forOf_, has, lengthOf, re)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
@@ -126,6 +127,11 @@ taskPage world today authUser task integrationData = checklistPage_ (view nameTe
             td_ $ toHtml $ show (diffDays startingDay today) <> " days"
 
   where
-    employees =  sortOn (view employeeStartingDay) $ toList $ Map.intersection
+    employees = sortOn (\e -> (taskChecked e, view employeeStartingDay e)) $ toList $ Map.intersection
         (IdMap.toMap (world ^. worldEmployees))
         (world ^. worldTaskItems' .ix (task ^. identifier))
+    taskChecked employee = flip has world
+                           $ worldTaskItems
+                           . ix (employee ^. identifier)
+                           . ix (task ^. identifier)
+                           . _AnnTaskItemDone
