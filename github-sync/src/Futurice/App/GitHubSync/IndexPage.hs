@@ -12,9 +12,11 @@ import Prelude ()
 import Futurice.App.GitHubSync.Config (Pinned (..))
 import Futurice.App.GitHubSync.Markup
 
-import qualified GitHub   as GH
-import qualified Okta     as O
-import qualified Personio as P
+import qualified Data.Set  as Set
+import qualified Data.Text as T
+import qualified GitHub    as GH
+import qualified Okta      as O
+import qualified Personio  as P
 
 indexPage
     :: Day
@@ -44,7 +46,8 @@ indexPage today (Pin pinned) githubs githubInvs personios oktas = page_ "GitHub 
 
             tbody_ $ for_ githubs $ \u -> do
                 let login = GH.userLogin u
-                unless (personioLogins ^. contains login || oktaGithubLogins ^. contains login) $ tr_ $ do
+                let login' = T.toLower $ GH.untagName $ login
+                unless (personioLogins ^. contains login' || oktaGithubLogins ^. contains login') $ tr_ $ do
                     td_ $ checkbox_ False [ data_ "futu-remove-user" $ GH.untagName $ GH.userLogin u]
                     td_ $ toHtml $ GH.userLogin u
                     td_ $ maybe "" toHtml $ GH.userName u
@@ -109,8 +112,8 @@ indexPage today (Pin pinned) githubs githubInvs personios oktas = page_ "GitHub 
     githubLogins :: Set (GH.Name GH.User)
     githubLogins = setOf (folded . getter GH.userLogin) githubs
 
-    personioLogins :: Set (GH.Name GH.User)
-    personioLogins = setOf (folded . filtered (P.employeeIsActive today) . P.employeeGithub . _Just) personios
+    personioLogins :: Set Text
+    personioLogins = Set.map (T.toLower . GH.untagName) $ setOf (folded . filtered (P.employeeIsActive today) . P.employeeGithub . _Just) personios
         -- add pinned users to personio set, so we don't remove them
         <> setOf folded pinned
 
@@ -119,5 +122,5 @@ indexPage today (Pin pinned) githubs githubInvs personios oktas = page_ "GitHub 
       where
         f e = (,e) <$> e ^. P.employeeGithub
 
-    oktaGithubLogins :: Set (GH.Name GH.User)
-    oktaGithubLogins = setOf (folded . getter O.appUserCredentials . _Just . getter O.credUserName . getter (GH.mkName Proxy)) oktas
+    oktaGithubLogins :: Set Text
+    oktaGithubLogins = Set.map (T.toLower . GH.untagName) $ setOf (folded . getter O.appUserCredentials . _Just . getter O.credUserName . getter (GH.mkName Proxy)) oktas
