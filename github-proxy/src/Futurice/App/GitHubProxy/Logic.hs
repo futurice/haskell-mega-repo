@@ -14,8 +14,10 @@ module Futurice.App.GitHubProxy.Logic (
     ) where
 
 import Data.Aeson.Types               (FromJSON, parseEither, parseJSON)
+import Data.Binary.Get                (Get, runGetOrFail)
 import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
+       (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
+       structuralInfo, structuralInfoSha1Digest, taggedDecode, taggedEncode)
 import Data.Constraint
 import Futurice.App.GitHubProxy.H     (runH)
 import Futurice.App.GitHubProxy.Types (Ctx (..))
@@ -27,17 +29,12 @@ import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant               (Cache, CachePolicy (..), genCachedIO)
 import Futurice.TypeTag
+import GHC.TypeLits                   (natVal)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
 import qualified Database.PostgreSQL.Simple as Postgres
-
-import Data.Binary.Get    (Get, runGetOrFail)
-import Data.Binary.Tagged
-       (SemanticVersion, Version, structuralInfo,
-       structuralInfoSha1ByteStringDigest)
-import GHC.TypeLits       (natVal)
 
 -------------------------------------------------------------------------------
 -- Intervals
@@ -273,4 +270,4 @@ checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
     proxyV = Proxy :: Proxy (SemanticVersion a)
     proxyA = Proxy :: Proxy a
     ver' = fromIntegral (natVal proxyV) :: Version
-    hash'' = structuralInfoSha1ByteStringDigest . structuralInfo $ proxyA
+    hash'' = structuralInfoSha1Digest . structuralInfo $ proxyA
