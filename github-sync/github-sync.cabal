@@ -54,6 +54,7 @@ library
     , servant
     , servant-lucid
     , servant-server
+    , text
 
   exposed-modules:
     Futurice.App.GitHubSync.API

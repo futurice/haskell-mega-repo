@@ -1,10 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DerivingVia       #-}
-{-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
 -- TODO: split into submodules
 module Power.Types where
 
