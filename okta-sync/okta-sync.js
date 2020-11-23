@@ -7,6 +7,7 @@ futu.onload(function () {
     var buttonOnClick = futu.buttonOnClick;
 
     var addUsersButton = $("button#add-users");
+    var syncOktaButton = $("button#start-okta-sync");
     if (addUsersButton) {
         console.log("Initialising okta-sync");
 
@@ -53,6 +54,19 @@ futu.onload(function () {
                 })
                 .catch(function (exc) {
                     addUsersButton.className = "button alert";
+                });
+        });
+        buttonOnClick(syncOktaButton, function () {
+            if (syncOktaButton.disabled) return;
+            syncOktaButton.disabled = true;
+
+            console.log("Starting sync");
+            futu.commandFetchJSON("/command/start-okta-sync", undefined)
+                .then(function (res) {
+                    syncOktaButton.className = "button success";
+                })
+                .catch(function (exc) {
+                    syncOktaButton.className = "button alert";
                 });
         });
     }
