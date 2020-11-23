@@ -18,18 +18,22 @@ import qualified Personio  as P
 indexPage :: [P.Employee] -> [O.User] -> [O.User] -> [PK.Employee] -> HtmlPage "indexpage"
 indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync" (Just NavHome) $ do
     fullRow_ $ do
+        button_ [ id_ "start-okta-sync", class_ "button" ] "Sync with Personio"
+    fullRow_ $ do
         h2_ "Not inactive people in Personio that are not in Okta"
         sortableTable_ $ do
             thead_ $ do
                 th_ mempty
                 th_ "#"
                 th_ "Name"
+                th_ "Start"
                 th_ "Employment"
             tbody_ $ do
                 for_ notInactiveEmployeesNotInOkta $ \e -> tr_ $ do
                     td_ $ checkbox_ False [ data_ "okta-add-user" $ employeeNumber $ e ^. P.employeeId]
                     td_ $ toHtml (e ^. P.employeeId)
                     td_ $ toHtml (e ^. P.employeeFullname)
+                    td_ $ toHtml $ maybe "" show (e ^. P.employeeHireDate)
                     td_ $ toHtml $ maybe "" show (e ^. P.employeeEmploymentType)
         div_ [ class_ "button-group" ] $
             button_ [ id_ "add-users", class_ "button alert", disabled_ "disabled" ] "Add to Okta"

@@ -30,6 +30,7 @@ apiServer :: Ctx -> Server OktaSyncAPI
 apiServer ctx = genericServer $ Record
     { githubUsernames = githubUsernamesImpl ctx
     , addOktaUsers    = oktaAddUsersImpl ctx
+    , startOktaSync   = startOktaSyncImpl ctx
     }
 
 htmlServer :: Ctx -> Server HtmlAPI
@@ -49,7 +50,7 @@ indexPageImpl ctx login = withAuthUser ctx login $ \_ -> do
   where
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
-    integrationCfg = (cfgIntegrationsCfg (ctxConfig ctx))
+    integrationCfg = cfgIntegrationsCfg (ctxConfig ctx)
 
 githubUsernamesImpl :: Ctx -> Handler (Map.Map Email (Maybe (GH.Name GH.User)))
 githubUsernamesImpl ctx = do
@@ -75,6 +76,11 @@ oktaAddUsersImpl ctx login eids = withAuthUser ctx login $ \_ -> do
     mgr = ctxManager ctx
     lgr = ctxLogger ctx
     integrationCfg = cfgIntegrationsCfg (ctxConfig ctx)
+
+startOktaSyncImpl :: Ctx -> Maybe FUM.Login -> Handler (CommandResponse ())
+startOktaSyncImpl ctx mfum = withAuthUser ctx mfum $ \_ -> do
+    _ <- liftIO $ updateJob ctx
+    pure $ CommandResponseReload
 
 withAuthUser
     :: Ctx
@@ -107,15 +113,19 @@ makeCtx cfg lgr mgr cache mq = do
         _ -> pure ()
 
     return (ctx, [])
+
+updateJob :: Ctx -> IO OktaUpdateStats
+updateJob ctx = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
+    es' <- P.personioEmployees
+    let es'' = filter (\p -> (p ^. P.employeeId) `Set.notMember` ignoreSet) es'
+    oktaUsers <- O.users
+    updateUsers ctx (utctDay now) es'' oktaUsers
   where
+    cfg = ctxConfig ctx
+    mgr = ctxManager ctx
+    lgr = ctxLogger ctx
     integrationCfg = cfgIntegrationsCfg cfg
     ignoreSet      = cfgIgnoreFromPersonio cfg
-
-    updateJob ctx = currentTime >>= \now -> runIntegrations mgr lgr now integrationCfg $ do
-        es' <- P.personioEmployees
-        let es'' = filter (\p -> (p ^. P.employeeId) `Set.notMember` ignoreSet) es'
-        oktaUsers <- O.users
-        updateUsers ctx (utctDay now) es'' oktaUsers
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
