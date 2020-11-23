@@ -106,7 +106,7 @@ indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync"
                                              Just _ -> False
                                              Nothing -> True) users
 
-    oktaFuturiceMember = filter (\u -> case (emailFromText $ u ^. O.userProfile . O.profileLogin) >>= \email -> personioMap ^. at email of
+    oktaFuturiceMember = filter (\u -> case emailFromText (u ^. O.userProfile . O.profileLogin) >>= \email -> personioMap ^. at email of
                                     Just (e:_) | u `elem` internalGroupUsers -> not (e ^. P.employeeStatus == P.Active && e ^. P.employeeEmploymentType == Just P.Internal)
                                                | otherwise -> False
                                     _ -> True) users

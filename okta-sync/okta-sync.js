@@ -63,10 +63,10 @@ futu.onload(function () {
             console.log("Starting sync");
             futu.commandFetchJSON("/command/start-okta-sync", undefined)
                 .then(function (res) {
-                    addUsersButton.className = "button success";
+                    syncOktaButton.className = "button success";
                 })
                 .catch(function (exc) {
-                    addUsersButton.className = "button alert";
+                    syncOktaButton.className = "button alert";
                 });
         });
     }
