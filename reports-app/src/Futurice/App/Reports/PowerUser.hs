@@ -55,6 +55,7 @@ data PowerUser = PowerUser
     , _powerUserInvoiceableFTE     :: !(Maybe Double)
     , _powerUserCompetenceHome     :: !(Maybe Text)
     , _powerUserPosition           :: !(Maybe Text)
+    , _powerUserJobOfferAccepted   :: !(Maybe Day)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
@@ -117,6 +118,7 @@ powerUser today es emailMap e = do
         , _powerUserInvoiceableFTE = e ^. P.employeeInvoiceableFTE
         , _powerUserCompetenceHome = e ^. P.employeeCompetenceHome
         , _powerUserPosition       = e ^. P.employeePosition
+        , _powerUserJobOfferAccepted = e ^. P.employeeJobOfferAccepted
         }
   where
     s = do
