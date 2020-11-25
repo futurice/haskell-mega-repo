@@ -42,6 +42,7 @@ data Service
     | HoursApiService
     | HCService
     | LibraryService
+    | OktaAdminService
     | OktaProxyService
     | OktaSyncService
     | PersonioProxyService
@@ -82,6 +83,7 @@ instance TextEnum Service where
         , "hours-api"
         , "hc"
         , "library"
+        , "okta-admin"
         , "okta-proxy"
         , "okta-sync"
         , "personio-proxy"
@@ -146,6 +148,7 @@ data PerService a = PerService
     , perHoursApi      :: a
     , perHC            :: a
     , perLibrary       :: a
+    , perOktaAdmin     :: a
     , perOktaProxy     :: a
     , perOktaSync      :: a
     , perPersonio      :: a
@@ -188,6 +191,7 @@ instance Representable PerService where
     index p HoursApiService      = perHoursApi p
     index p HCService            = perHC p
     index p LibraryService       = perLibrary p
+    index p OktaAdminService     = perOktaAdmin p
     index p OktaProxyService     = perOktaProxy p
     index p OktaSyncService      = perOktaSync p
     index p PersonioProxyService = perPersonioProxy p
@@ -222,6 +226,7 @@ instance Representable PerService where
         , perHoursApi      = f HoursApiService
         , perHC            = f HCService
         , perLibrary       = f LibraryService
+        , perOktaAdmin     = f OktaAdminService
         , perOktaProxy     = f OktaProxyService
         , perOktaSync      = f OktaSyncService
         , perPersonio      = f PersonioService
