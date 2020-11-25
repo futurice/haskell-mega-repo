@@ -12,7 +12,7 @@ module Okta.Types
 
 import Data.Aeson
 import Data.Aeson.Lens
-import Data.Aeson.Types                        (Parser, withText)
+import Data.Aeson.Types                        (Parser)
 import Futurice.Company                        (Country)
 import Futurice.Email
 import Futurice.EnvConfig
@@ -32,7 +32,7 @@ import qualified Personio  as P
 groupInfo :: OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
 
-groupMap :: Map Text GroupInfo
+groupMap :: Map GroupName GroupInfo
 groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
 
 data OktaCfg = OktaCfg
