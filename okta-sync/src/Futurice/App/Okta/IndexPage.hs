@@ -29,7 +29,7 @@ indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync"
                 th_ "Start"
                 th_ "Employment"
             tbody_ $ do
-                for_ notInactiveEmployeesNotInOkta $ \e -> tr_ $ do
+                for_ (sortOn P._employeeHireDate notInactiveEmployeesNotInOkta) $ \e -> tr_ $ do
                     td_ $ checkbox_ False [ data_ "okta-add-user" $ employeeNumber $ e ^. P.employeeId]
                     td_ $ toHtml (e ^. P.employeeId)
                     td_ $ toHtml (e ^. P.employeeFullname)
