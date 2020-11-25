@@ -25,6 +25,9 @@ newtype GroupName = GroupName Text
     deriving (Eq, Ord, Generic, Lift, Show)
     deriving anyclass (HasDatatypeInfo, SopGeneric, FromJSON, ToJSON, ToSchema)
 
+instance FromEnvVar GroupName where
+    fromEnvVar = fmap GroupName . fromEnvVar
+
 instance FromEnvVarList GroupName where
     fromEnvVarList = traverse (fmap GroupName . fromEnvVar) . map T.unpack . T.splitOn "," . T.pack
 
