@@ -34,13 +34,24 @@ utzChartRender :: Map (Integer, Int) Double -> Chart "utz"
 utzChartRender utzs = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
 
-    C.plot $ C.line "2020" [yearData 2020]
+    -- add top color again to get consistent color for first year
+    C.liftCState (C.colors %= (\colors -> head colors : colors))
+
+    -- add dashes to the last 4 months to mark uncertainly
+    C.plot $ do
+        line <- C.line "2020" [takeLast 4 (yearData 2020)]
+        pure $ line & C.plot_lines_style . C.line_dashes .~ [0.5,0.5]
+    C.plot $ C.line "2020" [dropLast 3 (yearData 2020)]
     C.plot $ C.line "2019" [yearData 2019]
     C.plot $ C.line "2018" [yearData 2018]
     C.plot $ C.line "2017" [yearData 2017]
     C.plot $ C.line "2016" [yearData 2016]
     C.plot $ C.line "2015" [yearData 2015]
   where
+    takeLast n = reverse . take n . reverse
+
+    dropLast n = reverse . drop n . reverse
+
     yearData y = takeWhileMaybe
         (\w -> fmap ((,) $ WeekNumber w) $ utzs ^? ix (y, w))
         [1..53]
