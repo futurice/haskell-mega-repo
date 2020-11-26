@@ -16,6 +16,7 @@ import Futurice.App.OktaProxy.Logic
 import Futurice.App.OktaProxy.Types
 
 import qualified FUM.Types.Login as FUM
+import qualified Okta            as O
 import qualified Personio        as P
 
 apiServer :: Ctx -> Server OktaProxyAPI
@@ -30,7 +31,7 @@ makeCtx cfg lgr mgr cache _mq = do
 
     return (ctx, [])
 
-getGroupMembersImpl :: Ctx -> Text -> Handler [FUM.Login]
+getGroupMembersImpl :: Ctx -> O.GroupName -> Handler [FUM.Login]
 getGroupMembersImpl ctx groupName = do
     now <- currentTime
     liftIO $ runIntegrations mgr lgr now cfg $ groupMembers groupName

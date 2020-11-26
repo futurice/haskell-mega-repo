@@ -14,7 +14,7 @@ import qualified FUM.Types.Login as FUM
 import qualified Okta            as O
 import qualified Personio        as P
 
-groupMembers :: (MonadOkta m, MonadPersonio m, MonadPlanMillQuery m, Monad m) => Text -> m [FUM.Login]
+groupMembers :: (MonadOkta m) => O.GroupName -> m [FUM.Login]
 groupMembers groupName = do
     case O.groupMap ^.at groupName of
       Just group -> do

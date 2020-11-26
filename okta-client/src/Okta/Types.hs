@@ -12,12 +12,14 @@ module Okta.Types
 
 import Data.Aeson
 import Data.Aeson.Lens
-import Data.Aeson.Types                        (Parser, withText)
+import Data.Aeson.Types                        (Parser)
 import Futurice.Company                        (Country)
+import Futurice.Constants                      (oktaAdminPublicUrl)
 import Futurice.Email
 import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.Prelude
+import Lucid                                   (a_, class_, href_)
 import Prelude ()
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
@@ -32,7 +34,7 @@ import qualified Personio  as P
 groupInfo :: OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
 
-groupMap :: Map Text GroupInfo
+groupMap :: Map GroupName GroupInfo
 groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
 
 data OktaCfg = OktaCfg
@@ -177,6 +179,10 @@ newtype OktaId = OktaId Text
     deriving (Eq, Ord, Generic)
     deriving anyclass (NFData, AnsiPretty, Hashable)
     deriving newtype (FromJSON, ToJSON, Show)
+
+instance ToHtml OktaId where
+    toHtmlRaw = toHtml
+    toHtml (OktaId oid) = a_ [ class_ "okta", href_ ( oktaAdminPublicUrl <> "/admin/user/profile/view/" <> oid)] (toHtml oid)
 
 newtype OktaAppId = OktaAppId Text
     deriving (Eq, Show, Generic)

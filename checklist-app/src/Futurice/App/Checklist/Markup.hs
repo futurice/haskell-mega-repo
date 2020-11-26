@@ -336,7 +336,7 @@ hasFUMLoginHtml login = case login of
 hasOktaAccountHtml :: Monad m => Maybe O.OktaId -> [HtmlT m ()]
 hasOktaAccountHtml moktaId = case moktaId of
     Nothing -> pure $ b_ "No Okta account found connected to work email"
-    Just (O.OktaId oktaId) -> pure $ "Okta account: " <> a_ [href_ ("https://futurice-admin.okta-emea.com/admin/user/profile/view/" <> oktaId)] (toHtml oktaId)
+    Just oktaId -> pure $ "Okta account: " <> toHtml oktaId
 
 taskInfo_
     :: Monad m

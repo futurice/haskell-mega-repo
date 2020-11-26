@@ -33,11 +33,13 @@ library
     , env-config
     , free
     , fum-client
+    , futurice-constants
     , futurice-prelude
     , futurice-tribes
     , http-client
     , http-types
     , lens-aeson
+    , lucid
     , personio-client
     , servant
     , servant-client

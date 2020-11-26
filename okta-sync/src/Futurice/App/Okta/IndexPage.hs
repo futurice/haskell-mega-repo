@@ -29,7 +29,7 @@ indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync"
                 th_ "Start"
                 th_ "Employment"
             tbody_ $ do
-                for_ notInactiveEmployeesNotInOkta $ \e -> tr_ $ do
+                for_ (sortOn P._employeeHireDate notInactiveEmployeesNotInOkta) $ \e -> tr_ $ do
                     td_ $ checkbox_ False [ data_ "okta-add-user" $ employeeNumber $ e ^. P.employeeId]
                     td_ $ toHtml (e ^. P.employeeId)
                     td_ $ toHtml (e ^. P.employeeFullname)
@@ -41,11 +41,13 @@ indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync"
         sortableTable_ $ do
             thead_ $ do
                 th_ "#"
+                th_ "Okta"
                 th_ "Name"
                 th_ "Contract end date"
             tbody_ $ do
-                for_ inactiveInPersonio $ \e -> tr_ $ do
+                for_ (sortOn (P._employeeEndDate . snd) inactiveInPersonio) $ \(u,e) -> tr_ $ do
                     td_ $ toHtml (e ^. P.employeeId)
+                    td_ $ toHtml $ u ^. O.userId
                     td_ $ toHtml (e ^. P.employeeFullname)
                     td_ $ toHtml $ maybe "" textShow (e ^. P.employeeEndDate)
         h2_ "People in Okta that are not in Personio"
@@ -95,6 +97,10 @@ indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync"
     machineUsers = P.EmployeeId <$> [1436090, 982480]
     notMachineUser e = not $ e ^. P.employeeId `elem` machineUsers
     notInactiveEmployees = filter (\e -> e ^. P.employeeStatus /= P.Inactive) employees
+
+    oktaUser :: P.Employee -> Maybe O.User
+    oktaUser e = e ^. P.employeeEmail >>= \email -> loginMap ^. at (emailToText email)
+
     notFoundInOkta e =
         case e ^. P.employeeEmail >>= \email -> loginMap ^. at (emailToText email) of
           Just _ -> False
@@ -110,7 +116,9 @@ indexPage employees users internalGroupUsers peakonEmployees = page_ "Okta sync"
                                     Just (e:_) | u `elem` internalGroupUsers -> not (e ^. P.employeeStatus == P.Active && e ^. P.employeeEmploymentType == Just P.Internal)
                                                | otherwise -> False
                                     _ -> True) users
-    inactiveInPersonio = filter (not . notFoundInOkta) $ filter (\e -> e ^. P.employeeStatus == P.Inactive) employees
+
+    inactiveInPersonio :: [(O.User, P.Employee)]
+    inactiveInPersonio = catMaybes $ fmap (\e -> (,) <$> oktaUser e <*> Just e) $ filter (\e -> e ^. P.employeeStatus == P.Inactive) employees
 
     peakonMap :: Map P.EmployeeId PK.Employee
     peakonMap = Map.fromList $ catMaybes $ map (\pk -> (,) <$> (Just . P.EmployeeId =<< readMaybe . T.unpack =<< PK._employeeIdentifier pk) <*> Just pk) peakonEmployees

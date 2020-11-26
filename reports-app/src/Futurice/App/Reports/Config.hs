@@ -17,6 +17,7 @@ import Servant.Client             (BaseUrl)
 
 import qualified FUM.Types.Login                   as FUM
 import qualified Futurice.Integrations.Serv.Config as C
+import qualified Okta                              as O
 
 type ReportIntegrations = '[ ServFD, ServFUM, ServGH, ServPE, ServPK, ServPM, ServPO ]
 
@@ -30,7 +31,7 @@ data Config = Config
     , cfgHcEmailCC             :: !(Maybe Email)
     , cfgOktaProxyBaseurl      :: !BaseUrl
     , cfgMockUser              :: !(Maybe FUM.Login)
-    , cfgITTeamOktaGroup       :: !Text
+    , cfgITTeamOktaGroup       :: !(O.GroupName)
     }
 
 instance Configure Config where

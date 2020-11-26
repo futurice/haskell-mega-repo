@@ -3,7 +3,6 @@
 module Futurice.App.Okta (defaultMain) where
 
 import Futurice.Email            (Email)
-import Futurice.FUM.MachineAPI   (FUM6 (..), fum6)
 import Futurice.Integrations
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Prelude
@@ -82,6 +81,14 @@ startOktaSyncImpl ctx mfum = withAuthUser ctx mfum $ \_ -> do
     _ <- liftIO $ updateJob ctx
     pure $ CommandResponseReload
 
+groupMembers :: (MonadOkta m) => O.GroupName -> m (Set FUM.Login)
+groupMembers groupName = do
+    case O.groupMap ^.at groupName of
+      Just group -> do
+          oktaGroupMembers <- O.groupMembers $ O.giId group
+          pure $ Set.fromList $ catMaybes $ (^. O.userProfile . O.profileFumUsername) <$> oktaGroupMembers
+      Nothing -> pure mempty
+
 withAuthUser
     :: Ctx
     -> Maybe FUM.Login
@@ -92,7 +99,7 @@ withAuthUser ctx loc f = case loc <|> cfgMockUser cfg of
     Just login -> do
         now <- currentTime
         notMember <- liftIO $ runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) $ do
-            fus <- mconcat <$> traverse (fum6 . FUMGroupEmployees) (cfgAccessGroups cfg)
+            fus <- mconcat <$> traverse groupMembers (cfgAccessGroups cfg)
             pure $ login `Set.notMember` fus
         if notMember then throwError err403 else f login
   where

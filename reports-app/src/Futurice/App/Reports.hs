@@ -330,11 +330,11 @@ servePeakonSegments ctx = runIntegrations' ctx $ segments
 
 serveSendMessageToAll :: Ctx -> Maybe FUM.Login -> Text -> IO ()
 serveSendMessageToAll ctx mfum smstext =
-    case mfum <|> (cfgMockUser cfg) of
+    case mfum <|> cfgMockUser cfg of
       Nothing -> error "No user found"
       Just login -> do
           res <- groupMembers (ctxManager ctx) (cfgOktaProxyBaseurl cfg) (cfgITTeamOktaGroup cfg)
-          if login `Set.member` (Set.fromList res) then
+          if login `Set.member` Set.fromList res then
             sendMessageToAll ctx smstext
           else
             error "Not authorized"

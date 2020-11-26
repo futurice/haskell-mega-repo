@@ -27,20 +27,20 @@ import qualified Power
 groupInfo :: O.OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy O.OktaJSON))
 
-groupMap :: Map Text O.GroupInfo
+groupMap :: Map O.GroupName O.GroupInfo
 groupMap = Map.fromList $ (\g -> (O.giName g, g)) <$> O.ojGroups groupInfo
 
-internalGroupName :: Text
+internalGroupName :: O.GroupName
 internalGroupName = O.ojInternalGroup groupInfo
 
 internalGroup :: O.OktaGroupId
 internalGroup = maybe (error "No internal group found") O.giId $ Map.lookup internalGroupName groupMap
 
-externalGroupName :: Text
+externalGroupName :: O.GroupName
 externalGroupName = O.ojExternalGroup groupInfo
 
 peakonGroup :: O.OktaGroupId
-peakonGroup = maybe (error "No App-Peakon group found") O.giId $ Map.lookup "App-Peakon" groupMap
+peakonGroup = maybe (error "No App-Peakon group found") O.giId $ Map.lookup (O.GroupName "App-Peakon") groupMap
 
 allGroupFuturiceEmployees :: (O.MonadOkta m) => m [O.User]
 allGroupFuturiceEmployees = let g = fromMaybe (error "Error while finding group") $ Map.lookup internalGroupName groupMap
@@ -240,10 +240,10 @@ createUser pemp = O.createUser newUser
     listSingleton a = [a]
     newUser = O.NewUser newUserProfile newUserGroupIds
     futuGroup = listSingleton $ O.giId <$> Map.lookup internalGroupName groupMap
-    officeGroup = listSingleton $ O.giId <$> Map.lookup ("Org-" <> (officeToText $ pemp ^. P.employeeOffice)) groupMap
-    tribeGroup = listSingleton $ O.giId <$> Map.lookup ("Org-" <> (T.replace " " "-" $ tribeToText $ pemp ^. P.employeeTribe)) groupMap
+    officeGroup = listSingleton $ O.giId <$> Map.lookup (O.GroupName $ "Org-" <> (officeToText $ pemp ^. P.employeeOffice)) groupMap
+    tribeGroup = listSingleton $ O.giId <$> Map.lookup (O.GroupName $ "Org-" <> (T.replace " " "-" $ tribeToText $ pemp ^. P.employeeTribe)) groupMap
     externalGroup = listSingleton $ O.giId <$> Map.lookup externalGroupName groupMap
-    externalOfficeGroup = listSingleton $ O.giId <$> Map.lookup (externalGroupName <> "-" <> (officeToText $ pemp ^. P.employeeOffice)) groupMap
+    externalOfficeGroup = listSingleton $ O.giId <$> Map.lookup (O.GroupName $ O.groupNameToText externalGroupName <> "-" <> (officeToText $ pemp ^. P.employeeOffice)) groupMap
     newUserGroupIds | (pemp ^. P.employeeEmploymentType) == Just P.Internal = nub $ catMaybes $ futuGroup <> officeGroup <> tribeGroup
                     | otherwise                                             = nub $ catMaybes $ externalGroup <> externalOfficeGroup <> tribeGroup
     newUserProfile = O.NewUserProfile

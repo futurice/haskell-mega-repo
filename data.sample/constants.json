@@ -19,6 +19,7 @@
     "hours-api": "https://hours-api.example.com",
     "hc": "https://hc.example.com",
     "library": "https://library.example.com",
+    "okta-admin": "http://okta-admin.example.com",
     "okta-proxy": "https://okta-proxy.example.com",
     "okta-sync": "https://okta-sync.example.com",
     "personio": "https://personio.example.com",
