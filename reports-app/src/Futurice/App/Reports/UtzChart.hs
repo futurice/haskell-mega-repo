@@ -17,21 +17,26 @@ import qualified Graphics.Rendering.Chart.Easy as C
 import qualified PlanMill                      as PM
 import qualified PlanMill.Queries              as PMQ
 
+data UTZChartData = UTZChartData
+    { cdData         :: !(Map (Integer, Int) Double)
+    , cdShowAllYears :: !Bool
+    } deriving (Generic, NFData)
+
 utzChartData
     :: forall m. ( MonadTime m, MonadPlanMillQuery m)
-    => m (Map (Integer, Int) Double)
+    => m UTZChartData
 utzChartData = do
     today <- currentDay
     uids <- view PM.identifier <$$> PMQ.users
     trs' <- bindForM (chopInterval $ interval today) $ \i ->
         traverse (PMQ.timereports i) uids
     let trs = trs' ^.. folded . folded . folded
-    pure $ timereportUtzPerWeek trs
+    pure $ UTZChartData (timereportUtzPerWeek trs) False
   where
     interval today = $(mkDay "2015-01-01") PM.... today
 
-utzChartRender :: Map (Integer, Int) Double -> Chart "utz"
-utzChartRender utzs = Chart . C.toRenderable $ do
+utzChartRender :: UTZChartData -> Chart "utz"
+utzChartRender (UTZChartData utzs showAll) = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
 
     -- add top color again to get consistent color for first year
@@ -40,13 +45,14 @@ utzChartRender utzs = Chart . C.toRenderable $ do
     -- add dashes to the last 4 months to mark uncertainly
     C.plot $ do
         line <- C.line "2020" [takeLast 4 (yearData 2020)]
-        pure $ line & C.plot_lines_style . C.line_dashes .~ [0.5,0.5]
+        pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
     C.plot $ C.line "2020" [dropLast 3 (yearData 2020)]
     C.plot $ C.line "2019" [yearData 2019]
     C.plot $ C.line "2018" [yearData 2018]
     C.plot $ C.line "2017" [yearData 2017]
-    C.plot $ C.line "2016" [yearData 2016]
-    C.plot $ C.line "2015" [yearData 2015]
+    when showAll $ do
+        C.plot $ C.line "2016" [yearData 2016]
+        C.plot $ C.line "2015" [yearData 2015]
   where
     takeLast n = reverse . take n . reverse
 
