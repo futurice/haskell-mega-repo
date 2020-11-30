@@ -100,6 +100,7 @@ data ValidationMessage
     | EmployerCountryDontMatch (Maybe Country) Company
     | StartDateMissing
     | EndDateBeforeStart Day Day
+    | ExternalEmailInvalid Text
   deriving stock (Eq, Ord, Show, Typeable, Generic)
   deriving anyclass (NFData)
 
@@ -200,6 +201,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , employerCountryDontMatch
         , startDateMissing
         , endDateBeforeStart
+        , externalEmailValidate
         ]
       where
         isExternal = e ^. employeeEmploymentType == Just External
@@ -533,6 +535,14 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         finnishOffices :: [Office]
         finnishOffices = filter (\o -> officeCountry o == countryFinland) [minBound .. maxBound]
+
+        externalEmailValidate :: WriterT [ValidationMessage] Parser ()
+        externalEmailValidate = when isExternal $ do
+            email <- lift (parseAttribute obj "email")
+            if T.isPrefixOf "ext-" $ T.strip email then
+                pure ()
+            else
+                tell [ExternalEmailInvalid email]
 
 -- | Validate IBAN.
 --
