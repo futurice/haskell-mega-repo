@@ -124,6 +124,10 @@ showMessages cons msgs = ul_ $ do
 
     showMessage (P.LoginInvalid _) = b_ "IT: " <> i_ "Invalid FUM Login."
     showMessage P.WorkPhoneMissing = b_ "IT: " <> i_ "Work phone is missing."
+    showMessage (P.ExternalEmailInvalid e) = do
+        b_ "IT: " <> i_ "Email doesn't start with ext-"
+        br_ []
+        toHtml e
     showMessage (P.EmailInvalid e) = do
         b_ "Invalid email: "
         toHtml e
