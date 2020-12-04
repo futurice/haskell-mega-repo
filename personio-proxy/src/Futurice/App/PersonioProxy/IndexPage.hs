@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.PersonioProxy.IndexPage (indexPage) where
 
 import Data.Aeson                (Value (..))
