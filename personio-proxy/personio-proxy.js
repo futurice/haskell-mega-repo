@@ -186,7 +186,7 @@ futu.onload(function () {
     var other    = words.filter(function (w) { return w.length > 2 && w[0] !== ":"; }).map(function (w) { return w.toLowerCase(); });
 
     return {
-      keywords: _.sortBy(_.intersection(keywords, KEYWORDS)),
+      keywords: _.sortBy(keywords),
       words: _.sortBy(other),
     };
   }
