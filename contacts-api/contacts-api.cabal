@@ -42,7 +42,6 @@ library
     , bytestring
     , cassava
     , containers
-    , cryptohash
     , deepseq
     , directory
     , env-config

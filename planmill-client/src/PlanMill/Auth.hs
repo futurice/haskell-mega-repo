@@ -15,9 +15,8 @@ module PlanMill.Auth (
 
 import PlanMill.Internal.Prelude
 
-import Crypto.Hash   (HMAC (..), SHA256, hmac)
-import Data.Bits     (shiftL, (.|.))
-import Data.Byteable (toBytes)
+import Crypto.Hash.SHA256 (hmac)
+import Data.Bits          (shiftL, (.|.))
 
 import qualified Data.ByteString as BS
 import qualified Data.Vector     as V
@@ -36,10 +35,8 @@ data Auth = Auth
     deriving (Eq, Show)
 
 signature :: UserId -> ApiKey -> UTCTime -> Nonce -> ByteString
-signature (Ident uid) (ApiKey k) timestamp (Nonce nonce) =
-    toBytes $ hmacGetDigest digest
+signature (Ident uid) (ApiKey k) timestamp (Nonce nonce) = digest
   where
-    digest :: HMAC SHA256
     digest = hmac k message
 
     message :: ByteString
