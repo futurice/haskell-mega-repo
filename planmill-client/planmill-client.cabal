@@ -48,13 +48,12 @@ library
     , binary
     , binary-orphans
     , binary-tagged
-    , byteable
     , bytestring
     , cassava
     , composition-extra
     , constraints
     , containers
-    , cryptohash
+    , cryptohash-sha256
     , deepseq
     , dependent-sum
     , DRBG
@@ -170,13 +169,11 @@ executable planmill-client
     , binary
     , binary-orphans
     , binary-tagged
-    , byteable
     , bytestring
     , cassava
     , composition-extra
     , constraints
     , containers
-    , cryptohash
     , deepseq
     , dependent-sum
     , DRBG
@@ -249,13 +246,11 @@ executable pm-cli
     , binary
     , binary-orphans
     , binary-tagged
-    , byteable
     , bytestring
     , cassava
     , composition-extra
     , constraints
     , containers
-    , cryptohash
     , deepseq
     , dependent-sum
     , DRBG
@@ -327,13 +322,11 @@ test-suite integration
     , binary
     , binary-orphans
     , binary-tagged
-    , byteable
     , bytestring
     , cassava
     , composition-extra
     , constraints
     , containers
-    , cryptohash
     , deepseq
     , dependent-sum
     , DRBG
@@ -401,13 +394,11 @@ test-suite test
     , binary
     , binary-orphans
     , binary-tagged
-    , byteable
     , bytestring
     , cassava
     , composition-extra
     , constraints
     , containers
-    , cryptohash
     , deepseq
     , dependent-sum
     , DRBG
