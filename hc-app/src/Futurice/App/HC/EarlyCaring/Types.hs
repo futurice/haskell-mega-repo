@@ -85,7 +85,7 @@ instance ToHtml EarlyCaringEmail where
     toHtml (EarlyCaringEmail a s b) = pre_ $ do
         "To:      " <> toHtml a <> "\n"
         "Subject: " <> toHtml s <> "\n\n"
-        toHtml b
+        toHtmlRaw b
 
 -------------------------------------------------------------------------------
 -- MonthFlex

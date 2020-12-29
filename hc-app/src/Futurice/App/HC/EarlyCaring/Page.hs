@@ -262,24 +262,25 @@ earlyCaringPage esecret today interval personioEmployees0 planmillData absences0
 
             for_ ms $ \s -> fullRow_ $ case s ^. P.employeeEmail of
                 Nothing -> div_ [ class_ "callout warning" ] "Supervisor don't have an email set"
-                Just a -> div_ [ class_ "callout secondary" ] $ do
-                    h3_ "Reminder mail"
-                    let email = EarlyCaringEmail a "Early caring email" $ renderTemplate
-                            (s ^. P.employeeFirst)
-                            today
-                            interval
-                            (toList bs)
+                Just a -> div_ [ class_ "callout secondary" ] $
+                    when (not (emptyTemplate today interval (toList bs))) $ do
+                        h3_ "Reminder mail"
+                        let email = EarlyCaringEmail a "Early caring email" $ renderTemplate
+                                (s ^. P.employeeFirst)
+                                today
+                                interval
+                                (toList bs)
 
-                    pre_ $ toHtml email
-                    for_ esecret $ \secret -> do
-                        hr_ []
-                        button_
-                            [ data_ "futu-early-caring-mail" (decodeUtf8Lenient (Aeson.encode (mkSignedBlob secret email) ^. strict))
-                            , data_ "futu-early-caring-name" $ s ^. P.employeeFullname
-                            , class_ "button primary"
-                            , disabled_ "disabled"
-                            ]
-                            "Send"
+                        pre_ $ toHtml email
+                        for_ esecret $ \secret -> do
+                            hr_ []
+                            button_
+                                [ data_ "futu-early-caring-mail" (decodeUtf8Lenient (Aeson.encode (mkSignedBlob secret email) ^. strict))
+                                , data_ "futu-early-caring-name" $ s ^. P.employeeFullname
+                                , class_ "button primary"
+                                , disabled_ "disabled"
+                                ]
+                                "Send"
 
     forSelf_ esecret $ \self -> do
         h2_ "Your all subordinates"
