@@ -17,8 +17,8 @@ import qualified Data.Map.Strict               as Map
 import qualified Futurice.Colour               as FC
 import qualified Graphics.Rendering.Chart.Easy as C
 
-import Futurice.App.HC.Achoo.Types
 import Futurice.App.HC.API
+import Futurice.App.HC.Achoo.Types
 import Futurice.App.HC.Markup
 
 achooReportPage :: AchooReport -> HtmlPage "achoo-report"
@@ -41,7 +41,10 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
 
     hr_ []
     ul_ [ class_ "menu" ] $ do
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2021-01-01")) (Just $(mkDay "2021-06-30")) (Just whole) ] $ "2021 H1"
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2021-01-01")) (Just $(mkDay "2021-12-31")) (Just whole) ] $ "2021 Year"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2020-01-01")) (Just $(mkDay "2020-06-30")) (Just whole) ] $ "2020 H1"
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2020-07-01")) (Just $(mkDay "2020-12-31")) (Just whole) ] $ "2020 H2"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2020-01-01")) (Just $(mkDay "2020-12-31")) (Just whole) ] $ "2020 Year"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2019-01-01")) (Just $(mkDay "2019-06-30")) (Just whole) ] $ "2019 H1"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2019-07-01")) (Just $(mkDay "2019-12-31")) (Just whole) ] $ "2019 H2"
@@ -81,7 +84,7 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
     len = 1 + diffDays dayMax dayMin
 
     renderPercentages :: (Monad m, ToHtml a) => Text -> Map a (PerSickDays Int) -> HtmlT m ()
-    renderPercentages title pers = table_ $ do
+    renderPercentages title pers = sortableTable_ $ do
         thead_ $ do
             th_ $ toHtml title
             for_ tableBucketNames $ \n -> th_ $ toHtmlRaw n

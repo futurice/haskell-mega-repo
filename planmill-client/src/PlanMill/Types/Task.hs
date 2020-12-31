@@ -57,5 +57,5 @@ instance FromJSON Task where
         <*> (getParsedAsText <$> obj .: "name" <|> pure "") -- HACK^2
         <*> obj .:? "project"
         <*> (dayFromZ <$> obj .: "start"  <|> pure (ModifiedJulianDay 57023)) -- 2015-01-01
-        <*> (dayFromZ <$> obj .: "finish" <|> pure (ModifiedJulianDay 58849)) -- 2020-01-01
+        <*> (dayFromZ <$> obj .: "finish" <|> pure (ModifiedJulianDay 59580)) -- 2022-01-01
         <*> obj .:? "totalEffort" .!= 0

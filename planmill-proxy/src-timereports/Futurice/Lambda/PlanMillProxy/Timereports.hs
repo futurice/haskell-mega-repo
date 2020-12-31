@@ -5,9 +5,10 @@ module Futurice.Lambda.PlanMillProxy.Timereports (
     planMillProxyTimereportsLambda,
     ) where
 
-import Data.Aeson                  (Value, object, (.=))
+import Data.Aeson                  (object, (.=))
 import Data.Binary.Tagged          (taggedEncode)
 import Data.Time                   (addDays, diffDays)
+import Data.Time.Calendar          (fromGregorian, toGregorian)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.EnvConfig
 import Futurice.Lambda
@@ -58,12 +59,12 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
         withWorkers lgr mgr cfgPmCfg ["worker1", "worker2", "worker3"] $ \ws ->
             case v of
                 "without-timereports" ->
-                    updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (take 2 $ toList intervals)
+                    updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (take 2 $ toList $ intervals (utctDay now))
                 "without-timereports-rest" -> do -- check for older timereports on weekends when there is not that much other traffic
                     day <- currentDay
-                    checkIsWeekend day $ updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (drop 2 $ toList intervals)
+                    checkIsWeekend day $ updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (drop 2 $ toList $ intervals (utctDay now))
                 "without-timereports-all" ->
-                    updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList intervals)
+                    updateWithoutTimereports (lcRemainingTimeInMillis lc) pool ws (toList $ intervals (utctDay now))
                 "all-recent-timereports" -> -- don't try to update old timereports often
                     updateAllTimereports (lcRemainingTimeInMillis lc) pool ws now 730
                 "update-all-timereports" -> -- update all existing timereports
@@ -76,16 +77,18 @@ planMillProxyTimereportsLambda = makeAwsLambda impl where
 -- Intervals
 -------------------------------------------------------------------------------
 
+year :: Day -> Integer
+year n =
+    case toGregorian n of
+      (y, _, _) -> y
+
 -- TODO: this needs updating. Making it dependent on current day?
-intervals :: NonEmpty (PM.Interval Day)
-intervals =
-    ($(mkDay "2020-01-01") ... $(mkDay "2020-12-31")) :|
-    [ $(mkDay "2019-01-01") ... $(mkDay "2019-12-31")
-    , $(mkDay "2018-01-01") ... $(mkDay "2018-12-31")
-    , $(mkDay "2017-01-01") ... $(mkDay "2017-12-31")
-    , $(mkDay "2016-01-01") ... $(mkDay "2016-12-31")
-    , $(mkDay "2015-01-01") ... $(mkDay "2015-12-31")
-    ]
+intervals :: Day -> NonEmpty (PM.Interval Day)
+intervals today = currentYearInterval :| restOfYears
+  where
+    currentYear = year today
+    currentYearInterval = fromGregorian currentYear 1 1 ... fromGregorian currentYear 12 31
+    restOfYears = (\y -> fromGregorian y 1 1 ... fromGregorian y 12 31) <$> reverse [2015 .. currentYear - 1]
 
 -------------------------------------------------------------------------------
 -- Without timereports
@@ -148,7 +151,7 @@ updateAllTimereports remaining pool ws now updateTimeframe = do
         $ object [ "stamp" .= stamp ]
 
     -- Select uids with oldest updated time reports
-    (uids, dayMin, dayMax) <- selectUids stamp intervals
+    (uids, dayMin, dayMax) <- selectUids stamp $ intervals (utctDay now)
 
     logInfoI "Updating timereports for users ($min ... $max)" $ object
             [ "uids" .= uids
