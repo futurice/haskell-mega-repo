@@ -240,9 +240,9 @@ achooReportAction ctx mfu mi' ma' all' = do
     impl now = do
         let (mi, ma) = case (mi', ma') of
               (Just x,  Just y)  -> (x, y)
-              (Nothing, Nothing) -> (now, addGregorianMonthsClip (-6) now)
+              (Nothing, Nothing) -> (addGregorianMonthsClip (-6) now, now)
               (Just x,  Nothing) -> (x, addGregorianMonthsClip 6 x)
-              (Nothing, Just x)  -> (x, addGregorianMonthsClip (-6) x)
+              (Nothing, Just x)  -> (addGregorianMonthsClip (-6) x, x)
         achooReportPage <$> achooReportFetch mi ma (fromMaybe True all')
 
 achooChartAction

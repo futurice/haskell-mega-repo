@@ -44,13 +44,14 @@ utzChartRender (UTZChartData utzs showAll) = Chart . C.toRenderable $ do
 
     -- add dashes to the last 4 months to mark uncertainly
     C.plot $ do
-        line <- C.line "2020" [takeLast 4 (yearData 2020)]
+        line <- C.line "2021" [takeLast 4 (yearData 2021)]
         pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
-    C.plot $ C.line "2020" [dropLast 3 (yearData 2020)]
+    C.plot $ C.line "2021" [dropLast 3 (yearData 2021)]
+    C.plot $ C.line "2020" [yearData 2020]
     C.plot $ C.line "2019" [yearData 2019]
     C.plot $ C.line "2018" [yearData 2018]
-    C.plot $ C.line "2017" [yearData 2017]
     when showAll $ do
+        C.plot $ C.line "2017" [yearData 2017]
         C.plot $ C.line "2016" [yearData 2016]
         C.plot $ C.line "2015" [yearData 2015]
   where
