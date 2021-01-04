@@ -3,6 +3,8 @@
 module Futurice.App.Reports.UtzChart (utzChartData, utzChartRender) where
 
 import Control.Lens                ((.=))
+import Data.List                   (partition)
+import Data.Time                   (addDays)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
 import Futurice.Monoid             (Average (..))
@@ -18,7 +20,8 @@ import qualified PlanMill                      as PM
 import qualified PlanMill.Queries              as PMQ
 
 data UTZChartData = UTZChartData
-    { cdData         :: !(Map (Integer, Int) Double)
+    { cdToday        :: !Day
+    , cdData         :: !(Map (Integer, Int) Double)
     , cdShowAllYears :: !Bool
     } deriving (Generic, NFData)
 
@@ -31,23 +34,28 @@ utzChartData = do
     trs' <- bindForM (chopInterval $ interval today) $ \i ->
         traverse (PMQ.timereports i) uids
     let trs = trs' ^.. folded . folded . folded
-    pure $ UTZChartData (timereportUtzPerWeek trs) False
+    pure $ UTZChartData today (timereportUtzPerWeek trs) False
   where
     interval today = $(mkDay "2015-01-01") PM.... today
 
 utzChartRender :: UTZChartData -> Chart "utz"
-utzChartRender (UTZChartData utzs showAll) = Chart . C.toRenderable $ do
+utzChartRender (UTZChartData today utzs showAll) = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
 
-    -- add top color again to get consistent color for first year
-    C.liftCState (C.colors %= (\colors -> head colors : colors))
+    -- duplicate colors to get consistent color for preliminary and actual line
+    C.liftCState (C.colors %= dupColors)
 
-    -- add dashes to the last 4 months to mark uncertainly
+    -- add dashes to the last 4 weeks to mark preliminary results
+    let (preCutOff,afterCutOff) = partition (\(week,_) -> week `notElem` preliminaryWeeks 2021) (yearData 2021)
     C.plot $ do
-        line <- C.line "2021" [takeLast 4 (yearData 2021)]
+        line <- C.line "2021" [takeLast 1 preCutOff <> afterCutOff]
         pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
-    C.plot $ C.line "2021" [dropLast 3 (yearData 2021)]
-    C.plot $ C.line "2020" [yearData 2020]
+    C.plot $ C.line "2021" [preCutOff]
+    let (preCutOff',afterCutOff') = partition (\(week,_) -> week `notElem` preliminaryWeeks 2020) (yearData 2020)
+    C.plot $ do
+        line <- C.line "2020" [takeLast 1 preCutOff' <> afterCutOff']
+        pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
+    C.plot $ C.line "2020" [preCutOff']
     C.plot $ C.line "2019" [yearData 2019]
     C.plot $ C.line "2018" [yearData 2018]
     when showAll $ do
@@ -57,7 +65,20 @@ utzChartRender (UTZChartData utzs showAll) = Chart . C.toRenderable $ do
   where
     takeLast n = reverse . take n . reverse
 
-    dropLast n = reverse . drop n . reverse
+    dupColors (c1:c2:xs) = c1:c1:c2:c2:xs
+    dupColors xs = xs
+
+    preliminaryWeeks :: Int -> [WeekNumber]
+    preliminaryWeeks y = map (\(a,_) -> WeekNumber a) $ filter (\(_,year) -> y == fromIntegral year) $ getWeek <$>
+                         [ addDays (-21) today
+                         , addDays (-14) today
+                         , addDays (-7) today
+                         , today
+                         ]
+
+    getWeek d =
+        let (year,week,_) = toWeekDate d
+        in (week, year)
 
     yearData y = takeWhileMaybe
         (\w -> fmap ((,) $ WeekNumber w) $ utzs ^? ix (y, w))
