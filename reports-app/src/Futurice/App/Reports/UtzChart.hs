@@ -5,6 +5,7 @@ module Futurice.App.Reports.UtzChart (utzChartData, utzChartRender) where
 import Control.Lens                ((.=))
 import Data.List                   (partition)
 import Data.Time                   (addDays)
+import Data.Time.Calendar          (fromGregorian, toGregorian)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
 import Futurice.Monoid             (Average (..))
@@ -31,44 +32,52 @@ utzChartData
 utzChartData = do
     today <- currentDay
     uids <- view PM.identifier <$$> PMQ.users
-    trs' <- bindForM (chopInterval $ interval today) $ \i ->
+    let showAll = False
+    trs' <- bindForM (chopInterval $ interval today showAll) $ \i ->
         traverse (PMQ.timereports i) uids
     let trs = trs' ^.. folded . folded . folded
-    pure $ UTZChartData today (timereportUtzPerWeek trs) False
+    pure $ UTZChartData today (timereportUtzPerWeek trs) showAll
   where
-    interval today = $(mkDay "2015-01-01") PM.... today
+    currentYear d =
+        let (year, _, _) = toGregorian d
+        in year
+    interval today showAll =
+        if showAll then
+          $(mkDay "2015-01-01") PM.... today
+        else
+          fromGregorian (currentYear today - 3) 1 1 PM.... today
 
 utzChartRender :: UTZChartData -> Chart "utz"
 utzChartRender (UTZChartData today utzs showAll) = Chart . C.toRenderable $ do
     C.layout_title .= "UTZ per week"
 
-    -- duplicate colors to get consistent color for preliminary and actual line
-    C.liftCState (C.colors %= dupColors)
-
-    -- add dashes to the last 4 weeks to mark preliminary results
-    let (preCutOff,afterCutOff) = partition (\(week,_) -> week `notElem` preliminaryWeeks 2021) (yearData 2021)
-    C.plot $ do
-        line <- C.line "2021" [takeLast 1 preCutOff <> afterCutOff]
-        pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
-    C.plot $ C.line "2021" [preCutOff]
-    let (preCutOff',afterCutOff') = partition (\(week,_) -> week `notElem` preliminaryWeeks 2020) (yearData 2020)
-    C.plot $ do
-        line <- C.line "2020" [takeLast 1 preCutOff' <> afterCutOff']
-        pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
-    C.plot $ C.line "2020" [preCutOff']
-    C.plot $ C.line "2019" [yearData 2019]
-    C.plot $ C.line "2018" [yearData 2018]
-    when showAll $ do
-        C.plot $ C.line "2017" [yearData 2017]
-        C.plot $ C.line "2016" [yearData 2016]
-        C.plot $ C.line "2015" [yearData 2015]
+    for_ yearRange $ \year -> do
+        if year `elem` last2years then do
+            -- add dashes to the last 4 weeks to mark preliminary results
+            let (preCutOff,afterCutOff) = partition (\(week,_) -> week `notElem` preliminaryWeeks year) (yearData year)
+            -- duplicate colors to get consistent color for preliminary and actual line
+            C.liftCState (C.colors %= dupColors)
+            C.plot $ do
+                line <- C.line (show year) [takeLast 1 preCutOff <> afterCutOff]
+                pure $ line & C.plot_lines_style . C.line_dashes .~ [5,5]
+            C.plot $ C.line (show year) [preCutOff]
+        else do
+            C.plot $ C.line (show year) [yearData year]
   where
+    (currentYear, _, _) = toGregorian today
+    yearRange =
+        if showAll then
+          [currentYear,currentYear-1..2015]
+        else
+          take 4 [currentYear,currentYear-1..2015]
+    last2years = [currentYear - 1, currentYear]
+
     takeLast n = reverse . take n . reverse
 
-    dupColors (c1:c2:xs) = c1:c1:c2:c2:xs
+    dupColors (c1:xs) = c1:c1:xs
     dupColors xs = xs
 
-    preliminaryWeeks :: Int -> [WeekNumber]
+    preliminaryWeeks :: Integer -> [WeekNumber]
     preliminaryWeeks y = map (\(a,_) -> WeekNumber a) $ filter (\(_,year) -> y == fromIntegral year) $ getWeek <$>
                          [ addDays (-21) today
                          , addDays (-14) today
