@@ -29,7 +29,6 @@ import qualified PlanMill.Queries               as PMQ
 returningEmployees :: (MonadPlanMillQuery m, MonadTime m, MonadPersonio m) => Integer -> m (Day, [P.Employee])
 returningEmployees dayLookup = do
     now <- currentDay
---    let now = $(mkDay "2020-12-31")
     let startDay = addDays (-(180-dayLookup-1)) now
     let endDay = addDays (dayLookup - 1) now
     let checkInterval = startDay ... endDay

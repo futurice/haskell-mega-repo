@@ -3,10 +3,10 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.HC.Achoo.Render where
 
-import Data.Monoid               (Sum (..))
 import Data.Time                 (diffDays)
 import Futurice.Company          (Country, countryToText)
 import Futurice.Prelude
+import Futurice.Tribe            (Tribe, tribeToText)
 import Numeric.Interval.NonEmpty (inf, sup)
 import Prelude ()
 import Servant                   (toQueryParam)
@@ -14,11 +14,12 @@ import Servant.Chart             (Chart (..))
 import Text.Printf               (printf)
 
 import qualified Data.Map.Strict               as Map
+import qualified Data.Text                     as T
 import qualified Futurice.Colour               as FC
 import qualified Graphics.Rendering.Chart.Easy as C
 
-import Futurice.App.HC.Achoo.Types
 import Futurice.App.HC.API
+import Futurice.App.HC.Achoo.Types
 import Futurice.App.HC.Markup
 
 achooReportPage :: AchooReport -> HtmlPage "achoo-report"
@@ -41,7 +42,10 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
 
     hr_ []
     ul_ [ class_ "menu" ] $ do
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2021-01-01")) (Just $(mkDay "2021-06-30")) (Just whole) ] $ "2021 H1"
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2021-01-01")) (Just $(mkDay "2021-12-31")) (Just whole) ] $ "2021 Year"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2020-01-01")) (Just $(mkDay "2020-06-30")) (Just whole) ] $ "2020 H1"
+        li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2020-07-01")) (Just $(mkDay "2020-12-31")) (Just whole) ] $ "2020 H2"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2020-01-01")) (Just $(mkDay "2020-12-31")) (Just whole) ] $ "2020 Year"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2019-01-01")) (Just $(mkDay "2019-06-30")) (Just whole) ] $ "2019 H1"
         li_ $ a_ [ recordHref_ recAchooReport (Just $(mkDay "2019-07-01")) (Just $(mkDay "2019-12-31")) (Just whole) ] $ "2019 H2"
@@ -81,7 +85,7 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
     len = 1 + diffDays dayMax dayMin
 
     renderPercentages :: (Monad m, ToHtml a) => Text -> Map a (PerSickDays Int) -> HtmlT m ()
-    renderPercentages title pers = table_ $ do
+    renderPercentages title pers = sortableTable_ $ do
         thead_ $ do
             th_ $ toHtml title
             for_ tableBucketNames $ \n -> th_ $ toHtmlRaw n
@@ -115,11 +119,31 @@ achooReportPage report = page_ ("Achoo " <> textShow (arInterval report) <> " re
 achooRenderChart :: AchooChart -> AchooReport -> Chart "achoo-chart"
 achooRenderChart ty report = case ty of
     ACTribe   -> Chart . C.toRenderable $ tribeChart "Per tribe"   (arPercentsTribe report)
-    ACOffice  -> Chart . C.toRenderable $ tribeChart "Per office"  (arPercentsOffice report)
-    ACCountry -> Chart . C.toRenderable $ tribeChart "Per country(without family company members)" (maybeCountryToCountry $ arPercentsCountry report)
+    ACOffice  -> Chart . C.toRenderable $ chart "Per office"  (arPercentsOffice report)
+    ACCountry -> Chart . C.toRenderable $ chart "Per country(without family company members)" (maybeCountryToCountry $ arPercentsCountry report)
   where
-    tribeChart :: C.PlotValue x => String -> Map x (PerSickDays Int) -> C.EC (C.Layout x Double) ()
+    tribeChart :: String -> Map Tribe (PerSickDays Int) -> C.EC (C.Layout C.PlotIndex Double) ()
     tribeChart title pers = do
+        -- using custom indices to not have empty spaces on chart because of old tribes
+        let indeces = Map.fromList $ (\(a,b) -> (b,a)) <$> C.addIndexes (Map.keys pers)
+        -- full titles don't fit the chart
+        let titles = second (T.unpack . T.take 12 . tribeToText) <$> C.addIndexes (Map.keys pers)
+        C.layout_title C..= title
+        colors
+        b <- C.bars
+            (toList bucketNames)
+            [ (tribe, abc ^.. folded . getter f)
+            | (tribe, abc) <- mapMaybe (\(a,b) -> (,) <$> Map.lookup a indeces <*> pure b) $ Map.toList pers
+            , let total = getSum (fold abc)
+            , let f (Sum x) = fromIntegral x / fromIntegral total * 100 :: Double
+            ]
+        C.plot $ return $ C.plotBars $ b
+            & C.plot_bars_style .~ C.BarsStacked
+        C.layout_x_axis . C.laxis_override C..= C.axisLabelsOverride titles
+        C.layout_x_axis . C.laxis_style . C.axis_label_style . C.font_size C..= 7
+
+    chart :: C.PlotValue x => String -> Map x (PerSickDays Int) -> C.EC (C.Layout x Double) ()
+    chart title pers = do
         C.layout_title C..= title
         colors
         b <- C.bars

@@ -5,21 +5,19 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 module Futurice.App.HC.Main (defaultMain) where
 
 import Data.Aeson                     (object, (.=))
-import Data.Time                      (addDays, toGregorian)
+import Data.Time                      (addGregorianMonthsClip, toGregorian)
 import Futurice.App.EmailProxy.Client (sendEmail)
 import Futurice.App.EmailProxy.Types
        (emptyReq, fromEmail, reqBody, reqCc, reqSubject)
 import Futurice.FUM.MachineAPI        (FUM6 (..), fum6)
 import Futurice.Integrations
-       (Integrations, ServFUM6, ServPE, ServPM, beginningOfPrev2Month,
-       personio, planmillEmployee, runIntegrations)
+       (Integrations, ServFUM6, ServPE, ServPM, beginningOfPrev2Month, personio,
+       planmillEmployee, runIntegrations)
 import Futurice.Lucid.Foundation
        (HtmlPage, a_, fullRow_, h1_, href_, p_, page_)
 import Futurice.Postgres
@@ -41,11 +39,11 @@ import qualified Personio         as P
 import qualified PlanMill         as PM
 import qualified PlanMill.Queries as PMQ
 
+import Futurice.App.HC.API
 import Futurice.App.HC.Achoo.Fetch
 import Futurice.App.HC.Achoo.Render
 import Futurice.App.HC.Achoo.Types        (AchooChart)
 import Futurice.App.HC.Anniversaries
-import Futurice.App.HC.API
 import Futurice.App.HC.Config
 import Futurice.App.HC.Ctx
 import Futurice.App.HC.EarlyCaring.Page
@@ -235,14 +233,17 @@ achooReportAction
     -> Maybe Day
     -> Maybe Bool
     -> Handler (HtmlPage "achoo-report")
-achooReportAction ctx mfu mi' ma' all' = withAuthUser (const impl) ctx mfu where
-    impl = achooReportPage <$> achooReportFetch mi ma (fromMaybe True all')
-
-    (mi, ma) = case (mi', ma') of
-        (Just x,  Just y)  -> (x, y)
-        (Nothing, Nothing) -> ( $(mkDay "2019-07-01"), $(mkDay "2019-12-31") )
-        (Just x,  Nothing) -> (x, addDays 180 x) -- TODO: add 6 months
-        (Nothing, Just x)  -> (x, addDays (negate 180) x)
+achooReportAction ctx mfu mi' ma' all' = do
+    now <- currentDay
+    withAuthUser (const (impl now)) ctx mfu
+ where
+    impl now = do
+        let (mi, ma) = case (mi', ma') of
+              (Just x,  Just y)  -> (x, y)
+              (Nothing, Nothing) -> (addGregorianMonthsClip (-6) now, now)
+              (Just x,  Nothing) -> (x, addGregorianMonthsClip 6 x)
+              (Nothing, Just x)  -> (addGregorianMonthsClip (-6) x, x)
+        achooReportPage <$> achooReportFetch mi ma (fromMaybe True all')
 
 achooChartAction
     :: Ctx
