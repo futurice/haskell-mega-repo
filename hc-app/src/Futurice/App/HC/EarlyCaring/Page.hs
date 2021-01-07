@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, earlyCaringCSV, EarlyCaringPlanMill (..)) where
+module Futurice.App.HC.EarlyCaring.Page (earlyCaringPage, earlyCaringCSV, EarlyCaringPlanMill (..), calculateBalances) where
 
 import Data.Either               (isRight)
 import Data.Fixed                (Deci)

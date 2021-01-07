@@ -78,13 +78,14 @@ library
     , vector
 
   exposed-modules:
-    Futurice.App.HC.API
     Futurice.App.HC.Achoo.Fetch
     Futurice.App.HC.Achoo.Render
     Futurice.App.HC.Achoo.Types
     Futurice.App.HC.Anniversaries
+    Futurice.App.HC.API
     Futurice.App.HC.Config
     Futurice.App.HC.Ctx
+    Futurice.App.HC.EarlyCaring.Notification
     Futurice.App.HC.EarlyCaring.Page
     Futurice.App.HC.EarlyCaring.Template
     Futurice.App.HC.EarlyCaring.Types

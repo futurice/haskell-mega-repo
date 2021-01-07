@@ -17,7 +17,7 @@ import Futurice.App.EmailProxy.Types
 import Futurice.FUM.MachineAPI        (FUM6 (..), fum6)
 import Futurice.Integrations
        (Integrations, ServFUM6, ServPE, ServPM, beginningOfPrev2Month, personio,
-       planmillEmployee, runIntegrations)
+       runIntegrations)
 import Futurice.Lucid.Foundation
        (HtmlPage, a_, fullRow_, h1_, href_, p_, page_)
 import Futurice.Postgres
@@ -42,10 +42,11 @@ import qualified PlanMill.Queries as PMQ
 import Futurice.App.HC.API
 import Futurice.App.HC.Achoo.Fetch
 import Futurice.App.HC.Achoo.Render
-import Futurice.App.HC.Achoo.Types        (AchooChart)
+import Futurice.App.HC.Achoo.Types              (AchooChart)
 import Futurice.App.HC.Anniversaries
 import Futurice.App.HC.Config
 import Futurice.App.HC.Ctx
+import Futurice.App.HC.EarlyCaring.Notification
 import Futurice.App.HC.EarlyCaring.Page
 import Futurice.App.HC.EarlyCaring.Types
 import Futurice.App.HC.HRNumbers
@@ -183,17 +184,6 @@ earlyCaringAction ctx mfu super = impl ctx mfu
 
     secret = ctxSecret ctx
 
-    pmData interval = do
-        -- todo: make personio + planmill map function.
-        us <- PMQ.users
-        fmap catMaybes $ for (toList us) $ \u -> do
-            let uid = u ^. PM.identifier
-            for (PM.userLogin u) $ \login -> EarlyCaringPlanMill login uid
-                <$> planmillEmployee uid
-                <*> PMQ.capacities interval uid
-                <*> PMQ.timereports interval uid
-                <*> PMQ.userTimebalance uid
-
 earlyCaringActionCSV
     :: Ctx
     -> Maybe FUM.Login
@@ -214,17 +204,6 @@ earlyCaringActionCSV ctx mfu super = impl ctx mfu
 
     -- Will be replaced with more flexible auth
     isPeopleManager login = login == cfgPeopleManager (ctxConfig ctx)
-
-    pmData interval = do
-        -- todo: make personio + planmill map function.
-        us <- PMQ.users
-        fmap catMaybes $ for (toList us) $ \u -> do
-            let uid = u ^. PM.identifier
-            for (PM.userLogin u) $ \login -> EarlyCaringPlanMill login uid
-                <$> planmillEmployee uid
-                <*> PMQ.capacities interval uid
-                <*> PMQ.timereports interval uid
-                <*> PMQ.userTimebalance uid
 
 achooReportAction
     :: Ctx
@@ -384,8 +363,14 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx      .~ "HCAPP"
   where
     makeCtx :: () -> Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx () cfg lgr mgr _cache _mq = do
+    makeCtx () cfg lgr mgr _cache mq = do
         secret <- getEntropy 64
         pp <- createPostgresPool $ cfgPostgresConnInfo cfg
         let ctx = Ctx cfg lgr mgr secret pp
+
+        -- listen to MQ, especially for missing hours ping
+        void $ forEachMessage mq $ \msg -> case msg of
+            EarlyCaringPing        -> void $ sendEarlyCaringNotification ctx
+            _                      -> pure ()
+
         pure (ctx, [])

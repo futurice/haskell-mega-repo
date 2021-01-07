@@ -76,6 +76,7 @@ data Message
     | AbsenceUpdatePing
     | ReturningEmployeePing
     | DueDatePing
+    | EarlyCaringPing
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message
@@ -95,6 +96,7 @@ data Topic
     | TopicAbsenceUpdatePing
     | TopicReturningEmployeePing
     | TopicDueDatePing
+    | TopicEarlyCaringPing
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 data PerTopic a = PerTopic
@@ -107,6 +109,7 @@ data PerTopic a = PerTopic
     , perAbsenceUpdatePing      :: a
     , perReturningEmployeePing  :: a
     , perDueDatePing            :: a
+    , perEarlyCaringPing        :: a
     }
   deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -126,6 +129,7 @@ instance Representable PerTopic where
     index p TopicAbsenceUpdatePing      = perAbsenceUpdatePing p
     index p TopicReturningEmployeePing  = perReturningEmployeePing p
     index p TopicDueDatePing            = perDueDatePing p
+    index p TopicEarlyCaringPing        = perEarlyCaringPing p
 
     tabulate f = PerTopic
         { perServiceStarting        = f TopicServiceStarting
@@ -137,6 +141,7 @@ instance Representable PerTopic where
         , perAbsenceUpdatePing      = f TopicAbsenceUpdatePing
         , perReturningEmployeePing  = f TopicReturningEmployeePing
         , perDueDatePing            = f TopicDueDatePing
+        , perEarlyCaringPing        = f TopicEarlyCaringPing
         }
 
 messageTopic :: Message -> Topic
@@ -149,6 +154,7 @@ messageTopic SubcontractorHoursPing {} = TopicSubcontractorHoursPing
 messageTopic AbsenceUpdatePing {}      = TopicAbsenceUpdatePing
 messageTopic ReturningEmployeePing {}  = TopicReturningEmployeePing
 messageTopic DueDatePing {}            = TopicDueDatePing
+messageTopic EarlyCaringPing {}        = TopicEarlyCaringPing
 
 -- | A subject of email
 messageSubject :: Message -> Text
@@ -166,6 +172,7 @@ topicName awsGroup TopicSubcontractorHoursPing = awsGroup <> "-subcontractor-hou
 topicName awsGroup TopicAbsenceUpdatePing      = awsGroup <> "-absence-update-ping"
 topicName awsGroup TopicReturningEmployeePing  = awsGroup <> "-returning-employee-ping"
 topicName awsGroup TopicDueDatePing            = awsGroup <> "-due-date-ping"
+topicName awsGroup TopicEarlyCaringPing        = awsGroup <> "-early-caring-ping"
 
 -------------------------------------------------------------------------------
 -- Functions
