@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Checklist.Pages.Index (indexPage) where
 
 import Control.Lens
@@ -140,7 +141,16 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                 when (mtask == Nothing) $ th_ [title_ "Days till due date"]          "ETA"
                 -- viewerItemsHeader viewerRole
                 when (mtask == Nothing) $ th_ [title_ "Task items todo/done"]        "Tasks"
-            tbody_ $ for_ employees' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
+            let nextTaskDay employee =
+                    let eid = employee ^. identifier
+                        arg       t = Arg (t ^. taskOffset) t
+                        predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
+                        startingDay = employee ^. employeeStartingDay
+                    in case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
+                      Nothing -> $(mkDay "2038-01-01")
+                      Just (Arg offset _) -> addDays offset startingDay
+            let employees'' = mcase mtask (sortOn nextTaskDay employees') (const employees')
+            tbody_ $ for_ employees'' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
                 let eid = employee ^. identifier
                 let firstFutureDay = employees' ^? folded . employeeStartingDay . filtered (> today)
                 let startingDay = employee ^. employeeStartingDay
