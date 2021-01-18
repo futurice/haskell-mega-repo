@@ -147,7 +147,7 @@ indexPage world today authUser@(_fu, _viewerRole) integrationData mloc mlist mta
                         predicate t = has (worldTaskItems . ix eid . ix (t ^. identifier) . _AnnTaskItemTodo) world
                         startingDay = employee ^. employeeStartingDay
                     in case minimumOf (worldTasks . folded . filtered predicate . getter arg) world of
-                      Nothing -> $(mkDay "2038-01-01")
+                      Nothing -> $(mkDay "2038-01-01") -- If all task done, move to the end of the list
                       Just (Arg offset _) -> addDays offset startingDay
             let employees'' = mcase mtask (sortOn nextTaskDay employees') (const employees')
             tbody_ $ for_ employees'' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
