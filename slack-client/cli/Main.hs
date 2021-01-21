@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import Futurice.EnvConfig (getConfig)
+import Futurice.EnvConfig                      (getConfig)
 import Futurice.Prelude
 import Prelude ()
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty
+       (AnsiPretty (..), linebreak, putDoc)
 
 import Slack
 
@@ -36,13 +38,13 @@ optsParser = O.subparser $ mconcat
 main' :: SlackToken -> Cmd -> IO ()
 main' token (CmdSendMessage channelId message) = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    event <- evalSlackReqIO token mgr $ ReqSendMessage (ChannelId channelId) message
-    print event
+    _ <- evalSlackReqIO token mgr $ ReqSendMessage (ChannelId channelId) message
+    print "Message send successfully"
     pure ()
 main' token CmdGetUsers = do
     mgr <- liftIO $ newManager tlsManagerSettings
-    event <- evalSlackReqIO token mgr ReqGetUsers
-    print event
+    users <- evalSlackReqIO token mgr ReqGetUsers
+    putPretty users
     pure ()
 
 main :: IO ()
@@ -55,3 +57,9 @@ main = withStderrLogger $ \lgr -> runLogT "slack-cli" lgr $ do
         , O.progDesc "Cli for slack-client"
         , O.header "slack-cli"
         ]
+-------------------------------------------------------------------------------
+-- putPretty
+-------------------------------------------------------------------------------
+
+putPretty :: (MonadIO m, AnsiPretty a) => a -> m ()
+putPretty = liftIO . putDoc . (<> linebreak) . ansiPretty

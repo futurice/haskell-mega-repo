@@ -1,6 +1,5 @@
-{-# LANGUAGE GADTs              #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Slack.Types where
 
 import Data.Aeson
@@ -22,16 +21,20 @@ class HasSlackToken a where
     slackToken :: Lens' a SlackToken
 
 data User = User
-    { slackDisplayName :: !Text
+    { slackName        :: !Text --TODO this shouldn't be really used
+    , slackDisplayName :: !Text
     , slackRealName    :: !Text
     , slackImageUrl    :: !Text
-    } deriving Show
+    } deriving (Show, Generic)
+
+instance AnsiPretty User
 
 instance FromJSON User where
     parseJSON = withObject "user" $ \o -> do
         profile <- o .: "profile"
         User
-            <$> profile .: "display_name"
+            <$> o .: "name"
+            <*> profile .: "display_name"
             <*> profile .: "real_name"
             <*> profile .: "image_512"
 

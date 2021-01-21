@@ -53,6 +53,7 @@ executable slack-cli
   hs-source-dirs: cli
   ghc-options:    -Wall -threaded
   build-depends:
+    , ansi-pretty
     , base
     , env-config
     , futurice-prelude
