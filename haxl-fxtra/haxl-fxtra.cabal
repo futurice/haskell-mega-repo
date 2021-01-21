@@ -51,16 +51,18 @@ library
     , personio-client
     , power-client
     , servant-client-core
+    , slack-client
     , tagged
     , text
     , vector
 
   exposed-modules:
-    FUM.Haxl
     Flowdock.Haxl
+    FUM.Haxl
     Github.Haxl
     Google.Haxl
     Okta.Haxl
     Peakon.Haxl
     Personio.Haxl
     Power.Haxl
+    Slack.Haxl

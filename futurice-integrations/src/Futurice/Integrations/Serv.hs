@@ -15,7 +15,7 @@ module Futurice.Integrations.Serv (
     Serv (..),
     AllServs,
     ServNat,
-    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO,
+    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -116,9 +116,10 @@ data Serv
     | ServPK    -- ^ peakon
     | ServPM    -- ^ planmill
     | ServPO    -- ^ power
+    | ServSL    -- ^ slack
   deriving (Show)
 
-type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO ]
+type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL ]
 
 type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
@@ -130,6 +131,7 @@ type ServPE   = 'ServPE
 type ServPK   = 'ServPK
 type ServPM   = 'ServPM
 type ServPO   = 'ServPO
+type ServSL   = 'ServSL
 
 -- | Serv to nat
 --
@@ -137,6 +139,8 @@ type ServPO   = 'ServPO
 -- ServNat ServFUM6 :: N.Nat
 -- = N.Nat2
 --
+type Nat10 = 'N.S N.Nat9
+
 type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
     ServNat 'ServFD   = N.Nat0
     ServNat 'ServFUM  = N.Nat1
@@ -148,6 +152,7 @@ type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
     ServNat 'ServPK   = N.Nat7
     ServNat 'ServPM   = N.Nat8
     ServNat 'ServPO   = N.Nat9
+    ServNat 'ServSL   = Nat10
 
 -------------------------------------------------------------------------------
 -- Services Singleton
@@ -164,6 +169,7 @@ data SServ :: Serv -> Type where
     SServPK   :: SServ 'ServPK
     SServPM   :: SServ 'ServPM
     SServPO   :: SServ 'ServPO
+    SServSL   :: SServ 'ServSL
 
 deriving instance Show (SServ s)
 
@@ -183,6 +189,7 @@ instance ServI 'ServPE     where sserv = SServPE
 instance ServI 'ServPK     where sserv = SServPK
 instance ServI 'ServPM     where sserv = SServPM
 instance ServI 'ServPO     where sserv = SServPO
+instance ServI 'ServSL     where sserv = SServSL
 
 -------------------------------------------------------------------------------
 -- Services Set

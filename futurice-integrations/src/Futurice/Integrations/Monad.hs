@@ -59,6 +59,8 @@ import qualified Personio
 import qualified Personio.Haxl
 import qualified PlanMill.Types.Query         as Q
 import qualified Power.Haxl
+import qualified Slack.Haxl
+import qualified Slack.Request
 
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Common
@@ -217,6 +219,7 @@ integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
         IntCfgPeakon cfg cfg2     -> stateSetPeakon lgr mgr cfg (f cfg2)
         IntCfgPlanMill req cfg2   -> stateSetPlanMill lgr mgr req (f cfg2)
         IntCfgPower req cfg2      -> stateSetPower lgr mgr req (f cfg2)
+        IntCfgSlack token cfg2    -> stateSetSlack lgr mgr token (f cfg2)
   where
     ctsEmpty :: ConfigToState '[]
     ctsEmpty = CTS $ \IntCfgEmpty -> Tagged $
@@ -374,6 +377,17 @@ instance Contains ServPE ss => MonadPersonio (Integrations ss) where
 
 instance Contains ServPO ss => MonadPower (Integrations ss) where
     powerReq = liftHaxl . Power.Haxl.request
+
+-------------------------------------------------------------------------------
+-- MonadSlack
+-------------------------------------------------------------------------------
+
+instance Contains ServSL ss => MonadSlack (Integrations ss) where
+    slackReq r =  case (showDict, typeableDict) of
+        (Dict, Dict) -> liftHaxl . Slack.Haxl.request $ r
+      where
+        showDict     = Slack.Request.requestDict (Proxy :: Proxy Show) r
+        typeableDict = Slack.Request.requestDict (Proxy :: Proxy Typeable) r
 
 -------------------------------------------------------------------------------
 -- Has* instances

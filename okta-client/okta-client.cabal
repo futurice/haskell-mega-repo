@@ -52,6 +52,7 @@ library
     Okta.Eval
     Okta.Request
     Okta.Types
+    Okta.Types.App
     Okta.Types.Group
     Okta.Types.GroupInfo
 

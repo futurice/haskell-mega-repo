@@ -29,8 +29,10 @@ import qualified Futurice.App.Avatar.API as Avatar
 -- Data definition
 import qualified FUM.Types.Login as FUM
 import qualified GitHub          as GH
+import qualified Okta
 import qualified Personio
 import qualified Power
+import qualified Slack
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -41,10 +43,11 @@ noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 -- | Get contacts data
 contacts
-    :: ( MonadFlowdock m, MonadGitHub m, Personio.MonadPersonio m
+    :: ( MonadGitHub m, Personio.MonadPersonio m
        , Power.MonadPower m
        , MonadTime m, MonadReader env m
-       , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
+       , HasGithubOrgName env, HasFUMEmployeeListName env
+       , Slack.MonadSlack m, MonadOkta m
        )
     => m [Contact Text]
 contacts = contacts'
@@ -52,6 +55,8 @@ contacts = contacts'
     <*> Personio.personio Personio.PersonioEmployees
     <*> Power.powerPeople
     <*> githubDetailedMembers
+    <*> Okta.slackUsers Okta.slackAppId
+    <*> Slack.slackProfiles
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
@@ -59,13 +64,16 @@ contacts'
     -> [Personio.Employee]
     -> [Power.Person]
     -> Vector GH.User
+    -> [Okta.AppUser Okta.SlackProfile]
+    -> [Slack.User]
     -> [Contact Text]
-contacts' today employees powPeople githubMembers =
+contacts' today employees powPeople githubMembers slackProfiles slackUsers =
     let employees' = filter (Personio.employeeIsActive today) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addPowerInfo powPeople res1
-    in sortBy (compareUnicode `on` contactName) res2
+        res3 = addSlackInfo slackProfiles slackUsers res2
+    in sortBy (compareUnicode `on` contactName) res3
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
@@ -88,6 +96,7 @@ employeeToContact e = Contact
     , contactHrnumber   = e ^. Personio.employeeHRNumber
     , contactPersonio   = e ^. Personio.employeeId
     , contactUtzTarget  = 0 -- to be corrected
+    , contactSlack      = Nothing
     }
   where
     fumLogin = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
@@ -143,4 +152,21 @@ addPowerInfo powerPeople = map add
     add c = c
         { contactUtzTarget = fromMaybe 0 $
             fumMap ^? ix (contactLogin c) . getter Power.personUtzTarget
+        }
+
+addSlackInfo :: [Okta.AppUser Okta.SlackProfile] -> [Slack.User] -> [Contact Text] -> [Contact Text]
+addSlackInfo slackProfiles slackUsers = map add
+  where
+    slackProfileMap :: Map Text Text
+    slackProfileMap = Map.fromList $ (\s -> (Okta._spEmail s, fromMaybe (Okta._spSlackUsername s) (Okta._spDisplayName s))) . Okta.appUserProfile <$> slackProfiles
+
+    slackUsersMap = Map.fromList $ (\u -> (Slack.slackDisplayName u, u)) <$> slackUsers
+
+    emailToSlack :: Text -> Maybe (ContactSlack Text)
+    emailToSlack e = ContactSlack
+        <$> e `Map.lookup` slackProfileMap
+        <*> (e `Map.lookup` slackProfileMap >>= (`Map.lookup` slackUsersMap) >>= pure . Slack.slackImageUrl)
+
+    add c = c
+        { contactSlack = emailToSlack (contactEmail c)
         }

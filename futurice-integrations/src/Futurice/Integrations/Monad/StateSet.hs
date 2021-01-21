@@ -17,6 +17,7 @@ module Futurice.Integrations.Monad.StateSet (
     stateSetPersonio,
     stateSetPlanMill,
     stateSetPower,
+    stateSetSlack,
     ) where
 
 import Futurice.Prelude
@@ -25,9 +26,9 @@ import PlanMill.Queries.Haxl (initDataSourceBatch)
 import Prelude ()
 
 import qualified Chat.Flowdock.REST           as FD
-import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
 import qualified FUM.Haxl
+import qualified Flowdock.Haxl                as FD.Haxl
 import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.Integrations.GitHub as GH
 import qualified Google.Haxl
@@ -39,6 +40,8 @@ import qualified Peakon.Haxl
 import qualified Peakon.Types
 import qualified Personio.Haxl
 import qualified Power.Haxl
+import qualified Slack.Haxl
+import qualified Slack.Types
 
 import Futurice.Integrations.Serv
 
@@ -122,3 +125,11 @@ stateSetPeakon
     -> Tagged (ServPK ': ss) H.StateStore
 stateSetPeakon lgr mgr cfg (Tagged store) = Tagged $
     H.stateSet (Peakon.Haxl.initDataSource cfg lgr mgr) store
+
+stateSetSlack
+    :: Logger -> Manager
+    -> Slack.Types.SlackToken
+    -> Tagged ss H.StateStore
+    -> Tagged (ServSL ': ss) H.StateStore
+stateSetSlack lgr mgr token (Tagged store) = Tagged $
+    H.stateSet (Slack.Haxl.initDataSource token lgr mgr) store

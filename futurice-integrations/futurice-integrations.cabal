@@ -74,6 +74,7 @@ library
     , power-client
     , regex-applicative-text
     , servant-client-core
+    , slack-client
     , step-function
     , swagger2
     , text

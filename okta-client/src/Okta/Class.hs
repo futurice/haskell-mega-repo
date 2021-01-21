@@ -12,8 +12,11 @@ class Monad m => MonadOkta m where
 users :: MonadOkta m => m [User]
 users = oktaReq ReqGetAllUsers
 
-appUsers :: MonadOkta m => OktaAppId -> m [AppUser]
+appUsers :: MonadOkta m => OktaAppId -> m [AppUser GithubProfile]
 appUsers = oktaReq . ReqGetAppUsers
+
+slackUsers :: MonadOkta m => OktaAppId -> m [AppUser SlackProfile]
+slackUsers = oktaReq . ReqGetSlackUsers
 
 updateUser :: MonadOkta m => OktaId -> Value -> m User
 updateUser oktaid value = oktaReq $ ReqUpdateUser oktaid value

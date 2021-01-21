@@ -30,8 +30,9 @@ library
     DeriveTraversable
     DerivingStrategies
     ScopedTypeVariables
+
   build-depends:
-      aeson
+    , aeson
     , aeson-compat
     , avatar-client
     , base
@@ -48,7 +49,6 @@ library
     , exceptions
     , file-embed
     , filepath
-    , flowdock-rest
     , fum-types
     , futurice-constants
     , futurice-integrations
@@ -66,6 +66,7 @@ library
     , lens
     , lucid
     , mtl
+    , okta-client
     , periocron
     , personio-client
     , planmill-client
@@ -76,6 +77,7 @@ library
     , servant-lucid
     , servant-server
     , SHA
+    , slack-client
     , stm
     , strict-base-types      >=0.4
     , swagger2
@@ -87,6 +89,7 @@ library
     , unordered-containers
     , vector
     , wai
+
   exposed-modules:
     Futurice.App.Contacts
     Futurice.App.Contacts.API
@@ -106,6 +109,7 @@ executable contacts-api-server
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
-      base
+    , base
     , contacts-api

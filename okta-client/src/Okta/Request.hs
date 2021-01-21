@@ -13,7 +13,7 @@ data Req a where
     ReqGetAllGroups        :: Req [Group]
     ReqGetGroupUsers       :: OktaGroupId -> Req [User]
     ReqGetAllApps          :: Req [App]
-    ReqGetAppUsers         :: OktaAppId -> Req [AppUser]
+    ReqGetAppUsers         :: OktaAppId -> Req [AppUser GithubProfile]
     ReqCreateUser          :: NewUser -> Req User
     ReqUpdateUser          :: OktaId -> Value -> Req User
     ReqAddUserToGroup      :: OktaGroupId -> OktaId -> Req ()
@@ -21,6 +21,7 @@ data Req a where
     ReqGetAppLinks         :: OktaId -> Req [AppLink]
     ReqGetApplication      :: OktaAppId -> Req App
     ReqGetUser             :: OktaId -> Req User
+    ReqGetSlackUsers       :: OktaAppId -> Req [AppUser SlackProfile]
 
 deriving instance Eq (Req a)
 deriving instance Show (Req a)
@@ -38,6 +39,7 @@ instance Hashable (Req a) where
     hashWithSalt salt (ReqGetAppLinks i)           = hashWithSalt salt (9 :: Int, i)
     hashWithSalt salt (ReqGetApplication i)        = hashWithSalt salt (10 :: Int, i)
     hashWithSalt salt (ReqGetUser u)               = hashWithSalt salt (11 :: Int, u)
+    hashWithSalt salt (ReqGetSlackUsers u)         = hashWithSalt salt (12 :: Int, u)
 
 requestDict
     :: ( c [User]
@@ -45,7 +47,8 @@ requestDict
        , c [User]
        , c [App]
        , c App
-       , c [AppUser]
+       , c [AppUser SlackProfile]
+       , c [AppUser GithubProfile]
        , c [AppLink]
        , c User
        , c ()
@@ -65,3 +68,4 @@ requestDict _ (ReqRemoveUserFromGroup _ _) = Dict
 requestDict _ (ReqGetAppLinks _) = Dict
 requestDict _ (ReqGetApplication _) = Dict
 requestDict _ (ReqGetUser _) = Dict
+requestDict _ (ReqGetSlackUsers _) = Dict
