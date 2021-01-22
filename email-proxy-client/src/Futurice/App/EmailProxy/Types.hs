@@ -38,6 +38,9 @@ instance ToSchema EmailAddress where
 -- Request
 -------------------------------------------------------------------------------
 
+data EmailType = TextEmail
+               | HtmlEmail
+
 data Req = Req
     { _reqTo      :: !(NonEmpty EmailAddress)
     , _reqCc      :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.

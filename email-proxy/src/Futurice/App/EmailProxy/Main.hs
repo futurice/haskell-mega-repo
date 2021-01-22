@@ -20,10 +20,12 @@ import Futurice.App.EmailProxy.API
 import Futurice.App.EmailProxy.Config
 import Futurice.App.EmailProxy.Ctx
 import Futurice.App.EmailProxy.Logic
+import Futurice.App.EmailProxy.Types
 
 server :: Ctx -> Server EmailProxyAPI
 server ctx = pure "This is email proxy. See /swagger-ui/"
-    :<|> (nt . sendEmail ctx)
+    :<|> (nt . sendEmail ctx TextEmail)
+    :<|> (nt . sendEmail ctx HtmlEmail)
   where
     nt :: forall x. LogT Handler x -> Handler x
     nt = runLogT "emailproxy" (ctxLogger ctx)
