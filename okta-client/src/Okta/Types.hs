@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
 module Okta.Types
   ( module Okta.Types
   , module Okta.Types.Group
@@ -31,10 +30,9 @@ import Okta.Types.App
 import Okta.Types.Group
 import Okta.Types.GroupInfo
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
+import qualified Data.Map as Map
 import qualified FUM
-import qualified Personio  as P
+import qualified Personio as P
 
 groupInfo :: OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))

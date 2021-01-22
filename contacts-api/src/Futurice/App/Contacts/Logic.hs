@@ -159,7 +159,7 @@ addSlackInfo slackUsers = map add
     emailToSlack :: Text -> Maybe (ContactSlack Text)
     emailToSlack e = ContactSlack
         <$> (e `Map.lookup` slackUsersMap >>= pure . Slack.slackDisplayName)
-        <*> (e `Map.lookup`slackUsersMap >>= pure . Slack.slackImageUrl)
+        <*> (e `Map.lookup` slackUsersMap >>= pure . Slack.slackImageUrl)
 
     add c = c
         { contactSlack = emailToSlack (contactEmail c)
