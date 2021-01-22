@@ -34,6 +34,7 @@ library
   build-depends:
     , aeson
     , base
+    , constraints
     , env-config
     , futurice-prelude
     , http-client
@@ -42,7 +43,9 @@ library
 
   exposed-modules:
     Slack
+    Slack.Class
     Slack.Eval
+    Slack.Request
     Slack.Types
 
 executable slack-cli
@@ -50,6 +53,7 @@ executable slack-cli
   hs-source-dirs: cli
   ghc-options:    -Wall -threaded
   build-depends:
+    , ansi-pretty
     , base
     , env-config
     , futurice-prelude

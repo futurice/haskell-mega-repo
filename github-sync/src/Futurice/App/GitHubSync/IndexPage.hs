@@ -4,7 +4,6 @@
 module Futurice.App.GitHubSync.IndexPage (indexPage) where
 
 import Control.Lens     (contains, filtered)
-import Data.Map.Lens    (toMapOf)
 import Data.Set.Lens    (setOf)
 import Futurice.Prelude
 import Prelude ()
@@ -24,7 +23,7 @@ indexPage
     -> [GH.User]
     -> [GH.Invitation]
     -> [P.Employee]
-    -> [O.AppUser]
+    -> [O.AppUser O.GithubProfile]
     -> HtmlPage "index"
 indexPage today (Pin pinned) githubs githubInvs personios oktas = page_ "GitHub ← Personio sync" (Just NavHome) $ do
     ul_ $ do

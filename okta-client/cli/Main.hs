@@ -26,6 +26,7 @@ data Cmd = CmdGetAllUsers
          | CmdGetUserApps Text
          | CmdGetApplication Text
          | CmdUpdateUser Text Value
+         | CmdGetSlackUsers Text
 
 getAllUsersOptions :: O.Parser Cmd
 getAllUsersOptions = pure CmdGetAllUsers
@@ -52,6 +53,9 @@ getUserAppsOptions = CmdGetUserApps <$> strArgument [ O.metavar ":user-id", O.he
 
 getApplicationOptions :: O.Parser Cmd
 getApplicationOptions = CmdGetApplication <$> strArgument [ O.metavar ":app-id", O.help "App id"]
+
+getSlackUsersOptions :: O.Parser Cmd
+getSlackUsersOptions = CmdGetSlackUsers <$> strArgument [ O.metavar ":app-id", O.help "Slack app id"]
 
 readValue :: String -> Either String Value
 readValue s = case eitherDecodeStrict $ TE.encodeUtf8 t of
@@ -80,6 +84,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "get-user-apps" getUserAppsOptions "Get all apps user has"
     , cmdParser "get-application" getApplicationOptions "Get application information"
     , cmdParser "update-user" getUpdateUserOptions "Update user information"
+    , cmdParser "get-slack-users" getSlackUsersOptions "Get all Slack application users"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -141,6 +146,11 @@ main' lgr token (CmdUpdateUser oid value) = do
     mgr <- liftIO $ newManager tlsManagerSettings
     user <- evalOktaReqIO token mgr lgr $ ReqUpdateUser (OktaId oid) value
     putPretty user
+    pure ()
+main' lgr token (CmdGetSlackUsers aid) = do
+    mgr <- liftIO $ newManager tlsManagerSettings
+    users <- evalOktaReqIO token mgr lgr $ ReqGetSlackUsers $ OktaAppId aid
+    putPretty users
     pure ()
 
 main :: IO ()

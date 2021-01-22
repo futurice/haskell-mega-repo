@@ -8,6 +8,7 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
+import Okta.Types.App
 import Okta.Types.Group
 
 import qualified Data.Text as T
@@ -17,6 +18,7 @@ import qualified Data.Text as T
 data OktaJSON = OktaJSON
     { ojExternalGroup :: !GroupName,
       ojInternalGroup :: !GroupName,
+      ojSlackAppId    :: !OktaAppId,
       ojGroups        :: ![GroupInfo]
     } deriving (SopGeneric, GhcGeneric, HasDatatypeInfo, Lift)
       deriving (FromJSON) via Sopica OktaJSON

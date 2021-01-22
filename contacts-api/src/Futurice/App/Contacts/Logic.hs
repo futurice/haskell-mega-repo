@@ -31,6 +31,7 @@ import qualified FUM.Types.Login as FUM
 import qualified GitHub          as GH
 import qualified Personio
 import qualified Power
+import qualified Slack
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -41,10 +42,11 @@ noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 -- | Get contacts data
 contacts
-    :: ( MonadFlowdock m, MonadGitHub m, Personio.MonadPersonio m
+    :: ( MonadGitHub m, Personio.MonadPersonio m
        , Power.MonadPower m
        , MonadTime m, MonadReader env m
-       , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
+       , HasGithubOrgName env, HasFUMEmployeeListName env
+       , MonadSlack m
        )
     => m [Contact Text]
 contacts = contacts'
@@ -52,6 +54,7 @@ contacts = contacts'
     <*> Personio.personio Personio.PersonioEmployees
     <*> Power.powerPeople
     <*> githubDetailedMembers
+    <*> Slack.slackProfiles
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
@@ -59,13 +62,15 @@ contacts'
     -> [Personio.Employee]
     -> [Power.Person]
     -> Vector GH.User
+    -> [Slack.User]
     -> [Contact Text]
-contacts' today employees powPeople githubMembers =
+contacts' today employees powPeople githubMembers slackUsers =
     let employees' = filter (Personio.employeeIsActive today) employees
         res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addPowerInfo powPeople res1
-    in sortBy (compareUnicode `on` contactName) res2
+        res3 = addSlackInfo slackUsers res2
+    in sortBy (compareUnicode `on` contactName) res3
 
 employeeToContact :: Personio.Employee -> Contact Text
 employeeToContact e = Contact
@@ -88,6 +93,7 @@ employeeToContact e = Contact
     , contactHrnumber   = e ^. Personio.employeeHRNumber
     , contactPersonio   = e ^. Personio.employeeId
     , contactUtzTarget  = 0 -- to be corrected
+    , contactSlack      = Nothing
     }
   where
     fumLogin = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
@@ -143,4 +149,18 @@ addPowerInfo powerPeople = map add
     add c = c
         { contactUtzTarget = fromMaybe 0 $
             fumMap ^? ix (contactLogin c) . getter Power.personUtzTarget
+        }
+
+addSlackInfo :: [Slack.User] -> [Contact Text] -> [Contact Text]
+addSlackInfo slackUsers = map add
+  where
+    slackUsersMap = Map.fromList $ (\u -> (Slack.slackName u <> "@futurice.com", u)) <$> slackUsers
+
+    emailToSlack :: Text -> Maybe (ContactSlack Text)
+    emailToSlack e = ContactSlack
+        <$> (e `Map.lookup` slackUsersMap >>= pure . Slack.slackDisplayName)
+        <*> (e `Map.lookup` slackUsersMap >>= pure . Slack.slackImageUrl)
+
+    add c = c
+        { contactSlack = emailToSlack (contactEmail c)
         }

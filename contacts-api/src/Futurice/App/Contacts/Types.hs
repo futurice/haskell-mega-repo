@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DerivingVia           #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -13,6 +14,7 @@ module Futurice.App.Contacts.Types (
     ContactFD(..),
     ContactGH(..),
     Contact(..),
+    ContactSlack(..),
     ) where
 
 import Data.Csv          (ToField (..))
@@ -79,6 +81,23 @@ instance ToField (ContactGH a) where
     toField = toField . cghNick
 
 -------------------------------------------------------------------------------
+-- Slack
+-------------------------------------------------------------------------------
+
+data ContactSlack avatar = ContactSlack
+    { cslNick   :: !Text
+    , cslAvatar :: !avatar
+    } deriving (Eq, Ord, Show, Generic, Typeable, Functor, Foldable, Traversable, NFData)
+
+deriveGeneric ''ContactSlack
+
+deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactSlack a))   `Via` Sopica (ContactSlack a) |]
+deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactSlack a)) `Via` Sopica (ContactSlack a) |]
+
+instance ToSchema a => ToSchema (ContactSlack a) where
+    declareNamedSchema = sopDeclareNamedSchema
+
+-------------------------------------------------------------------------------
 -- Contact
 -------------------------------------------------------------------------------
 
@@ -101,6 +120,7 @@ data Contact avatar = Contact
     , contactHrnumber   :: !(Maybe Int)
     , contactPersonio   :: !P.EmployeeId
     , contactUtzTarget  :: !Int
+    , contactSlack      :: !(Maybe (ContactSlack avatar))
     }
   deriving stock
     ( Eq, Ord, Show, Generic, Typeable

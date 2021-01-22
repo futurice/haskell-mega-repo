@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveLift        #-}
 {-# LANGUAGE DerivingVia       #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -8,11 +9,13 @@ module Okta.Types
   ( module Okta.Types
   , module Okta.Types.Group
   , module Okta.Types.GroupInfo
+  , module Okta.Types.App
   ) where
 
 import Data.Aeson
 import Data.Aeson.Lens
 import Data.Aeson.Types                        (Parser)
+import Data.Char                               (toLower)
 import Futurice.Company                        (Country)
 import Futurice.Constants                      (oktaAdminPublicUrl)
 import Futurice.Email
@@ -23,19 +26,22 @@ import Lucid                                   (a_, class_, href_)
 import Prelude ()
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (AnsiPretty (..))
 
+import Okta.Types.App
 import Okta.Types.Group
 import Okta.Types.GroupInfo
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
+import qualified Data.Map as Map
 import qualified FUM
-import qualified Personio  as P
+import qualified Personio as P
 
 groupInfo :: OktaJSON
 groupInfo = $(makeRelativeToProject "okta-groups.json" >>= embedFromJSON (Proxy :: Proxy OktaJSON))
 
 groupMap :: Map GroupName GroupInfo
 groupMap = Map.fromList $ (\g -> (giName g, g)) <$> ojGroups groupInfo
+
+slackAppId :: OktaAppId
+slackAppId = ojSlackAppId groupInfo
 
 data OktaCfg = OktaCfg
     { oktaToken   :: !Text
@@ -184,14 +190,6 @@ instance ToHtml OktaId where
     toHtmlRaw = toHtml
     toHtml (OktaId oid) = a_ [ class_ "okta", href_ ( oktaAdminPublicUrl <> "/admin/user/profile/view/" <> oid)] (toHtml oid)
 
-newtype OktaAppId = OktaAppId Text
-    deriving (Eq, Show, Generic)
-    deriving anyclass (Hashable, NFData, AnsiPretty)
-    deriving newtype (FromJSON, ToJSON)
-
-instance FromEnvVar OktaAppId where
-    fromEnvVar = Just . OktaAppId . T.pack
-
 data User = User
     { _userId      :: !OktaId
     , _userStatus  :: !Status
@@ -223,17 +221,38 @@ simpleUser user =
     , _simpleUserStatus     = user ^. userStatus
     }
 
-data AppUser = AppUser
+data AppUser a = AppUser
     { appUserId          :: !OktaId
     , appUserStatus      :: !Status
     , appUserCreated     :: !UTCTime
     , appUserActive      :: !(Maybe UTCTime)
-    , appUserProfile     :: !GithubProfile
+    , appUserProfile     :: !a
     , appUserCredentials :: !(Maybe AppCredentials)
     } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
-      deriving (ToJSON, FromJSON) via (Sopica AppUser)
 
-instance AnsiPretty AppUser
+cleanLabel :: String -> String
+cleanLabel s =
+    let s' = drop 7 s
+    in case s' of
+      (x : xs) -> toLower x : xs
+      xs       -> xs
+
+instance (ToJSON a) => ToJSON (AppUser a) where
+    toEncoding = genericToEncoding $ defaultOptions { fieldLabelModifier = cleanLabel }
+
+instance (FromJSON a) => FromJSON (AppUser a) where
+    parseJSON = genericParseJSON defaultOptions { fieldLabelModifier = cleanLabel }
+
+instance (AnsiPretty a) => AnsiPretty (AppUser a)
+
+data SlackProfile = SlackProfile
+    { _spDisplayName    :: !(Maybe Text)
+    , _spSlackUsername  :: !Text
+    , _spEmail          :: !Text
+    } deriving (Show, GhcGeneric, SopGeneric, HasDatatypeInfo, NFData)
+      deriving (ToJSON, FromJSON) via (Sopica SlackProfile)
+
+instance AnsiPretty SlackProfile
 
 data AppLink = AppLink
     { alId            :: !Text

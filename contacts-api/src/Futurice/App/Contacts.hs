@@ -2,10 +2,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Contacts (defaultMain) where
 
 import Control.Concurrent.STM
@@ -39,17 +37,21 @@ defaultMain = futuriceServerMain (const makeCtx) $ emptyServerConfig
     & serverEnvPfx          .~ "CONTACTSAPI"
   where
     makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job])
-    makeCtx cfg lgr mgr _cache _mq = do
-        now <- currentTime
-
-        -- Contacts action
-        let getContacts = runIntegrations mgr lgr now cfg contacts
-
-        cs <- newTVarIO =<< getContacts
+    makeCtx cfg lgr mgr _cache mq = do
+        cs <- newTVarIO []
         -- Action returning the contact list
-        let action = atomically . writeTVar cs =<< getContacts
+        let action = do
+                runLogT "update-contacts" lgr $ logTrace_ "Updating"
+                now <- currentTime
+                c <- runIntegrations mgr lgr now cfg contacts
+                atomically $ writeTVar cs c
 
         -- Periodically try to fetch new data
         let job = mkJob "update contacts" action $ every 3600
+
+        -- listen to MQ, especially updated Personio
+        void $ forEachMessage mq $ \msg -> case msg of
+          PersonioUpdated -> action
+          _               -> pure ()
 
         pure (cs, [job])

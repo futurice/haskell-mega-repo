@@ -134,6 +134,7 @@ cmpReflServ SServPE   = Refl
 cmpReflServ SServPK   = Refl
 cmpReflServ SServPM   = Refl
 cmpReflServ SServPO   = Refl
+cmpReflServ SServSL   = Refl
 
 -- $setup
 --

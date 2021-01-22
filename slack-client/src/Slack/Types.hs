@@ -1,13 +1,15 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Slack.Types where
 
+import Data.Aeson
 import Futurice.EnvConfig (Configure (..), FromEnvVar (..), envVar)
 import Futurice.Prelude
 import Prelude ()
 
 import qualified Data.Text as T
 
-newtype ChannelId = ChannelId Text
+newtype ChannelId = ChannelId Text deriving (Eq, Show, Hashable)
 
 instance FromEnvVar ChannelId where
     fromEnvVar = Just . ChannelId . T.pack
@@ -18,8 +20,23 @@ class HasHttpManager a where
 class HasSlackToken a where
     slackToken :: Lens' a SlackToken
 
-data Req a where
-    ReqSendMessage :: ChannelId -> Text -> Req ()
+data User = User
+    { slackName        :: !Text --TODO this shouldn't be really used
+    , slackDisplayName :: !Text
+    , slackRealName    :: !Text
+    , slackImageUrl    :: !Text
+    } deriving (Show, Generic)
+
+instance AnsiPretty User
+
+instance FromJSON User where
+    parseJSON = withObject "user" $ \o -> do
+        profile <- o .: "profile"
+        User
+            <$> o .: "name"
+            <*> profile .: "display_name"
+            <*> profile .: "real_name"
+            <*> profile .: "image_512"
 
 newtype SlackToken = SlackToken Text
 

@@ -19,6 +19,7 @@ module Futurice.Integrations.Classes (
     MonadPlanMillQuery(..),
     MonadTime(..),
     MonadMemoize(..),
+    MonadSlack(..),
     -- * Exceptions
     PlanmillBatchError (..),
     ) where
@@ -38,6 +39,7 @@ import Peakon                 (MonadPeakon (..))
 import PlanMill.Queries.Haxl  (PlanmillBatchError (..))
 import Power                  (MonadPower (..))
 import Prelude ()
+import Slack                  (MonadSlack (..))
 
 import qualified Chat.Flowdock.REST as FD
 import qualified GitHub             as GH

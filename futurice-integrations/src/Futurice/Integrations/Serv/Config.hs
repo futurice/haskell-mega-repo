@@ -25,6 +25,7 @@ import qualified FUM
 import qualified Google.Types
 import qualified Okta.Types
 import qualified Peakon.Types
+import qualified Slack.Types
 
 import Futurice.Integrations.Serv
 
@@ -83,6 +84,11 @@ data IntegrationsConfig :: [Serv] -> Type where
         -> IntegrationsConfig ss
         -> IntegrationsConfig (ServPO ': ss)
 
+    IntCfgSlack
+        :: Slack.Types.SlackToken
+        -> IntegrationsConfig ss
+        -> IntegrationsConfig (ServSL ': ss)
+
 -- ServSet is to fail early on error
 instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
     configure = go
@@ -114,6 +120,8 @@ instance (All ServI ss, ServSet ss) => Configure (IntegrationsConfig ss) where
             <$> (f <$> envVar "PLANMILLPROXY_HAXLURL")
         cons SServPO = IntCfgPower
             <$> (f <$> envVar "POWER_API_BASEURL")
+        cons SServSL = IntCfgSlack
+            <$> configure
 
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
 

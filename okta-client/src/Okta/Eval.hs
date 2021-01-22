@@ -36,6 +36,7 @@ evalOktaReq r = case r of
     ReqGetAppLinks (OktaId uid)                           -> pagedReq $ "/api/v1/users/" <> T.unpack uid <> "/appLinks"
     ReqGetApplication (OktaAppId aid)                     -> singleReq $ "/api/v1/apps/" <> T.unpack aid
     ReqGetUser (OktaId uid)                               -> singleReq $ "/api/v1/users/" <> T.unpack uid
+    ReqGetSlackUsers (OktaAppId aid)                      -> pagedReq $ "/api/v1/apps/" <> T.unpack aid <> "/users"
   where
      go _ _ responses Nothing = pure responses
      go mgr token responses (Just url) = do
