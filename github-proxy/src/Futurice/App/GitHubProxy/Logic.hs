@@ -13,6 +13,7 @@ module Futurice.App.GitHubProxy.Logic (
     cleanupCache,
     ) where
 
+import Control.Exception.Base         (fromException)
 import Data.Aeson.Types               (FromJSON, parseEither, parseJSON)
 import Data.Binary.Get                (Get, runGetOrFail)
 import Data.Binary.Tagged
@@ -22,7 +23,8 @@ import Data.Constraint
 import Futurice.App.GitHubProxy.H     (runH)
 import Futurice.App.GitHubProxy.Types (Ctx (..))
 import Futurice.GitHub
-       (Auth, RW (..), ReqTag, Request, SomeRequest (..), SomeResponse (..))
+       (Auth, Error (..), RW (..), ReqTag, Request, SomeRequest (..),
+       SomeResponse (..))
 import Futurice.Integrations.Classes  (MonadGitHub (..))
 import Futurice.Metrics.RateMeter     (mark)
 import Futurice.Postgres
@@ -30,8 +32,12 @@ import Futurice.Prelude
 import Futurice.Servant               (Cache, CachePolicy (..), genCachedIO)
 import Futurice.TypeTag
 import GHC.TypeLits                   (natVal)
+import Network.HTTP.Client
+       (HttpException (..), HttpExceptionContent (..), path, responseStatus)
+import Network.HTTP.Types.Status      (notFound404)
 import Prelude ()
 
+import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
 import qualified Database.PostgreSQL.Simple as Postgres
@@ -153,7 +159,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         ]
 
 -- | Update cache, we look what's viewed the most and update these entries.
--- This means that we never delete items from cache
+-- This means that we never delete items from cache unless there is a error
 updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ do
     qs <- safePoolQuery_ ctx selectQuery
@@ -166,6 +172,13 @@ updateCache ctx = runLIO ctx $ do
                 Left exc -> do
                     liftIO $ mark "Exception"
                     logAttention "Exception" (show exc)
+                    case fromException exc of
+                      Just (HTTPError (HttpExceptionRequest req' (StatusCodeException res _))) ->
+                          -- remove user request as that users has probably changed
+                          when (responseStatus res == notFound404 && "/users/" `BS.isPrefixOf` path req') $ do
+                            logAttention "Removing query from database" (show k)
+                            void $ safePoolExecute ctx deleteQuery (Postgres.Only k)
+                      _ -> pure ()
         Left err -> do
             logAttention "Invalid query" (val, err)
             void $ safePoolExecute ctx deleteQuery (Postgres.Only k)
