@@ -69,4 +69,5 @@ sendReminderEmails ctx emps = do
           , _reqReplyTo = Nothing
           , _reqSubject = "[Library] Book loan reminder"
           , _reqBody = reminderTemplate loanerId days iName
+          , _reqHtmlBody = Nothing
           }
