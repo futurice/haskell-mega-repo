@@ -28,13 +28,17 @@ sendEmail ctx emailType req = do
           & AWS.cCharset ?~ "UTF-8"
     let content = AWS.content (req ^. reqBody)
           & AWS.cCharset ?~ "UTF-8"
-    let message = case emailType of
-          TextEmail -> AWS.message subject (AWS.body & AWS.bText ?~ content)
-          HtmlEmail -> AWS.message subject (AWS.body & AWS.bHTML ?~ content)
+    let message = AWS.message subject (AWS.body & AWS.bText ?~ content)
+    let message' =
+            case (emailType, req ^. reqHtmlBody) of
+              (HtmlEmail, Just b) ->
+                  let content' = AWS.content b & AWS.cCharset ?~ "UTF-8"
+                  in message & AWS.mBody . AWS.bHTML ?~ content'
+              _ -> message
 
     -- Sender address is hardcoded, as this service is used by machines.
     res <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
-        AWS.send $ AWS.sendEmail "no-reply@futurice.tech" destination message
+        AWS.send $ AWS.sendEmail "no-reply@futurice.tech" destination message'
 
     logInfo "AWS Response" $ object
         [ "messageId" .= (res ^. AWS.sersMessageId)
