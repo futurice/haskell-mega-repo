@@ -27,6 +27,7 @@ library
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , aeson
     , base
@@ -46,6 +47,7 @@ library
     , github
     , http-client
     , http-client-tls
+    , http-types
     , intervals
     , lens
     , monad-logger
@@ -63,6 +65,7 @@ library
     , time-parsers           >=0.1.1.0
     , unordered-containers
     , vector
+
   exposed-modules:
     Futurice.App.GitHubProxy
     Futurice.App.GitHubProxy.API
@@ -70,6 +73,7 @@ library
     Futurice.App.GitHubProxy.H
     Futurice.App.GitHubProxy.Logic
     Futurice.App.GitHubProxy.Types
+
   default-language:   Haskell2010
 
 executable github-proxy-client
@@ -84,6 +88,7 @@ executable github-proxy-client
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , base
     , constraints
@@ -112,6 +117,7 @@ executable github-proxy-server
     DeriveGeneric
     DeriveTraversable
     ScopedTypeVariables
+
   build-depends:
     , base
     , github-proxy
