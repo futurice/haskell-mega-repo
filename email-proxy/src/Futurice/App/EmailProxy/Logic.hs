@@ -13,8 +13,8 @@ import qualified Network.AWS.SES.Types     as AWS
 import Futurice.App.EmailProxy.Ctx
 import Futurice.App.EmailProxy.Types
 
-sendEmail :: (MonadIO m, MonadLog m) => Ctx -> Req -> m NoContent
-sendEmail ctx req = do
+sendEmail :: (MonadIO m, MonadLog m) => Ctx -> EmailType -> Req -> m NoContent
+sendEmail ctx emailType req = do
     let env = ctxAwsEnv ctx
 
     logInfo "Sending email" $ req
@@ -29,10 +29,16 @@ sendEmail ctx req = do
     let content = AWS.content (req ^. reqBody)
           & AWS.cCharset ?~ "UTF-8"
     let message = AWS.message subject (AWS.body & AWS.bText ?~ content)
+    let message' =
+            case (emailType, req ^. reqHtmlBody) of
+              (HtmlEmail, Just b) ->
+                  let content' = AWS.content b & AWS.cCharset ?~ "UTF-8"
+                  in message & AWS.mBody . AWS.bHTML ?~ content'
+              _ -> message
 
     -- Sender address is hardcoded, as this service is used by machines.
     res <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
-        AWS.send $ AWS.sendEmail "no-reply@futurice.tech" destination message
+        AWS.send $ AWS.sendEmail "no-reply@futurice.tech" destination message'
 
     logInfo "AWS Response" $ object
         [ "messageId" .= (res ^. AWS.sersMessageId)

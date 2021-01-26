@@ -31,6 +31,7 @@ sendEmail _ req = do
 server :: Ctx -> Server EmailProxyAPI
 server ctx = pure "This is email proxy mock. See /swagger-ui/"
     :<|> (nt . sendEmail ctx)
+    :<|> (nt . sendEmail ctx)
   where
     nt :: forall x. LogT Handler x -> Handler x
     nt = runLogT "emailproxy" (ctxLogger ctx)

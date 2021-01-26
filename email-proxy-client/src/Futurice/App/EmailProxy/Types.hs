@@ -38,18 +38,22 @@ instance ToSchema EmailAddress where
 -- Request
 -------------------------------------------------------------------------------
 
+data EmailType = TextEmail
+               | HtmlEmail
+
 data Req = Req
-    { _reqTo      :: !(NonEmpty EmailAddress)
-    , _reqCc      :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.
-    , _reqBcc     :: !(Maybe (NonEmpty EmailAddress))
-    , _reqReplyTo :: !(Maybe EmailAddress)
-    , _reqSubject :: !Text
-    , _reqBody    :: !Text
+    { _reqTo       :: !(NonEmpty EmailAddress)
+    , _reqCc       :: !(Maybe (NonEmpty EmailAddress)) -- maybe to make generic derivation work as we want it to.
+    , _reqBcc      :: !(Maybe (NonEmpty EmailAddress))
+    , _reqReplyTo  :: !(Maybe EmailAddress)
+    , _reqSubject  :: !Text
+    , _reqBody     :: !Text
+    , _reqHtmlBody :: !(Maybe Text)
     }
   deriving (Show)
 
 emptyReq :: EmailAddress -> Req
-emptyReq x = Req (pure x) Nothing Nothing Nothing mempty mempty
+emptyReq x = Req (pure x) Nothing Nothing Nothing mempty mempty Nothing
 
 -- TODO: move to futurice-prelude or even lens.
 nonEmpty :: Iso [a] [b] (Maybe (NonEmpty a)) (Maybe (NonEmpty b))
