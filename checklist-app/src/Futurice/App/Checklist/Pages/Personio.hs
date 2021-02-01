@@ -30,7 +30,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from Personi
     -- info
     fullRow_ $ div_ [ class_ "callout" ] $ ul_ $ do
         li_ "Checklist is shown when' employee Personio id or FUM login matches"
-        li_ $ em_ "In the past" <> " lists show people left in last 180 days"
+        li_ $ em_ "In the past" <> " lists show people left in last 360 days"
 
 
     -- Tables
@@ -41,7 +41,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from Personi
 
   where
     today = utctDay now
-    loday = addDays (-180) today
+    loday = addDays (-360) today
 
     combinations = [ (what, when') | what <- [ Starting, Leaving], when' <- [ Future, Past] ]
 
