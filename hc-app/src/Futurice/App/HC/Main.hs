@@ -30,14 +30,15 @@ import Servant.Chart                  (Chart)
 import Servant.Server.Generic
 import System.Entropy                 (getEntropy)
 
-import qualified Data.Map         as Map
-import qualified Data.Set         as Set
-import qualified Data.Vector      as V
-import qualified FUM.Types.Login  as FUM
-import qualified Futurice.IdMap   as IdMap
-import qualified Personio         as P
-import qualified PlanMill         as PM
-import qualified PlanMill.Queries as PMQ
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Map           as Map
+import qualified Data.Set           as Set
+import qualified Data.Vector        as V
+import qualified FUM.Types.Login    as FUM
+import qualified Futurice.IdMap     as IdMap
+import qualified Personio           as P
+import qualified PlanMill           as PM
+import qualified PlanMill.Queries   as PMQ
 
 import Futurice.App.HC.API
 import Futurice.App.HC.Achoo.Fetch
@@ -262,7 +263,7 @@ earlyCaringSubmitAction ctx mfu sb = do
                 req = emptyReq (fromEmail toAddr)
                     & reqSubject .~ subject
                     & reqBody    .~ body ^. strict
-                    & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
+                    & reqCc      .~ Just (pure $ fromEmail $ NE.head $ cfgEarlyCaringCC cfg)
 
 currentYear :: Day -> Integer
 currentYear n =

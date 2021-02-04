@@ -19,7 +19,7 @@ data Config = Config
     , cfgMockUser              :: !(Maybe FUM.Login)
     , cfgAccessGroups          :: ![FUM.GroupName]
     , cfgEmailProxyBaseurl     :: !BaseUrl
-    , cfgEarlyCaringCC         :: !(Maybe Email)
+    , cfgEarlyCaringCC         :: !(NonEmpty Email)
     , cfgPeopleManager         :: !FUM.Login
     , cfgPostgresConnInfo      :: !ConnectInfo
     }
@@ -30,6 +30,6 @@ instance Configure Config where
         <*> optionalAlt (envVar "MOCKUSER")
         <*> envVar "ACCESS_GROUPS"
         <*> envVar "EMAILPROXY_BASEURL"
-        <*> optionalAlt (envVar "EARLYCARING_CC")
+        <*> envVar "EARLYCARING_CC"
         <*> envVar "PEOPLE_MANAGER"
         <*> envConnectInfo

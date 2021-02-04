@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.HC.EarlyCaring.Notification where
 
-import Data.List                      (group)
-import Futurice.App.EmailProxy.Client (sendEmail)
+import Data.List.NonEmpty             (nonEmpty)
+import Futurice.App.EmailProxy.Client (sendEmail, sendHtmlEmail)
 import Futurice.App.EmailProxy.Types
        (emptyReq, fromEmail, reqBody, reqCc, reqSubject)
 import Futurice.Integrations
@@ -35,12 +35,11 @@ pmData interval = do
             <*> PMQ.timereports interval uid
             <*> PMQ.userTimebalance uid
 
-data SendStatus = Successful
-                | SendFailed
+data SendStatus = Successful (NonEmpty Balance)
+                | SendFailed P.Employee
                 | NoEmail
                 | SupervisorNotFound
                 | NoEmployees
-                deriving (Eq, Ord, Show)
 
 sendEarlyCaringNotification :: Ctx -> IO ()
 sendEarlyCaringNotification ctx = do
@@ -74,13 +73,31 @@ sendEarlyCaringNotification ctx = do
                             let req = emptyReq (fromEmail toAddr)
                                     & reqSubject .~ "Early caring email"
                                     & reqBody    .~ body ^. strict
-                                    & reqCc      .~ fmap (pure . fromEmail) (cfgEarlyCaringCC cfg)
                             x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) req
                             case x of
-                              Left exc -> logAttention "sendEmail failed" (show exc) >> return SendFailed
-                              Right () -> return Successful
+                              Left exc -> logAttention "sendEmail failed" (show exc) >> return (SendFailed s)
+                              Right () -> return (Successful bs)
+    --send summary email
+    let body = renderSummaryTemplate
+           (concat $ mapMaybe extractEmployee stats)
+           today
+           (mapMaybe extractSupervisor stats)
+    let req = emptyReq (fromEmail (NE.head $ cfgEarlyCaringCC cfg))
+          & reqSubject .~ "Early caring email summary"
+          & reqBody    .~ body ^. strict
+          & reqCc      .~ nonEmpty (fmap fromEmail (NE.tail $ cfgEarlyCaringCC cfg))
+    x <- liftIO $ tryDeep $ sendHtmlEmail mgr (cfgEmailProxyBaseurl cfg) req
+    case x of
+        Left exc -> runLogT "early-caring-submit" lgr $ logAttention "sendEmail failed" (show exc)
+        Right () -> runLogT "early-caring-submit" lgr $ logInfo_ "Send summary email successfully"
     pure ()
   where
+
+    extractEmployee (Successful bs) = Just $ toList bs
+    extractEmployee _ = Nothing
+
+    extractSupervisor (SendFailed supervisor) = Just supervisor
+    extractSupervisor _                       = Nothing
 
     cfg = ctxConfig ctx
     mgr = ctxManager ctx

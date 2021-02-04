@@ -25,6 +25,7 @@ import Algebra.Lattice                (Lattice (..))
 import Control.Monad.Logger           (LogLevel (..))
 import Data.Functor.Alt               (Alt (..))
 import Data.List                      (foldl')
+import Data.List.NonEmpty             (nonEmpty)
 import Data.List.Split                (splitOn)
 import Data.Semigroup.Foldable        (asum1)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
@@ -108,6 +109,9 @@ instance FromEnvVarList a => FromEnvVar [a] where
 
 instance (FromEnvVarList a, Ord a) => FromEnvVar (Set a) where
     fromEnvVar = fmap Set.fromList . fromEnvVarList
+
+instance FromEnvVarList a => FromEnvVar (NonEmpty a) where
+    fromEnvVar s = fromEnvVarList s >>= nonEmpty
 
 -------------------------------------------------------------------------------
 -- CP
