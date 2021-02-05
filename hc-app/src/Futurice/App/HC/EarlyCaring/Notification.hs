@@ -5,6 +5,7 @@ import Data.List.NonEmpty             (nonEmpty)
 import Futurice.App.EmailProxy.Client (sendEmail, sendHtmlEmail)
 import Futurice.App.EmailProxy.Types
        (emptyReq, fromEmail, reqBody, reqCc, reqSubject)
+import Futurice.Email                 (emailToText)
 import Futurice.Integrations
        (MonadPersonio, MonadPlanMillQuery, beginningOfPrev2Month, personio,
        planmillEmployee, runIntegrations)
@@ -76,7 +77,7 @@ sendEarlyCaringNotification ctx = do
                             x <- liftIO $ tryDeep $ sendEmail mgr (cfgEmailProxyBaseurl cfg) req
                             case x of
                               Left exc -> logAttention "sendEmail failed" (show exc) >> return (SendFailed s)
-                              Right () -> return (Successful bs)
+                              Right () -> logInfo "Send message to " (textShow $ emailToText email) >> return (Successful bs)
     --send summary email
     let body = renderSummaryTemplate
            (concat $ mapMaybe extractEmployee stats)
