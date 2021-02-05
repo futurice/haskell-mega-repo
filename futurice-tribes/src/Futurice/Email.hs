@@ -12,7 +12,8 @@ module Futurice.Email (
 import Data.Aeson
        (FromJSON (..), FromJSONKey (..), FromJSONKeyFunction (..), ToJSON (..),
        ToJSONKey (..), withText)
-import Futurice.EnvConfig                      (FromEnvVar (..))
+import Futurice.EnvConfig
+       (FromEnvVar (..), FromEnvVarList (..))
 import Futurice.Prelude
 import Language.Haskell.TH                     (ExpQ)
 import Lucid                                   (ToHtml (..), a_, href_)
@@ -116,6 +117,9 @@ instance Csv.FromField Email where
 
 instance FromEnvVar Email where
     fromEnvVar s = emailFromText (s ^. packed)
+
+instance FromEnvVarList Email where
+    fromEnvVarList s = traverse (fromEnvVar . T.unpack . T.strip) (T.splitOn "," $ T.pack s)
 
 -------------------------------------------------------------------------------
 -- helpers

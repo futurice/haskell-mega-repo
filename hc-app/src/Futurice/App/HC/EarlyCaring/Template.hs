@@ -1,10 +1,11 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Futurice.App.HC.EarlyCaring.Template (renderTemplate, emptyTemplate) where
+module Futurice.App.HC.EarlyCaring.Template (renderTemplate, emptyTemplate, renderSummaryTemplate) where
 
 import Data.Aeson                (object, (.=))
 import Data.Fixed                (Deci)
+import Futurice.Office           (Office, officeToText)
 import Futurice.Prelude
 import Futurice.Time
 import Futurice.Time.Month       (dayToMonth)
@@ -12,8 +13,10 @@ import Numeric.Interval.NonEmpty (Interval, inf)
 import Prelude ()
 import Text.Microstache          (Template, compileMustacheText, renderMustache)
 
-import qualified Data.Text as T
-import qualified Personio  as P
+import qualified Data.Map       as Map
+import qualified Data.Text      as T
+import qualified Data.Text.Lazy as LT
+import qualified Personio       as P
 
 import Futurice.App.HC.EarlyCaring.Types
 
@@ -93,8 +96,54 @@ formatHours n = sign <> formatHours' n where
 formatHours' :: NDT 'Hours Deci -> Text
 formatHours' n = textShow (unNDT n)
 
+renderSummaryTemplate
+    :: [Balance]      -- ^ balances
+    -> Day            -- ^ today
+    -> [P.Employee]   -- ^ supervisors with email problems
+    -> LazyText
+renderSummaryTemplate balances today supervisors = LT.replace "\n" "" $ renderMustache earlyCaringSummaryTemplate $ object
+    [ "timestamp"        .= today
+    , "balanceMap"       .= (mkOfficeMap <$> sortOn fst (Map.toList $ Map.fromListWith (<>) $ mapMaybe toOffice $ mapMaybe (extractBalances today) balances))
+    , "sicknessMap"      .= (mkOfficeMap <$> sortOn fst (Map.toList $ Map.fromListWith (<>) $ mapMaybe toOffice $ mapMaybe (extractSick today) balances))
+    , "missingEmails"    .= ((^. P.employeeFullname) <$> supervisors)
+    , "hasMissingEmails" .= not (null supervisors)
+    ]
+  where
+    toOffice b =
+        case balanceSupervisor b of
+          Just s -> Just (balanceEmployee b ^. P.employeeOffice, [(s, balanceEmployee b)])
+          Nothing -> Nothing
+
+extractBalances :: Day -> Balance -> Maybe Balance
+extractBalances today b
+    | balanceNormalFlex today b = Nothing
+    | otherwise = Just b
+
+extractSick ::  Day -> Balance -> Maybe Balance
+extractSick today b
+    | balanceNormalAbsenceDays today b = Nothing
+    | otherwise = Just b
+
+mkEmployee :: (P.Employee, P.Employee) -> Value
+mkEmployee (supervisor, e) = object
+    [ "name"       .= (e ^. P.employeeFullname)
+    , "supervisor" .= (supervisor ^. P.employeeFullname)
+    ]
+
+mkOfficeMap :: (Office, [(P.Employee, P.Employee)]) -> Value
+mkOfficeMap (office, emps) = object
+    [ "office"    .= officeToText office
+    , "employees" .= fmap mkEmployee emps
+    ]
+
 earlyCaringTemplate :: Template
 earlyCaringTemplate = either (error . show) id
     $ compileMustacheText "early-caring.template"
     $(makeRelativeToProject "early-caring.template" >>= embedStringFile)
 {-# NOINLINE earlyCaringTemplate #-}
+
+earlyCaringSummaryTemplate :: Template
+earlyCaringSummaryTemplate = either (error . show) id
+    $ compileMustacheText "early-caring-summary.template"
+    $(makeRelativeToProject "early-caring-summary.template" >>= embedStringFile)
+{-# NOINLINE earlyCaringSummaryTemplate #-}

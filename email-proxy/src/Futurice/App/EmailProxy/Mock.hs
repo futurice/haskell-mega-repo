@@ -28,10 +28,15 @@ sendEmail _ req = do
     logInfo "Sending mail" req
     pure NoContent
 
+sendHtmlEmail :: (MonadIO m, MonadLog m) => Ctx -> Req -> m NoContent
+sendHtmlEmail _ req = do
+    logInfo "Sending html mail" req
+    pure NoContent
+
 server :: Ctx -> Server EmailProxyAPI
 server ctx = pure "This is email proxy mock. See /swagger-ui/"
     :<|> (nt . sendEmail ctx)
-    :<|> (nt . sendEmail ctx)
+    :<|> (nt . sendHtmlEmail ctx)
   where
     nt :: forall x. LogT Handler x -> Handler x
     nt = runLogT "emailproxy" (ctxLogger ctx)
