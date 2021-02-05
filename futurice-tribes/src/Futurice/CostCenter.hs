@@ -13,7 +13,6 @@ import Futurice.CostCenter.Internal
 import Futurice.Generics
 import Futurice.Prelude
 import Language.Haskell.TH          (ExpQ)
-import Lucid                        (ToHtml (..))
 import Prelude ()
 
 import qualified Data.Csv        as Csv
