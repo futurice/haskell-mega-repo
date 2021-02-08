@@ -6,6 +6,8 @@
 module Futurice.App.Library (defaultMain) where
 
 import Codec.Picture                (DynamicImage, decodeImage)
+import Control.Concurrent.STM
+       (atomically, newTVarIO, readTVarIO, writeTVar)
 import Control.Lens
 import Data.Aeson                   (eitherDecode)
 import Data.Char                    (isSpace)
@@ -14,9 +16,9 @@ import FUM.Types.Login
 import Futurice.App.Sisosota.Client
 import Futurice.App.Sisosota.Types  (ContentHash)
 import Futurice.FUM.MachineAPI      (FUM6 (..), fum6)
-import Futurice.IdMap               (IdMap, fromFoldable)
+import Futurice.IdMap               (IdMap)
 import Futurice.Integrations
-import Futurice.Lucid.Foundation    (HtmlPage)
+import Futurice.Periocron
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
@@ -45,6 +47,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Map             as Map
 import qualified Data.Set             as Set
 import qualified Data.Text            as T
+import qualified Futurice.IdMap       as IdMap
 import qualified Network.HTTP.Client  as HTTP
 import qualified Personio             as P
 
@@ -98,34 +101,38 @@ makeCtx :: Config -> Logger -> Manager -> Cache -> MessageQueue -> IO (Ctx, [Job
 makeCtx cfg lgr mgr cache mq = do
     pp <- createPostgresPool $ cfgPostgresConnInfo cfg
 
-    let ctx = Ctx cfg pp lgr mgr cache
+    let fetchEmployees = do
+            now <- currentTime
+            IdMap.fromFoldable <$> runIntegrations mgr lgr now integrationConfig P.personioEmployees
+    employees <- fetchEmployees
+
+    ctx <- Ctx cfg pp lgr mgr cache <$> newTVarIO employees
+
+    let employeesJob = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every 3600
 
     -- listen to MQ, especially for library reminder requests
     void $ forEachMessage mq $ \msg -> case msg of
       LibraryReminderPing -> void $ do
-          emps <- getPersonioData ctx
+          emps <- liftIO $ readTVarIO $ ctxPersonio ctx
           runLogT "send-reminder" (ctxLogger ctx) $ sendReminderEmails ctx emps
       _                   -> pure ()
 
-    return (ctx, [])
+    return (ctx, [employeesJob])
+  where
+    integrationConfig = cfgIntegrationsCfg cfg
+
+    updateJob :: Ctx -> IO (IdMap P.Employee) -> IO ()
+    updateJob ctx fetchEmployees = do
+        employees <- fetchEmployees
+        atomically $ writeTVar (ctxPersonio ctx) employees
 
 -------------------------------------------------------------------------------
 -- Integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations '[ ServFUM6, ServPE ] a -> IO a
-runIntegrations' (Ctx cfg _ lgr mgr _cache) m = do
-    now <- currentTime
-    runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
-
-getPersonioData :: Ctx -> IO (IdMap P.Employee)
-getPersonioData ctx = do
-    es' <- cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations' ctx P.personioEmployees
-    pure $ fromFoldable es'
-
 getPersonioDataMap :: Ctx -> IO (Map Login P.Employee)
 getPersonioDataMap ctx = do
-    es' <- cachedIO (ctxLogger ctx) (ctxCache ctx) 180 () $ runIntegrations' ctx P.personioEmployees
+    es' <- toList <$> (liftIO $ readTVarIO $ ctxPersonio ctx)
     pure $ Map.fromList $ catMaybes $ fmap (\e -> case e ^. P.employeeLogin of
                                                Just login -> Just (login, e)
                                                Nothing -> Nothing) es'
@@ -253,7 +260,7 @@ indexPageImpl ctx mcriteria direction limit startBookId startBoardGameId search 
 bookInformationPageImpl :: Ctx -> BookInformationId -> Handler (HtmlPage "bookinformation")
 bookInformationPageImpl ctx binfoid = do
     book <- getBookImpl ctx binfoid
-    es <- liftIO $ getPersonioData ctx
+    es <- liftIO $ readTVarIO $ ctxPersonio ctx
     ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_booksBookId <$> _books book)
     pure $ bookInformationPage book ls es
 
@@ -262,7 +269,7 @@ boardGameInformationPageImpl ctx boardgameInfoId = do
     boardgameResponse <- runLogT "fetch-boardgame-response" (ctxLogger ctx) $ fetchBoardGameResponse ctx boardgameInfoId
     case boardgameResponse of
       Just response -> do
-          es <- liftIO $ getPersonioData ctx
+          es <- liftIO $ readTVarIO $ ctxPersonio ctx
           ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoansWithItemIds ctx (_boardGamesBoardGameId <$> response ^. boardGameResponseGames)
           pure $ boardGameInformationPage response ls es
       Nothing -> throwError err404
@@ -342,7 +349,7 @@ getBookByISBNImpl ctx isbn = do
 
 getLoansImpl :: Ctx -> Handler [LoanResponse]
 getLoansImpl ctx = do
-    es <- liftIO $ getPersonioData ctx
+    es <- liftIO $ readTVarIO $ ctxPersonio ctx
     ls <- runLogT "fetch-loans" (ctxLogger ctx) $ fetchLoans ctx es
     pure $ toLoanResponse <$> ls
   where
@@ -350,7 +357,7 @@ getLoansImpl ctx = do
 
 getLoanImpl :: Ctx -> LoanId -> Handler Loan
 getLoanImpl ctx lid = do
-    es <- liftIO $ getPersonioData ctx
+    es <- liftIO $ readTVarIO $ ctxPersonio ctx
     loanInfo <- runLogT "fetch-loan" (ctxLogger ctx) $ fetchLoan ctx es lid
     case loanInfo of
       Just loan' -> pure loan'
@@ -359,7 +366,7 @@ getLoanImpl ctx lid = do
 personalLoansImpl :: Ctx -> Maybe Login -> Handler [Loan]
 personalLoansImpl ctx login = withAuthUser ctx login $ (\l -> do
     emap <- liftIO $ getPersonioDataMap ctx
-    eidmap <- liftIO $ getPersonioData ctx
+    eidmap <- liftIO $ readTVarIO $ ctxPersonio ctx
     case emap ^.at l of
       Nothing -> throwError err403
       Just es -> runLogT "fetch-personal-loans" (ctxLogger ctx) $ fetchPersonalLoans ctx eidmap (es ^. P.employeeId))
@@ -447,7 +454,7 @@ addItemPostImpl ctx req = do
 
 sendReminderEmailsImpl :: Ctx -> Maybe Login -> Handler Bool
 sendReminderEmailsImpl ctx login = withAuthUser' ctx login $ \_ -> do
-    emps <- liftIO $ getPersonioData ctx
+    emps <- liftIO $ readTVarIO $ ctxPersonio ctx
     _ <- runLogT "loan-remainder" (ctxLogger ctx) $ sendReminderEmails ctx emps
     return True
 
