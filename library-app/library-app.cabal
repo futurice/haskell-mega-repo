@@ -31,6 +31,7 @@ library
     GeneralizedNewtypeDeriving
     ScopedTypeVariables
     StandaloneDeriving
+
   build-depends:
     , aeson
     , base
@@ -54,6 +55,7 @@ library
     , http-types
     , JuicyPixels
     , lens
+    , periocron
     , personio-client
     , postgresql-simple
     , servant
@@ -63,9 +65,11 @@ library
     , servant-multipart
     , servant-server
     , sisosota-client
+    , stm
     , swagger2
     , text
     , time
+
   exposed-modules:
     Futurice.App.Library
     Futurice.App.Library.API

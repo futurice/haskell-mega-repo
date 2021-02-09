@@ -22,7 +22,7 @@ import Futurice.Postgres               (createPostgresPool, safePoolExecute)
 import Futurice.Postgres.SqlBuilder
 import Futurice.Prelude
 import Futurice.Servant
-import Network.Wai                     (Request, rawPathInfo)
+import Network.Wai                     (Request, rawPathInfo, requestHeaders)
 import Network.Wai.Middleware.HttpAuth (basicAuth')
 import Prelude ()
 import Servant
@@ -139,6 +139,7 @@ checkCreds ctx req u p = do
         logAttention "Invalid login with " $ object
             [ "username" .= u'
             , "endpoint" .= endpoint
+            , "client"   .= show (requestHeaders req)
             ]
 
     -- | Logs user, and requested endpoint if endpoint is not swagger-related.
