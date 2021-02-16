@@ -67,35 +67,33 @@ fetchClientInformation now emps = do
     let personsMap = Map.fromList $ (\p -> (Power.personLogin p, p)) <$> persons
 
     customers <- filter (\c -> Power.customerInternalCustomer c == False) <$> Power.powerCustomers
+    let customersMap = Map.fromList $ fmap (\c -> (Power.customerId c, Power.customerName c)) customers
+
     projects <- Power.powerProjects
     allocations <- Power.powerAllocations
 
     let employeeAllocations emp = filter (\a -> Power.allocationPersonId a == Just (Power.personId emp)) allocations
     let filterCurrentAllocations = filter (\a -> utctDay (Power.allocationStartDate a) <= now && now <= utctDay (Power.allocationEndDate a) && Power.allocationProposed a == False)
-    let filterMainAllocations = filter (\a -> Power.allocationTotalAllocation a > 0.5)
-    let filterNonMainAllocations = filter (\a -> not (Power.allocationTotalAllocation a > 0.5))
-    let getRelevantAllocations Main as = filterMainAllocations $ filterCurrentAllocations as
-        getRelevantAllocations NonMain as = filterNonMainAllocations $ filterCurrentAllocations as
 
-    let isOnProject as cm p = Power.projectId p `elem` (Power.allocationProjectId <$> getRelevantAllocations cm as)
-    let employeeProjects cm as = filter (isOnProject as cm) projects
-    let employeeCustomers ps = filter (\c -> elem (Power.customerId c) (Power.projectCustomerId <$> ps)) customers
+    let allocationTimePerClient :: [Power.Allocation] -> [(Power.CustomerId,Double)]
+        allocationTimePerClient allocs =
+            let clientFromProject = Map.fromList $ fmap (\p -> (Power.projectId p, Power.projectCustomerId p)) projects
+            in Map.toList $ Map.fromListWith (+) $ mapMaybe (\a -> (,) <$> (clientFromProject ^.at (Power.allocationProjectId a)) <*> Just (Power.allocationTotalAllocation a)) allocs
 
     let employeeMainProject emp =
-            let employeeCustomer cm allocs = listToMaybe $ Power.customerName <$> (employeeCustomers $ employeeProjects cm $ allocs)
-
-                processAllocs :: [Power.Allocation] -> ClientStatus
+            let processAllocs :: [(Power.CustomerId, Double)] -> ClientStatus
                 processAllocs [] = NoClient
-                processAllocs allocs | Just customer <- employeeCustomer Main allocs = MainClient customer
-                                     | Just _ <- employeeCustomer NonMain allocs     = NoMainClient
-                                     | otherwise                                     = Other
+                processAllocs ((client, time) : _) | time > 0.5, Just clientName <- customersMap ^.at client = MainClient clientName
+                                                   | Just _ <- customersMap ^.at client = NoMainClient
+                                                   | otherwise  = Other
 
                 clientStatus =
                     case emp ^. P.employeeLogin >>= \x -> personsMap ^.at x of
                       Just e | Power.personUtzTarget e > 0 ->
-                                   let allocs = employeeAllocations e
-                                   in if length (filterCurrentAllocations allocs) > 0 then
-                                        processAllocs allocs
+                                   let currentAllocs = filterCurrentAllocations (employeeAllocations e)
+                                       timePerClient = allocationTimePerClient currentAllocs
+                                   in if length currentAllocs > 0 then
+                                        processAllocs $ reverse $ sortOn snd timePerClient
                                       else
                                         NoClient
                       _ -> Other
