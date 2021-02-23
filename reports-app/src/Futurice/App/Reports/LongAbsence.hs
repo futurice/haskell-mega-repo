@@ -79,7 +79,7 @@ longAbsencesNotification ctx = do
         let office = emp ^. P.employeeOffice
         if office == offBerlin || office == offMunich || office == offStuttgart then do
             let params = object
-                  [ "supervisorName" .= (emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s >>= Just . (^. P.employeeFullname))
+                  [ "supervisorName" .= (fromMaybe "No supervisor found" $ emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s >>= Just . (^. P.employeeFullname))
                   , "name"           .= (emp ^. P.employeeFullname)
                   , "returnDate"     .= day
                   ]
