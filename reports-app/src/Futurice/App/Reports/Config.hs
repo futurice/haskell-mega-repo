@@ -31,7 +31,8 @@ data Config = Config
     , cfgHcEmailCC             :: !(Maybe Email)
     , cfgOktaProxyBaseurl      :: !BaseUrl
     , cfgMockUser              :: !(Maybe FUM.Login)
-    , cfgITTeamOktaGroup       :: !(O.GroupName)
+    , cfgITTeamOktaGroup       :: !O.GroupName
+    , cfgHcGermanyEmail        :: !Email
     }
 
 instance Configure Config where
@@ -46,6 +47,7 @@ instance Configure Config where
         <*> envVar "OKTAPROXY_BASEURL"
         <*> optionalAlt (envVar "MOCKUSER")
         <*> envVar "OKTA_GROUP_IT"
+        <*> envVar "HCGERMANY_EMAIL"
 
 toFutuquCfg
     :: C.IntegrationsConfig ReportIntegrations

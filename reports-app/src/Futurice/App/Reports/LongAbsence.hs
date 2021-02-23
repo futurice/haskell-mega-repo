@@ -6,6 +6,7 @@ module Futurice.App.Reports.LongAbsence (longAbsencesNotification) where
 import Data.Aeson                (object, (.=))
 import Data.Time.Calendar        (addDays)
 import Futurice.Integrations
+import Futurice.Office           (offBerlin, offMunich, offStuttgart)
 import Futurice.Prelude
 import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
@@ -75,23 +76,37 @@ longAbsencesNotification ctx = do
     returners <- liftIO $ traverse (runIntegrations' ctx . returningEmployees) dayLookups
 --    print returners
     for_ returners $ \(day, rs) -> for_ rs $ \emp -> do
-        case emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s of
-          Just supervisor -> case supervisor ^. P.employeeEmail of
-            Just supervisorEmail ->  do
-                let params = object
-                        [ "supervisorName" .= (supervisor ^. P.employeeFirst)
-                        , "name"           .= (emp ^. P.employeeFullname)
-                        , "returnDate"     .= day
-                        ]
-                x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail supervisorEmail)
-                    & E.reqCc      .~ fmap (pure . E.fromEmail) (cfgHcEmailCC cfg)
-                    & E.reqSubject .~ "Returning employee"
-                    & E.reqBody    .~ renderMustache returningEmployeeEmailTemplate params ^. strict
-                case x of
-                  Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
-                  Right () -> runLogT "returning-employee-notification" lgr $ logInfo "Returning employee email send with params " params
-            Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No email for supervisor " (show $ supervisor ^. P.employeeFullname)
-          Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No supervisor for employee " (show $ emp ^. P.employeeFullname)
+        let office = emp ^. P.employeeOffice
+        if office == offBerlin || office == offMunich || office == offStuttgart then do
+            let params = object
+                  [ "supervisorName" .= (emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s >>= Just . (^. P.employeeFullname))
+                  , "name"           .= (emp ^. P.employeeFullname)
+                  , "returnDate"     .= day
+                  ]
+            x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail (cfgHcGermanyEmail cfg))
+                 & E.reqSubject .~ "Returning employee"
+                 & E.reqBody    .~ renderMustache returningEmployeeEmailGermanyTemplate params ^. strict
+            case x of
+              Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
+              Right () -> runLogT "returning-employee-notification" lgr $ logInfo "Returning employee email send with params " params
+        else do
+            case emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s of
+              Just supervisor -> case supervisor ^. P.employeeEmail of
+                Just supervisorEmail ->  do
+                    let params = object
+                           [ "supervisorName" .= (supervisor ^. P.employeeFirst)
+                           , "name"           .= (emp ^. P.employeeFullname)
+                           , "returnDate"     .= day
+                           ]
+                    x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail supervisorEmail)
+                        & E.reqCc      .~ fmap (pure . E.fromEmail) (cfgHcEmailCC cfg)
+                        & E.reqSubject .~ "Returning employee"
+                        & E.reqBody    .~ renderMustache returningEmployeeEmailTemplate params ^. strict
+                    case x of
+                      Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
+                      Right () -> runLogT "returning-employee-notification" lgr $ logInfo "Returning employee email send with params " params
+                Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No email for supervisor " (show $ supervisor ^. P.employeeFullname)
+              Nothing -> runLogT "returning-employee-notification" lgr $ logAttention "No supervisor for employee " (show $ emp ^. P.employeeFullname)
     pure ()
   where
     mgr = ctxManager ctx
