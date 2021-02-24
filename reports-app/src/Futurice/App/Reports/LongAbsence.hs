@@ -73,22 +73,27 @@ longAbsencesNotification ctx = do
     employees <- runIntegrations' ctx $ P.personio P.PersonioEmployees
     let empMap = IdMap.fromFoldable employees
     let dayLookups = [7,14,30]
-    returners <- liftIO $ traverse (runIntegrations' ctx . returningEmployees) dayLookups
+    returners <- liftIO $ for dayLookups $ \d -> do
+        returners <- runIntegrations' ctx (returningEmployees d)
+        pure (d, returners)
 --    print returners
-    for_ returners $ \(day, rs) -> for_ rs $ \emp -> do
+    for_ returners $ \(dayLookup, (day, rs)) -> for_ rs $ \emp -> do
         let office = emp ^. P.employeeOffice
         if office == offBerlin || office == offMunich || office == offStuttgart then do
-            let params = object
-                  [ "supervisorName" .= (fromMaybe "No supervisor found" $ emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s >>= Just . (^. P.employeeFullname))
-                  , "name"           .= (emp ^. P.employeeFullname)
-                  , "returnDate"     .= day
-                  ]
-            x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail (cfgHcGermanyEmail cfg))
-                 & E.reqSubject .~ "Returning employee"
-                 & E.reqBody    .~ renderMustache returningEmployeeEmailGermanyTemplate params ^. strict
-            case x of
-              Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
-              Right () -> runLogT "returning-employee-notification" lgr $ logInfo "Returning employee email send with params " params
+            if dayLookup == 14 then do
+                let params = object
+                        [ "supervisorName" .= (fromMaybe "No supervisor found" $ emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s >>= Just . (^. P.employeeFullname))
+                        , "name"           .= (emp ^. P.employeeFullname)
+                        , "returnDate"     .= day
+                        ]
+                x <- liftIO $ tryDeep $ E.sendEmail mgr emailProxyBurl $ E.emptyReq (E.fromEmail (cfgHcGermanyEmail cfg))
+                    & E.reqSubject .~ "Returning employee"
+                    & E.reqBody    .~ renderMustache returningEmployeeEmailGermanyTemplate params ^. strict
+                case x of
+                  Left exc -> runLogT "returning-employee-notification" lgr $ logAttention "sendEmail failed" (show exc)
+                  Right () -> runLogT "returning-employee-notification" lgr $ logInfo "Returning employee email send with params " params
+            else
+               pure ()
         else do
             case emp ^. P.employeeSupervisorId >>= \s -> empMap ^.at s of
               Just supervisor -> case supervisor ^. P.employeeEmail of
