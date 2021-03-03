@@ -18,6 +18,9 @@ module Futurice.Office (
     -- * known values
     offHelsinki,
     offTampere,
+    offBerlin,
+    offMunich,
+    offStuttgart,
     offOther,
     ) where
 
@@ -75,6 +78,15 @@ offHelsinki = fromMaybe (error "Office Helsinki") $ officeFromText "Helsinki"
 
 offTampere :: Office
 offTampere = fromMaybe (error "Office Tampere") $ officeFromText "Tampere"
+
+offBerlin :: Office
+offBerlin = fromMaybe (error "Office Berlin") $ officeFromText "Berlin"
+
+offMunich :: Office
+offMunich = fromMaybe (error "Office Munich") $ officeFromText "Munich"
+
+offStuttgart :: Office
+offStuttgart = fromMaybe (error "Office Stuttgart") $ officeFromText "Stuttgart"
 
 offOther :: Office
 offOther = fromMaybe (error "Office Other") $ officeFromText "Other"

@@ -8,6 +8,7 @@ module Futurice.App.Reports.Templates (
     subcontractorSmsTemplate,
     subcontractorHoursEmailTemplate,
     returningEmployeeEmailTemplate,
+    returningEmployeeEmailGermanyTemplate,
     ) where
 
 import Data.FileEmbed   (embedStringFile, makeRelativeToProject)
@@ -47,3 +48,8 @@ returningEmployeeEmailTemplate :: Template
 returningEmployeeEmailTemplate = either (error . show) id
     $ compileMustacheText "returning-employee-email.template"
     $(makeRelativeToProject "returning-employee-email.template" >>= embedStringFile)
+
+returningEmployeeEmailGermanyTemplate :: Template
+returningEmployeeEmailGermanyTemplate = either (error . show) id
+    $ compileMustacheText "returning-employee-email-germany.template"
+    $(makeRelativeToProject "returning-employee-email-germany.template" >>= embedStringFile)
