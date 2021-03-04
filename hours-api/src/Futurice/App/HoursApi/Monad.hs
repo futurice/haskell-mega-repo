@@ -86,7 +86,10 @@ viewHours = Hours . view
 -- previewHours = Hours . preview
 
 cachedPlanmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
-cachedPlanmillAction = Hours . lift . Haxl.dataFetch . PlanMillRequestCached
+cachedPlanmillAction r = Hours $ lift $ Haxl.dataFetch $ PlanMillRequestCached r 300
+
+cachedPlanmillAction' :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> NominalDiffTime -> Hours a
+cachedPlanmillAction' r = Hours . lift . Haxl.dataFetch . PlanMillRequestCached r
 
 planmillAction :: (Typeable a, FromJSON a, NFData a, Show a) => PM.PlanMill a -> Hours a
 planmillAction = Hours . lift . Haxl.dataFetch . PlanMillRequest
@@ -115,7 +118,7 @@ instance PM.MonadPlanMillQuery Hours where
 
 data PlanMillRequest a where
     PlanMillRequest       :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> PlanMillRequest a
-    PlanMillRequestCached :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> PlanMillRequest a
+    PlanMillRequestCached :: (FromJSON a, NFData a, Show a, Typeable a) => PM.PlanMill a -> NominalDiffTime -> PlanMillRequest a
 
 deriving instance Show (PlanMillRequest a)
 deriving instance Typeable PlanMillRequest
@@ -126,8 +129,8 @@ instance Haxl.ShowP PlanMillRequest where showp = show
 instance Hashable (PlanMillRequest a) where
   hashWithSalt salt (PlanMillRequest r) =
       salt `hashWithSalt` (0 :: Int) `hashWithSalt` r
-  hashWithSalt salt (PlanMillRequestCached r) =
-      salt `hashWithSalt` (1 :: Int) `hashWithSalt` r
+  hashWithSalt salt (PlanMillRequestCached r t) =
+      salt `hashWithSalt` (1 :: Int) `hashWithSalt` r `hashWithSalt` t
 
 instance Haxl.StateKey PlanMillRequest where
     data State PlanMillRequest = PlanMillDataState Logger Cache PM.Workers
@@ -139,9 +142,9 @@ instance Haxl.DataSource u PlanMillRequest where
     fetch (PlanMillDataState lgr cache workers) _f _u = Haxl.SyncFetch $ \blockedFetches ->
         for_ blockedFetches $ \(Haxl.BlockedFetch r v) -> case r of
             PlanMillRequest pm -> PM.submitPlanMillE workers pm >>= Haxl.putResult v
-            PlanMillRequestCached pm -> do
+            PlanMillRequestCached pm t -> do
                 let res' = PM.submitPlanMillE workers pm
-                res <- cachedIO lgr cache 300 {- 5 minutes -} pm (fmap Wrap res')
+                res <- cachedIO lgr cache t pm (fmap Wrap res')
                 Haxl.putResult v (unwrap res)
 
 -- | We need this type, because there isn't NFData SomeException
@@ -169,7 +172,7 @@ instance MonadHours Hours where
         -- Seems that we always need to divide by 7.5
         -- https://github.com/planmill/api/issues/12
         let wh = 7.5 :: NDT 'Time.Hours Centi
-        vs <- cachedPlanmillAction (PM.userVacations pmUid)
+        vs <- cachedPlanmillAction' (PM.userVacations pmUid) 3600
         let holidaysLeft = sumOf (folded . getter PM.vacationDaysRemaining . getter ndtConvert') vs
         -- I wish we could do units properly.
         pure $ NDT $ ndtDivide holidaysLeft wh
