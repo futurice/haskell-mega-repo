@@ -10,7 +10,7 @@ import qualified FUM.Types.Login as FUM
 
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServOK, ServPE, ServPM ])
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig '[ ServOK, ServPE ])
     }
 
 instance Configure Config where

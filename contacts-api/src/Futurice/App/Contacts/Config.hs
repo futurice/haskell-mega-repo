@@ -7,4 +7,4 @@ import Futurice.Integrations
 import Futurice.Prelude ()
 import Prelude ()
 
-type Config = IntegrationsConfig '[ ServFUM, ServGH, ServOK, ServPE, ServPM, ServPO, ServSL ]
+type Config = IntegrationsConfig '[ ServFUM, ServGH, ServOK, ServPE, ServPO, ServSL ]
