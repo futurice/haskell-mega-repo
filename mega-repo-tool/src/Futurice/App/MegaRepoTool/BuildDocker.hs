@@ -113,6 +113,13 @@ cmdBuildCommand buildLambdas = do
     cmd <- cmdExpand $ buildCmd buildLambdas $ _mrtDockerBaseImage cfg
     T.putStrLn cmd
 
+cmdBuildCommandLambda :: Bool -> IO ()
+cmdBuildCommandLambda buildLambdas = do
+    cfg <- readConfig
+    cmd <- cmdExpand $ buildCmd buildLambdas $ _mrtDockerBaseImage cfg
+    T.putStrLn cmd
+
+
 -------------------------------------------------------------------------------
 -- Build image
 -------------------------------------------------------------------------------

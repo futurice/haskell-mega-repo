@@ -4,17 +4,17 @@ module Futurice.App.MegaRepoTool.CopyArtifacts (
     cmdCopyArtifacts
     ) where
 
+import AWS.Lambda.RuntimeAPI.Package
 import Cabal.Plan
-import Control.Lens          (firstOf, iforOf_)
+import Control.Lens                  (firstOf, iforOf_)
 import Futurice.Prelude
 import Prelude ()
-import AWS.Lambda.RuntimeAPI.Package
-import System.Directory      (copyFile, createDirectoryIfMissing)
-import System.Exit           (exitFailure)
-import System.FilePath.Posix (takeFileName, (-<.>), (</>))
-import System.IO             (hPutStrLn, stderr)
-import System.IO.Temp        (withTempDirectory)
-import System.Process        (callProcess)
+import System.Directory              (copyFile, createDirectoryIfMissing)
+import System.Exit                   (exitFailure)
+import System.FilePath.Posix         (takeFileName, (-<.>), (</>))
+import System.IO                     (hPutStrLn, stderr)
+import System.IO.Temp                (withTempDirectory)
+import System.Process                (callProcess)
 
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Map             as Map
@@ -75,6 +75,14 @@ cmdCopyArtifacts (CAO rootDir buildDir buildLambdas) = withTempDirectory "/tmp" 
                     , "libtasn1"
                     , "libunistring"
                     , "libwind"
+                    , "libssl3"
+                    , "libsmime3"
+                    , "libnss3"
+                    , "libnssutil3"
+                    , "libplds4"
+                    , "libplc4"
+                    , "libnspr4"
+                    , "libselinux"
                     -- C++
                     , "libstdc++"
                     -- GCC runtime
