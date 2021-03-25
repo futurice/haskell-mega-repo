@@ -1,10 +1,10 @@
-index-state: 2021-01-26T08:08:13Z
+index-state: 2021-03-23T10:52:39Z
 tests: True
 
 -- cabal.project is probably better place than
 -- repeating those all over the packages
 constraints:
-  aeson                 ^>= 1.4.7.1,
+  aeson                 ^>= 1.5.6.0,
   amazonka-core         ^>= 1.6.1,
   cabal-plan            ^>= 0.7.0.0,
   Chart                 ^>= 1.9.3,
@@ -16,17 +16,17 @@ constraints:
   github                ^>= 0.26,
   haxl                  ^>= 2.3.0.0,
   http-types            ^>= 0.12,
-  lens                  ^>= 4.18,
-  log-base              ^>= 0.8.0.1,
+  lens                  ^>= 4.19,
+  log-base              ^>= 0.9.0.0,
   semigroupoids         ^>= 5.3.1,
-  servant               ^>= 0.17,
+  servant               ^>= 0.18,
   postgresql-simple     ^>= 0.6,
-  servant-client        ^>= 0.17,
-  servant-client-core   ^>= 0.17,
+  servant-client        ^>= 0.18,
+  servant-client-core   ^>= 0.18,
   servant-lucid         ^>= 0.9,
-  servant-server        ^>= 0.17,
+  servant-server        ^>= 0.18,
   -- TODO: solve Swagger UI syntax coloring induced slowness
-  servant-swagger-ui    ==0.3.4.3.23.11,
+  servant-swagger-ui    ^>= 0.3.4.3.37.2,
   SVGFonts              ^>= 1.7,
   unix-time             ^>= 0.3.8,
   tdigest               ^>= 0.2,
@@ -71,8 +71,6 @@ packages:
   email-proxy-client/
   email-proxy/
   env-config/
-  flowdock-grep/
-  flowdock-rest/
   fum-api/
   fum-carbon-app/
   fum-client/

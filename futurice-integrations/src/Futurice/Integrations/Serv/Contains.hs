@@ -124,7 +124,6 @@ trustMe :: forall x y. x :~: y
 trustMe = unsafeCoerce (Refl :: () :~: ())
 
 cmpReflServ :: SServ s -> CMP (ServNat s) (ServNat s) :~: 'EQ
-cmpReflServ SServFD   = Refl
 cmpReflServ SServFUM  = Refl
 cmpReflServ SServFUM6 = Refl
 cmpReflServ SServGH   = Refl

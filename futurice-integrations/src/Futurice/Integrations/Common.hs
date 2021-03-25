@@ -11,7 +11,6 @@ module Futurice.Integrations.Common (
     previousFriday,
     -- * FUM
     fumEmployeeList,
-    flowdockOrganisation,
     githubOrganisationMembers,
     -- * PlanMill
     personioPlanmillMap,
@@ -22,7 +21,6 @@ module Futurice.Integrations.Common (
     githubUsernamesFromOkta,
     -- * Classy lenses
     HasFUMEmployeeListName(..),
-    HasFlowdockOrgName(..),
     HasGithubOrgName(..),
     HasOktaGithubId(..),
     ) where
@@ -40,20 +38,16 @@ import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 
-import qualified Chat.Flowdock.REST as FD
-import qualified Data.Map           as Map
+import qualified Data.Map         as Map
 import qualified FUM
-import qualified GitHub             as GH
-import qualified Okta               as O
-import qualified Personio           as P
-import qualified PlanMill           as PM
-import qualified PlanMill.Queries   as PMQ
+import qualified GitHub           as GH
+import qualified Okta             as O
+import qualified Personio         as P
+import qualified PlanMill         as PM
+import qualified PlanMill.Queries as PMQ
 
 class HasFUMEmployeeListName a where
     fumEmployeeListName :: Lens' a FUM.ListName
-
-class HasFlowdockOrgName a where
-    flowdockOrganisationName :: Lens' a (FD.ParamName FD.Organisation)
 
 class HasGithubOrgName a where
     githubOrganisationName :: Lens' a (GH.Name GH.Organization)
@@ -123,14 +117,6 @@ fumEmployeeList
 fumEmployeeList = do
     listName <- view fumEmployeeListName
     FUM.fumList listName
-
--- | Get organisation from Flowdock
-flowdockOrganisation
-    :: (MonadFlowdock m, MonadReader env m, HasFlowdockOrgName env)
-    => m FD.Organisation
-flowdockOrganisation = do
-    orgName <- view flowdockOrganisationName
-    flowdockOrganisationReq orgName
 
 -- | Get all members of the organisation.
 githubOrganisationMembers

@@ -7,7 +7,6 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Futurice.Integrations.Monad.StateSet (
-    stateSetFlowdock,
     stateSetFUM,
     stateSetFUM6,
     stateSetGitHub,
@@ -25,10 +24,8 @@ import Network.HTTP.Client   (Request)
 import PlanMill.Queries.Haxl (initDataSourceBatch)
 import Prelude ()
 
-import qualified Chat.Flowdock.REST           as FD
 import qualified FUM
 import qualified FUM.Haxl
-import qualified Flowdock.Haxl                as FD.Haxl
 import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.Integrations.GitHub as GH
 import qualified Google.Haxl
@@ -44,14 +41,6 @@ import qualified Slack.Haxl
 import qualified Slack.Types
 
 import Futurice.Integrations.Serv
-
-stateSetFlowdock
-    :: Logger -> Manager
-    -> FD.AuthToken
-    -> Tagged ss H.StateStore
-    -> Tagged (ServFD ': ss) H.StateStore
-stateSetFlowdock _lgr mgr token (Tagged store) = Tagged $
-    H.stateSet (FD.Haxl.initDataSource' mgr token) store
 
 stateSetFUM
     :: Logger -> Manager

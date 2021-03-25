@@ -15,7 +15,7 @@ module Futurice.Integrations.Serv (
     Serv (..),
     AllServs,
     ServNat,
-    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL,
+    ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -106,8 +106,7 @@ lessThanCmpGT (LTS lt) = case lessThanCmpGT lt of Refl -> Refl
 --
 -- /Note:/ constructors are in the alphabetical order.
 data Serv
-    = ServFD    -- ^ flowdock
-    | ServFUM   -- ^ fum
+    = ServFUM   -- ^ fum
     | ServFUM6  -- ^ fum-carbon
     | ServGH    -- ^ github
     | ServGO    -- ^ google
@@ -119,9 +118,8 @@ data Serv
     | ServSL    -- ^ slack
   deriving (Show)
 
-type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL ]
+type AllServs = '[ ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL ]
 
-type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
 type ServFUM6 = 'ServFUM6
 type ServGH   = 'ServGH
@@ -142,7 +140,6 @@ type ServSL   = 'ServSL
 type Nat10 = 'N.S N.Nat9
 
 type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
-    ServNat 'ServFD   = N.Nat0
     ServNat 'ServFUM  = N.Nat1
     ServNat 'ServFUM6 = N.Nat2
     ServNat 'ServGH   = N.Nat3
@@ -159,7 +156,6 @@ type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
 -------------------------------------------------------------------------------
 
 data SServ :: Serv -> Type where
-    SServFD   :: SServ 'ServFD
     SServFUM  :: SServ 'ServFUM
     SServFUM6 :: SServ 'ServFUM6
     SServGH   :: SServ 'ServGH
@@ -179,7 +175,6 @@ deriving instance Show (SServ s)
 -- SServGH
 --
 class    ServI (s :: Serv) where sserv :: SServ s
-instance ServI 'ServFD     where sserv = SServFD
 instance ServI 'ServFUM    where sserv = SServFUM
 instance ServI 'ServFUM6   where sserv = SServFUM6
 instance ServI 'ServGH     where sserv = SServGH
