@@ -36,7 +36,6 @@ library
     , bytestring
     , containers
     , ed25519
-    , flowdock-rest
     , futurice-prelude
     , github
     , http-client
