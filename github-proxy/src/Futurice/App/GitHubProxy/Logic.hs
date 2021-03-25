@@ -17,8 +17,7 @@ import Control.Exception.Base         (fromException)
 import Data.Aeson.Types               (FromJSON, parseEither, parseJSON)
 import Data.Binary.Get                (Get, runGetOrFail)
 import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
-       structuralInfo, structuralInfoSha1Digest, taggedDecode, taggedEncode)
+       (Structured, structureHash, structuredDecode, structuredEncode)
 import Data.Constraint
 import Futurice.App.GitHubProxy.H     (runH)
 import Futurice.App.GitHubProxy.Types (Ctx (..))
@@ -31,7 +30,6 @@ import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant               (Cache, CachePolicy (..), genCachedIO)
 import Futurice.TypeTag
-import GHC.TypeLits                   (natVal)
 import Network.HTTP.Client
        (HttpException (..), HttpExceptionContent (..), path, responseStatus)
 import Network.HTTP.Types.Status      (notFound404)
@@ -102,16 +100,15 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         :: CacheLookup -> SomeRequest
         -> LIO (Either Text SomeResponse)
     fetch cacheResult (MkSomeRequest tag req) =
-        case (binaryDict, semVerDict, structDict, nfdataDict) of
-            (Dict, Dict, Dict, Dict) -> fetch' cacheResult tag req
+        case (binaryDict, structDict, nfdataDict) of
+            (Dict, Dict, Dict) -> fetch' cacheResult tag req
       where
         binaryDict = typeTagDict (Proxy :: Proxy Binary) tag
-        semVerDict = typeTagDict (Proxy :: Proxy HasSemanticVersion) tag
-        structDict = typeTagDict (Proxy :: Proxy HasStructuralInfo) tag
+        structDict = typeTagDict (Proxy :: Proxy Structured) tag
         nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
 
     fetch'
-        :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a, FromJSON a)
+        :: forall a. (NFData a, Binary a, Structured a, FromJSON a)
         => CacheLookup  -> ReqTag a -> Request 'RA a
         -> LIO (Either Text SomeResponse)
     fetch' cacheResult tag req = case HM.lookup sreq cacheResult of
@@ -119,7 +116,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
             -- we only check tags, the rest of the response is decoded lazily
             -- Hopefully when the end result is constructed.
             if checkTagged (Proxy :: Proxy a) bs
-                then pure $ Right $ MkSomeResponse tag $ taggedDecode bs
+                then pure $ Right $ MkSomeResponse tag $ structuredDecode bs
                 else do
                     logAttention_ $ "Borked cache content for " <> textShow sreq
                     _ <- safePoolExecute ctx deleteQuery (Postgres.Only sreq)
@@ -130,7 +127,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 
     -- Fetch and store
     fetch''
-        :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a, FromJSON a)
+        :: (NFData a, Binary a, Structured a, FromJSON a)
         => ReqTag a -> Request 'RA a -> LIO (Either Text a)
     fetch'' tag req = do
         res <- liftIO $ tryDeep $ runLogT' ctx $ do
@@ -185,16 +182,15 @@ updateCache ctx = runLIO ctx $ do
   where
     fetch :: (FromJSON a) => ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
     fetch tag req  =
-        case (binaryDict, semVerDict, structDict, nfdataDict) of
-            (Dict, Dict, Dict, Dict) -> fetch' tag req
+        case (binaryDict, structDict, nfdataDict) of
+            (Dict, Dict, Dict) -> fetch' tag req
       where
         binaryDict = typeTagDict (Proxy :: Proxy Binary) tag
-        semVerDict = typeTagDict (Proxy :: Proxy HasSemanticVersion) tag
-        structDict = typeTagDict (Proxy :: Proxy HasStructuralInfo) tag
+        structDict = typeTagDict (Proxy :: Proxy Structured) tag
         nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
 
     fetch'
-      :: (Binary a, HasStructuralInfo a, HasSemanticVersion a, FromJSON a)
+      :: (Binary a, Structured a, FromJSON a)
       => ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
     fetch' tag req = liftIO $ tryDeep $ runLogT' ctx $ do
         x <- fetchFromGitHub (ctxLogger ctx) (ctxCache ctx) (ctxGitHubAuth ctx) tag req
@@ -228,11 +224,11 @@ cleanupCache ctx = runLIO ctx $ do
         ]
 
 storeInPostgres
-    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, FromJSON a, HasPostgresPool ctx)
+    :: (Binary a, Structured a, FromJSON a, HasPostgresPool ctx)
     => ctx -> ReqTag a -> Request 'RA a -> a -> LIO ()
 storeInPostgres ctx tag req x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
-    i <- safePoolExecute ctx postgresQuery (MkSomeRequest tag req, Postgres.Binary $ taggedEncode x)
+    i <- safePoolExecute ctx postgresQuery (MkSomeRequest tag req, Postgres.Binary $ structuredEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow (MkSomeRequest tag req)
   where
@@ -270,17 +266,14 @@ runLogT' ctx = runLogT "github-proxy" (ctxLogger ctx)
 
 -- | Check whether the tag at the beginning of the 'LazyByteString' is correct.
 checkTagged
-    :: forall a. (HasStructuralInfo a, HasSemanticVersion a)
+    :: forall a. (Structured a)
     => Proxy a -> LazyByteString -> Bool
 checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
   where
     decoder :: Get Bool
     decoder = do
-        ver <- get
         hash' <- get
-        pure $ ver == ver' && hash' == hash''
+        pure $ hash' == hash''
 
-    proxyV = Proxy :: Proxy (SemanticVersion a)
     proxyA = Proxy :: Proxy a
-    ver' = fromIntegral (natVal proxyV) :: Version
-    hash'' = structuralInfoSha1Digest . structuralInfo $ proxyA
+    hash'' = structureHash proxyA

@@ -54,7 +54,6 @@ import Control.Monad.Memoize (MonadMemoize (memo))
 import Data.Constraint       (Dict (..))
 import Data.List             (find)
 import Data.Reflection       (reifySymbol)
-import GHC.TypeLits          (KnownSymbol, symbolVal)
 
 import Control.Monad.PlanMill
 import Futurice.Time.Month           (Month (..))

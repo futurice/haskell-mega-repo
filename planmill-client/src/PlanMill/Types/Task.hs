@@ -48,8 +48,7 @@ instance Hashable Task
 instance NFData Task
 instance AnsiPretty Task
 instance Binary Task
-instance HasStructuralInfo Task where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Task
+instance Structured Task
 
 instance FromJSON Task where
     parseJSON = withObject "Task" $ \obj -> Task

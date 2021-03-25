@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE GADTs              #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE GADTs           #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -26,7 +26,7 @@ newtype UrlParts = UrlParts (NE.NonEmpty String)
 instance Hashable UrlParts
 instance NFData UrlParts
 instance Binary UrlParts
-instance HasStructuralInfo UrlParts
+instance Structured UrlParts
 
 instance Semigroup UrlParts where
     UrlParts a <> UrlParts b = UrlParts (a <> b)

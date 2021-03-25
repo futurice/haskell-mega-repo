@@ -13,7 +13,7 @@ data InvoiceData = InvoiceData
   , _invoiceDate    :: !Text
   , _invoiceDueDate :: !UTCTime
   , _invoiceCreated :: !UTCTime
-  } deriving (Eq, Show, Binary, NFData, HasStructuralInfo, Generic, HasSemanticVersion)
+  } deriving (Eq, Show, Binary, NFData, Structured, Generic)
 
 instance AnsiPretty InvoiceData
 

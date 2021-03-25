@@ -19,7 +19,7 @@ import PlanMill.Internal.Prelude
 import Prelude ()
 
 import Data.Binary          (encode)
-import Data.Binary.Tagged   (taggedDecodeFileOrFail, taggedEncodeFile)
+import Data.Binary.Tagged   (structuredDecodeFileOrFail, structuredEncodeFile)
 import Data.Constraint      (Dict (..), type (:-) (..), (\\))
 import Data.Digest.Pure.SHA (sha256, showDigest)
 import GHC.TypeLits         (KnownSymbol)
@@ -54,7 +54,7 @@ instance (Applicative m, MonadCatch m) => MonadCatch (CachingT m) where
 instance MonadTrans CachingT where
     lift = CachingT
 
-class (MonadPlanMillC m a, Binary a, HasStructuralInfo a, HasSemanticVersion a)
+class (MonadPlanMillC m a, Binary a, Structured a)
      => CachingTC m a
 
 -- Unfortunate boilerplate
@@ -73,7 +73,7 @@ instance MonadPlanMillC m TimeBalance          => CachingTC m TimeBalance
 instance MonadPlanMillC m Timereport           => CachingTC m Timereport
 instance MonadPlanMillC m User                 => CachingTC m User
 instance MonadPlanMillC m UserCapacity         => CachingTC m UserCapacity
-instance MonadPlanMillC m (EnumDesc s)         => CachingTC m (EnumDesc s)
+instance (KnownSymbol s, MonadPlanMillC m (EnumDesc s))         => CachingTC m (EnumDesc s)
 instance MonadPlanMillC m AllRevenues2         => CachingTC m AllRevenues2
 instance MonadPlanMillC m PersonValueCreation  => CachingTC m PersonValueCreation
 instance MonadPlanMillC m TeamsHoursByCategoryRow => CachingTC m TeamsHoursByCategoryRow
@@ -129,18 +129,18 @@ cacheFile :: Binary a => a -> FilePath
 cacheFile = (".cache/" ++) .showDigest . sha256 . encode
 
 cached :: ( Applicative m, MonadIO m, MonadCatch m
-          , Binary a, HasStructuralInfo a, HasSemanticVersion a
+          , Binary a, Structured a
           )
        => FilePath  -- ^ Cache file
        -> m a       -- ^ Action to perform on cache miss
        -> m a
 cached path action = do
-    e <- liftIO (taggedDecodeFileOrFail path) `catch` onIOError (Left undefined)
+    e <- liftIO (structuredDecodeFileOrFail path) `catch` onIOError (Left undefined)
     case e of
         Right x -> return x
         Left _  -> do
             x <- action
-            liftIO $ taggedEncodeFile path x
+            liftIO $ structuredEncodeFile path x
             pure x
 
 onIOError :: Monad m => a -> IOError -> m a

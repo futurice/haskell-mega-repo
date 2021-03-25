@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE TemplateHaskell    #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
 -- |
 -- Copyright : (c) 2015 Futurice Oy
 -- License   : BSD3
@@ -23,8 +23,7 @@ instance Hashable TimeBalance
 instance NFData TimeBalance
 instance AnsiPretty TimeBalance
 instance Binary TimeBalance
-instance HasStructuralInfo TimeBalance where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion TimeBalance
+instance Structured TimeBalance
 
 instance FromJSON TimeBalance where
     parseJSON = withObject "TimeBalance" $ \obj ->

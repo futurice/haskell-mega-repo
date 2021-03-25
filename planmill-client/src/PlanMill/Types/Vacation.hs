@@ -37,8 +37,7 @@ instance Hashable Vacation
 instance NFData Vacation
 instance AnsiPretty Vacation
 instance Binary Vacation
-instance HasStructuralInfo Vacation where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Vacation
+instance Structured Vacation
 
 instance FromJSON Vacation where
     parseJSON = withObject "Vacation" $ \obj -> Vacation

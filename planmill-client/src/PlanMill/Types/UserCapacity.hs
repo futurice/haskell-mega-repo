@@ -29,8 +29,7 @@ instance Hashable UserCapacity
 instance NFData UserCapacity
 instance AnsiPretty UserCapacity
 instance Binary UserCapacity
-instance HasStructuralInfo UserCapacity where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion UserCapacity
+instance Structured UserCapacity
 
 instance FromJSON UserCapacity where
     parseJSON = withObject "UserCapacity" $ \obj -> UserCapacity

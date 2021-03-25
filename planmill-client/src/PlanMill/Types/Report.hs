@@ -71,10 +71,10 @@ instance AnsiPretty Report
 
 newtype AllRevenues2 = AllRevenues2 {getRevenuesData :: Map Text [AllRevenuesPortfolio]}
     deriving (Eq, Show, Generic)
-    deriving anyclass (Binary, ToSchema, NFData, HasSemanticVersion)
+    deriving anyclass (Binary, ToSchema, NFData)
     deriving newtype (ToJSON)
 
-instance HasStructuralInfo AllRevenues2
+instance Structured AllRevenues2
 
 instance AnsiPretty AllRevenues2
 
@@ -100,7 +100,7 @@ data AllRevenuesPortfolio = AllRevenuesPortfolio
       deriving (ToJSON) via (Sopica AllRevenuesPortfolio)
 
 instance AnsiPretty AllRevenuesPortfolio
-instance HasStructuralInfo AllRevenuesPortfolio where structuralInfo = sopStructuralInfo
+instance Structured AllRevenuesPortfolio
 
 instance FromJSON AllRevenuesPortfolio where
     parseJSON = withArray "Portfolio" $ \array -> do
@@ -152,11 +152,11 @@ data PersonValueCreation = PersonValueCreation
     , _pvcOctoberValue   :: !Double
     , _pvcNovemberValue  :: !Double
     , _pvcDecemberValue  :: !Double
-    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasSemanticVersion, HasDatatypeInfo)
+    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, ToJSON, NFData, HasDatatypeInfo)
 type PersonValueCreations = Vector PersonValueCreation
 
 instance AnsiPretty PersonValueCreation
-instance HasStructuralInfo PersonValueCreation where structuralInfo = sopStructuralInfo
+instance Structured PersonValueCreation
 
 parseNum :: (Num a, Read a) => Value -> Parser a
 parseNum s = do
@@ -210,12 +210,12 @@ data TeamsHoursByCategoryRow = TeamsHoursByCategoryRow
     , _thcTotal             :: !Double
     , _thcPrimaryTeam       :: !(Maybe Text)
     , _thcPrimaryCompetence :: !(Maybe Text)
-    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, NFData, HasSemanticVersion, HasDatatypeInfo)
+    }  deriving (Eq, Show, Binary, GhcGeneric, SopGeneric, ToSchema, NFData, HasDatatypeInfo)
 
 type TeamsHoursByCategory = Vector TeamsHoursByCategoryRow
 
 instance AnsiPretty TeamsHoursByCategoryRow
-instance HasStructuralInfo TeamsHoursByCategoryRow where structuralInfo = sopStructuralInfo
+instance Structured TeamsHoursByCategoryRow
 
 instance FromJSON TeamsHoursByCategoryRow where
     parseJSON = withArray "Teams hours by category" $ \array -> do
@@ -273,10 +273,10 @@ data EarnedVacationsRow = EarnedVacationsRow
     , _vacationSavedLeave              :: !Double
     , _vacationSavedLeaveRemaining     :: !Double
     , _vacationSuperior                :: !(Maybe Double)
-    } deriving (Eq, Show, Binary, NFData, GhcGeneric, SopGeneric, HasSemanticVersion, HasDatatypeInfo)
+    } deriving (Eq, Show, Binary, NFData, GhcGeneric, SopGeneric, HasDatatypeInfo)
 
 instance AnsiPretty EarnedVacationsRow
-instance HasStructuralInfo EarnedVacationsRow where structuralInfo = sopStructuralInfo
+instance Structured EarnedVacationsRow
 
 parseNull :: Value -> Parser (Maybe String)
 parseNull Null = pure Nothing

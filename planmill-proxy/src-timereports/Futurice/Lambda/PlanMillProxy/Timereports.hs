@@ -6,7 +6,7 @@ module Futurice.Lambda.PlanMillProxy.Timereports (
     ) where
 
 import Data.Aeson                  (object, (.=))
-import Data.Binary.Tagged          (taggedEncode)
+import Data.Binary.Tagged          (structuredEncode)
 import Data.Time                   (addDays, diffDays)
 import Data.Time.Calendar          (fromGregorian, toGregorian)
 import Data.Time.Calendar.WeekDate (toWeekDate)
@@ -251,7 +251,7 @@ insertTimereports pool trs =
         ( tr ^. PM.identifier
         , PM.trPerson tr
         , PM.trStart tr
-        , Postgres.Binary $ taggedEncode tr
+        , Postgres.Binary $ structuredEncode tr
         )
 
     insertQuery :: Postgres.Query

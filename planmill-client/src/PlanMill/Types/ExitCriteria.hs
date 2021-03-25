@@ -27,8 +27,7 @@ instance Hashable ExitCriteria
 instance NFData ExitCriteria
 instance AnsiPretty ExitCriteria
 instance Binary ExitCriteria
-instance HasStructuralInfo ExitCriteria where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion ExitCriteria
+instance Structured ExitCriteria
 
 instance FromJSON ExitCriteria where
     parseJSON = withObject "ExitCriteria" $ \obj ->
