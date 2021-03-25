@@ -30,8 +30,7 @@ instance Hashable Phone
 instance NFData Phone
 instance AnsiPretty Phone
 instance Binary Phone
-instance HasStructuralInfo Phone where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Phone
+instance Structured Phone
 
 instance FromJSON Phone where
     parseJSON (String t) = return $ Phone t
@@ -45,8 +44,7 @@ instance Hashable Postal
 instance NFData Postal
 instance AnsiPretty Postal
 instance Binary Postal
-instance HasStructuralInfo Postal where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Postal
+instance Structured Postal
 
 instance FromJSON Postal where
     parseJSON (String t) = return $ Postal t
@@ -98,8 +96,7 @@ instance Hashable Contact
 instance NFData Contact
 instance AnsiPretty Contact
 instance Binary Contact
-instance HasStructuralInfo Contact where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Contact
+instance Structured Contact
 
 instance FromJSON Contact where
     parseJSON = withObject "Contact" $ \obj ->
@@ -107,7 +104,7 @@ instance FromJSON Contact where
                 <*> obj .: "account"
                 <*> obj .: "accountName"
                 <*> obj .: "accountType"
-                <*> (getU <$> obj .: "created")
+                <*> obj .: "created"
                 <*> obj .: "createdBy"
                 <*> obj .: "department"
                 <*> obj .: "email"
@@ -118,7 +115,7 @@ instance FromJSON Contact where
                 <*> obj .: "lastName"
                 <*> obj .: "linkedIn"
                 <*> obj .: "mobilePhone"
-                <*> optional (getU <$> obj .: "modified")
+                <*> optional (obj .: "modified")
                 <*> obj .: "modifiedBy"
                 <*> obj .: "passive"
                 <*> obj .: "primaryAddress"

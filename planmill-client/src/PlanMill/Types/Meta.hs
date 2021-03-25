@@ -30,7 +30,6 @@ data FieldFormat
 instance NFData FieldFormat
 instance AnsiPretty FieldFormat
 instance Binary FieldFormat
-instance HasSemanticVersion FieldFormat
 
 data MetaField = MetaField
     { _metaFieldFormat  :: !FieldFormat
@@ -41,7 +40,6 @@ data MetaField = MetaField
 instance NFData MetaField
 instance AnsiPretty MetaField where ansiPretty = ansiPretty . show
 instance Binary MetaField
-instance HasSemanticVersion MetaField
 
 data Meta = Meta
     { metaFields  :: HashMap Text MetaField
@@ -52,15 +50,14 @@ data Meta = Meta
 instance NFData Meta
 instance AnsiPretty Meta
 instance Binary Meta
-instance HasSemanticVersion Meta
 
 deriveGeneric ''FieldFormat
 deriveGeneric ''MetaField
 deriveGeneric ''Meta
 
-instance HasStructuralInfo FieldFormat where structuralInfo = sopStructuralInfo
-instance HasStructuralInfo MetaField where structuralInfo = sopStructuralInfo
-instance HasStructuralInfo Meta where structuralInfo = sopStructuralInfo
+instance Structured FieldFormat
+instance Structured MetaField
+instance Structured Meta
 
 instance FromJSON FieldFormat where
     parseJSON = withText "Field format" $ \t ->

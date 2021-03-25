@@ -3,8 +3,7 @@
 module Futurice.App.PlanMillProxy.Logic.UpdateAbsences where
 
 import Data.Aeson                   (FromJSON, object, (.=))
-import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, taggedEncode)
+import Data.Binary.Tagged           (Structured, structuredEncode)
 import Data.Constraint
 import Data.Time                    (addDays)
 import Futurice.Postgres
@@ -64,17 +63,16 @@ updateAbsences ctx = runLogT "update-absences" (ctxLogger ctx) $ do
 
   where
     fetch :: PM.Query a -> LogT IO (Either SomeException ())
-    fetch q = case (binaryDict, semVerDict, structDict, nfdataDict, fromJsonDict) of
-        (Dict, Dict, Dict, Dict, Dict) -> fetch' q
+    fetch q = case (binaryDict, structDict, nfdataDict, fromJsonDict) of
+        (Dict, Dict, Dict, Dict) -> fetch' q
       where
         binaryDict   = PM.queryDict (Proxy :: Proxy Binary) q
-        semVerDict   = PM.queryDict (Proxy :: Proxy HasSemanticVersion) q
-        structDict   = PM.queryDict (Proxy :: Proxy HasStructuralInfo) q
+        structDict   = PM.queryDict (Proxy :: Proxy Structured) q
         nfdataDict   = PM.queryDict (Proxy :: Proxy NFData) q
         fromJsonDict = PM.queryDict (Proxy :: Proxy FromJSON) q
 
     fetch'
-        :: (Binary a, NFData a, FromJSON a, HasStructuralInfo a, HasSemanticVersion a)
+        :: (Binary a, NFData a, FromJSON a, Structured a)
         => PM.Query a
         -> LogT IO (Either SomeException ())
     fetch' q = do
@@ -95,11 +93,11 @@ deleteQuery :: Postgres.Query
 deleteQuery = "DELETE FROM planmillproxy.cache WHERE query = ?;"
 
 storeInPostgres
-    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, HasPostgresPool ctx)
+    :: (Binary a, Structured a, HasPostgresPool ctx)
     => ctx -> PM.Query a -> a -> LogT IO ()
 storeInPostgres ctx q x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
-    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ taggedEncode x)
+    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ structuredEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow q
   where

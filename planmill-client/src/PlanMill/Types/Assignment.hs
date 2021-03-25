@@ -62,8 +62,7 @@ instance Hashable Assignment
 instance NFData Assignment
 instance AnsiPretty Assignment
 instance Binary Assignment
-instance HasStructuralInfo Assignment where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Assignment
+instance Structured Assignment
 
 instance FromJSON Assignment where
     parseJSON = withObject "Assignment" $ \obj ->
@@ -84,8 +83,8 @@ instance FromJSON Assignment where
                    <*> obj .:? "request"
                    <*> obj .:? "status"
                    <*> obj .:? "taskBillableStatus"
-                   <*> (getU <$$> obj .:? "taskFinish")
-                   <*> (getU <$$> obj .:? "taskStart")
+                   <*> obj .:? "taskFinish"
+                   <*> obj .:? "taskStart"
                    <*> obj .:? "taskStatus"
                    <*> obj .:? "totalAmount"
                    <*> obj .:? "unitPrice"

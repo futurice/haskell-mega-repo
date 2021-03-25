@@ -14,10 +14,8 @@
 -- >>> type BinaryTaggedGET a = Get '[BINARYTAGGED] a
 module Servant.Binary.Tagged where
 
-import Data.Bifunctor     (bimap)
 import Data.Binary        (Binary)
-import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, taggedDecodeOrFail, taggedEncode)
+import Data.Binary.Tagged (Structured, structuredDecode, structuredEncode)
 import Servant.API        (Accept (..), MimeRender (..), MimeUnrender (..))
 
 import qualified Codec.Compression.GZip as GZip
@@ -30,13 +28,10 @@ instance Accept BINARYTAGGED where
     contentType _ = "application" M.// "gzip-binary-tagged"
 
 -- | `taggedEncode`
-instance (HasStructuralInfo a, HasSemanticVersion a, Binary a) => MimeRender BINARYTAGGED a where
-    mimeRender _ = GZip.compress . taggedEncode
+instance (Structured a, Binary a) => MimeRender BINARYTAGGED a where
+    mimeRender _ = GZip.compress . structuredEncode
 
 -- | `taggedDecodeOrFail`
-instance  (HasStructuralInfo a, HasSemanticVersion a, Binary a) => MimeUnrender BINARYTAGGED a where
+instance  (Structured a, Binary a) => MimeUnrender BINARYTAGGED a where
     -- there might be some trailing data, but we don't care about it atm.
-    mimeUnrender _ = bimap f f. taggedDecodeOrFail . GZip.decompress
-      where
-        f :: (a, b, c) -> c
-        f (_, _, c) = c
+    mimeUnrender _ = pure . structuredDecode . GZip.decompress

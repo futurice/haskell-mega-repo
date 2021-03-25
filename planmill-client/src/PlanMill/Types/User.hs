@@ -39,7 +39,7 @@ import Text.Regex.Applicative.Text     (match)
 
 import qualified FUM.Types.Login as FUM
 
-import PlanMill.Types.UOffset          (UOffset (..))
+import PlanMill.Types.UOffset (UOffset (..))
 
 -------------------------------------------------------------------------------
 -- User
@@ -101,8 +101,7 @@ instance Hashable User
 instance NFData User
 instance AnsiPretty User
 instance Binary User
-instance HasStructuralInfo User where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion User
+instance Structured User
 
 -- | This instance is very small, serialising only the fields we want ever to update.
 --
@@ -190,21 +189,20 @@ instance Hashable Team
 instance NFData Team
 instance AnsiPretty Team
 instance Binary Team
-instance HasStructuralInfo Team where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Team
+instance Structured Team
 
 instance FromJSON Team where
     parseJSON = withObject "Team" $ \obj -> Team <$> obj .: "id"
         <*> obj .: "name"
         <*> obj .:? "childTeams"
         <*> obj .: "costCenter"
-        <*> (getU <$$> obj .:? "created")
+        <*> obj .:? "created"
         <*> obj .:? "createdBy"
         <*> obj .:? "description"
         <*> obj .:? "latestMember"
         <*> obj .:? "manager"
         <*> obj .:? "members"
-        <*> (getU <$$> obj .:? "modified")
+        <*> obj .:? "modified"
         <*> obj .:? "modifiedBy"
         <*> obj .:? "parentTeam"
         <*> obj .:? "parentTeamName"
@@ -237,8 +235,7 @@ instance Hashable Account
 instance NFData Account
 instance AnsiPretty Account
 instance Binary Account
-instance HasStructuralInfo Account where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Account
+instance Structured Account
 
 instance FromJSON Account where
     parseJSON = withObject "Account" $ \obj -> Account

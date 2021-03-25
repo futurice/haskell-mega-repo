@@ -58,8 +58,7 @@ instance Hashable Timereport
 instance NFData Timereport
 instance AnsiPretty Timereport
 instance Binary Timereport
-instance HasStructuralInfo Timereport where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Timereport
+instance Structured Timereport
 
 instance FromJSON Timereport where
     parseJSON = withObject "Timereport" $ \obj -> Timereport
@@ -99,8 +98,7 @@ instance Hashable NewTimereport
 instance NFData NewTimereport
 instance AnsiPretty NewTimereport
 instance Binary NewTimereport
-instance HasStructuralInfo NewTimereport where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion NewTimereport
+instance Structured NewTimereport
 
 instance ToJSON NewTimereport where
     toJSON NewTimereport {..} = object
@@ -135,8 +133,7 @@ instance Hashable EditTimereport
 instance NFData EditTimereport
 instance AnsiPretty EditTimereport
 instance Binary EditTimereport
-instance HasStructuralInfo EditTimereport where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion EditTimereport
+instance Structured EditTimereport
 
 instance ToJSON EditTimereport where
     toJSON EditTimereport {..} = object

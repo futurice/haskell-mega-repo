@@ -26,18 +26,18 @@ import Control.Lens       (review)
 import Data.Aeson.Compat
        (FromJSON (..), Object, ToJSON (..), object, (.:), (.=))
 import Data.Aeson.Types   (Pair, Parser)
-import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo (..), StructuralInfo (..))
+import Data.Binary.Tagged (Structure (..), Structured (..))
 import Data.Constraint    (Dict (..))
 import Data.GADT.Compare  (GOrdering (..), gcompare, geq)
 import Data.Swagger       (NamedSchema (..), ToSchema (..))
 import Data.Type.Equality
+import Data.Typeable
 import Futurice.Aeson     (withObjectDump)
 import Futurice.Has       (In, inj)
 import Futurice.List      (Append, TMap, splitAppend, tmapToNSComp)
 import Futurice.Prelude   hiding (Pair)
 import Futurice.TypeTag
-import Generics.SOP       ((:.:) (..), SListI, hcollapse, hcpure)
+import Generics.SOP       (SListI, hcollapse, hcpure, (:.:) (..))
 
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
@@ -198,18 +198,16 @@ instance Binary SomeResponse where
                 x <- get
                 pure $ MkSomeResponse t x
 
-instance HasSemanticVersion SomeResponse
-
-instance HasStructuralInfo SomeResponse where
-    structuralInfo _ = StructuralInfo "GitHub.SomeResponse" [responseInfo]
+instance Structured SomeResponse where
+    structure p = Nominal (typeRep p) 0 "GitHub.SomeResponse" responseInfo
       where
         responseInfo = hcollapse infos
 
-        infos :: NP (K StructuralInfo) GHTypes
-        infos = hcpure (Proxy :: Proxy HasStructuralInfo) f
+        infos :: NP (K Structure) GHTypes
+        infos = hcpure (Proxy :: Proxy Structured) f
 
-        f :: forall a. HasStructuralInfo a => K StructuralInfo a
-        f = K $ structuralInfo (Proxy :: Proxy a)
+        f :: forall a. Structured a => K Structure a
+        f = K $ structure (Proxy :: Proxy a)
 
 instance ToSchema SomeResponse where
     declareNamedSchema _ = pure $ NamedSchema (Just "Some github response") mempty

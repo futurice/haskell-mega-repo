@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -27,13 +28,15 @@ module PlanMill.Types.Query (
     ) where
 
 import Data.Binary                      (Put)
-import Data.Binary.Tagged               (StructuralInfo (..))
+import Data.Binary.Tagged
+       (Structure (..), containerStructure, nominalStructure)
 import Data.Constraint
 import Data.GADT.Compare                (GEq (..), defaultEq)
 import Data.Reflection                  (reifySymbol)
 import Data.Singletons.Bool             (SBoolI, sboolEqRefl)
 import Data.Swagger                     (NamedSchema (..), ToSchema (..))
 import Data.Type.Equality
+import Data.Typeable
 import Futurice.Aeson                   (withObjectDump)
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import GHC.TypeLits                     (KnownSymbol, sameSymbol, symbolVal)
@@ -225,7 +228,7 @@ instance Hashable (QueryTag f a) where
     hashWithSalt salt QueryTagCalendar     = salt `hashWithSalt` (10 :: Int)
     hashWithSalt salt (QueryTagEnumDesc p) = salt
         -- We don't add a int prehash, as it's unnecessary
-        `hashWithSalt` (symbolVal p)
+        `hashWithSalt` symbolVal p
     hashWithSalt salt QueryTagAllRevenue        = salt `hashWithSalt` (11 :: Int)
     hashWithSalt salt QueryTagProjectMember = salt `hashWithSalt` (12 :: Int)
     hashWithSalt salt QueryTagAssignment    = salt `hashWithSalt` (13 :: Int)
@@ -343,28 +346,32 @@ instance SBoolI (f == I) => FromJSON (SomeQueryTag f) where
             mk p = SomeQueryTag (QueryTagEnumDesc p)
         _ -> fail $ "Invalid tag: " ++ show t
 
-instance HasStructuralInfo (QueryTag f a) where
-    structuralInfo _ = StructuralInfo "QueryTag"
-        [[ NominalType "QueryTagEnumDesc"
-        ,  NominalType "QueryTagMe"
-        ,  NominalType "QueryTagMeta"
-        ,  NominalType "QueryTagTeam"
-        ,  NominalType "QueryTagUser"
-        ,  NominalType "QueryTagTimebalance"
-        ,  NominalType "QueryTagTimereport"
-        ,  NominalType "QueryTagTask"
-        ,  NominalType "QueryTagProject"
-        ,  NominalType "QueryTagProjectMember"
-        ,  NominalType "QueryTagAbsence"
-        ,  NominalType "QueryTagAccount"
-        ,  NominalType "QueryTagCalendar"
-        ,  NominalType "QueryTagAllRevenue"
-        ,  NominalType "QueryTagAssignment"
-        ,  NominalType "QueryTagValueCreation"
-        ,  NominalType "QueryTagTeamsHours"
-        ,  NominalType "QueryTagEarnedVacation"
-        ,  NominalType "QueryTagInvoiceData"
-        ]]
+--TODO: get rid of this separate type
+newtype EnumDescType = EnumDescType (forall enum. KnownSymbol enum => (Proxy enum) -> QueryTag I (EnumDesc enum))
+
+instance (Typeable f, Structured a) => Structured (QueryTag f a) where --structure = containerStructure
+    structure p = Nominal (typeRep p) 0 "QueryTag" --[ Nominal (typeRep (Proxy :: Proxy :$ QueryTag I Me)) 0 "QueryTagEnumDesc" []]
+        [ Nominal (typeRep (Proxy :: Proxy EnumDescType)) 0 "QueryTagEnumDesc" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag I Me)) 0 "QueryTagMe" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag I Meta)) 0 "QueryTagMeta" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f Team)) 0 "QueryTagTeam" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f User)) 0 "QueryTagUser" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag I TimeBalance)) 0 "QueryTagTimebalance" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag I Timereport)) 0 "QueryTagTimereport" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f Task)) 0 "QueryTagTask" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f Project)) 0 "QueryTagProject" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f ProjectMember)) 0 "QueryTagProjectMember" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f Absence)) 0 "QueryTagAbsence" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f Account)) 0 "QueryTagAccount" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f CapacityCalendar)) 0 "QueryTagCalendar" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag I AllRevenues2)) 0 "QueryTagAllRevenue" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f Assignment)) 0 "QueryTagAssignment" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f PersonValueCreation)) 0 "QueryTagValueCreation" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f TeamsHoursByCategoryRow)) 0 "QueryTagTeamsHours" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f EarnedVacationsRow)) 0 "QueryTagEarnedVacation" []
+        , Nominal (typeRep (Proxy :: Proxy :$ QueryTag f InvoiceData)) 0 "QueryTagInvoiceData" []
+        ]
+
 
 -------------------------------------------------------------------------------
 -- Query instances
@@ -460,22 +467,26 @@ instance Postgres.ToField (Query a) where
     toField = Postgres.toField . Aeson.encode
 
 -- Unfortunately we cannot autoderive this
-instance HasStructuralInfo (Query a) where
-    structuralInfo _ = StructuralInfo "SomeQuery"
-        [ [ structuralInfo (Proxy :: Proxy :$ QueryTag I ())
-          , structuralInfo (Proxy :: Proxy QueryString)
-          , structuralInfo (Proxy :: Proxy UrlParts)
-          ]
-        , [ structuralInfo (Proxy :: Proxy :$ QueryTag Vector ())
-          , structuralInfo (Proxy :: Proxy QueryString)
-          , structuralInfo (Proxy :: Proxy UrlParts)
-          ]
-        , [ structuralInfo (Proxy :: Proxy :$ Maybe :$ Interval Day)
-          , structuralInfo (Proxy :: Proxy UserId)
-          ]
-        , [ structuralInfo (Proxy :: Proxy :$ Interval Day)
-          , structuralInfo (Proxy :: Proxy UserId)
-          ]
+instance Typeable a => Structured (Query a) where
+    structure p = Structure (typeRep p) 0 "SomeQuery"
+        [ ("QueryGet"
+          , [ nominalStructure (Proxy :: Proxy :$ QueryTag I ())
+            , nominalStructure (Proxy :: Proxy QueryString)
+            , nominalStructure (Proxy :: Proxy UrlParts)
+          ])
+        , ("QueryPagedGet"
+          , [ nominalStructure (Proxy :: Proxy :$ QueryTag Vector ())
+            , nominalStructure (Proxy :: Proxy QueryString)
+            , nominalStructure (Proxy :: Proxy UrlParts)
+          ])
+        , ("QueryPagedGet"
+          , [ nominalStructure (Proxy :: Proxy :$ Maybe :$ Interval Day)
+            , nominalStructure (Proxy :: Proxy UserId)
+          ])
+        , ("QueryCapacities"
+          , [ nominalStructure (Proxy :: Proxy :$ Interval Day)
+            , nominalStructure (Proxy :: Proxy UserId)
+          ])
         ]
 
 -------------------------------------------------------------------------------
@@ -711,27 +722,24 @@ instance Binary SomeResponse where
         SomeQuery q <- get
         case queryDict (Proxy :: Proxy Binary)  q of
             Dict -> do
-                r <- get
-                pure (MkSomeResponse q r)
+                MkSomeResponse q <$> get
 
 instance NFData SomeResponse where
     rnf (MkSomeResponse q a) = case queryDict (Proxy :: Proxy NFData) q of
         Dict -> rnf q `seq` rnf a
 
-instance HasSemanticVersion SomeResponse
-
-instance HasStructuralInfo SomeResponse where
-    structuralInfo _ =
-        StructuralInfo "SomeResponse" [ queryInfo : responseInfo ]
+instance Structured SomeResponse where
+    structure p =
+        Nominal (typeRep p) 0 "SomeResponse" (queryInfo : responseInfo)
       where
-        queryInfo = structuralInfo (Proxy :: Proxy (Query ()))
+        queryInfo = structure (Proxy :: Proxy (Query ()))
         responseInfo = hcollapse infos
 
-        infos :: NP (K StructuralInfo) QueryTypes
-        infos = hcpure (Proxy :: Proxy HasStructuralInfo) f
+        infos :: NP (K Structure) QueryTypes
+        infos = hcpure (Proxy :: Proxy Structured) f
 
-        f :: forall a. HasStructuralInfo a => K StructuralInfo a
-        f = K $ structuralInfo (Proxy :: Proxy a)
+        f :: forall a. Structured a => K Structure a
+        f = K $ structure (Proxy :: Proxy a)
 
 instance ToSchema SomeResponse where
     declareNamedSchema _ = pure $ NamedSchema (Just "Some planmill query response") mempty

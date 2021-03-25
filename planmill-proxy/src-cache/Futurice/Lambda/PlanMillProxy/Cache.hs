@@ -7,10 +7,9 @@ module Futurice.Lambda.PlanMillProxy.Cache (
     planMillProxyCacheLambda,
     ) where
 
-import Data.Aeson                   (FromJSON, Value, object, parseJSON, (.=))
+import Data.Aeson                   (FromJSON, object, parseJSON, (.=))
 import Data.Aeson.Types             (parseMaybe)
-import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, taggedEncode)
+import Data.Binary.Tagged           (Structured, structuredEncode)
 import Data.Constraint              (Dict (..))
 import Data.Time                    (addDays)
 import Futurice.EnvConfig
@@ -95,17 +94,16 @@ planMillProxyCacheLambda = makeAwsLambda impl
                                 void $ safePoolExecute pool deleteQuery (Postgres.Only q)
 
     fetch :: HasPostgresPool ctx => Workers -> ctx -> PM.Query a -> LogT IO (Either SomeException ())
-    fetch ws ctx q = case (binaryDict, semVerDict, structDict, nfdataDict, fromJsonDict) of
-        (Dict, Dict, Dict, Dict, Dict) -> fetch' ws ctx q
+    fetch ws ctx q = case (binaryDict, structDict, nfdataDict, fromJsonDict) of
+        (Dict, Dict, Dict, Dict) -> fetch' ws ctx q
       where
         binaryDict   = PM.queryDict (Proxy :: Proxy Binary) q
-        semVerDict   = PM.queryDict (Proxy :: Proxy HasSemanticVersion) q
-        structDict   = PM.queryDict (Proxy :: Proxy HasStructuralInfo) q
+        structDict   = PM.queryDict (Proxy :: Proxy Structured) q
         nfdataDict   = PM.queryDict (Proxy :: Proxy NFData) q
         fromJsonDict = PM.queryDict (Proxy :: Proxy FromJSON) q
 
     fetch'
-        :: (Binary a, NFData a, FromJSON a, HasStructuralInfo a, HasSemanticVersion a, HasPostgresPool ctx)
+        :: (Binary a, NFData a, FromJSON a, Structured a, HasPostgresPool ctx)
         => Workers -> ctx -> PM.Query a
         -> LogT IO (Either SomeException ())
     fetch' ws ctx q = do
@@ -134,11 +132,11 @@ deleteQuery :: Postgres.Query
 deleteQuery = "DELETE FROM planmillproxy.cache WHERE query = ?;"
 
 storeInPostgres
-    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, HasPostgresPool ctx)
+    :: (Binary a, Structured a, HasPostgresPool ctx)
     => ctx -> PM.Query a -> a -> LogT IO ()
 storeInPostgres ctx q x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
-    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ taggedEncode x)
+    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ structuredEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow q
   where

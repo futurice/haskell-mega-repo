@@ -9,8 +9,8 @@ module Futurice.App.PlanMillProxy.Logic.Common (
 import Data.Aeson.Compat  (FromJSON)
 import Data.Binary.Get    (Get, runGetOrFail)
 import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, SemanticVersion, Version,
-       structuralInfo, structuralInfoSha1Digest)
+       (Structure, Structured, TypeVersion, structure, structureHash,
+       typeVersion)
 import Data.Constraint
 import Futurice.Postgres  hiding (Query)
 import Futurice.Prelude
@@ -60,17 +60,14 @@ fetchFromPlanMill ctx q = case (typeableDict, fromJsonDict, nfdataDict) of
 
 -- | Check whether the tag at the beginning of the 'LazyByteString' is correct.
 checkTagged
-    :: forall a. (HasStructuralInfo a, HasSemanticVersion a)
+    :: forall a. (Structured a)
     => Proxy a -> LazyByteString -> Bool
 checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
   where
     decoder :: Get Bool
     decoder = do
-        ver <- get
         hash' <- get
-        pure $ ver == ver' && hash' == hash''
+        pure $ hash' == hash''
 
-    proxyV = Proxy :: Proxy (SemanticVersion a)
     proxyA = Proxy :: Proxy a
-    ver' = fromIntegral (natVal proxyV) :: Version
-    hash'' = structuralInfoSha1Digest . structuralInfo $ proxyA
+    hash'' = structureHash proxyA
