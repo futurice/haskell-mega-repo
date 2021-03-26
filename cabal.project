@@ -25,7 +25,6 @@ constraints:
   servant-client-core   ^>= 0.18,
   servant-lucid         ^>= 0.9,
   servant-server        ^>= 0.18,
-  -- TODO: solve Swagger UI syntax coloring induced slowness
   servant-swagger-ui    ^>= 0.3.4.3.37.2,
   SVGFonts              ^>= 1.7,
   unix-time             ^>= 0.3.8,
