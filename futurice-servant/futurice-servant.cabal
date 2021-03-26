@@ -69,6 +69,7 @@ library
     , servant-server
     , servant-swagger
     , servant-swagger-ui
+    , servant-swagger-ui-core
     , split
     , stm
     , swagger2

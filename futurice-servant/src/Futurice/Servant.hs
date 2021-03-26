@@ -88,8 +88,8 @@ import Data.Text.Encoding                   (decodeLatin1)
 import Data.Time                            (addUTCTime)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
-       (Cache, CachePolicy (..), cacheSize, cachedIO, cleanupCache,
-       genCachedIO, newCache)
+       (Cache, CachePolicy (..), cacheSize, cachedIO, cleanupCache, genCachedIO,
+       newCache)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.CommandResponse
@@ -118,6 +118,7 @@ import Servant.HTML.Lucid                   (HTML)
 import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
+import Servant.Swagger.UI.Core
 
 import qualified Codec.Compression.GZip    as GZIP
 import qualified Codec.Compression.Lzma    as LZMA
@@ -218,6 +219,9 @@ swaggerDoc t d proxy = toSwagger proxy
   where
     v = $(gitCommitDate) ++ " " ++ $(gitHash)
 
+myTemplateFile :: Text
+myTemplateFile = $(embedText "index.html.tmpl")
+
 -- | Create futurice server
 futuriceServer
     :: forall api colour. (HasSwagger api)
@@ -230,7 +234,7 @@ futuriceServer
 futuriceServer t d swaggerMod papi server
     = serveFutuFavicon
     :<|> server
-    :<|> swaggerSchemaUIServer (swaggerMod (swaggerDoc t d papi))
+    :<|> swaggerSchemaUIServerImpl myTemplateFile swaggerUiFiles (swaggerMod (swaggerDoc t d papi))
     :<|> vendorServer
 
 -------------------------------------------------------------------------------
