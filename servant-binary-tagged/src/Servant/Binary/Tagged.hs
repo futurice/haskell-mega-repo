@@ -27,11 +27,11 @@ data BINARYTAGGED -- deriving Typeable
 instance Accept BINARYTAGGED where
     contentType _ = "application" M.// "gzip-binary-tagged"
 
--- | `taggedEncode`
+-- | `structuredEncode`
 instance (Structured a, Binary a) => MimeRender BINARYTAGGED a where
     mimeRender _ = GZip.compress . structuredEncode
 
--- | `taggedDecodeOrFail`
+-- | `structuredDecode`
 instance  (Structured a, Binary a) => MimeUnrender BINARYTAGGED a where
     -- there might be some trailing data, but we don't care about it atm.
     mimeUnrender _ = pure . structuredDecode . GZip.decompress

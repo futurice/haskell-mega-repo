@@ -17,7 +17,8 @@ import Control.Exception.Base         (fromException)
 import Data.Aeson.Types               (FromJSON, parseEither, parseJSON)
 import Data.Binary.Get                (Get, runGetOrFail)
 import Data.Binary.Tagged
-       (Structured, structureHash, structuredDecode, structuredEncode)
+       (Structured, binaryGetMD5, structureHash, structuredDecode,
+       structuredEncode)
 import Data.Constraint
 import Futurice.App.GitHubProxy.H     (runH)
 import Futurice.App.GitHubProxy.Types (Ctx (..))
@@ -272,7 +273,7 @@ checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
   where
     decoder :: Get Bool
     decoder = do
-        hash' <- get
+        hash' <- binaryGetMD5
         pure $ hash' == hash''
 
     proxyA = Proxy :: Proxy a

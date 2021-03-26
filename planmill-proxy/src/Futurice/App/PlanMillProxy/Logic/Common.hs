@@ -8,14 +8,11 @@ module Futurice.App.PlanMillProxy.Logic.Common (
 
 import Data.Aeson.Compat  (FromJSON)
 import Data.Binary.Get    (Get, runGetOrFail)
-import Data.Binary.Tagged
-       (Structure, Structured, TypeVersion, structure, structureHash,
-       typeVersion)
+import Data.Binary.Tagged (Structured, binaryGetMD5, structureHash)
 import Data.Constraint
 import Futurice.Postgres  hiding (Query)
 import Futurice.Prelude
 import Futurice.Servant   (CachePolicy (..), genCachedIO)
-import GHC.TypeLits       (natVal)
 import Prelude ()
 
 import PlanMill.Types.Query (Query (..), queryDict, queryToRequest)
@@ -66,7 +63,7 @@ checkTagged _ lbs = either (const False) (view _3) $ runGetOrFail decoder lbs
   where
     decoder :: Get Bool
     decoder = do
-        hash' <- get
+        hash' <- binaryGetMD5
         pure $ hash' == hash''
 
     proxyA = Proxy :: Proxy a
