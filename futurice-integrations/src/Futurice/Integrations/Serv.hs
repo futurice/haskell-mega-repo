@@ -216,19 +216,19 @@ deriving instance Show (ServSetProof ss)
 --
 -- Sanity test: all services
 --
--- >>> ssProof :: ServSetProof '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM ]
--- SSCons SServFD LTZ (SSCons SServFUM (LTS LTZ) (SSCons SServFUM6 (LTS (LTS LTZ)) (SSCons SServGH (LTS (LTS (LTS LTZ))) (SSCons SServGO (LTS (LTS (LTS (LTS LTZ)))) (SSCons SServOK (LTS (LTS (LTS (LTS (LTS LTZ))))) (SSCons SServPE (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))) (SSSing SServPM)))))))
+-- >>> ssProof :: ServSetProof '[ ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO, ServSL ]
+-- SSCons SServFUM (LTS LTZ) (SSCons SServFUM6 (LTS (LTS LTZ)) (SSCons SServGH (LTS (LTS (LTS LTZ))) (SSCons SServGO (LTS (LTS (LTS (LTS LTZ)))) (SSCons SServOK (LTS (LTS (LTS (LTS (LTS LTZ))))) (SSCons SServPE (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))) (SSCons SServPM (LTS (LTS (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))))) (SSCons SServPO (LTS (LTS (LTS (LTS (LTS (LTS (LTS (LTS (LTS LTZ))))))))) (SSSing SServSL))))))))
 --
 -- Error case: duplicate
 --
--- >>> ssProof :: ServSetProof '[ ServFD, ServFD ]
+-- >>> ssProof :: ServSetProof '[ ServFUM, ServFUM ]
 -- ...
 -- ...error...
 -- ...
 --
 -- Error case: out-of-order
 --
--- >>> ssProof :: ServSetProof '[ ServFUM, ServFD ]
+-- >>> ssProof :: ServSetProof '[ ServFUM6, ServFUM ]
 -- ...
 -- ...error...
 -- ...
