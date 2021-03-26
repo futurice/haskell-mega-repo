@@ -263,12 +263,12 @@ instance
 -- | Fold over 'ServSet'.
 -- We don't use the set property here, as in some cases we don't need it on the value level: types have done their job.
 --
--- >>> withServSet  (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFD, ServGH ]
--- Const ["SServFD","SServGH"]
+-- >>> withServSet  (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFUM, ServGH ]
+-- Const ["SServFUM","SServGH"]
 --
 -- Error case:
 --
--- >>> withServSet (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFD, ServFD ]
+-- >>> withServSet (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFUM, ServFUM ]
 -- ...
 -- ...error...
 -- ...
