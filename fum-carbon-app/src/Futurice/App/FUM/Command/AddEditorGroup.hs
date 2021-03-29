@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.AddEditorGroup (AddEditorGroup) where
 
 import Control.Lens      (contains, (.=))
@@ -32,8 +34,10 @@ instance phase ~ 'Input => HasLomake (AddEditorGroup phase) where
         dynEnumField "Editor group" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEditorGroup phase))   `Via` Sopica (AddEditorGroup phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEditorGroup phase)) `Via` Sopica (AddEditorGroup phase) |]
+deriving via Sopica (AddEditorGroup phase) instance (phase ~ 'Internal) => ToJSON (AddEditorGroup phase)
+deriving via Sopica (AddEditorGroup phase) instance (phase ~ 'Internal) => FromJSON (AddEditorGroup phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEditorGroup phase))   `Via` Sopica (AddEditorGroup phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEditorGroup phase)) `Via` Sopica (AddEditorGroup phase) |]
 
 instance Command AddEditorGroup where
     type CommandTag AddEditorGroup = "add-editor-group"

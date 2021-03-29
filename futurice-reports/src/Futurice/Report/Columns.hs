@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE DefaultSignatures       #-}
+{-# LANGUAGE DerivingVia             #-}
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE FlexibleInstances       #-}
 {-# LANGUAGE InstanceSigs            #-}
@@ -7,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings       #-}
 {-# LANGUAGE RankNTypes              #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
+{-# LANGUAGE StandaloneDeriving      #-}
 {-# LANGUAGE TemplateHaskell         #-}
 {-# LANGUAGE TypeApplications        #-}
 {-# LANGUAGE TypeFamilies            #-}
@@ -95,8 +97,10 @@ instance (NFData params, NFData a) => NFData (Report name params a) where
 -- Report + aeson
 -------------------------------------------------------------------------------
 
-deriveVia [t| forall name params a. ((ToJSON a, ToJSON params, IsMaybe a, IsMaybe params) => ToJSON (Report name params a))       `Via` Sopica (Report name params a) |]
-deriveVia [t| forall name params a. ((FromJSON a, FromJSON params, IsMaybe a, IsMaybe params) => FromJSON (Report name params a)) `Via` Sopica (Report name params a) |]
+deriving via Sopica (Report name params a) instance ((ToJSON a, ToJSON params, IsMaybe a, IsMaybe params) => ToJSON (Report name params a))
+deriving via Sopica (Report name params a) instance ((FromJSON a, FromJSON params, IsMaybe a, IsMaybe params) => FromJSON (Report name params a))
+--deriveVia [t| forall name params a. ((ToJSON a, ToJSON params, IsMaybe a, IsMaybe params) => ToJSON (Report name params a))       `Via` Sopica (Report name params a) |]
+--deriveVia [t| forall name params a. ((FromJSON a, FromJSON params, IsMaybe a, IsMaybe params) => FromJSON (Report name params a)) `Via` Sopica (Report name params a) |]
 
 instance (ToSchema a, ToSchema params, KnownSymbol name)
     => ToSchema (Report name params a)

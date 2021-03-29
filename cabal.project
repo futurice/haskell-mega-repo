@@ -34,9 +34,8 @@ constraints:
   gogol-admin-directory ^>= 0.5.0,
   gogol-apps-calendar   ^>= 0.5.0,
   gogol-core            ^>= 0.5.0,
-  gogol-people          ^>= 0.5.0,
+  gogol-people          ^>= 0.5.0
   -- this is for keeping TH derivingVias working without modification
-  deriving-compat       ==0.5.6 
 
 -- diagrams + lens + Chart
 allow-newer:
@@ -49,6 +48,17 @@ allow-newer:
   diagrams-postscript:base,
   diagrams-postscript:containers,
   diagrams-postscript:lens
+
+-- 8.10.4 diagrams + servant-JuicyPixels
+allow-newer:
+  diagrams-svg:base,
+  diagrams-core:base,
+  dual-tree:base,
+  diagrams-rasterific:base,
+  diagrams-lib:base,
+  active:base,
+  statestack:base,
+  servant-JuicyPixels:base
 
 -- 8.6.2: https://github.com/nilcons/haskell-tz/pull/21
 allow-newer:

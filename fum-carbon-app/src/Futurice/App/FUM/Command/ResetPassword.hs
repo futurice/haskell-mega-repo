@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DerivingVia          #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
@@ -33,8 +35,10 @@ instance phase ~ 'Input => HasLomake (ResetPassword phase) where
         unitField :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (ResetPassword phase))   `Via` Sopica (ResetPassword phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (ResetPassword phase)) `Via` Sopica (ResetPassword phase) |]
+deriving via Sopica (ResetPassword phase) instance (phase ~ 'Internal) => ToJSON (ResetPassword phase)
+deriving via Sopica (ResetPassword phase) instance (phase ~ 'Internal) => FromJSON (ResetPassword phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (ResetPassword phase))   `Via` Sopica (ResetPassword phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (ResetPassword phase)) `Via` Sopica (ResetPassword phase) |]
 
 instance Command ResetPassword where
     type CommandTag ResetPassword = "reset-password"

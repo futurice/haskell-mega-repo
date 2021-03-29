@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.RemoveEditorGroup (RemoveEditorGroup) where
 
 import Control.Lens      (contains, (.=))
@@ -32,8 +34,10 @@ instance phase ~ 'Input => HasLomake (RemoveEditorGroup phase) where
         dynEnumField "Editor group" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEditorGroup phase))   `Via` Sopica (RemoveEditorGroup phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEditorGroup phase)) `Via` Sopica (RemoveEditorGroup phase) |]
+deriving via Sopica (RemoveEditorGroup phase) instance (phase ~ 'Internal) => ToJSON (RemoveEditorGroup phase)
+deriving via Sopica (RemoveEditorGroup phase) instance (phase ~ 'Internal) => FromJSON (RemoveEditorGroup phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEditorGroup phase))   `Via` Sopica (RemoveEditorGroup phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEditorGroup phase)) `Via` Sopica (RemoveEditorGroup phase) |]
 
 instance Command RemoveEditorGroup where
     type CommandTag RemoveEditorGroup = "remove-editor-group"

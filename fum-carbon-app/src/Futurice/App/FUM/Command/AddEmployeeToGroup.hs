@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.AddEmployeeToGroup (AddEmployeeToGroup) where
 
 import Control.Lens      (contains, (.=))
@@ -31,8 +33,10 @@ instance phase ~ 'Input => HasLomake (AddEmployeeToGroup phase) where
         dynEnumField "Employee" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEmployeeToGroup phase))   `Via` Sopica (AddEmployeeToGroup phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEmployeeToGroup phase)) `Via` Sopica (AddEmployeeToGroup phase) |]
+deriving via Sopica (AddEmployeeToGroup phase) instance (phase ~ 'Internal) => ToJSON (AddEmployeeToGroup phase)
+deriving via Sopica (AddEmployeeToGroup phase) instance (phase ~ 'Internal) => FromJSON (AddEmployeeToGroup phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEmployeeToGroup phase))   `Via` Sopica (AddEmployeeToGroup phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEmployeeToGroup phase)) `Via` Sopica (AddEmployeeToGroup phase) |]
 
 instance Command AddEmployeeToGroup where
     type CommandTag AddEmployeeToGroup = "add-employee-to-group"

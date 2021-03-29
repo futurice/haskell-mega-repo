@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.AddSSHKeyToEmployee (AddSSHKeyToEmployee) where
 
 import Control.Lens      (contains, (.=))
@@ -32,8 +34,10 @@ instance phase ~ 'Input => HasLomake (AddSSHKeyToEmployee phase) where
         textField "SSH Key" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddSSHKeyToEmployee phase))   `Via` Sopica (AddSSHKeyToEmployee phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddSSHKeyToEmployee phase)) `Via` Sopica (AddSSHKeyToEmployee phase) |]
+deriving via Sopica (AddSSHKeyToEmployee phase) instance (phase ~ 'Internal) => ToJSON (AddSSHKeyToEmployee phase)
+deriving via Sopica (AddSSHKeyToEmployee phase) instance (phase ~ 'Internal) => FromJSON (AddSSHKeyToEmployee phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddSSHKeyToEmployee phase))   `Via` Sopica (AddSSHKeyToEmployee phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddSSHKeyToEmployee phase)) `Via` Sopica (AddSSHKeyToEmployee phase) |]
 
 instance Command AddSSHKeyToEmployee where
     type CommandTag AddSSHKeyToEmployee = "add-sshkey-to-employee"

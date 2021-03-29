@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.RemoveSSHKeyFromEmployee (RemoveSSHKeyFromEmployee) where
 
 import Control.Lens      (only)
@@ -34,8 +36,10 @@ instance phase ~ 'Input => HasLomake (RemoveSSHKeyFromEmployee phase) where
         hiddenField "SSHKeyFingerprint" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveSSHKeyFromEmployee phase))   `Via` Sopica (RemoveSSHKeyFromEmployee phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveSSHKeyFromEmployee phase)) `Via` Sopica (RemoveSSHKeyFromEmployee phase) |]
+deriving via Sopica (RemoveSSHKeyFromEmployee phase) instance (phase ~ 'Internal) => ToJSON (RemoveSSHKeyFromEmployee phase)
+deriving via Sopica (RemoveSSHKeyFromEmployee phase) instance (phase ~ 'Internal) => FromJSON (RemoveSSHKeyFromEmployee phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveSSHKeyFromEmployee phase))   `Via` Sopica (RemoveSSHKeyFromEmployee phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveSSHKeyFromEmployee phase)) `Via` Sopica (RemoveSSHKeyFromEmployee phase) |]
 
 instance Command RemoveSSHKeyFromEmployee where
     type CommandTag RemoveSSHKeyFromEmployee = "remove-sshkey-from-employee"

@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.RemoveEmailFromEmployee (RemoveEmailFromEmployee) where
 
 import Control.Lens      (contains, (.=))
@@ -32,8 +34,10 @@ instance phase ~ 'Input => HasLomake (RemoveEmailFromEmployee phase) where
         hiddenField "Email address" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEmailFromEmployee phase))   `Via` Sopica (RemoveEmailFromEmployee phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEmailFromEmployee phase)) `Via` Sopica (RemoveEmailFromEmployee phase) |]
+deriving via Sopica (RemoveEmailFromEmployee phase) instance (phase ~ 'Internal) => ToJSON (RemoveEmailFromEmployee phase)
+deriving via Sopica (RemoveEmailFromEmployee phase) instance (phase ~ 'Internal) => FromJSON (RemoveEmailFromEmployee phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEmailFromEmployee phase))   `Via` Sopica (RemoveEmailFromEmployee phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEmailFromEmployee phase)) `Via` Sopica (RemoveEmailFromEmployee phase) |]
 
 instance Command RemoveEmailFromEmployee where
     type CommandTag RemoveEmailFromEmployee = "remove-email-from-employee"

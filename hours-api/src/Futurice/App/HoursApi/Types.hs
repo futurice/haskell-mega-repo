@@ -1,8 +1,10 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DerivingVia           #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -318,8 +320,10 @@ deriveVia [t| ToJSON EntryType   `Via` Enumica EntryType |]
 instance ToParamSchema EntryType where toParamSchema = enumToParamSchema
 instance ToSchema EntryType where declareNamedSchema = enumDeclareNamedSchema
 
-deriveVia [t| forall task. (Arbitrary task => Arbitrary (Project task)) `Via` Sopica (Project task) |]
-deriveVia [t| forall task. (ToJSON task => ToJSON (Project task))       `Via` Sopica (Project task) |]
+deriving via Sopica (Project task) instance Arbitrary task => Arbitrary (Project task)
+deriving via Sopica (Project task) instance ToJSON task => ToJSON (Project task)
+--deriveVia [t| forall task. (Arbitrary task => Arbitrary (Project task)) `Via` Sopica (Project task) |]
+--deriveVia [t| forall task. (ToJSON task => ToJSON (Project task))       `Via` Sopica (Project task) |]
 instance ToSchema task => ToSchema (Project task) where declareNamedSchema = sopDeclareNamedSchema
 
 deriveVia [t| Arbitrary ReportableTask `Via` Sopica ReportableTask |]

@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DerivingVia          #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
@@ -42,8 +44,10 @@ instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
         textFieldWithRegexp "email" emailKleene :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (CreateEmployee phase))   `Via` Sopica (CreateEmployee phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (CreateEmployee phase)) `Via` Sopica (CreateEmployee phase) |]
+deriving via Sopica (CreateEmployee phase) instance (phase ~ 'Internal) => ToJSON (CreateEmployee phase)
+deriving via Sopica (CreateEmployee phase) instance (phase ~ 'Internal) => FromJSON (CreateEmployee phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (CreateEmployee phase))   `Via` Sopica (CreateEmployee phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (CreateEmployee phase)) `Via` Sopica (CreateEmployee phase) |]
 
 instance Command CreateEmployee where
     type CommandTag CreateEmployee = "create-employee"
