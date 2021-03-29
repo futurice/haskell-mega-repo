@@ -65,7 +65,7 @@ install)
     cabal)
         # Install doctest
 		(cd /tmp && echo "" | cabal new-repl --build-dep fail)
-		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.0' --installdir="$HOME/.local/bin") || exit 1
+		(cd /tmp && cabal new-install doctest --constraint='doctest^>=0.16.3' --installdir="$HOME/.local/bin") || exit 1
         doctest --version
 
         # Generate cabal.project.local file, with -Werror
