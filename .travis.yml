@@ -102,5 +102,5 @@ matrix:
         packages:
         - libfftw3-dev
         - cabal-install-3.2
-        - ghc-8.8.4
+        - ghc-8.10.4
         - libgmp-dev
