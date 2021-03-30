@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -47,8 +48,10 @@ data ContactFD avatar = ContactFD
 
 deriveGeneric ''ContactFD
 
-deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactFD a))   `Via` Sopica (ContactFD a) |]
-deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactFD a)) `Via` Sopica (ContactFD a) |]
+deriving via Sopica (ContactFD a) instance (ToJSON a, IsMaybe a)   => ToJSON (ContactFD a)
+deriving via Sopica (ContactFD a) instance (FromJSON a, IsMaybe a)   => FromJSON (ContactFD a)
+--deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactFD a))   `Via` Sopica (ContactFD a) |]
+--deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactFD a)) `Via` Sopica (ContactFD a) |]
 
 instance ToSchema a => ToSchema (ContactFD a) where
     declareNamedSchema = sopDeclareNamedSchema
@@ -72,8 +75,10 @@ data ContactGH avatar = ContactGH
 
 deriveGeneric ''ContactGH
 
-deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactGH a))   `Via` Sopica (ContactGH a) |]
-deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactGH a)) `Via` Sopica (ContactGH a) |]
+deriving via Sopica (ContactGH a) instance (ToJSON a, IsMaybe a)   => ToJSON (ContactGH a)
+deriving via Sopica (ContactGH a) instance (FromJSON a, IsMaybe a)   => FromJSON (ContactGH a)
+--deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactGH a))   `Via` Sopica (ContactGH a) |]
+--deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactGH a)) `Via` Sopica (ContactGH a) |]
 
 instance ToSchema a => ToSchema (ContactGH a) where
     declareNamedSchema = sopDeclareNamedSchema
@@ -91,8 +96,10 @@ data ContactSlack avatar = ContactSlack
 
 deriveGeneric ''ContactSlack
 
-deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactSlack a))   `Via` Sopica (ContactSlack a) |]
-deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactSlack a)) `Via` Sopica (ContactSlack a) |]
+deriving via Sopica (ContactSlack a) instance (ToJSON a, IsMaybe a)   => ToJSON (ContactSlack a)
+deriving via Sopica (ContactSlack a) instance (FromJSON a, IsMaybe a)   => FromJSON (ContactSlack a)
+--deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (ContactSlack a))   `Via` Sopica (ContactSlack a) |]
+--deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (ContactSlack a)) `Via` Sopica (ContactSlack a) |]
 
 instance ToSchema a => ToSchema (ContactSlack a) where
     declareNamedSchema = sopDeclareNamedSchema
@@ -132,8 +139,10 @@ data Contact avatar = Contact
 
 deriveGeneric ''Contact
 
-deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (Contact a))   `Via` Sopica (Contact a) |]
-deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (Contact a)) `Via` Sopica (Contact a) |]
+deriving via Sopica (Contact a) instance (ToJSON a, IsMaybe a)   => ToJSON (Contact a)
+deriving via Sopica (Contact a) instance (FromJSON a, IsMaybe a)   => FromJSON (Contact a)
+--deriveVia [t| forall a. ((ToJSON a, IsMaybe a)   => ToJSON (Contact a))   `Via` Sopica (Contact a) |]
+--deriveVia [t| forall a. ((FromJSON a, IsMaybe a) => FromJSON (Contact a)) `Via` Sopica (Contact a) |]
 deriveVia [t| forall a. DefaultOrdered (Contact a) `Via` Sopica (Contact a) |]
 
 instance ToSchema a => ToSchema (Contact a) where

@@ -43,8 +43,7 @@ instance Hashable ReportableAssignment
 instance NFData ReportableAssignment
 instance AnsiPretty ReportableAssignment
 instance Binary ReportableAssignment
-instance HasStructuralInfo ReportableAssignment where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion ReportableAssignment
+instance Structured ReportableAssignment
 
 instance FromJSON ReportableAssignment where
     parseJSON = withObject "ReportableAssignment" $ \obj ->
@@ -56,4 +55,4 @@ instance FromJSON ReportableAssignment where
             <*> obj .: "projectName"
             <*> (dayFromZ <$> obj .: "taskStart")
             <*> (dayFromZ <$> obj .: "taskFinish")
-            <*> (getU <$> obj .: "lastTimereportCreated")
+            <*> obj .: "lastTimereportCreated"

@@ -34,7 +34,6 @@ newtype EnumDesc (k :: Symbol) = EnumDesc (IntMap Text)
 instance NFData (EnumDesc k)
 instance AnsiPretty (EnumDesc k)
 instance Binary (EnumDesc k)
-instance HasSemanticVersion (EnumDesc k)
 
 instance KnownSymbol k => FromJSON (EnumDesc k) where
     parseJSON = withObject "Enum description" $ \obj ->
@@ -47,7 +46,6 @@ instance ForallFSymbol Eq         EnumDesc where instFSymbol = Dict
 instance ForallFSymbol NFData     EnumDesc where instFSymbol = Dict
 instance ForallFSymbol AnsiPretty EnumDesc where instFSymbol = Dict
 instance ForallFSymbol Binary     EnumDesc where instFSymbol = Dict
-instance ForallFSymbol HasSemanticVersion EnumDesc where instFSymbol = Dict
 instance ForallFSymbol FromJSON   EnumDesc where instFSymbol = Dict
 instance ForallFSymbol Show       EnumDesc where instFSymbol = Dict
 instance ForallFSymbol Typeable   EnumDesc where
@@ -66,7 +64,6 @@ instance Hashable (EnumValue entity field)
 instance NFData (EnumValue entity field)
 instance AnsiPretty (EnumValue entity field)
 instance Binary (EnumValue entity field)
-instance HasSemanticVersion (EnumValue entity field)
 
 instance FromJSON (EnumValue entity field) where
     parseJSON = fmap EnumValue . parseJSON
@@ -103,8 +100,7 @@ instance FromJSON a => FromJSON (IM a) where
 deriveGeneric ''EnumDesc
 deriveGeneric ''EnumValue
 
-instance HasStructuralInfo (EnumDesc k) where structuralInfo = sopStructuralInfo
-instance ForallFSymbol HasStructuralInfo EnumDesc where
+instance (KnownSymbol k) => Structured (EnumDesc k)
+instance ForallFSymbol Structured EnumDesc where
     instFSymbol = Dict
-instance HasStructuralInfo  (EnumValue entity field)
-  where structuralInfo = sopStructuralInfo
+instance (Typeable entity, KnownSymbol field) => Structured (EnumValue entity field)

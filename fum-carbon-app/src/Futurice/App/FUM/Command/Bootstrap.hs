@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DerivingVia          #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
@@ -45,8 +47,10 @@ instance phase ~ 'Input => HasLomake (Bootstrap phase) where
         unitField :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (Bootstrap phase))   `Via` Sopica (Bootstrap phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (Bootstrap phase)) `Via` Sopica (Bootstrap phase) |]
+deriving via Sopica (Bootstrap phase) instance (phase ~ 'Internal) => ToJSON (Bootstrap phase)
+deriving via Sopica (Bootstrap phase) instance (phase ~ 'Internal) => FromJSON (Bootstrap phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (Bootstrap phase))   `Via` Sopica (Bootstrap phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (Bootstrap phase)) `Via` Sopica (Bootstrap phase) |]
 
 instance Command Bootstrap where
     type CommandTag Bootstrap = "bootstrap"

@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.RemoveEmployeeFromGroup (RemoveEmployeeFromGroup) where
 
 import Control.Lens      (contains, (.=))
@@ -31,8 +33,10 @@ instance phase ~ 'Input => HasLomake (RemoveEmployeeFromGroup phase) where
         dynEnumField "Employee" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEmployeeFromGroup phase))   `Via` Sopica (RemoveEmployeeFromGroup phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEmployeeFromGroup phase)) `Via` Sopica (RemoveEmployeeFromGroup phase) |]
+deriving via Sopica (RemoveEmployeeFromGroup phase) instance (phase ~ 'Internal) => ToJSON (RemoveEmployeeFromGroup phase)
+deriving via Sopica (RemoveEmployeeFromGroup phase) instance (phase ~ 'Internal) => FromJSON (RemoveEmployeeFromGroup phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (RemoveEmployeeFromGroup phase))   `Via` Sopica (RemoveEmployeeFromGroup phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (RemoveEmployeeFromGroup phase)) `Via` Sopica (RemoveEmployeeFromGroup phase) |]
 
 instance Command RemoveEmployeeFromGroup where
     type CommandTag RemoveEmployeeFromGroup = "remove-employee-from-group"

@@ -26,13 +26,11 @@ data GroupType
     = GroupTypeAccess
     | GroupTypeProject
     | GroupTypeServer
-  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
   deriving anyclass (NFData, Binary)
 
 -- makeLenses ''GroupType -- we don't need prisms atm
 deriveGeneric ''GroupType
--- TODO: remove when we drop support for GHC-7.10
-deriveLift ''GroupType
 
 instance TextEnum GroupType where
     type TextEnumNames GroupType = '["access", "project", "Server"]

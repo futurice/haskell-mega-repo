@@ -35,9 +35,7 @@ import qualified Test.QuickCheck     as QC
 
 -- | Tribe.
 newtype Tribe = Tribe Int
-  deriving (Eq, Ord)
-
-deriveLift ''Tribe
+  deriving (Eq, Ord, Lift)
 
 instance Show Tribe where
     showsPrec d t = showsPrec d (tribeToText t)

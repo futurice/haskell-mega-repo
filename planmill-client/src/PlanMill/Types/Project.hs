@@ -44,7 +44,7 @@ type Projects = Vector Project
 
 newtype PortfolioId = PortfolioId Int --TODO: change to use Identifier
     deriving (Eq, Ord, Show, Read, Generic)
-    deriving newtype ( AnsiPretty,Hashable, Binary, HasStructuralInfo, FromJSON, ToJSON, Csv.ToField, ToSchema, NFData)
+    deriving newtype ( AnsiPretty,Hashable, Binary, Structured, FromJSON, ToJSON, Csv.ToField, ToSchema, NFData)
 
 newtype Portfolios = Portfolios (Vector Portfolio)
     deriving (Show, Generic)
@@ -139,8 +139,7 @@ instance Hashable Project
 instance NFData Project
 instance AnsiPretty Project
 instance Binary Project
-instance HasStructuralInfo Project where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Project
+instance Structured Project
 
 instance FromJSON Project where
     parseJSON = withObject "Project" $ \obj -> Project
@@ -151,8 +150,8 @@ instance FromJSON Project where
         <*> (obj .:? "category" .!= EnumValue (-1)) -- seems not all projects have category?
         <*> (join <$> readMaybe <$$> obj .:? "operationalId")
         <*> obj .:? "portfolio"
-        <*> (getU <$$> obj .:? "start")
-        <*> (getU <$$> obj .:? "finish")
+        <*> obj .:? "start"
+        <*> obj .:? "finish"
         <*> obj .:? "projectManager"
         <*> obj .:? "invoicedRevenue" .!= 0
         <*> obj .:? "actualRevenue"   .!= 0
@@ -165,7 +164,7 @@ instance FromJSON Project where
 data ProjectMember = ProjectMember
     { _projectMemberName   :: !Text
     , _projectMemberUserId :: !UserId
-    } deriving (Eq, Ord, Show, Generic, Binary, NFData, HasStructuralInfo, Typeable, HasSemanticVersion)
+    } deriving (Eq, Ord, Show, Generic, Binary, NFData, Structured, Typeable)
 
 instance FromJSON ProjectMember where
     parseJSON = withObject "ProjectMember" $ \p -> do

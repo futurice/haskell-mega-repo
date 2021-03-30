@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveLift            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -39,9 +40,7 @@ import qualified Test.QuickCheck                      as QC
 
 -- | Login name. @[a-z]{4,5}|itteam@.
 newtype Login = Login Text
-  deriving (Eq, Ord, Generic)
-
-deriveLift ''Login
+  deriving (Eq, Ord, Generic, Lift)
 
 instance Show Login where
     showsPrec _ (Login l)

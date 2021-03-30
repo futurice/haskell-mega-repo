@@ -66,7 +66,7 @@ instance H.DataSource u GHR where
                     -- print (BSL.take 1000 $ HTTP.responseBody res)
                     -- print (last $ BSL.toChunks $ HTTP.responseBody res)
                     -- print (BSL.length $ HTTP.responseBody res)
-                    let x = Binary.taggedDecode (GZip.decompress $ HTTP.responseBody res) :: [Either Text GH.SomeResponse]
+                    let x = Binary.structuredDecode (GZip.decompress $ HTTP.responseBody res) :: [Either Text GH.SomeResponse]
 
                     -- return blocked fetches as well.
                     evaluate $!! x

@@ -10,8 +10,7 @@ module Futurice.App.PlanMillProxy.Logic (
     statsEndpoint,
     ) where
 
-import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
+import Data.Binary.Tagged   (Structured, structuredDecode, structuredEncode)
 import Data.Constraint
 import Futurice.Prelude
 import PlanMill.Types.Query
@@ -113,16 +112,15 @@ haxlEndpoint ctx qs = runLIO ctx $ do
     fetch _cacheResult (SomeQuery q@(QueryTimereports i u)) =
         Right . MkSomeResponse q <$> selectTimereports ctx u i
     fetch cacheResult (SomeQuery q) =
-        case (binaryDict, semVerDict, structDict, nfdataDict) of
-            (Dict, Dict, Dict, Dict) -> fetch' cacheResult q
+        case (binaryDict, structDict, nfdataDict) of
+            (Dict, Dict, Dict) -> fetch' cacheResult q
       where
         binaryDict = queryDict (Proxy :: Proxy Binary) q
-        semVerDict = queryDict (Proxy :: Proxy HasSemanticVersion) q
-        structDict = queryDict (Proxy :: Proxy HasStructuralInfo) q
+        structDict = queryDict (Proxy :: Proxy Structured) q
         nfdataDict = queryDict (Proxy :: Proxy NFData) q
 
     fetch'
-        :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
+        :: forall a. (NFData a, Binary a, Structured a)
         => CacheLookup  -> Query a
         -> LIO (Either Text SomeResponse)
     fetch' cacheResult q = case HM.lookup (SomeQuery q) cacheResult of
@@ -130,7 +128,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
             -- we only check tags, the rest of the response is decoded lazily
             -- Hopefully when the end result is constructed.
             if checkTagged (Proxy :: Proxy a) bs
-                then pure $ Right $ MkSomeResponse q $ taggedDecode bs
+                then pure $ Right $ MkSomeResponse q $ structuredDecode bs
                 else do
                     logAttention_ $ "Borked cache content for " <> textShow q
                     _ <- safePoolExecute ctx deleteQuery (Postgres.Only q)
@@ -139,7 +137,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 
     -- Fetch and store
     fetch''
-        :: (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
+        :: (NFData a, Binary a, Structured a)
         => Query a -> LIO (Either Text a)
     fetch'' q = do
         res <- liftIO $ tryDeep $ runLogT' ctx $ do
@@ -166,11 +164,11 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         ]
 
 storeInPostgres
-    :: (Binary a, HasSemanticVersion a, HasStructuralInfo a, HasPostgresPool ctx)
+    :: (Binary a, Structured a, HasPostgresPool ctx)
     => ctx -> Query a -> a -> LIO ()
 storeInPostgres ctx q x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
-    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ taggedEncode x)
+    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ structuredEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow q
   where

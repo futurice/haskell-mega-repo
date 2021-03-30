@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.AddEmailToEmployee (AddEmailToEmployee) where
 
 import Control.Lens      (contains, (.=))
@@ -32,8 +34,10 @@ instance phase ~ 'Input => HasLomake (AddEmailToEmployee phase) where
         textFieldWithRegexp "Email address" emailKleene :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEmailToEmployee phase))   `Via` Sopica (AddEmailToEmployee phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEmailToEmployee phase)) `Via` Sopica (AddEmailToEmployee phase) |]
+deriving via Sopica (AddEmailToEmployee phase) instance (phase ~ 'Internal) => ToJSON (AddEmailToEmployee phase)
+deriving via Sopica (AddEmailToEmployee phase) instance (phase ~ 'Internal) => FromJSON (AddEmailToEmployee phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (AddEmailToEmployee phase))   `Via` Sopica (AddEmailToEmployee phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (AddEmailToEmployee phase)) `Via` Sopica (AddEmailToEmployee phase) |]
 
 instance Command AddEmailToEmployee where
     type CommandTag AddEmailToEmployee = "add-email-to-employee"

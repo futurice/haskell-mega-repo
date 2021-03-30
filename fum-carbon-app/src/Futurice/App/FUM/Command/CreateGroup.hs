@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DerivingVia          #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
@@ -37,9 +39,10 @@ instance phase ~ 'Input => HasLomake (CreateGroup phase) where
         enumField "type" groupTypeToText :*
         -- todo description
         Nil
-
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (CreateGroup phase))   `Via` Sopica (CreateGroup phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (CreateGroup phase)) `Via` Sopica (CreateGroup phase) |]
+deriving via Sopica (CreateGroup phase) instance (phase ~ 'Internal) => ToJSON (CreateGroup phase)
+deriving via Sopica (CreateGroup phase) instance (phase ~ 'Internal) => FromJSON (CreateGroup phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (CreateGroup phase))   `Via` Sopica (CreateGroup phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (CreateGroup phase)) `Via` Sopica (CreateGroup phase) |]
 
 instance Command CreateGroup where
     type CommandTag CreateGroup = "create-group"

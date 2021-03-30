@@ -31,9 +31,7 @@ import qualified Test.QuickCheck     as QC
 
 -- | CareerLevel.
 newtype CareerLevel = CareerLevel Int
-  deriving (Eq, Ord)
-
-deriveLift ''CareerLevel
+  deriving (Eq, Ord, Lift)
 
 instance Show CareerLevel where
     showsPrec d t = showsPrec d (careerLevelToText t)

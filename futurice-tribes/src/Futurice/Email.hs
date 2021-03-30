@@ -31,9 +31,7 @@ import qualified Kleene.Functor as K
 
 -- | Futurice email. i.e. @someone@@futurice.com@.
 newtype Email = Email Text
-  deriving (Eq, Ord, Show, Generic)
-
-deriveLift ''Email
+  deriving (Eq, Ord, Show, Generic, Lift)
 
 emailToText :: Email -> Text
 emailToText (Email x) = x <> suffix

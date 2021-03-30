@@ -31,8 +31,7 @@ instance Hashable Me
 instance NFData Me
 instance AnsiPretty Me
 instance Binary Me
-instance HasStructuralInfo Me where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Me
+instance Structured Me
 
 instance FromJSON Me where
     parseJSON = withObject "Me" $ \obj ->

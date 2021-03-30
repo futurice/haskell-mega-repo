@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveLift        #-}
 {-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -38,9 +39,7 @@ import qualified Text.Parsec                          as Parsec
 
 -- | GroupName name. @[a-zA-Z0-9 _.-]+@.
 newtype GroupName = GroupName Text
-  deriving (Eq, Ord)
-
-deriveLift ''GroupName
+  deriving (Eq, Ord, Lift)
 
 instance Show GroupName where
     showsPrec _ (GroupName l)

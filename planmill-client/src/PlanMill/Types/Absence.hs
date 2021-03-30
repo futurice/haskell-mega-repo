@@ -59,8 +59,7 @@ instance Hashable Absence
 instance NFData Absence
 instance AnsiPretty Absence
 instance Binary Absence
-instance HasStructuralInfo Absence where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Absence
+instance Structured Absence
 
 instance HasIdentifier Absence Absence where
     identifier = absenceId

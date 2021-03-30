@@ -3,12 +3,12 @@ module Futurice.App.PlanMillProxy.Logic.Capacities (
     selectCapacities,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Data.Binary.Tagged        (taggedDecode, taggedEncode)
+import Data.Binary.Tagged        (structuredDecode, structuredEncode)
 import Data.Time                 (addDays)
+import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Types.Query      (Query (..))
+import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.Vector                as V
@@ -58,7 +58,7 @@ selectCapacities ctx uid interval = do
         -> [(PM.UserId, Day, Postgres.Binary BSL.ByteString)]
     transformForInsert = fmap f . toList
       where
-        f uc = (uid, PM.userCapacityDate uc, Postgres.Binary $ taggedEncode uc)
+        f uc = (uid, PM.userCapacityDate uc, Postgres.Binary $ structuredEncode uc)
 
     insertQuery :: Postgres.Query
     insertQuery = fromString $ unwords $
@@ -78,7 +78,7 @@ selectCapacities ctx uid interval = do
     selectTransform
         :: Postgres.Only (Postgres.Binary BSL.ByteString)
         -> PM.UserCapacity
-    selectTransform (Postgres.Only (Postgres.Binary bs)) = taggedDecode bs
+    selectTransform (Postgres.Only (Postgres.Binary bs)) = structuredDecode bs
 
     selectQuery :: Postgres.Query
     selectQuery = fromString $ unwords $

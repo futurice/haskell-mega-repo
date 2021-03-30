@@ -17,7 +17,7 @@ import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), contramapToJSONKeyFunction)
 import Data.Swagger              (ToParamSchema, ToSchema)
 import Futurice.EnvConfig        (FromEnvVar (..))
-import Lucid                     (ToHtml (..), HtmlT)
+import Lucid                     (HtmlT, ToHtml (..))
 import PlanMill.Internal.Prelude
 import Prelude ()
 import Test.QuickCheck           (Arbitrary (..))
@@ -41,8 +41,7 @@ instance NFData (Identifier a)
 instance Hashable (Identifier a)
 instance AnsiPretty (Identifier a)
 instance Binary (Identifier a)
-instance HasStructuralInfo (Identifier a) where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion (Identifier a)
+instance (Typeable a) => Structured (Identifier a)
 
 instance FromJSON (Identifier a) where
     parseJSON = fmap Ident . parseJSON
@@ -95,7 +94,7 @@ instance O.FromOptions (Identifier a) where
 
 instance IdentifierToHtml a => ToHtml (Identifier a) where
     toHtmlRaw = toHtml
-    toHtml = identifierToHtml 
+    toHtml = identifierToHtml
 
 class IdentifierToHtml a where
     identifierToHtml :: Monad m => Identifier a -> HtmlT m ()

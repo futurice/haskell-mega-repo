@@ -1,11 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 module Futurice.App.FUM.Command.ChangeGroupMatch (ChangeGroupMatch) where
 
 import Control.Lens      ((.=))
@@ -32,8 +34,10 @@ instance phase ~ 'Input => HasLomake (ChangeGroupMatch phase) where
         textField "Employee match" :*
         Nil
 
-deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (ChangeGroupMatch phase))   `Via` Sopica (ChangeGroupMatch phase) |]
-deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (ChangeGroupMatch phase)) `Via` Sopica (ChangeGroupMatch phase) |]
+deriving via Sopica (ChangeGroupMatch phase) instance (phase ~ 'Internal) => ToJSON (ChangeGroupMatch phase)
+deriving via Sopica (ChangeGroupMatch phase) instance (phase ~ 'Internal) => FromJSON (ChangeGroupMatch phase)
+--deriveVia [t| forall phase. (phase ~ 'Internal => ToJSON (ChangeGroupMatch phase))   `Via` Sopica (ChangeGroupMatch phase) |]
+--deriveVia [t| forall phase. (phase ~ 'Internal => FromJSON (ChangeGroupMatch phase)) `Via` Sopica (ChangeGroupMatch phase) |]
 
 instance Command ChangeGroupMatch where
     type CommandTag ChangeGroupMatch = "change-group-match"

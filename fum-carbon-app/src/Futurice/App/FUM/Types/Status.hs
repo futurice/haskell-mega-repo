@@ -30,12 +30,11 @@ data Status
     = StatusActive
     | StatusSuspended  -- ^ temporary status.
     | StatusDeleted
-  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
   deriving anyclass (NFData, Binary)
 
 makePrisms ''Status
 deriveGeneric ''Status
-deriveLift ''Status
 
 instance TextEnum Status where
     type TextEnumNames Status = '["active", "suspended", "deleted"]

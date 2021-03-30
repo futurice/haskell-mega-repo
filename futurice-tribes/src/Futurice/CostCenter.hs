@@ -24,9 +24,7 @@ import qualified Test.QuickCheck as QC
 
 -- | CostCenter is not a Tribe.
 newtype CostCenter = CostCenter Int
-  deriving (Eq, Ord)
-
-deriveLift ''CostCenter
+  deriving (Eq, Ord, Lift)
 
 instance Show CostCenter where
     showsPrec d t = showsPrec d (costCenterToText t)

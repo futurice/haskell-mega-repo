@@ -21,6 +21,7 @@ library
   hs-source-dirs:     src
   ghc-options:        -Wall
   default-extensions:
+    DeriveLift
     DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
