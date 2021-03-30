@@ -22,12 +22,11 @@ data ContractType
     | ContractTypeFixedTerm
     | ContractTypePartTimer
     | ContractTypeSummerWorker
-  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
   deriving anyclass (NFData, Binary)
 
 makePrisms ''ContractType
 deriveGeneric ''ContractType
-deriveLift ''ContractType
 
 instance TextEnum ContractType where
     type TextEnumNames ContractType =

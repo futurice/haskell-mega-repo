@@ -44,9 +44,7 @@ import qualified Test.QuickCheck     as QC
 
 -- | Office.
 newtype Office = Office Int
-  deriving (Eq, Ord)
-
-deriveLift ''Office
+  deriving (Eq, Ord, Lift)
 
 instance Show Office where
     showsPrec d t = showsPrec d (officeToText t)

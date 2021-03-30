@@ -22,12 +22,11 @@ data TaskRole
     = TaskRoleIT
     | TaskRoleHR
     | TaskRoleSupervisor
-  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
   deriving anyclass (NFData, Binary)
 
 makePrisms ''TaskRole
 deriveGeneric ''TaskRole
-deriveLift ''TaskRole
 
 instance TextEnum TaskRole where
     type TextEnumNames TaskRole =

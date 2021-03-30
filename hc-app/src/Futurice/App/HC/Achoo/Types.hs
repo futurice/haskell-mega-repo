@@ -113,12 +113,11 @@ data AchooChart
     = ACTribe
     | ACOffice
     | ACCountry
-  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic)
+  deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Typeable, Generic, Lift)
   deriving anyclass (NFData, Binary)
 
 makePrisms ''AchooChart
 deriveGeneric ''AchooChart
-deriveLift ''AchooChart
 
 instance TextEnum AchooChart where
     type TextEnumNames AchooChart =

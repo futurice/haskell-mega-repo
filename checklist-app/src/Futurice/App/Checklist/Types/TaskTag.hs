@@ -30,11 +30,10 @@ data TaskTag
     | FirstContactTask -- ^ This task relates to accepting job offer
     | FUMTask          -- ^ This task relates to FUM
     | OktaTask         -- ^ This task related to Okta
- deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic)
+ deriving (Eq, Ord, Show, Read, Enum, Bounded, Generic, Lift)
 
 makePrisms ''TaskTag
 deriveGeneric ''TaskTag
-deriveLift ''TaskTag
 
 instance TextEnum TaskTag where
     type TextEnumNames TaskTag = '["GitHub", "PlanMill", "FirstContact", "FUM", "Okta"]

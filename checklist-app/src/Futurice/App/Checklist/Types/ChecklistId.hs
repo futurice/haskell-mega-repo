@@ -38,12 +38,11 @@ data ChecklistId
     | LeavingEmployeeChecklist
     | FromInternalToExternalChecklist
     | FromFuturiceToSubsidiaryChecklist
- deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Generic)
+ deriving stock (Eq, Ord, Show, Read, Enum, Bounded, Generic, Lift)
  deriving anyclass (NFData, Hashable)
 
 makePrisms ''ChecklistId
 deriveGeneric ''ChecklistId
-deriveLift ''ChecklistId
 
 instance TextEnum ChecklistId where
     type TextEnumNames ChecklistId =
