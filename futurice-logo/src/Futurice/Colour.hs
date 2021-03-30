@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
@@ -41,11 +40,7 @@ import Data.Swagger        (ToParamSchema (..), format)
 
 import qualified Data.Colour.SRGB as DC
 
-#if MIN_VERSION_servant(0,5,0)
 import Servant.API (FromHttpApiData (..), ToHttpApiData (..))
-#else
-import Servant.Common.Text (FromText (..), ToText (..))
-#endif
 
 ------------------------------------------------------------------------------
 -- Types
@@ -245,7 +240,6 @@ instance (SAccentColour c, SAccentFamily f) => SColour ('FutuAccent f c) where
 -- Servant bindings
 ------------------------------------------------------------------------------
 
-#if MIN_VERSION_servant(0,5,0)
 instance ToHttpApiData AccentFamily where
     toUrlPiece AF1 = "f1"
     toUrlPiece AF2 = "f2"
@@ -277,39 +271,6 @@ instance FromHttpApiData AccentColour where
 instance FromHttpApiData Colour where
     parseUrlPiece t = maybe (Left $ "Invalid colour: " <> t) Right $ lookup t ts
       where ts = [ (toUrlPiece c, c) | c <- [minBound..maxBound] ]
-#else
-instance ToText AccentFamily where
-    toText AF1 = "f1"
-    toText AF2 = "f2"
-    toText AF3 = "f3"
-    toText AF4 = "f4"
-    toText AF5 = "f5"
-    toText AF6 = "f6"
-
-instance ToText AccentColour where
-    toText AC1 = "c1"
-    toText AC2 = "c2"
-    toText AC3 = "c3"
-
-instance ToText Colour where
-    toText FutuGreen         = "futu-green"
-    toText FutuBlack         = "futu-black"
-    toText FutuLightGreen    = "futu-light-green"
-    toText FutuDarkGreen     = "futu-dark-green"
-    toText (FutuAccent f c)  = "futu-" <> toText f <> "-" <> toText c
-
-instance FromText AccentFamily where
-    fromText = flip lookup t
-      where t = [ (toText c, c) | c <- [minBound..maxBound] ]
-
-instance FromText AccentColour where
-    fromText = flip lookup t
-      where t = [ (toText c, c) | c <- [minBound..maxBound] ]
-
-instance FromText Colour where
-    fromText = flip lookup t
-      where t = [ (toText c, c) | c <- [minBound..maxBound] ]
-#endif
 
 ------------------------------------------------------------------------------
 -- Typeable lifted
