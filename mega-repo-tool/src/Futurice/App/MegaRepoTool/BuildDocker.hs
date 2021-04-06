@@ -174,7 +174,7 @@ cmdBuildDocker appnames = do
             --
             -- To compile own use sfdp
             -- /configure --prefix=/opt/graphviz --with-gtk=no --with-glade=no --with-glut=no --with-gts=yes --with-smyrna=no --with-pangocairo=yes --enable-static --disable-shared
-            copyFile "data/cacert.pem" directory
+            copyFile "data/cacert.pem" (directory </> "cacert.pem")
             copyFile "vendor/sfdp" (directory </> "sfdp")
 
             -- write dockerfile
