@@ -5,8 +5,8 @@ import Data.Aeson       (Value (Null, String), eitherDecodeStrict)
 import Data.Char        (isAlphaNum)
 import Futurice.Prelude
 import Prelude ()
-import System.Process
 import System.Exit
+import System.Process
 
 import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (ansiPretty)
 
@@ -45,6 +45,7 @@ data Cmd
     | CmdExec !(NonEmpty String)
     | CmdLambda !Text !(Maybe Value) !(Maybe Int)
     | CmdCopyArtifacts !Bool !FilePath !FilePath
+    | CmdDeployLambda !Text
 
 buildDockerOptions :: O.Parser Cmd
 buildDockerOptions = CmdBuildDocker
@@ -161,6 +162,14 @@ copyArtifactsOptions = CmdCopyArtifacts
     <*> O.strOption (O.long "rootdir"  <> O.metavar ":dir" <> O.help "The root directory")
     <*> O.strOption (O.long "builddir" <> O.metavar ":dir" <> O.help "The directory where Cabal put build files")
 
+deployLambdaOptions :: O.Parser Cmd
+deployLambdaOptions = CmdDeployLambda
+    <$> strArgument
+        [ O.metavar ":lambda"
+        , O.help "Lambda component name"
+        , O.completer lambdaCompleter
+        ]
+
 strArgument :: IsString a => [O.Mod O.ArgumentFields a] -> O.Parser a
 strArgument = O.strArgument . mconcat
 
@@ -186,6 +195,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "lambda"       lambdaOptions      "Run lambda locally"
     , cmdParser "exec"         execOptions        "Execute command in environment"
     , cmdParser "copy-artifacts" copyArtifactsOptions "(Internal) copy-artifacts during build"
+    , cmdParser "deploy-lambda" deployLambdaOptions "Deploy Lambda to AWS"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
@@ -210,6 +220,7 @@ main' (CmdDeleteKey k)                = deleteKey k
 main' (CmdExec args)                  = cmdExec args
 main' (CmdLambda flib payload mlimit) = cmdLambda flib payload mlimit
 main' (CmdCopyArtifacts bl rd bd)     = cmdCopyArtifacts (CAO rd bd bl)
+main' (CmdDeployLambda lambdaName)    = cmdDeployLambda lambdaName
 
 defaultMain :: IO ()
 defaultMain = do

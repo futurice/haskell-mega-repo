@@ -1,26 +1,36 @@
-module Futurice.App.MegaRepoTool.Lambda (cmdLambda) where
+module Futurice.App.MegaRepoTool.Lambda (cmdLambda, cmdDeployLambda) where
 
 import Cabal.Plan
-import Control.Lens       (firstOf)
-import Data.Aeson         (encode)
+import Control.Lens                            (firstOf)
+import Data.Aeson                              (encode)
 import Data.Machine
        (MachineT (..), Step (..), await, repeatedly, runT_, (<~))
 import Futurice.Prelude
 import Prelude ()
-import System.Directory   (doesFileExist)
-import System.Environment (getEnvironment)
-import System.Exit        (ExitCode (..), exitFailure, exitWith)
-import System.IO          (Handle, hFlush, hIsEOF, stdout)
-import System.IO.Temp     (withTempDirectory)
-import Text.Printf        (printf)
+import System.Directory                        (doesFileExist)
+import System.Environment                      (getEnvironment)
+import System.Exit
+       (ExitCode (..), exitFailure, exitWith)
+import System.IO                               (Handle, hFlush, hIsEOF, stdout)
+import System.IO.Temp                          (withTempDirectory)
+import System.Process                          (readProcess)
+import Text.PrettyPrint.ANSI.Leijen.AnsiPretty (ansiPretty)
+import Text.Printf                             (printf)
 
 import qualified Control.Concurrent.Async as A
 import qualified Data.ByteString          as BS
 import qualified Data.Map                 as Map
+import qualified Data.Text                as T
 import qualified System.Process           as Process
 
 import Futurice.App.MegaRepoTool.Config
 import Futurice.App.MegaRepoTool.Keys   (Storage (..), readStorage)
+
+cmdDeployLambda :: Text -> IO ()
+cmdDeployLambda lambdaName = do
+    let lambdaNameS = T.unpack lambdaName
+    res <- readProcess "aws" ["lambda", "update-function-code", "--zip-file", "fileb://build/Lambdas/" <> lambdaNameS <> ".zip", "--function-name", lambdaNameS] ""
+    print $ ansiPretty res
 
 cmdLambda :: Text -> Maybe Value -> Maybe Int -> IO ()
 cmdLambda lambdaName mpayload mtimelimit = do
