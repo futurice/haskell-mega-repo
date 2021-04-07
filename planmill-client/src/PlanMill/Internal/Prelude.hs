@@ -12,12 +12,12 @@ module PlanMill.Internal.Prelude (
     -- ** extras
     getParsedAsText, getParsedAsIntegral,
     -- * binary-tagged
-    HasSemanticVersion, HasStructuralInfo(..), sopStructuralInfo,
+    Structured(..), nominalStructure,
     -- * intervals
     Interval, (...), inf, sup,
     -- * Time related
     ZonedTime, UTCTime(..),
-    Aeson.getU, Aeson.getZ, dayFromZ, zonedTimeDay,
+    dayFromZ, zonedTimeDay,
     utcTimeToInteger,
     -- * HasKey
     HasKey (..),
@@ -27,26 +27,24 @@ module PlanMill.Internal.Prelude (
     bsShow,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Aeson.Compat
        (FromJSON (..), ToJSON (..), Value (..), object, withObject, withText,
        (.!=), (.:), (.:?), (.=))
 import Data.Aeson.Types          (typeMismatch)
-import Data.Binary.Tagged
-       (HasSemanticVersion, HasStructuralInfo (..), sopStructuralInfo)
+import Data.Binary.Tagged        (Structured (..), nominalStructure)
 import Data.Time                 (ZonedTime, zonedTimeToLocalTime)
 import Data.Time.Clock.POSIX     (utcTimeToPOSIXSeconds)
 import Data.Type.Equality
 import Futurice.Aeson            (getParsedAsIntegral, getParsedAsText)
 import Futurice.IdMap            (HasKey (..))
+import Futurice.Prelude
 import Futurice.Time
 import Numeric.Interval.NonEmpty (Interval, inf, sup, (...))
+import Prelude ()
 
-import qualified Data.Aeson.Extra   as Aeson
-
-dayFromZ :: Aeson.Z -> Day
-dayFromZ = zonedTimeDay . Aeson.getZ
+--TODO: remove this function
+dayFromZ :: ZonedTime -> Day
+dayFromZ = zonedTimeDay
 
 zonedTimeDay :: ZonedTime -> Day
 zonedTimeDay = localDay . zonedTimeToLocalTime

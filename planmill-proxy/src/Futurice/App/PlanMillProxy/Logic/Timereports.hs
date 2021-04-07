@@ -3,7 +3,7 @@ module Futurice.App.PlanMillProxy.Logic.Timereports (
     selectTimereports,
     ) where
 
-import Data.Binary.Tagged        (taggedDecode)
+import Data.Binary.Tagged        (structuredDecode)
 import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup)
 import Prelude ()
@@ -38,7 +38,7 @@ selectTimereports ctx uid minterval = do
     selectTransform
         :: Postgres.Only (Postgres.Binary BSL.ByteString)
         -> PM.Timereport
-    selectTransform (Postgres.Only (Postgres.Binary bs)) = taggedDecode bs
+    selectTransform (Postgres.Only (Postgres.Binary bs)) = structuredDecode bs
 
     selectQueryWithInterval :: Postgres.Query
     selectQueryWithInterval = fromString $ unwords $

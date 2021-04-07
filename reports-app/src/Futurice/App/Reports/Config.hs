@@ -19,7 +19,7 @@ import qualified FUM.Types.Login                   as FUM
 import qualified Futurice.Integrations.Serv.Config as C
 import qualified Okta                              as O
 
-type ReportIntegrations = '[ ServFD, ServFUM, ServGH, ServPE, ServPK, ServPM, ServPO ]
+type ReportIntegrations = '[ ServFUM, ServGH, ServPE, ServPK, ServPM, ServPO ]
 
 data Config = Config
     { cfgIntegrationsCfg       :: !(IntegrationsConfig ReportIntegrations)
@@ -53,8 +53,7 @@ toFutuquCfg
     :: C.IntegrationsConfig ReportIntegrations
     -> C.IntegrationsConfig FutuquIntegrations
 toFutuquCfg
-    (C.IntCfgFlowdock _
     (C.IntCfgFUM _ _
     (C.IntCfgGitHub _
     (C.IntCfgPersonio a
-    (C.IntCfgPeakon _ c))))) = (C.IntCfgPersonio a c)
+    (C.IntCfgPeakon _ c)))) = (C.IntCfgPersonio a c)

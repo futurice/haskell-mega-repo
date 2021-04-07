@@ -55,8 +55,7 @@ instance Hashable Action
 instance NFData Action
 instance AnsiPretty Action
 instance Binary Action
-instance HasStructuralInfo Action where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion Action
+instance Structured Action
 
 instance FromJSON Action where
     parseJSON = withObject "Action" $ \obj ->
@@ -64,9 +63,9 @@ instance FromJSON Action where
                <*> obj .: "private"
                <*> obj .: "reminder"
                <*> obj .: "subject"
-               <*> (getU <$> obj .: "created")
-               <*> optional (getU <$> obj .: "dueDate")
-               <*> optional (getU <$> obj .: "start")
+               <*> obj .: "created"
+               <*> optional (obj .: "dueDate")
+               <*> optional (obj .: "start")
                <*> obj .: "opportunity"
                <*> obj .: "project"
                <*> obj .: "type"
@@ -74,7 +73,7 @@ instance FromJSON Action where
                <*> obj .: "salesOrder"
                <*> obj .: "contact"
                <*> obj .: "responsible"
-               <*> optional (getU <$> obj .: "modified")
+               <*> optional (obj .: "modified")
                <*> obj .: "campaign"
                <*> obj .: "location"
                <*> obj .: "id"

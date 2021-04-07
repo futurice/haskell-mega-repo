@@ -21,7 +21,6 @@ module Futurice.Integrations.Monad (
     runIntegrationsWithEnv,
     makeIntegrationsEnv,
     -- * state setters
-    stateSetFlowdock,
     stateSetFUM,
     stateSetFUM6,
     stateSetGitHub,
@@ -39,10 +38,8 @@ import Futurice.Prelude
 import Futurice.TypeTag
 import Prelude ()
 
-import qualified Chat.Flowdock.REST           as FD
 import qualified FUM
 import qualified FUM.Haxl
-import qualified Flowdock.Haxl                as FD.Haxl
 import qualified Futurice.FUM.MachineAPI      as FUM6
 import qualified Futurice.GitHub              as GH
 import qualified Futurice.Integrations.GitHub as GH
@@ -78,7 +75,6 @@ import Futurice.Integrations.Serv.Contains
 data Env = Env
     { _envNow                 :: !UTCTime
     , _envFumEmployeeListName :: !FUM.ListName
-    , _envFlowdockOrgName     :: !(FD.ParamName FD.Organisation)
     , _envGithubOrgName       :: !(GH.Name GH.Organization)
     }
 
@@ -199,7 +195,6 @@ mkReaderEnv now = Env
     { _envNow = now
     -- HACK: these are hardcoded
     , _envFumEmployeeListName = "employees"
-    , _envFlowdockOrgName     = FD.mkParamName "futurice"
     , _envGithubOrgName       = "futurice"
     }
 
@@ -209,7 +204,6 @@ integrationConfigToState
     -> IntegrationsConfig ss -> Tagged ss H.StateStore
 integrationConfigToState mgr lgr cfg0 = flip runCTS cfg0 $
     withServSet ctsEmpty $ \_ (CTS f) -> CTS $ \cfg1 -> case cfg1 of
-        IntCfgFlowdock token cfg2 -> stateSetFlowdock lgr mgr token (f cfg2)
         IntCfgFUM token burl cfg2 -> stateSetFUM lgr mgr token burl (f cfg2)
         IntCfgFUM6 req cfg2       -> stateSetFUM6 lgr mgr req (f cfg2)
         IntCfgGitHub req cfg2     -> stateSetGitHub lgr mgr req (f cfg2)
@@ -297,15 +291,6 @@ instance Contains ServPM ss => MonadPlanMillQuery (Integrations ss) where
 
 instance Contains ServFUM ss  => MonadFUM (Integrations ss) where
     fumAction = liftHaxl . FUM.Haxl.request
-
--------------------------------------------------------------------------------
--- MonadFlowdock
--------------------------------------------------------------------------------
-
-instance Contains ServFD ss => MonadFlowdock (Integrations ss) where
-    flowdockOrganisationReq = liftHaxl . FD.Haxl.organisation
-    flowdockMessagesSinceReq org flow since = liftHaxl $
-        FD.Haxl.messagesSince org flow since
 
 -------------------------------------------------------------------------------
 -- MonadFUM6
@@ -399,9 +384,6 @@ instance MonadReader Env (Integrations ss) where
 
 instance HasFUMEmployeeListName Env where
     fumEmployeeListName = envFumEmployeeListName
-
-instance HasFlowdockOrgName Env where
-    flowdockOrganisationName = envFlowdockOrgName
 
 instance HasGithubOrgName Env where
     githubOrganisationName = envGithubOrgName

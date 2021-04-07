@@ -15,7 +15,7 @@ module Futurice.Integrations.Serv (
     Serv (..),
     AllServs,
     ServNat,
-    ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL,
+    ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL,
     -- ** Singleton
     SServ (..), ServI (..),
     -- * Service Sets
@@ -106,8 +106,7 @@ lessThanCmpGT (LTS lt) = case lessThanCmpGT lt of Refl -> Refl
 --
 -- /Note:/ constructors are in the alphabetical order.
 data Serv
-    = ServFD    -- ^ flowdock
-    | ServFUM   -- ^ fum
+    = ServFUM   -- ^ fum
     | ServFUM6  -- ^ fum-carbon
     | ServGH    -- ^ github
     | ServGO    -- ^ google
@@ -119,9 +118,8 @@ data Serv
     | ServSL    -- ^ slack
   deriving (Show)
 
-type AllServs = '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL ]
+type AllServs = '[ ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPK, ServPM, ServPO, ServSL ]
 
-type ServFD   = 'ServFD
 type ServFUM  = 'ServFUM
 type ServFUM6 = 'ServFUM6
 type ServGH   = 'ServGH
@@ -142,7 +140,6 @@ type ServSL   = 'ServSL
 type Nat10 = 'N.S N.Nat9
 
 type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
-    ServNat 'ServFD   = N.Nat0
     ServNat 'ServFUM  = N.Nat1
     ServNat 'ServFUM6 = N.Nat2
     ServNat 'ServGH   = N.Nat3
@@ -159,7 +156,6 @@ type family ServNat (s :: Serv) = (n :: N.Nat) | n -> s where
 -------------------------------------------------------------------------------
 
 data SServ :: Serv -> Type where
-    SServFD   :: SServ 'ServFD
     SServFUM  :: SServ 'ServFUM
     SServFUM6 :: SServ 'ServFUM6
     SServGH   :: SServ 'ServGH
@@ -179,7 +175,6 @@ deriving instance Show (SServ s)
 -- SServGH
 --
 class    ServI (s :: Serv) where sserv :: SServ s
-instance ServI 'ServFD     where sserv = SServFD
 instance ServI 'ServFUM    where sserv = SServFUM
 instance ServI 'ServFUM6   where sserv = SServFUM6
 instance ServI 'ServGH     where sserv = SServGH
@@ -221,19 +216,19 @@ deriving instance Show (ServSetProof ss)
 --
 -- Sanity test: all services
 --
--- >>> ssProof :: ServSetProof '[ ServFD, ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM ]
--- SSCons SServFD LTZ (SSCons SServFUM (LTS LTZ) (SSCons SServFUM6 (LTS (LTS LTZ)) (SSCons SServGH (LTS (LTS (LTS LTZ))) (SSCons SServGO (LTS (LTS (LTS (LTS LTZ)))) (SSCons SServOK (LTS (LTS (LTS (LTS (LTS LTZ))))) (SSCons SServPE (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))) (SSSing SServPM)))))))
+-- >>> ssProof :: ServSetProof '[ ServFUM, ServFUM6, ServGH, ServGO, ServOK, ServPE, ServPM, ServPO, ServSL ]
+-- SSCons SServFUM (LTS LTZ) (SSCons SServFUM6 (LTS (LTS LTZ)) (SSCons SServGH (LTS (LTS (LTS LTZ))) (SSCons SServGO (LTS (LTS (LTS (LTS LTZ)))) (SSCons SServOK (LTS (LTS (LTS (LTS (LTS LTZ))))) (SSCons SServPE (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))) (SSCons SServPM (LTS (LTS (LTS (LTS (LTS (LTS (LTS (LTS LTZ)))))))) (SSCons SServPO (LTS (LTS (LTS (LTS (LTS (LTS (LTS (LTS (LTS LTZ))))))))) (SSSing SServSL))))))))
 --
 -- Error case: duplicate
 --
--- >>> ssProof :: ServSetProof '[ ServFD, ServFD ]
+-- >>> ssProof :: ServSetProof '[ ServFUM, ServFUM ]
 -- ...
 -- ...error...
 -- ...
 --
 -- Error case: out-of-order
 --
--- >>> ssProof :: ServSetProof '[ ServFUM, ServFD ]
+-- >>> ssProof :: ServSetProof '[ ServFUM6, ServFUM ]
 -- ...
 -- ...error...
 -- ...
@@ -268,12 +263,12 @@ instance
 -- | Fold over 'ServSet'.
 -- We don't use the set property here, as in some cases we don't need it on the value level: types have done their job.
 --
--- >>> withServSet  (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFD, ServGH ]
--- Const ["SServFD","SServGH"]
+-- >>> withServSet  (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFUM, ServGH ]
+-- Const ["SServFUM","SServGH"]
 --
 -- Error case:
 --
--- >>> withServSet (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFD, ServFD ]
+-- >>> withServSet (Const []) (\s (Const ss) -> Const (show s : ss)) :: Const [String] '[ ServFUM, ServFUM ]
 -- ...
 -- ...error...
 -- ...

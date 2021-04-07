@@ -63,7 +63,6 @@ library
     , file-embed
     , filepath
     , fin
-    , flowdock-rest
     , folds
     , fum-client
     , fum-types

@@ -21,10 +21,10 @@ cradle:
     - path: "avatar-app/lambdas/ProcessLambda.hs"
       component: "avatar-app:exe:avatar-process-lambda"
 
-    - path: "avatar-app/src-process/Futurice.Lambda.Avatar.Process.hs"
+    - path: "avatar-app/src-process/Futurice/Lambda/Avatar/Process.hs"
       component: "avatar-app:exe:avatar-process-lambda"
 
-    - path: "avatar-app/lambdas/Futurice.Lambda.Avatar.Process.hs"
+    - path: "avatar-app/lambdas/Futurice/Lambda/Avatar/Process.hs"
       component: "avatar-app:exe:avatar-process-lambda"
 
     - path: "avatar-client/src"
@@ -71,15 +71,6 @@ cradle:
 
     - path: "env-config/src"
       component: "lib:env-config"
-
-    - path: "flowdock-grep/src/Main.hs"
-      component: "flowdock-grep:exe:flowdock-grep"
-
-    - path: "flowdock-rest/src"
-      component: "lib:flowdock-rest"
-
-    - path: "flowdock-rest/test"
-      component: "flowdock-rest:test:flowdock-rest-test"
 
     - path: "fum-api/src"
       component: "lib:fum-api"
@@ -300,10 +291,10 @@ cradle:
     - path: "planmill-proxy/lambdas/CapacityLambda.hs"
       component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
 
-    - path: "planmill-proxy/src-capacity/Futurice.Lambda.PlanMillProxy.Capacity.hs"
+    - path: "planmill-proxy/src-capacity/Futurice/Lambda/PlanMillProxy/Capacity.hs"
       component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
 
-    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Capacity.hs"
+    - path: "planmill-proxy/lambdas/Futurice/Lambda/PlanMillProxy/Capacity.hs"
       component: "planmill-proxy:exe:planmill-proxy-capacity-lambda"
 
     - path: "planmill-proxy/src-timereports/TimereportLambda.hs"
@@ -312,10 +303,10 @@ cradle:
     - path: "planmill-proxy/lambdas/TimereportLambda.hs"
       component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
 
-    - path: "planmill-proxy/src-timereports/Futurice.Lambda.PlanMillProxy.Timereports.hs"
+    - path: "planmill-proxy/src-timereports/Futurice/Lambda/PlanMillProxy/Timereports.hs"
       component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
 
-    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Timereports.hs"
+    - path: "planmill-proxy/lambdas/Futurice/Lambda/PlanMillProxy/Timereports.hs"
       component: "planmill-proxy:exe:planmill-proxy-timereports-lambda"
 
     - path: "planmill-proxy/src-cache/CacheLambda.hs"
@@ -324,10 +315,10 @@ cradle:
     - path: "planmill-proxy/lambdas/CacheLambda.hs"
       component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
 
-    - path: "planmill-proxy/src-cache/Futurice.Lambda.PlanMillProxy.Cache.hs"
+    - path: "planmill-proxy/src-cache/Futurice/Lambda/PlanMillProxy/Cache.hs"
       component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
 
-    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Cache.hs"
+    - path: "planmill-proxy/lambdas/Futurice/Lambda/PlanMillProxy/Cache.hs"
       component: "planmill-proxy:exe:planmill-proxy-cache-lambda"
 
     - path: "planmill-proxy/src-cache-slow/CacheSlowLambda.hs"
@@ -336,10 +327,10 @@ cradle:
     - path: "planmill-proxy/lambdas/CacheSlowLambda.hs"
       component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
 
-    - path: "planmill-proxy/src-cache-slow/Futurice.Lambda.PlanMillProxy.CacheSlow.hs"
+    - path: "planmill-proxy/src-cache-slow/Futurice/Lambda/PlanMillProxy/CacheSlow.hs"
       component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
 
-    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.CacheSlow.hs"
+    - path: "planmill-proxy/lambdas/Futurice/Lambda/PlanMillProxy/CacheSlow.hs"
       component: "planmill-proxy:exe:planmill-proxy-cache-slow-lambda"
 
     - path: "planmill-proxy/src-accounts/AccountsLambda.hs"
@@ -348,10 +339,10 @@ cradle:
     - path: "planmill-proxy/lambdas/AccountsLambda.hs"
       component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
 
-    - path: "planmill-proxy/src-accounts/Futurice.Lambda.PlanMillProxy.Accounts.hs"
+    - path: "planmill-proxy/src-accounts/Futurice/Lambda/PlanMillProxy/Accounts.hs"
       component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
 
-    - path: "planmill-proxy/lambdas/Futurice.Lambda.PlanMillProxy.Accounts.hs"
+    - path: "planmill-proxy/lambdas/Futurice/Lambda/PlanMillProxy/Accounts.hs"
       component: "planmill-proxy:exe:planmill-proxy-accounts-lambda"
 
     - path: "planmill-proxy/srv/Main.hs"
@@ -452,3 +443,45 @@ cradle:
 
     - path: "theme-app/srv/Main.hs"
       component: "theme-app:exe:theme-app-server"
+
+    - path: "vendor/diffusionkinetics-open/dashdo/src"
+      component: "lib:dashdo"
+
+    - path: "vendor/diffusionkinetics-open/lucid-extras/lib"
+      component: "lib:lucid-extras"
+
+    - path: "vendor/diffusionkinetics-open/lucid-extras/site-gen"
+      component: "lucid-extras:test:site-gen"
+
+    - path: "vendor/diffusionkinetics-open/plotlyhs/src"
+      component: "lib:plotlyhs"
+
+    - path: "vendor/gogol/core/src"
+      component: "lib:gogol-core"
+
+    - path: "vendor/gogol/core/test"
+      component: "gogol-core:test:tests"
+
+    - path: "vendor/gogol/gogol/src"
+      component: "lib:gogol"
+
+    - path: "vendor/gogol/gogol-admin-directory/src"
+      component: "lib:gogol-admin-directory"
+
+    - path: "vendor/gogol/gogol-admin-directory/gen"
+      component: "lib:gogol-admin-directory"
+
+    - path: "vendor/gogol/gogol-apps-calendar/src"
+      component: "lib:gogol-apps-calendar"
+
+    - path: "vendor/gogol/gogol-apps-calendar/gen"
+      component: "lib:gogol-apps-calendar"
+
+    - path: "vendor/gogol/gogol-people/src"
+      component: "lib:gogol-people"
+
+    - path: "vendor/gogol/gogol-people/gen"
+      component: "lib:gogol-people"
+
+    - path: "vendor/monad-http/src"
+      component: "lib:monad-http"

@@ -51,8 +51,7 @@ instance Hashable CapacityCalendar
 instance NFData CapacityCalendar
 instance AnsiPretty CapacityCalendar
 instance Binary CapacityCalendar
-instance HasStructuralInfo CapacityCalendar where structuralInfo = sopStructuralInfo
-instance HasSemanticVersion CapacityCalendar
+instance Structured CapacityCalendar
 
 instance FromJSON CapacityCalendar where
     parseJSON = withObject "CapacityCalendar" $ \obj -> CapacityCalendar

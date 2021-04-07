@@ -5,7 +5,7 @@ module Futurice.Lambda.PlanMillProxy.Capacity (
     ) where
 
 import Data.Aeson         (Value, object, (.=))
-import Data.Binary.Tagged (taggedEncode)
+import Data.Binary.Tagged (structuredEncode)
 import Data.Time          (addDays, addUTCTime)
 import Futurice.EnvConfig
 import Futurice.Lambda
@@ -13,7 +13,7 @@ import Futurice.Postgres
        (ConnectInfo, Query, createPostgresPool, safePoolExecuteMany,
        safePoolQuery)
 import Futurice.Prelude
-import PlanMill.Worker    (withWorkers, submitPlanMill)
+import PlanMill.Worker    (submitPlanMill, withWorkers)
 import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
@@ -69,7 +69,7 @@ transformForInsert
     -> [(PM.UserId, Day, Postgres.Binary BSL.ByteString)]
 transformForInsert uid = fmap f . toList
   where
-    f uc = (uid, PM.userCapacityDate uc, Postgres.Binary $ taggedEncode uc)
+    f uc = (uid, PM.userCapacityDate uc, Postgres.Binary $ structuredEncode uc)
 
 selectQuery :: Query
 selectQuery = fromString $ unwords $

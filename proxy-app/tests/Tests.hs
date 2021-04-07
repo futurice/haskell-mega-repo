@@ -4,16 +4,13 @@ module Main (main) where
 
 import Data.Binary.Tagged
 import Futurice.Prelude
-import GHC.TypeLits          (natVal)
 import Prelude ()
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
-import qualified Data.ByteString.Base16 as Base16
-import qualified Data.ByteString.Lazy   as LBS
-import qualified Futurice.GitHub        as GH
-import qualified PlanMill.Types         as PM
-import qualified PlanMill.Types.Query   as PM
+import qualified Futurice.GitHub      as GH
+import qualified PlanMill.Types       as PM
+import qualified PlanMill.Types.Query as PM
 
 main :: IO ()
 main = defaultMain tests
@@ -25,32 +22,28 @@ tests = testGroup "proxy-app"
 
 data BTTest where
     BTTest
-        :: (HasStructuralInfo a, HasSemanticVersion a)
-        => String -> Proxy a -> Int -> LazyByteString -> BTTest
+        :: (Structured a)
+        => String -> Proxy a -> String -> BTTest
 
 binaryTagTests :: TestTree
 binaryTagTests = testGroup "BinaryTagged tags" $ map mk tags
   where
     mk :: BTTest -> TestTree
-    mk (BTTest name p ver h) = testProperty name $ once $
-        ver === fromIntegral (natVal (versionProxy p)) .&&.
-        h === LBS.fromStrict (Base16.encode (structuralInfoSha1Digest (structuralInfo p)))
-
-    versionProxy :: Proxy a -> Proxy (SemanticVersion a)
-    versionProxy _ = Proxy
+    mk (BTTest name p h) = testProperty name $ once $
+        h === showMD5 (structureHash p)
 
     tags :: [BTTest]
     tags =
         [ BTTest "PlanMill.SomeResponse" (Proxy :: Proxy PM.SomeResponse)
-            0 "3999259680b4235f6ccbc05719657a1f79af95f5"
+            "6cceee5d80e20682bc0882ac7b0256c7"
         , BTTest "planmill-haxl endpoint" (Proxy :: Proxy [Either Text PM.SomeResponse])
-            0 "526d6d33518457f4e9476ee4b1092504e1aff402"
+            "52d9c48c677c735f293c1055ef8c81a6"
         , BTTest "PlanMill.Projects" (Proxy :: Proxy PM.Projects)
-            0 "943eec14806b8d90fa7d3e4566f4aca06e8c1b2d"
+            "086c56b9c08fd33d60517909c26cd80b"
         , BTTest "PlanMill.Tasks" (Proxy :: Proxy PM.Tasks)
-            0 "c0af841c9b60ca6217cd9cfb05eaa568ef3b89b1"
+            "a358a6fdfbb9ac5b33c5f58935d24da3"
         , BTTest "PlanMill.CapacityCalendars" (Proxy :: Proxy PM.CapacityCalendars)
-            0 "1fde910b8a5fc395de41cf0cda34f17fe9d141cd"
+            "8fc6cddac1228991014b13a4c3a50efe"
         , BTTest "GitHub.SomeResponse" (Proxy :: Proxy GH.SomeResponse)
-            0 "b1ea46b81cd6e0caa2fc5b4d0fafef0336de5da5"
+            "adaf2653cff70e23f2792fff97c5ea6f"
         ]
