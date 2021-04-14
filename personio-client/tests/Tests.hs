@@ -255,11 +255,11 @@ validations = testGroup "Validations"
         (HomeTribeInvalid "SomeTribe")
         $ correctEmployeeValue
             & attributeValue "dynamic_72943" . _String .~ "SomeTribe" -- Home tribe
-    -- , testValidation
-    --     "expat bonus and allowance currency"
-    --     ExpatBonusAndAllowanceCurrencyMissing
-    --     $ correctEmployeeValue
-    --         & attributeValue "dynamic_72972" . _String .~ "" -- Expat bonus and allowance currency
+    , testValidation
+         "expat bonus and allowance currency"
+         ExpatBonusAndAllowanceCurrencyMissing
+         $ correctEmployeeValue
+             & attributeValue "dynamic_72970" . _String .~ "s" -- Expat bonus and allowance currency
     , testValidation
         "salary"
         (SalaryInvalid "Type: Monthly: monthly salary not set")
