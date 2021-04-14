@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 import Data.Aeson.Compat
-import Data.Aeson.Lens       (key, _String)
+import Data.Aeson.Lens       (_String, key)
 import Data.Aeson.Types      (parseEither)
 import Futurice.Email        (mkEmail)
 import Futurice.Office       (offTampere)
@@ -256,11 +256,10 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72943" . _String .~ "SomeTribe" -- Home tribe
     , testValidation
-        "expat bonus and allowance currency"
-        ExpatBonusAndAllowanceCurrencyMissing
-        $ correctEmployeeValue
-            & attributeValue "dynamic_72971" . _String .~ "something?" -- Expat housing allowance
-            & attributeValue "dynamic_72972" . _String .~ "" -- Expat bonus and allowance currency
+         "expat bonus and allowance currency"
+         ExpatBonusAndAllowanceCurrencyMissing
+         $ correctEmployeeValue
+             & attributeValue "dynamic_72970" . _String .~ "s" -- Expat bonus and allowance currency
     , testValidation
         "salary"
         (SalaryInvalid "Type: Monthly: monthly salary not set")
