@@ -5,7 +5,6 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fconstraint-solver-iterations=0 -fprint-potential-instances #-}
 module Futurice.App.Reports (defaultMain) where
 
