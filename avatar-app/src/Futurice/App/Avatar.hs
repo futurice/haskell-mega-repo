@@ -83,7 +83,7 @@ cachedAvatar (Ctx _ _ _ cfg env) ap =
         r <- AWS.send $ AWS.getObject bucketName objKey
         logTrace "Response" (show r)
         lbs <- AWS.sinkBody (r ^. AWS.gorsBody) sinkLbs
-        return $ addHeader "pubic, max-age=3600" $ unsafeMkCached lbs
+        return $ addHeader "public, max-age=3600" $ unsafeMkCached lbs
 
 processOriginal :: Ctx ->  Text -> LogT IO DynamicImage'
 processOriginal ctx url = do
@@ -95,7 +95,7 @@ processOriginal ctx url = do
         encodeDynamicPng $ ImageRGBA8 $ convertRGBA8 origImg
   where
     mgr = ctxManager ctx
-    return' = return . addHeader "pubic, max-age=3600" . unsafeMkCached
+    return' = return . addHeader "public, max-age=3600" . unsafeMkCached
 
 mkAvatar
     :: Ctx
@@ -136,7 +136,7 @@ mkFum ctx@(Ctx cache lgr mgr cfg _) login msize grey = case fromMaybeSize msize 
                     Just url -> cachedAvatar ctx $
                         AvatarProcess url size grey
   where
-    fallback = addHeader "pubic, max-age=3600" $ unsafeMkCached $ LBS.fromStrict futulogoBS
+    fallback = addHeader "public, max-age=3600" $ unsafeMkCached $ LBS.fromStrict futulogoBS
 
     getFumMap :: IO (Map FUM.Login FUM.User)
     getFumMap = do
